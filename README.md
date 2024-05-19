@@ -1,3 +1,4 @@
+![Xplorer](https://github.com/xplorer2716/XplorerEditor/blob/main/WebSiteHeader.jpg?raw=true)
 
 **XPLORER - An editor for the Oberheim Xpander and Matrix-12 synthesizers**
 
