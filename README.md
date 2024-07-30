@@ -1,4 +1,4 @@
-![Xplorer](https://github.com/xplorer2716/XplorerEditor/blob/main/WebSiteHeader.jpg?raw=true)
+![Xplorer](https://github.com/xplorer2716/XplorerEditor/blob/main/README.XplorerFullScreen.jpg?raw=true)
 
 **XPLORER - A real time editor for the Oberheim Xpander and Matrix-12 synthesizers**
 
@@ -25,3 +25,4 @@ The main features of Xplorer are:
 - Patch randomizer (generates a new patch from random values)
 - Auto-sized user interface depending on system’s default font size
 - ...
+
