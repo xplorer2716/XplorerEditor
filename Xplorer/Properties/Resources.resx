@@ -1,0 +1,1402 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="RAMP_2_RATE" xml:space="preserve">
+    <value>RAMP2 RATE</value>
+  </data>
+  <data name="ENV_1_DELAY" xml:space="preserve">
+    <value>ENV1 DELAY</value>
+  </data>
+  <data name="ENV_3_DELAY" xml:space="preserve">
+    <value>ENV3 DELAY</value>
+  </data>
+  <data name="LAG_MODE_LEGATO" xml:space="preserve">
+    <value>LAG LEGATO</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV5_DLY" xml:space="preserve">
+    <value>ENV5 DELAY</value>
+  </data>
+  <data name="ENV_2_TRIG_LFOTRIG" xml:space="preserve">
+    <value>ENV2 TRIG LFOTRIG</value>
+  </data>
+  <data name="RAMP_4_TRIG_LFOTRIG" xml:space="preserve">
+    <value>RAMP4 TRIG LFOTRIG</value>
+  </data>
+  <data name="ENV_2_VOLUME" xml:space="preserve">
+    <value>ENV2 VOLUME</value>
+  </data>
+  <data name="VCO2_MOD_KEYB" xml:space="preserve">
+    <value>VCO2 MOD KEYBD</value>
+  </data>
+  <data name="EnumModulationDestinations_VCF_FRQ" xml:space="preserve">
+    <value>VCF FREQ</value>
+  </data>
+  <data name="RAMP_3_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>RAMP3 TRIG LFO </value>
+  </data>
+  <data name="LFO_2_WAVESHAPE" xml:space="preserve">
+    <value>LFO2 WAVE</value>
+  </data>
+  <data name="MOD_AMNT_SRC_11" xml:space="preserve">
+    <value>MOD ENTRY 11 AMOUNT</value>
+  </data>
+  <data name="ENV_3_MODE_RESET" xml:space="preserve">
+    <value>ENV3 MODE RESET</value>
+  </data>
+  <data name="ENV_5_DECAY" xml:space="preserve">
+    <value>ENV5 DECAY</value>
+  </data>
+  <data name="EnumVCFFilterModes__2_POLE_BAND" xml:space="preserve">
+    <value>2 POLE BAND</value>
+  </data>
+  <data name="LFO_1_AMP" xml:space="preserve">
+    <value>LFO1 AMP</value>
+  </data>
+  <data name="VCF_MOD_KEYB" xml:space="preserve">
+    <value>VCF MOD KEYBD</value>
+  </data>
+  <data name="MOD_AMNT_SRC_7" xml:space="preserve">
+    <value>MOD ENTRY 7 AMOUNT</value>
+  </data>
+  <data name="TRACK_3_POINT_2" xml:space="preserve">
+    <value>TRACK3 POINT 2</value>
+  </data>
+  <data name="EnumVCFFilterModes__2_HIGH_1_LOW" xml:space="preserve">
+    <value>2 HIGH + 1 LOW</value>
+  </data>
+  <data name="ENV_1_TRIG_EXTRIG" xml:space="preserve">
+    <value>ENV1 TRIG EXTRIG</value>
+  </data>
+  <data name="ENV_3_MODE_DADR" xml:space="preserve">
+    <value>ENV3 MODE DADR</value>
+  </data>
+  <data name="VCO1_MOD_VIB" xml:space="preserve">
+    <value>VCO1 MOD VIB</value>
+  </data>
+  <data name="MOD_QUANTIZE_14" xml:space="preserve">
+    <value>MOD ENTRY 14 QUANTIZE</value>
+  </data>
+  <data name="RAMP_1_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>RAMP1 TRIG</value>
+  </data>
+  <data name="VCO2_WAVESHAPE_TRI" xml:space="preserve">
+    <value>VCO2 WAVE TRI</value>
+  </data>
+  <data name="RAMP_2_TRIG_GATED" xml:space="preserve">
+    <value>RAMP2 TRIG GATED</value>
+  </data>
+  <data name="TRACK_2_POINT_5" xml:space="preserve">
+    <value>TRACK2 POINT 5</value>
+  </data>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="store" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\store.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RAMP_2_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>RAMP2 TRIG LFO</value>
+  </data>
+  <data name="ENV_4_VOLUME" xml:space="preserve">
+    <value>ENV4 VOLUME</value>
+  </data>
+  <data name="MOD_AMNT_SRC_16" xml:space="preserve">
+    <value>MOD ENTRY 16 AMOUNT</value>
+  </data>
+  <data name="EnumVCFFilterModes__4_POLE_LOW" xml:space="preserve">
+    <value>4 POLE LOW</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_RMP2" xml:space="preserve">
+    <value>RAMP2</value>
+  </data>
+  <data name="EnumModulationSources_LEV2" xml:space="preserve">
+    <value>LEV2</value>
+  </data>
+  <data name="LFO_3_SAMPLE_INPUT" xml:space="preserve">
+    <value>LFO3 SAMPLE IN</value>
+  </data>
+  <data name="ENV_3_TRIG_LFOTRIG" xml:space="preserve">
+    <value>ENV3 TRIG LFOTRIG</value>
+  </data>
+  <data name="ENV_5_MODE_DADR" xml:space="preserve">
+    <value>ENV5 MODE DADR</value>
+  </data>
+  <data name="VCF_MOD_LEV1" xml:space="preserve">
+    <value>VCF MOD LEV1</value>
+  </data>
+  <data name="RAMP_4_TRIG_GATED" xml:space="preserve">
+    <value>RAMP4 TRIG GATED</value>
+  </data>
+  <data name="ENV_5_ATTACK" xml:space="preserve">
+    <value>ENV5 ATTACK</value>
+  </data>
+  <data name="VCO1_DETUNE" xml:space="preserve">
+    <value>VCO1 DETUNE</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_RMP1" xml:space="preserve">
+    <value>RAMP1</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO4_SPD" xml:space="preserve">
+    <value>LFO4 SPEED</value>
+  </data>
+  <data name="ENV_4_MODE_FREERUN" xml:space="preserve">
+    <value>ENV4 MODE FREERUN</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_PRES" xml:space="preserve">
+    <value>PRESS</value>
+  </data>
+  <data name="LFO_1_WAVESHAPE" xml:space="preserve">
+    <value>LFO1 WAVE</value>
+  </data>
+  <data name="EnumModulationSources_LFO5" xml:space="preserve">
+    <value>LFO5</value>
+  </data>
+  <data name="TRACK_3_POINT_4" xml:space="preserve">
+    <value>TRACK3 POINT 4</value>
+  </data>
+  <data name="RAMP_1_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>RAMP1 TRIG LFO</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LFO1" xml:space="preserve">
+    <value>LFO1</value>
+  </data>
+  <data name="ENV_1_DECAY" xml:space="preserve">
+    <value>ENV1 DECAY</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_TRK3" xml:space="preserve">
+    <value>TRACK3</value>
+  </data>
+  <data name="EnumModulationSources_VIB" xml:space="preserve">
+    <value>VIB</value>
+  </data>
+  <data name="RAMP_3_TRIG_EXTRIG" xml:space="preserve">
+    <value>RAMP3 TRIG EXTRIG</value>
+  </data>
+  <data name="LFO_5_LAG" xml:space="preserve">
+    <value>LFO5 LAG</value>
+  </data>
+  <data name="ENV_2_MODE_DADR" xml:space="preserve">
+    <value>ENV2 MODE DADR</value>
+  </data>
+  <data name="LFO_3_RETRIG" xml:space="preserve">
+    <value>LFO3 RETRIG</value>
+  </data>
+  <data name="ENV_3_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>ENV3 TRIG LFO</value>
+  </data>
+  <data name="EnumModulationSources_LFO1" xml:space="preserve">
+    <value>LFO1</value>
+  </data>
+  <data name="EnumModulationDestinations_FM_AMP" xml:space="preserve">
+    <value>FM AMP</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LFO2" xml:space="preserve">
+    <value>LFO2</value>
+  </data>
+  <data name="EnumVCFFilterModes__1_POLE_HIGH" xml:space="preserve">
+    <value>1 POLE HIGH</value>
+  </data>
+  <data name="VCO2_WAVESHAPE_SAW" xml:space="preserve">
+    <value>VCO2 WAVE SAW</value>
+  </data>
+  <data name="LFO_4_AMP" xml:space="preserve">
+    <value>LFO4 AMP</value>
+  </data>
+  <data name="ENV_3_ATTACK" xml:space="preserve">
+    <value>ENV3 ATTACK</value>
+  </data>
+  <data name="ENV_4_DECAY" xml:space="preserve">
+    <value>ENV4 DECAY</value>
+  </data>
+  <data name="MOD_QUANTIZE_11" xml:space="preserve">
+    <value>MOD ENTRY 11 QUANTIZE</value>
+  </data>
+  <data name="VCO2_MOD_VIB" xml:space="preserve">
+    <value>VCO2 MOD VIB</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV2_DCY" xml:space="preserve">
+    <value>ENV2 DECAY</value>
+  </data>
+  <data name="save" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\save.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LFO_5_SPEED" xml:space="preserve">
+    <value>LFO5 SPEED</value>
+  </data>
+  <data name="EnumLFOWaveShapes_RANDOM" xml:space="preserve">
+    <value>RANDOM</value>
+  </data>
+  <data name="MOD_QUANTIZE_2" xml:space="preserve">
+    <value>MOD ENTRY 2 QUANTIZE</value>
+  </data>
+  <data name="EnumModulationSources_RMP3" xml:space="preserve">
+    <value>RAMP3</value>
+  </data>
+  <data name="EnumModulationSources_VEL" xml:space="preserve">
+    <value>VEL</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO1_SPD" xml:space="preserve">
+    <value>LFO1 SPEED</value>
+  </data>
+  <data name="VCO1_VOLUME" xml:space="preserve">
+    <value>VCO1 VOLUME</value>
+  </data>
+  <data name="EnumModulationSources_LFO3" xml:space="preserve">
+    <value>LFO3</value>
+  </data>
+  <data name="minusdown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\minusdown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="gotodown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\gotodown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LFO_5_WAVESHAPE" xml:space="preserve">
+    <value>LFO5 WAVE</value>
+  </data>
+  <data name="LFO_4_LAG" xml:space="preserve">
+    <value>LFO4 LAG</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV1_ATK" xml:space="preserve">
+    <value>ENV1 ATTACK</value>
+  </data>
+  <data name="EnumVCFFilterModes__1_POLE_LOW" xml:space="preserve">
+    <value>1 POLE LOW</value>
+  </data>
+  <data name="EnumModulationDestinations_VCO1_VOL" xml:space="preserve">
+    <value>VCO1 VOL</value>
+  </data>
+  <data name="MOD_AMNT_SRC_2" xml:space="preserve">
+    <value>MOD ENTRY 2 AMOUNT</value>
+  </data>
+  <data name="RAMP_2_TRIG_EXTRIG" xml:space="preserve">
+    <value>RAMP2 TRIG EXTRIG</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO3_AMP" xml:space="preserve">
+    <value>LFO3 AMP</value>
+  </data>
+  <data name="TRACK_1_POINT_2" xml:space="preserve">
+    <value>TRACK1 POINT 2</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV2_DLY" xml:space="preserve">
+    <value>ENV2 DELAY</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO3_SPD" xml:space="preserve">
+    <value>LFO3 SPEED</value>
+  </data>
+  <data name="LFO_2_SPEED" xml:space="preserve">
+    <value>LFO2 SPEED</value>
+  </data>
+  <data name="EnumModulationSources_PED2" xml:space="preserve">
+    <value>PED 2</value>
+  </data>
+  <data name="MOD_QUANTIZE_15" xml:space="preserve">
+    <value>MOD ENTRY 15 QUANTIZE</value>
+  </data>
+  <data name="random" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\random.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LFO_5_RETRIG_MODE" xml:space="preserve">
+    <value>LFO5 RETRIG MODE</value>
+  </data>
+  <data name="MOD_QUANTIZE_20" xml:space="preserve">
+    <value>MOD ENTRY 20 QUANTIZE</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV4_REL" xml:space="preserve">
+    <value>ENV4 RELEASE</value>
+  </data>
+  <data name="TRACK_2_POINT_4" xml:space="preserve">
+    <value>TRACK2 POINT 4</value>
+  </data>
+  <data name="LFO_1_SPEED" xml:space="preserve">
+    <value>LFO1 SPEED</value>
+  </data>
+  <data name="VCO1_WAVESHAPE_SAW" xml:space="preserve">
+    <value>VCO1 WAVE SAW</value>
+  </data>
+  <data name="MOD_AMNT_SRC_13" xml:space="preserve">
+    <value>MOD ENTRY 13 AMOUNT</value>
+  </data>
+  <data name="LFO_5_SAMPLE_INPUT" xml:space="preserve">
+    <value>LFO5 SAMPLE IN</value>
+  </data>
+  <data name="LFO_2_RETRIG" xml:space="preserve">
+    <value>LFO2 RETRIG</value>
+  </data>
+  <data name="EnumModulationSources_RMP4" xml:space="preserve">
+    <value>RAMP4</value>
+  </data>
+  <data name="settingshover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\settingshover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="savedown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\savedown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EnumVCFFilterModes__3_HIGH_1_LOW" xml:space="preserve">
+    <value>3 HIGH + 1 LOW</value>
+  </data>
+  <data name="ENV_1_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>ENV1 TRIG LFO</value>
+  </data>
+  <data name="TRACK_1_POINT_3" xml:space="preserve">
+    <value>TRACK1 POINT 3</value>
+  </data>
+  <data name="VCO2_DETUNE" xml:space="preserve">
+    <value>VCO2 DETUNE</value>
+  </data>
+  <data name="TRACK_3_POINT_1" xml:space="preserve">
+    <value>TRACK3 POINT 1</value>
+  </data>
+  <data name="ENV_4_SUSTAIN" xml:space="preserve">
+    <value>ENV4 SUSTAIN</value>
+  </data>
+  <data name="MOD_AMNT_SRC_6" xml:space="preserve">
+    <value>MOD ENTRY 6 AMOUNT</value>
+  </data>
+  <data name="minus" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\minus.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EnumVCFFilterModes__4_POLE_BAND" xml:space="preserve">
+    <value>4 POLE BAND</value>
+  </data>
+  <data name="EnumVCFFilterModes__2_POLE_LOW" xml:space="preserve">
+    <value>2 POLE LOW</value>
+  </data>
+  <data name="ENV_2_MODE_FREERUN" xml:space="preserve">
+    <value>ENV2 MODE FREERUN</value>
+  </data>
+  <data name="ENV_4_MODE_RESET" xml:space="preserve">
+    <value>ENV4 MODE RESET</value>
+  </data>
+  <data name="ENV_2_ATTACK" xml:space="preserve">
+    <value>ENV2 ATTACK</value>
+  </data>
+  <data name="loadhover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\loadhover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RAMP_3_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>RAMP3 TRIG</value>
+  </data>
+  <data name="EnumModulationSources_LFO4" xml:space="preserve">
+    <value>LFO4</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV4_AMP" xml:space="preserve">
+    <value>ENV4 AMP</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV3_DLY" xml:space="preserve">
+    <value>ENV3 DELAY</value>
+  </data>
+  <data name="MOD_QUANTIZE_1" xml:space="preserve">
+    <value>MOD ENTRY 1 QUANTIZE</value>
+  </data>
+  <data name="VCO1_WAVESHAPE_TRI" xml:space="preserve">
+    <value>VCO1 WAVE TRI</value>
+  </data>
+  <data name="MOD_AMNT_SRC_10" xml:space="preserve">
+    <value>MOD ENTRY 10 AMOUNT</value>
+  </data>
+  <data name="VCF_MOD_VIB" xml:space="preserve">
+    <value>VCF MOD VIB</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LFO3" xml:space="preserve">
+    <value>LFO3</value>
+  </data>
+  <data name="RAMP_2_TRIG_LFOTRIG" xml:space="preserve">
+    <value>RAMP2 TRIG LFOTRIG</value>
+  </data>
+  <data name="ENV_3_RELEASE" xml:space="preserve">
+    <value>ENV3 RELEASE</value>
+  </data>
+  <data name="MOD_AMNT_SRC_14" xml:space="preserve">
+    <value>MOD ENTRY 14 AMOUNT</value>
+  </data>
+  <data name="EnumModulationSources_LEV1" xml:space="preserve">
+    <value>LEV1</value>
+  </data>
+  <data name="ENV_1_RELEASE" xml:space="preserve">
+    <value>ENV1 RELEASE</value>
+  </data>
+  <data name="MOD_QUANTIZE_5" xml:space="preserve">
+    <value>MOD ENTRY 5 QUANTIZE</value>
+  </data>
+  <data name="ENV_3_TRIG_EXTRIG" xml:space="preserve">
+    <value>ENV3 TRIG EXTRIG</value>
+  </data>
+  <data name="EnumModulationDestinations_VCO2_VOL" xml:space="preserve">
+    <value>VCO2 VOL</value>
+  </data>
+  <data name="MOD_AMNT_SRC_1" xml:space="preserve">
+    <value>MOD ENTRY 1 AMOUNT</value>
+  </data>
+  <data name="randomdown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\randomdown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ENV_4_TRIG_LFOTRIG" xml:space="preserve">
+    <value>ENV4 TRIG LFOTRIG</value>
+  </data>
+  <data name="RAMP_1_TRIG_EXTRIG" xml:space="preserve">
+    <value>RAMP1 TRIG EXTRIG</value>
+  </data>
+  <data name="TRACK_1_POINT_1" xml:space="preserve">
+    <value>TRACK1 POINT 1</value>
+  </data>
+  <data name="TRACK_3_POINT_3" xml:space="preserve">
+    <value>TRACK3 POINT 3</value>
+  </data>
+  <data name="minushover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\minushover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ENV_4_DELAY" xml:space="preserve">
+    <value>ENV4 DELAY</value>
+  </data>
+  <data name="MOD_AMNT_SRC_18" xml:space="preserve">
+    <value>MOD ENTRY 18 AMOUNT</value>
+  </data>
+  <data name="settings" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\settings.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_KBD" xml:space="preserve">
+    <value>KEYBD</value>
+  </data>
+  <data name="ENV_2_DECAY" xml:space="preserve">
+    <value>ENV2 DECAY</value>
+  </data>
+  <data name="ENV_2_TRIG_GATED" xml:space="preserve">
+    <value>ENV2 TRIG GATED</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO4_AMP" xml:space="preserve">
+    <value>LFO4 AMP</value>
+  </data>
+  <data name="ENV_4_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>ENV4 TRIG LFO</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV5_ATK" xml:space="preserve">
+    <value>ENV5 ATTACK</value>
+  </data>
+  <data name="LFO_4_WAVESHAPE" xml:space="preserve">
+    <value>LFO4 WAVE</value>
+  </data>
+  <data name="LFO_4_RETRIG" xml:space="preserve">
+    <value>LFO4 RETRIG</value>
+  </data>
+  <data name="TRACK_2_IN" xml:space="preserve">
+    <value>TRACK2 IN</value>
+  </data>
+  <data name="RAMP_2_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>RAMP2 TRIG</value>
+  </data>
+  <data name="EnumLFOWaveShapes_SAMPLE" xml:space="preserve">
+    <value>SAMPLE</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV4_DLY" xml:space="preserve">
+    <value>ENV4 DELAY</value>
+  </data>
+  <data name="EnumLFOTriggerSources_LFO3" xml:space="preserve">
+    <value>LFO3</value>
+  </data>
+  <data name="RAMP_4_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>RAMP4 TRIG LFO</value>
+  </data>
+  <data name="TRACK_1_POINT_4" xml:space="preserve">
+    <value>TRACK1 POINT 4</value>
+  </data>
+  <data name="EnumModulationDestinations_VCO1_FRQ" xml:space="preserve">
+    <value>VCO1 FREQ</value>
+  </data>
+  <data name="MOD_QUANTIZE_12" xml:space="preserve">
+    <value>MOD ENTRY 12 QUANTIZE</value>
+  </data>
+  <data name="TRACK_3_POINT_5" xml:space="preserve">
+    <value>TRACK3 POINT 5</value>
+  </data>
+  <data name="ENV_4_ATTACK" xml:space="preserve">
+    <value>ENV4 ATTACK</value>
+  </data>
+  <data name="EnumModulationDestinations_VCO1_PW" xml:space="preserve">
+    <value>VCO1 PW</value>
+  </data>
+  <data name="LFO_1_SAMPLE_INPUT" xml:space="preserve">
+    <value>LFO1 SAMPLE IN</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_ENV4" xml:space="preserve">
+    <value>ENV4</value>
+  </data>
+  <data name="ENV_5_RELEASE" xml:space="preserve">
+    <value>ENV5 RELEASE</value>
+  </data>
+  <data name="TRACK_2_POINT_2" xml:space="preserve">
+    <value>TRACK2 POINT 2</value>
+  </data>
+  <data name="ENV_1_VOLUME" xml:space="preserve">
+    <value>ENV1 VOLUME</value>
+  </data>
+  <data name="EnumModulationSources_PED1" xml:space="preserve">
+    <value>PED 1</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV3_REL" xml:space="preserve">
+    <value>ENV3 RELEASE</value>
+  </data>
+  <data name="RAMP_3_RATE" xml:space="preserve">
+    <value>RAMP3 RATE</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV2_REL" xml:space="preserve">
+    <value>ENV2 RELEASE</value>
+  </data>
+  <data name="EnumVCFFilterModes__2_POLE_HIGH" xml:space="preserve">
+    <value>2 POLE HIGH</value>
+  </data>
+  <data name="EnumModulationDestinations_LAG_RATE" xml:space="preserve">
+    <value>LAG RATE</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_PED2" xml:space="preserve">
+    <value>PED 2</value>
+  </data>
+  <data name="settingsdown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\settingsdown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ENV_5_DELAY" xml:space="preserve">
+    <value>ENV5 DELAY</value>
+  </data>
+  <data name="ENV_5_TRIG_EXTRIG" xml:space="preserve">
+    <value>ENV5 TRIG EXTRIG</value>
+  </data>
+  <data name="EnumModulationSources_TRK3" xml:space="preserve">
+    <value>TRACK3</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_ENV5" xml:space="preserve">
+    <value>ENV5</value>
+  </data>
+  <data name="EnumLFOWaveShapes_TRIANGLE" xml:space="preserve">
+    <value>TRIANGLE</value>
+  </data>
+  <data name="MOD_AMNT_SRC_19" xml:space="preserve">
+    <value>MOD ENTRY 19 AMOUNT</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_NONE" xml:space="preserve">
+    <value>NONE</value>
+  </data>
+  <data name="EnumModulationSources_RMP2" xml:space="preserve">
+    <value>RAMP2</value>
+  </data>
+  <data name="FM_AMP" xml:space="preserve">
+    <value>FM AMP</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV5_AMP" xml:space="preserve">
+    <value>ENV5 AMP</value>
+  </data>
+  <data name="LAG_TIMING_LINEAR_EXPO" xml:space="preserve">
+    <value>LAG TIMING</value>
+  </data>
+  <data name="ENV_4_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>ENV4 TRIG</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_PED1" xml:space="preserve">
+    <value>PED 1</value>
+  </data>
+  <data name="plusdown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\plusdown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MOD_QUANTIZE_10" xml:space="preserve">
+    <value>MOD ENTRY 10 QUANTIZE</value>
+  </data>
+  <data name="ENV_3_DECAY" xml:space="preserve">
+    <value>ENV3 DECAY</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_TRK1" xml:space="preserve">
+    <value>TRACK1</value>
+  </data>
+  <data name="MOD_QUANTIZE_4" xml:space="preserve">
+    <value>MOD ENTRY 4 QUANTIZE</value>
+  </data>
+  <data name="ENV_3_TRIG_GATED" xml:space="preserve">
+    <value>ENV3 TRIG GATED</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV1_DCY" xml:space="preserve">
+    <value>ENV1 DECAY</value>
+  </data>
+  <data name="storehover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\storehover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="RAMP_1_RATE" xml:space="preserve">
+    <value>RAMP1 RATE</value>
+  </data>
+  <data name="VCO2_WAVE_SYNC" xml:space="preserve">
+    <value>VCO2 WAVE SYNC</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO2_SPD" xml:space="preserve">
+    <value>LFO2 SPEED</value>
+  </data>
+  <data name="LFO_4_SPEED" xml:space="preserve">
+    <value>LFO4 SPEED</value>
+  </data>
+  <data name="ENV_2_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>ENV2 TRIG LFO</value>
+  </data>
+  <data name="LFO_3_WAVESHAPE" xml:space="preserve">
+    <value>LFO3 WAVE</value>
+  </data>
+  <data name="EnumModulationSources_ENV3" xml:space="preserve">
+    <value>ENV3</value>
+  </data>
+  <data name="VCF_RES" xml:space="preserve">
+    <value>VCF RES</value>
+  </data>
+  <data name="LFO_2_RETRIG_MODE" xml:space="preserve">
+    <value>LFO2 RETRIG MODE</value>
+  </data>
+  <data name="MOD_AMNT_SRC_15" xml:space="preserve">
+    <value>MOD ENTRY 15 AMOUNT</value>
+  </data>
+  <data name="VCO2_WAVESHAPE_NOISE" xml:space="preserve">
+    <value>VCO2 WAVE NOISE</value>
+  </data>
+  <data name="LFO_4_RETRIG_MODE" xml:space="preserve">
+    <value>LFO4 RETRIG MODE</value>
+  </data>
+  <data name="loaddown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\loaddown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="TRACK_2_POINT_1" xml:space="preserve">
+    <value>TRACK2 POINT 1</value>
+  </data>
+  <data name="EnumModulationDestinations_VCA1_VOL" xml:space="preserve">
+    <value>VCA1 VOL</value>
+  </data>
+  <data name="EnumLFOTriggerSources_LFO5" xml:space="preserve">
+    <value>LFO5</value>
+  </data>
+  <data name="FMLAG_RATE" xml:space="preserve">
+    <value>LAG RATE</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV2_AMP" xml:space="preserve">
+    <value>ENV2 AMP</value>
+  </data>
+  <data name="LFO_5_AMP" xml:space="preserve">
+    <value>LFO5 AMP</value>
+  </data>
+  <data name="RAMP_4_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>RAMP4 TRIG</value>
+  </data>
+  <data name="ENV_1_MODE_FREERUN" xml:space="preserve">
+    <value>ENV1 MODE FREERUN</value>
+  </data>
+  <data name="VCO2_WAVESHAPE_PULSE" xml:space="preserve">
+    <value>VCO2 WAVE PULSE</value>
+  </data>
+  <data name="ENV_4_MODE_DADR" xml:space="preserve">
+    <value>ENV4 MODE DADR</value>
+  </data>
+  <data name="TRACK_2_POINT_3" xml:space="preserve">
+    <value>TRACK2 POINT 3</value>
+  </data>
+  <data name="EnumVCFFilterModes__3_POLE_PHASE" xml:space="preserve">
+    <value>3 POLE PHASE</value>
+  </data>
+  <data name="ENV_4_RELEASE" xml:space="preserve">
+    <value>ENV4 RELEASE</value>
+  </data>
+  <data name="ENV_3_SUSTAIN" xml:space="preserve">
+    <value>ENV3 SUSTAIN</value>
+  </data>
+  <data name="LFO_1_RETRIG" xml:space="preserve">
+    <value>LFO1 RETRIG</value>
+  </data>
+  <data name="EnumModulationDestinations_VCF_RES" xml:space="preserve">
+    <value>VCF RES</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LFO4" xml:space="preserve">
+    <value>LFO4</value>
+  </data>
+  <data name="EnumLFOWaveShapes_NOISE" xml:space="preserve">
+    <value>NOISE</value>
+  </data>
+  <data name="ENV_5_VOLUME" xml:space="preserve">
+    <value>ENV5 VOLUME</value>
+  </data>
+  <data name="ENV_5_TRIG_LFOTRIG" xml:space="preserve">
+    <value>ENV5 TRIG LFOTRIG</value>
+  </data>
+  <data name="ENV_2_RELEASE" xml:space="preserve">
+    <value>ENV2 RELEASE</value>
+  </data>
+  <data name="EnumModulationDestinations_VCO2_FRQ" xml:space="preserve">
+    <value>VCO2 FREQ</value>
+  </data>
+  <data name="MOD_QUANTIZE_17" xml:space="preserve">
+    <value>MOD ENTRY 17 QUANTIZE</value>
+  </data>
+  <data name="EnumModulationSources_RMP1" xml:space="preserve">
+    <value>RAMP1</value>
+  </data>
+  <data name="LFO_3_LAG" xml:space="preserve">
+    <value>LFO3 LAG</value>
+  </data>
+  <data name="EnumVCFFilterModes__3_POLE_LOW" xml:space="preserve">
+    <value>3 POLE LOW</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LFO5" xml:space="preserve">
+    <value>LFO5</value>
+  </data>
+  <data name="VCO1_WAVESHAPE_PULSE" xml:space="preserve">
+    <value>VCO1 WAVE PULSE</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO2_AMP" xml:space="preserve">
+    <value>LFO2 AMP</value>
+  </data>
+  <data name="LAG_IN" xml:space="preserve">
+    <value>LAG IN</value>
+  </data>
+  <data name="RAMP_3_TRIG_LFOTRIG" xml:space="preserve">
+    <value>RAMP3 TRIG LFOTRIG</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO5_AMP" xml:space="preserve">
+    <value>LFO5 AMP</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LAG" xml:space="preserve">
+    <value>LAG</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LEV1" xml:space="preserve">
+    <value>LEV1</value>
+  </data>
+  <data name="EnumVCFFilterModes__3_POLE_HIGH" xml:space="preserve">
+    <value>3 POLE HIGH</value>
+  </data>
+  <data name="gotopatch" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\gotopatch.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MOD_QUANTIZE_13" xml:space="preserve">
+    <value>MOD ENTRY 13 QUANTIZE</value>
+  </data>
+  <data name="MOD_QUANTIZE_8" xml:space="preserve">
+    <value>MOD ENTRY 8 QUANTIZE</value>
+  </data>
+  <data name="VCO2_FREQ" xml:space="preserve">
+    <value>VCO2 FREQ</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_ENV1" xml:space="preserve">
+    <value>ENV1</value>
+  </data>
+  <data name="EnumLFOWaveShapes_UP_SAW" xml:space="preserve">
+    <value>UP SAW</value>
+  </data>
+  <data name="VCO1_MOD_KEYB" xml:space="preserve">
+    <value>VCO1 MOD KEYBD</value>
+  </data>
+  <data name="EnumVCFFilterModes__3_PHASE_1_LOW" xml:space="preserve">
+    <value>3 PHASE + 1 LOW</value>
+  </data>
+  <data name="MOD_AMNT_SRC_17" xml:space="preserve">
+    <value>MOD ENTRY 17 AMOUNT</value>
+  </data>
+  <data name="plushover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\plushover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="randomhover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\randomhover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="MOD_AMNT_SRC_9" xml:space="preserve">
+    <value>MOD ENTRY 9 AMOUNT</value>
+  </data>
+  <data name="savehover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\savehover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_ENV2" xml:space="preserve">
+    <value>ENV2</value>
+  </data>
+  <data name="ENV_5_SUSTAIN" xml:space="preserve">
+    <value>ENV5 SUSTAIN</value>
+  </data>
+  <data name="EnumModulationSources_RVEL" xml:space="preserve">
+    <value>R.VEL</value>
+  </data>
+  <data name="ENV_2_MODE_RESET" xml:space="preserve">
+    <value>ENV2 MODE RESET</value>
+  </data>
+  <data name="RAMP_3_TRIG_GATED" xml:space="preserve">
+    <value>RAMP3 TRIG GATED</value>
+  </data>
+  <data name="ENV_2_DELAY" xml:space="preserve">
+    <value>ENV2 DELAY</value>
+  </data>
+  <data name="RAMP_1_TRIG_GATED" xml:space="preserve">
+    <value>RAMP1 TRIG GATED</value>
+  </data>
+  <data name="ENV_5_TRIG_LFO_SOURCE" xml:space="preserve">
+    <value>ENV5 TRIG LFO</value>
+  </data>
+  <data name="RAMP_1_TRIG_LFOTRIG" xml:space="preserve">
+    <value>RAMP1 TRIG LFOTRIG</value>
+  </data>
+  <data name="FM_DESTINATION" xml:space="preserve">
+    <value>FM DESTINATION</value>
+  </data>
+  <data name="EnumModulationSources_ENV5" xml:space="preserve">
+    <value>ENV5</value>
+  </data>
+  <data name="VCO1_FREQ" xml:space="preserve">
+    <value>VCO1 FREQ</value>
+  </data>
+  <data name="ENV_1_TRIG_GATED" xml:space="preserve">
+    <value>ENV1 TRIG GATED</value>
+  </data>
+  <data name="VCO1_MOD_LAG" xml:space="preserve">
+    <value>VCO1 MOD LAG</value>
+  </data>
+  <data name="EnumModulationSources_LAG" xml:space="preserve">
+    <value>LAG</value>
+  </data>
+  <data name="ENV_3_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>ENV3 TRIG</value>
+  </data>
+  <data name="VCO2_PW" xml:space="preserve">
+    <value>VCO2 PW</value>
+  </data>
+  <data name="LFO_2_LAG" xml:space="preserve">
+    <value>LFO2 LAG</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_RMP4" xml:space="preserve">
+    <value>RAMP4</value>
+  </data>
+  <data name="MOD_QUANTIZE_9" xml:space="preserve">
+    <value>MOD ENTRY 9 QUANTIZE</value>
+  </data>
+  <data name="EnumModulationSources_ENV1" xml:space="preserve">
+    <value>ENV1</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_RVEL" xml:space="preserve">
+    <value>R.VEL</value>
+  </data>
+  <data name="ENV_1_SUSTAIN" xml:space="preserve">
+    <value>ENV1 SUSTAIN</value>
+  </data>
+  <data name="ENV_3_VOLUME" xml:space="preserve">
+    <value>ENV3 VOLUME</value>
+  </data>
+  <data name="TRACK_3_IN" xml:space="preserve">
+    <value>TRACK3 IN</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_RMP3" xml:space="preserve">
+    <value>RAMP3</value>
+  </data>
+  <data name="VCF_FREQ" xml:space="preserve">
+    <value>VCF FREQ</value>
+  </data>
+  <data name="TRACK_1_IN" xml:space="preserve">
+    <value>TRACK1 IN</value>
+  </data>
+  <data name="ENV_4_TRIG_EXTRIG" xml:space="preserve">
+    <value>ENV4 TRIG EXTRIG</value>
+  </data>
+  <data name="EnumLFOTriggerSources_LFO2" xml:space="preserve">
+    <value>LFO2</value>
+  </data>
+  <data name="VCO1_PW" xml:space="preserve">
+    <value>VCO1 PW</value>
+  </data>
+  <data name="LFO_4_SAMPLE_INPUT" xml:space="preserve">
+    <value>LFO4 SAMPLE IN</value>
+  </data>
+  <data name="EnumLFOTriggerSources_VIB" xml:space="preserve">
+    <value>VIB</value>
+  </data>
+  <data name="LFO_3_SPEED" xml:space="preserve">
+    <value>LFO3 SPEED</value>
+  </data>
+  <data name="EnumVCFFilterModes__2_POLE_NOTCH" xml:space="preserve">
+    <value>2 POLE NOTCH</value>
+  </data>
+  <data name="LFO_5_RETRIG" xml:space="preserve">
+    <value>LFO5 RETRIG</value>
+  </data>
+  <data name="ENV_2_TRIG_EXTRIG" xml:space="preserve">
+    <value>ENV2 TRIG EXTRIG</value>
+  </data>
+  <data name="MOD_QUANTIZE_7" xml:space="preserve">
+    <value>MOD ENTRY 7 QUANTIZE</value>
+  </data>
+  <data name="load" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\load.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="ENV_2_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>ENV2 TRIG</value>
+  </data>
+  <data name="LFO_2_SAMPLE_INPUT" xml:space="preserve">
+    <value>LFO2 SAMPLE IN</value>
+  </data>
+  <data name="EnumModulationSources_TRK2" xml:space="preserve">
+    <value>TRACK2</value>
+  </data>
+  <data name="EnumLFOTriggerSources_LFO1" xml:space="preserve">
+    <value>LFO1</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_VEL" xml:space="preserve">
+    <value>VEL</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_VIB" xml:space="preserve">
+    <value>VIB</value>
+  </data>
+  <data name="MOD_QUANTIZE_18" xml:space="preserve">
+    <value>MOD ENTRY 18 QUANTIZE</value>
+  </data>
+  <data name="EnumLFOWaveShapes_SQUARE" xml:space="preserve">
+    <value>SQUARE</value>
+  </data>
+  <data name="ENV_5_MODE_FREERUN" xml:space="preserve">
+    <value>ENV5 MODE FREERUN</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV1_AMP" xml:space="preserve">
+    <value>ENV1 AMP</value>
+  </data>
+  <data name="EnumModulationSources_PRES" xml:space="preserve">
+    <value>PRESS</value>
+  </data>
+  <data name="ENV_1_MODE_DADR" xml:space="preserve">
+    <value>ENV1 MODE DADR</value>
+  </data>
+  <data name="ENV_1_TRIG_LFOTRIG" xml:space="preserve">
+    <value>ENV1 TRIG LFOTRIG</value>
+  </data>
+  <data name="VCF_VCA2_VOLUME" xml:space="preserve">
+    <value>VCA2 VOLUME</value>
+  </data>
+  <data name="plus" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\plus.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO5_SPD" xml:space="preserve">
+    <value>LFO5 SPEED</value>
+  </data>
+  <data name="TRACK_1_POINT_5" xml:space="preserve">
+    <value>TRACK1 POINT 5</value>
+  </data>
+  <data name="MOD_QUANTIZE_16" xml:space="preserve">
+    <value>MOD ENTRY 16 QUANTIZE</value>
+  </data>
+  <data name="MOD_AMNT_SRC_5" xml:space="preserve">
+    <value>MOD ENTRY 5 AMOUNT</value>
+  </data>
+  <data name="ENV_5_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>ENV5 TRIG</value>
+  </data>
+  <data name="ENV_4_TRIG_GATED" xml:space="preserve">
+    <value>ENV4 TRIG GATED</value>
+  </data>
+  <data name="VCO2_MOD_LEV1" xml:space="preserve">
+    <value>VCO2 MOD LEV1</value>
+  </data>
+  <data name="MOD_QUANTIZE_3" xml:space="preserve">
+    <value>MOD ENTRY 3 QUANTIZE</value>
+  </data>
+  <data name="RAMP_4_RATE" xml:space="preserve">
+    <value>RAMP4 RATE</value>
+  </data>
+  <data name="VCO2_MOD_LAG" xml:space="preserve">
+    <value>VCO2 MOD LAG</value>
+  </data>
+  <data name="EnumModulationSources_ENV2" xml:space="preserve">
+    <value>ENV2</value>
+  </data>
+  <data name="EnumModulationDestinations_LFO1_AMP" xml:space="preserve">
+    <value>LFO1 AMP</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV3_AMP" xml:space="preserve">
+    <value>ENV3 AMP</value>
+  </data>
+  <data name="LFO_3_AMP" xml:space="preserve">
+    <value>LFO3 AMP</value>
+  </data>
+  <data name="MOD_QUANTIZE_19" xml:space="preserve">
+    <value>MOD ENTRY 19 QUANTIZE</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV3_DCY" xml:space="preserve">
+    <value>ENV3 DECAY</value>
+  </data>
+  <data name="EnumModulationDestinations_VCO2_PW" xml:space="preserve">
+    <value>VCO2 PW</value>
+  </data>
+  <data name="EnumModulationSources_ENV4" xml:space="preserve">
+    <value>ENV4</value>
+  </data>
+  <data name="MOD_AMNT_SRC_3" xml:space="preserve">
+    <value>MOD ENTRY 3 AMOUNT</value>
+  </data>
+  <data name="ENV_1_MODE_RESET" xml:space="preserve">
+    <value>ENV1 MODE RESET</value>
+  </data>
+  <data name="ENV_5_MODE_RESET" xml:space="preserve">
+    <value>ENV5 MODE RESET</value>
+  </data>
+  <data name="storedown" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\storedown.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LAG_LINEAR_EQUAL_TIME" xml:space="preserve">
+    <value>LAG EQUAL TIME</value>
+  </data>
+  <data name="VCF_MOD_LAG" xml:space="preserve">
+    <value>VCF MOD LAG</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_LEV2" xml:space="preserve">
+    <value>LEV2</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV4_DCY" xml:space="preserve">
+    <value>ENV4 DECAY</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV4_ATK" xml:space="preserve">
+    <value>ENV4 ATTACK</value>
+  </data>
+  <data name="EnumModulationDestinations_VCA2_VOL" xml:space="preserve">
+    <value>VCA2 VOL</value>
+  </data>
+  <data name="VCF_VCA1_VOLUME" xml:space="preserve">
+    <value>VCA1 VOLUME</value>
+  </data>
+  <data name="ENV_5_TRIG_GATED" xml:space="preserve">
+    <value>ENV5 TRIG GATED</value>
+  </data>
+  <data name="EnumModulationSources_TRK1" xml:space="preserve">
+    <value>TRACK1</value>
+  </data>
+  <data name="LFO_1_LAG" xml:space="preserve">
+    <value>LFO1 LAG</value>
+  </data>
+  <data name="EnumVCFFilterModes__2_NOTCH_1_LOW" xml:space="preserve">
+    <value>2 NOTCH + 1 LOW</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV1_REL" xml:space="preserve">
+    <value>ENV1 RELEASE</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_TRK2" xml:space="preserve">
+    <value>TRACK2</value>
+  </data>
+  <data name="LFO_3_RETRIG_MODE" xml:space="preserve">
+    <value>LFO3 RETRIG MODE</value>
+  </data>
+  <data name="MOD_AMNT_SRC_12" xml:space="preserve">
+    <value>MOD ENTRY 12 AMOUNT</value>
+  </data>
+  <data name="ENV_1_ATTACK" xml:space="preserve">
+    <value>ENV1 ATTACK</value>
+  </data>
+  <data name="ENV_2_SUSTAIN" xml:space="preserve">
+    <value>ENV2 SUSTAIN</value>
+  </data>
+  <data name="MOD_AMNT_SRC_8" xml:space="preserve">
+    <value>MOD ENTRY 8 AMOUNT</value>
+  </data>
+  <data name="EnumModulationSources_KBD" xml:space="preserve">
+    <value>KEYBD</value>
+  </data>
+  <data name="LFO_1_RETRIG_MODE" xml:space="preserve">
+    <value>LFO1 RETRIG MODE</value>
+  </data>
+  <data name="EnumModulationSources_LFO2" xml:space="preserve">
+    <value>LFO2</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV1_DLY" xml:space="preserve">
+    <value>ENV1 DELAY</value>
+  </data>
+  <data name="EnumLFOWaveShapes_DOWN_SAW" xml:space="preserve">
+    <value>DOWN SAW</value>
+  </data>
+  <data name="ENV_3_MODE_FREERUN" xml:space="preserve">
+    <value>ENV3 MODE FREERUN</value>
+  </data>
+  <data name="MOD_AMNT_SRC_4" xml:space="preserve">
+    <value>MOD ENTRY 4 AMOUNT</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV3_ATK" xml:space="preserve">
+    <value>ENV3 ATTACK</value>
+  </data>
+  <data name="VCO2_VOLUME" xml:space="preserve">
+    <value>VCO2 VOLUME</value>
+  </data>
+  <data name="MOD_QUANTIZE_6" xml:space="preserve">
+    <value>MOD ENTRY 6 QUANTIZE</value>
+  </data>
+  <data name="ENV_1_TRIG_SINGLE_MULTI" xml:space="preserve">
+    <value>ENV1 TRIG</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV5_DCY" xml:space="preserve">
+    <value>ENV5 DECAY</value>
+  </data>
+  <data name="gotohover" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\gotohover.gif;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="LFO_2_AMP" xml:space="preserve">
+    <value>LFO2 AMP</value>
+  </data>
+  <data name="EnumLFOTriggerSources_LFO4" xml:space="preserve">
+    <value>LFO4</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV2_ATK" xml:space="preserve">
+    <value>ENV2 ATTACK</value>
+  </data>
+  <data name="MOD_AMNT_SRC_20" xml:space="preserve">
+    <value>MOD ENTRY 20 AMOUNT</value>
+  </data>
+  <data name="VCF_MODE" xml:space="preserve">
+    <value>VCF MODE</value>
+  </data>
+  <data name="EnumModulationDestinations_ENV5_REL" xml:space="preserve">
+    <value>ENV5 RELEASE</value>
+  </data>
+  <data name="VCO1_MOD_LEV1" xml:space="preserve">
+    <value>VCO1 MOD LEV1</value>
+  </data>
+  <data name="EnumModulationSourcesModMatrix_ENV3" xml:space="preserve">
+    <value>ENV3</value>
+  </data>
+  <data name="RAMP_4_TRIG_EXTRIG" xml:space="preserve">
+    <value>RAMP4 TRIG EXTRIG</value>
+  </data>
+  <data name="About" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\xdata\About.jpg;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
+  <data name="GuruStatement" xml:space="preserve">
+    <value>                           _ooOoo_
+                          o8888888o
+                          88" . "88
+                          (| -_- |)
+                          O\  =  /O
+                       ____/`---'\____
+                     .'  \\|     |//  `.
+                    /  \\|||  :  |||//  \
+                   /  _||||| -:- |||||_  \
+                   |   | \\\  -  /'| |   |
+                   | \_|  `\`---'//  |_/ |
+                   \  .-\__ `-. -'__/-.  /
+                 ___`. .'  /--.--\  `. .'___
+              ."" '&lt;  `.___\_&lt;|&gt;_/___.' _&gt; \"".
+             | | :  `- \`. ;`. _/; .'/ /  .' ; |
+             \  \ `-.   \_\_`. _.'_/_/  -' _.' /
+==============`-.`___`-.__\ \___  /__.-'_.'_.-'====================
+The only things which do not change are the laws of change (Buddha)
+===================================================================</value>
+  </data>
+  <data name="EnumPages_ENV_1" xml:space="preserve">
+    <value>ENV1</value>
+  </data>
+  <data name="EnumPages_ENV_2" xml:space="preserve">
+    <value>ENV2 </value>
+  </data>
+  <data name="EnumPages_ENV_3" xml:space="preserve">
+    <value>ENV3 </value>
+  </data>
+  <data name="EnumPages_ENV_4" xml:space="preserve">
+    <value>ENV4 </value>
+  </data>
+  <data name="EnumPages_ENV_5" xml:space="preserve">
+    <value>ENV4 </value>
+  </data>
+  <data name="EnumPages_FM_LAG_X" xml:space="preserve">
+    <value>FM_LAG </value>
+  </data>
+  <data name="EnumPages_LFO_1" xml:space="preserve">
+    <value>LFO1 </value>
+  </data>
+  <data name="EnumPages_LFO_2" xml:space="preserve">
+    <value>LFO2 </value>
+  </data>
+  <data name="EnumPages_LFO_3" xml:space="preserve">
+    <value>LFO3 </value>
+  </data>
+  <data name="EnumPages_LFO_4" xml:space="preserve">
+    <value>LFO4 </value>
+  </data>
+  <data name="EnumPages_LFO_5" xml:space="preserve">
+    <value>LFO5 </value>
+  </data>
+  <data name="EnumPages_RAMP_1" xml:space="preserve">
+    <value>RAMP1 </value>
+  </data>
+  <data name="EnumPages_RAMP_2" xml:space="preserve">
+    <value>RAMP2 </value>
+  </data>
+  <data name="EnumPages_RAMP_3" xml:space="preserve">
+    <value>RAMP3 </value>
+  </data>
+  <data name="EnumPages_RAMP_4" xml:space="preserve">
+    <value>RAMP4 </value>
+  </data>
+  <data name="EnumPages_TRACK_1" xml:space="preserve">
+    <value>TRACK1 </value>
+  </data>
+  <data name="EnumPages_TRACK_2" xml:space="preserve">
+    <value>TRACK2 </value>
+  </data>
+  <data name="EnumPages_TRACK_3" xml:space="preserve">
+    <value>TRACK3 </value>
+  </data>
+  <data name="EnumPages_VCF_VCA_X" xml:space="preserve">
+    <value>VCF </value>
+  </data>
+  <data name="EnumPages_VCO_1_X" xml:space="preserve">
+    <value>VCO1</value>
+  </data>
+  <data name="EnumPages_VCO_2_X" xml:space="preserve">
+    <value>VCO2</value>
+  </data>
+  <data name="EnumRandomVCAEnv_Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="EnumRandomVCAEnv_Organ" xml:space="preserve">
+    <value>Organ</value>
+  </data>
+  <data name="EnumRandomVCAEnv_Percusive" xml:space="preserve">
+    <value>Percusive</value>
+  </data>
+  <data name="EnumRandomVCAEnv_PercusiveWithRelease" xml:space="preserve">
+    <value>Percusive with release</value>
+  </data>
+  <data name="EnumRandomVCAEnv_String" xml:space="preserve">
+    <value>Strings</value>
+  </data>
+  <data name="EnumRandomVCODetune_Analog" xml:space="preserve">
+    <value>Analog</value>
+  </data>
+  <data name="EnumRandomVCODetune_Digital" xml:space="preserve">
+    <value>Digital</value>
+  </data>
+  <data name="EnumRandomVCODetune_Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Eleventh" xml:space="preserve">
+    <value>Eleventh</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Fifth" xml:space="preserve">
+    <value>Fifth</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Free" xml:space="preserve">
+    <value>Free</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Ninth" xml:space="preserve">
+    <value>Ninth</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Octave" xml:space="preserve">
+    <value>Octave</value>
+  </data>
+  <data name="EnumRandomVCOFreq_SameNote" xml:space="preserve">
+    <value>SameNote</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Seventh" xml:space="preserve">
+    <value>Seventh</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Third" xml:space="preserve">
+    <value>Third</value>
+  </data>
+  <data name="EnumRandomVCOFreq_Thirteenth" xml:space="preserve">
+    <value>Thirteenth</value>
+  </data>
+</root>

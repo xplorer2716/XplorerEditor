@@ -1,0 +1,364 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{D35E00CB-D5DE-48C3-917E-D95674768F24}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Xplorer</RootNamespace>
+    <AssemblyName>Xplorer</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ApplicationIcon>Xplorer.ico</ApplicationIcon>
+    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <SccProjectName>
+    </SccProjectName>
+    <SccLocalPath>
+    </SccLocalPath>
+    <SccAuxPath>
+    </SccAuxPath>
+    <SccProvider>
+    </SccProvider>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <UseWinFormsOutOfProcDesigner>True</UseWinFormsOutOfProcDesigner>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <UseWinFormsOutOfProcDesigner>True</UseWinFormsOutOfProcDesigner>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <Prefer32Bit>false</Prefer32Bit>
+    <UseWinFormsOutOfProcDesigner>True</UseWinFormsOutOfProcDesigner>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\x86\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+    <UseWinFormsOutOfProcDesigner>True</UseWinFormsOutOfProcDesigner>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Sanford.Multimedia">
+      <HintPath>..\MidiApp\3rdParty\Sanford.Multimedia.Midi\Sanford.Multimedia.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controller\AllDataDumpRequestState.cs" />
+    <Compile Include="Controller\Events\AllDataDumpRequestProgressionEventArgs.cs" />
+    <Compile Include="Controller\Events\FullToneChangeEventsArgs.cs" />
+    <Compile Include="Controller\Events\MidiDataSendReceivedEventArgs.cs" />
+    <Compile Include="Controller\Events\ModulationEntryChangeEventArgs.cs" />
+    <Compile Include="Controller\Events\PageChangeEventArgs.cs" />
+    <Compile Include="Controller\PageSubPageHelper.cs" />
+    <Compile Include="Controller\XpanderController.cs" />
+    <Compile Include="Controller\Events\XpanderController.Events.cs" />
+    <Compile Include="Controller\XpanderController.MIDIEvents.cs" />
+    <Compile Include="Controller\XpanderController.Clipboard.cs" />
+    <Compile Include="Model\Parameters\XpanderFullToneParameter.cs" />
+    <Compile Include="Model\Tone\ModulationMatrixEntry.cs" />
+    <Compile Include="Model\Tone\PacketizedBinaryReader.cs" />
+    <Compile Include="Model\Tone\PacketizedBinaryWriter.cs" />
+    <Compile Include="Model\Tone\XpanderTone.ModulationMatrix.cs" />
+    <Compile Include="Model\Tone\XPanderToneReader.cs" />
+    <Compile Include="Model\Parameters\XpanderModMatrixParameter.cs" />
+    <Compile Include="Model\Parameters\XpanderParameter.cs" />
+    <Compile Include="Model\Parameters\XpanderSignedParameter.cs" />
+    <Compile Include="Model\Tone\XPanderSinglePatch.cs" />
+    <Compile Include="Model\Tone\XpanderTone.cs" />
+    <Compile Include="Common\XpanderConstants.cs" />
+    <Compile Include="Model\Tone\XPanderToneWriter.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Controller\Service\Settings\AllUsersSettings.cs" />
+    <Compile Include="Controller\Service\Settings\AllUsersSettingsService.cs" />
+    <Compile Include="Controller\SinglePatchIterator.cs" />
+    <Compile Include="Settings.cs" />
+    <Compile Include="View\AboutForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\AboutForm.Designer.cs">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\ProgressForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ProgressForm.Designer.cs">
+      <DependentUpon>ProgressForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\ExtractSingleToneForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ExtractSingleToneForm.Designer.cs">
+      <DependentUpon>ExtractSingleToneForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\Settings\ISettingsPage.cs" />
+    <Compile Include="View\Settings\MidiPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="View\Settings\MidiPage.Designer.cs">
+      <DependentUpon>MidiPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\Settings\SettingsForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\Settings\SettingsForm.designer.cs">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\Settings\RandomizerPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="View\Settings\RandomizerPage.Designer.cs">
+      <DependentUpon>RandomizerPage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\Settings\UserInterfacePage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="View\Settings\UserInterfacePage.Designer.cs">
+      <DependentUpon>UserInterfacePage.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\SplashScreenForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\SplashScreenForm.Designer.cs">
+      <DependentUpon>SplashScreenForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\RenamePatchForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\RenamePatchForm.Designer.cs">
+      <DependentUpon>RenamePatchForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="View\AboutForm.resx">
+      <DependentUpon>AboutForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\ProgressForm.resx">
+      <DependentUpon>ProgressForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\ExtractSingleToneForm.resx">
+      <DependentUpon>ExtractSingleToneForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\Settings\MidiPage.resx">
+      <DependentUpon>MidiPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\Settings\SettingsForm.resx">
+      <DependentUpon>SettingsForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\Settings\RandomizerPage.resx">
+      <DependentUpon>RandomizerPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\Settings\UserInterfacePage.resx">
+      <DependentUpon>UserInterfacePage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\SplashScreenForm.resx">
+      <DependentUpon>SplashScreenForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\RenamePatchForm.resx">
+      <DependentUpon>RenamePatchForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="View\StoreAndGotoPatchForm.resx">
+      <DependentUpon>StoreAndGotoPatchForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="View\ToneMorphingForm.resx">
+      <DependentUpon>ToneMorphingForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
+    <Compile Include="Controller\XpanderController.WorkerThread.cs" />
+    <Compile Include="Controller\XpanderController.ModulationMatrix.cs" />
+    <Compile Include="Model\Tone\XpanderTone.Properties.cs" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="View\MainForm.Overrides.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\StoreAndGotoPatchForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\StoreAndGotoPatchForm.Designer.cs">
+      <DependentUpon>StoreAndGotoPatchForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\ToneMorphingForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="View\ToneMorphingForm.Designer.cs">
+      <DependentUpon>ToneMorphingForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="View\VfdDisplayHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gotopatch.gif" />
+    <None Include="Resources\minus.gif" />
+    <None Include="Resources\random.gif" />
+    <None Include="Resources\load.gif" />
+    <None Include="Resources\save.gif" />
+    <None Include="Resources\settings.gif" />
+    <None Include="Resources\store.gif" />
+    <None Include="Resources\plus.gif" />
+    <None Include="Resources\gotodown.gif" />
+    <None Include="Resources\gotohover.gif" />
+    <None Include="Resources\loaddown.gif" />
+    <None Include="Resources\loadhover.gif" />
+    <None Include="Resources\minusdown.gif" />
+    <None Include="Resources\minushover.gif" />
+    <None Include="Resources\plusdown.gif" />
+    <None Include="Resources\plushover.gif" />
+    <None Include="Resources\randomdown.gif" />
+    <None Include="Resources\randomhover.gif" />
+    <None Include="Resources\savedown.gif" />
+    <None Include="Resources\savehover.gif" />
+    <None Include="Resources\settingsdown.gif" />
+    <None Include="Resources\settingshover.gif" />
+    <None Include="Resources\storedown.gif" />
+    <None Include="Resources\storehover.gif" />
+    <None Include="oberheim.syx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Content Include="Notes.txt" />
+    <None Include="Resources\rainbow.png" />
+    <Content Include="xdata\Xpander.photo.about.jpg" />
+    <Content Include="Xplorer.ico" />
+    <None Include="xdata\About.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MidiApp\3rdParty\Sanford.Multimedia.Midi\Sanford.Multimedia.Midi.csproj">
+      <Project>{4269c72a-8d3a-4737-8f89-72eaa33ea9e1}</Project>
+      <Name>Sanford.Multimedia.Midi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MidiApp\MidiApp\MidiApp.MidiController\MidiApp.MidiController.csproj">
+      <Project>{548013ec-38c7-43bd-bad9-c4019ae5122e}</Project>
+      <Name>MidiApp.MidiController</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MidiApp\MidiApp\MidiApp.UIControls\MidiApp.UIControls.csproj">
+      <Project>{081a13b7-1afa-41ba-9125-38d804ef0e71}</Project>
+      <Name>MidiApp.UIControls</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties BuildVersion_AssemblyInfoFilename="Properties\AssemblyInfo.cs" BuildVersion_UpdateFileVersion="True" BuildVersion_UpdateAssemblyVersion="True" />
+    </VisualStudio>
+  </ProjectExtensions>
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
