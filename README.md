@@ -112,7 +112,7 @@ Traces can be activated in xplorer.config file:
   ```
   
   - value 0 = off, 4 = verbose.
-  - logfile is located in :\ProgramData\Xplorer\Xplorer\applog.txt
+  - logfile is located in `:\ProgramData\Xplorer\Xplorer\applog.txt`
   - MIDI-OX (http://www.midiox.com/) is your companion to debug MIDI messages
   
 
