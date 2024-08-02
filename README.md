@@ -67,7 +67,7 @@ Xplorer was started about ten years ago as a personal project, and then commerci
 
 Overall, 3 main parts need to be migrated, with different levels of complexity:
 1. Replacement of the MIDI implementation based on Leslie Sanford's C# MIDI toolkit by its C++ equivalent in JUCE. This could be strictly limited to the functions used in Xplorer (configuration of MIDI ports, sending and receiving MIDI messages). For someone who knows JUCE, this should be easy to do.
-2. Convert the MidiApp framework implementation and its use in Xplorer (Model and Controller parts) to C++. This should be relatively straightforward, for a guy that is familiar with both platforms.
+2. Convert the MidiApp framework implementation and its use in Xplorer (Model and Controller parts) to C++. This should be relatively straightforward, for a guy that is familiar with both C# and C++ languages.
 3. The big one, complete reimplementation of the UI in JUCE. The UI part of Xplorer is implemented in .NET Winforms, which has been pushed to the limit, notably for the management of all controls, transparency management and in-house binding with the controller part. I think this is the most important effort, and requires some knowledge of Winforms and UI with JUCE.
 
 
