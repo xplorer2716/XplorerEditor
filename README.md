@@ -94,7 +94,8 @@ The project is made of 2 repos:
 - **Ensure to select x86 as target platform in the solution**, due to x86 platform invoke mapping in 3rd party library.
 
 3. Build the application
-- if Visual Studio does not find the Sanford.Multimedia DLL, reference it from MidiApp subfolder: `.\MidiApp\3rdParty\Sanford.Multimedia.Midi`
+- if Visual Studio does not find the Sanford.Multimedia DLL, reference it from MidiApp subfolder:
+`.\MidiApp\3rdParty\Sanford.Multimedia.Midi`
 - DO NOT add an external reference to Sanford.Multimedia nuget packages you could find on Github, binaries may not match.
 - Launch `XplorerEditor\Xplorer\bin\x86\Debug\xplorer.exe`
 - **Read the manual** to configure Xplorer as required
