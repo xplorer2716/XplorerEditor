@@ -60,7 +60,8 @@ You are free to fork, contribute and submit PRs.
 ## IMPORTANT - Future of Xplorer
 
 Xplorer was started about ten years ago as a personal project, and then commercialized for a few years.
-It is today the only truly functional editor for the Oberheim Xpander and Matrix-12 synthesizers.
+
+**It is today the only truly functional editor for the Oberheim Xpander and Matrix-12 synthesizers.**
 
 **In order to perpetuate the life of the application and these mythical synthesizers, it would be advisable to migrate the source code to a perennial framework such as JUCE - https://juce.com/.**
 
