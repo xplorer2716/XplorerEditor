@@ -1507,7 +1507,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void checkForNewReleaseToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            const string releaseUrl = "http://xplorer.programmer.free.fr/bb/viewforum.php?id=5";
+            const string releaseUrl = "https://github.com/xplorer2716/XplorerEditor/releases";
             try
             {
                 Process.Start(releaseUrl);

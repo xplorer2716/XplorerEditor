@@ -33,8 +33,7 @@ using System.Runtime.InteropServices;
 // Vous pouvez spécifier toutes les values ou indiquer les numéros de build et de révision par défaut
 // en utilisant '*', comme indiqué ci-dessous :
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2024.05.18.1")]
-[assembly: AssemblyFileVersion("2024.05.18.1")]
+[assembly: AssemblyVersion("2024.08.02.1")]
+[assembly: AssemblyFileVersion("2024.08.02.1")]
 [assembly: NeutralResourcesLanguageAttribute("en-US")]
 [assembly: AssemblyInformationalVersion("XplorerData")]
-[assembly: InternalsVisibleTo("Xplorer.Test")]
