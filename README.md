@@ -114,8 +114,8 @@ Traces can be activated in xplorer.config file:
   - value 0 = off, 4 = verbose.
   - logfile is located in `\ProgramData\Xplorer\Xplorer\applog.txt`
   - MIDI-OX (http://www.midiox.com/) is your companion to debug MIDI messages
-  
-
+  - The latest Oberheim Xpander/Matrix-12 MIDI specification is available here: https://github.com/xplorer2716/OberheimXpanderMidiSpec
+    
 
 ## Submit your contribution
 
