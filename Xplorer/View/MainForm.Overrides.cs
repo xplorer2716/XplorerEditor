@@ -149,11 +149,6 @@ namespace Xplorer.View
                     knob.RotatingMode = isMovementLinear ? EnumRotatingMode.Linear : EnumRotatingMode.Rotating;
                     knob.KnobStyle = isKnobStyleStandard ? EnumKnobStyle.Standard : EnumKnobStyle.FlatStyle;
                 });
-
-            if (_pianoControlForm != null)
-            {
-                _pianoControlForm.NoteOnColor = ledBorderColor;
-            }
         }
 
         /// <summary>

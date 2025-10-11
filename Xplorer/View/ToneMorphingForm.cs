@@ -142,13 +142,13 @@ namespace Xplorer.View
         private void Play()
         {
             //send note on in UI thread
-            _controller.PlayNote(true, new Sanford.Multimedia.Midi.UI.PianoKeyEventArgs(PREVIEW_NOTE));
+            _controller.PlayNote(true, new Sanford.Multimedia.Midi.UI.Windows.PianoKeyEventArgs(PREVIEW_NOTE));
 
             // wait async and send note off back in ui thread
             Task task = Task.Delay(PREVIEW_NOTE_LENGTH);
             Task noteOff = task.ContinueWith((o) =>
             {
-                _controller.PlayNote(false, new Sanford.Multimedia.Midi.UI.PianoKeyEventArgs(PREVIEW_NOTE));
+                _controller.PlayNote(false, new Sanford.Multimedia.Midi.UI.Windows.PianoKeyEventArgs(PREVIEW_NOTE));
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
