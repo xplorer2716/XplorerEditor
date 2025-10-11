@@ -84,8 +84,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MidiApp\MidiApp\MidiApp.MidiController\MidiApp.MidiController.csproj" />
-    <ProjectReference Include="..\MidiApp\MidiApp\MidiApp.UIControls\MidiApp.UIControls.csproj" />
+    <ProjectReference Include="..\..\MidiApp\MidiApp.MidiController\MidiApp.MidiController.csproj" />
+    <ProjectReference Include="..\..\MidiApp\MidiApp.UIControls\MidiApp.UIControls.csproj" />
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>
