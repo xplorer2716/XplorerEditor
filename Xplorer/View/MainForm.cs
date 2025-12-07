@@ -51,8 +51,6 @@ namespace Xplorer.View
         /// </summary>
         private VfdDisplayHelper _vfdDisplayHelper;
 
-        // virtual keyboard
-        private PianoControlForm _pianoControlForm;
 
         /// <summary>
         /// Ctor (design mode only)

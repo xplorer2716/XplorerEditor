@@ -87,7 +87,7 @@ namespace Xplorer.View
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-            _controller.SendGreetingsToSynth("* DO SOME NOIZE *");
+            _controller.SendGreetingsToSynth();
         }
     }
 }

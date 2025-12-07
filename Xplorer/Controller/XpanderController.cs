@@ -690,7 +690,7 @@ namespace Xplorer.Controller
         /// Sends a message on synth's display
         /// </summary>
         /// <param name="additionalMessage">The additional message (null if unused)</param>
-        public void SendGreetingsToSynth(string additionalMessage)
+        public void SendGreetingsToSynth()
         {
             const int PADDING_LENGTH = MAX_DISPLAY_MESSAGE_LENGTH / 2;
 
@@ -698,15 +698,8 @@ namespace Xplorer.Controller
             {
                 // build the message
                 string greetingsLine1 = GetProductNameAndVersionAsString().ToUpperInvariant().PadRight(PADDING_LENGTH);
-
-                string greetingsLine2 = "HTTPS://GITHUB.COM/XPLORER2716/XPLOREREDITOR";
-                if (!string.IsNullOrEmpty(additionalMessage))
-                {
-                    greetingsLine2 += " " + additionalMessage.ToUpperInvariant();
-                }
-                greetingsLine2 = greetingsLine2.PadRight(PADDING_LENGTH);
-                greetingsLine2 = greetingsLine2.Substring(0, PADDING_LENGTH);
-
+                string greetingsLine2 = "GITHUB.COM/XPLORER2716/XPLOREREDITOR".PadRight(PADDING_LENGTH);
+           
                 SendDataToSynthOutputDevice(displayOFFMessage);
                 Thread.Sleep(ParameterTransmitDelay);
                 SendDataToSynthOutputDevice(displayONMessage);

@@ -150,10 +150,6 @@ namespace Xplorer.View
                     knob.KnobStyle = isKnobStyleStandard ? EnumKnobStyle.Standard : EnumKnobStyle.FlatStyle;
                 });
 
-            if (_pianoControlForm != null)
-            {
-                _pianoControlForm.NoteOnColor = ledBorderColor;
-            }
         }
 
         /// <summary>
