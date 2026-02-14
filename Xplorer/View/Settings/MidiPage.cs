@@ -22,6 +22,7 @@ using Sanford.Multimedia.Midi.Core.Sanford.Multimedia.Midi.Messages;
 using System;
 using System.Collections;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -49,6 +50,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The name of the synth output device.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string SynthOutputDeviceName
         {
             get { return _synthOutputDeviceName; }
@@ -63,6 +65,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The name of the automation input device.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string AutomationInputDeviceName
         {
             get { return _automationInputDeviceName; }
@@ -77,6 +80,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The name of the synth input device.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string SynthInputDeviceName
         {
             get { return _synthInputDeviceName; }
@@ -86,6 +90,7 @@ namespace Xplorer.View.Settings
         /// <summary>
         /// Smart "All Notes Off" management
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool SmartAllNotesOff { get; set; }
 
         /// <summary>
@@ -106,6 +111,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The sys ex transmit delay.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int SysExTransmitDelay
         {
             get { return _sysExTransmitDelay; }
@@ -114,6 +120,7 @@ namespace Xplorer.View.Settings
 
         private int _midiChannel = 1;
 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int MIDIChannel
         {
             get { return _midiChannel; }
@@ -128,6 +135,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The editing program number.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int EditingProgramNumber
         {
             get { return _editingProgramNumber; }
@@ -142,6 +150,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// 	<c>true</c> if [synth type is matrix12]; otherwise, <c>false</c>.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool SynthTypeIsMatrix12
         {
             get { return _SynthTypeIsMatrix12; }
@@ -154,6 +163,7 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The colorString of the knob led border.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public Color KnobLedBorderColor { get; set; }
 
         private readonly OrderedDictionary _automationTable = new OrderedDictionary();

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -83,6 +84,8 @@ namespace Xplorer.View.Settings
         /// <value>
         /// The color of the knob led border.
         /// </value>
+        /// 
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public Color KnobLedBorderColor { get; set; }
 
         /// <summary>
@@ -91,6 +94,7 @@ namespace Xplorer.View.Settings
         /// <value>
         ///   <c>true</c> if movement is linear; otherwise, <c>false</c>.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool IsLinearMovement { get; set; }
 
         /// <summary>
@@ -99,6 +103,7 @@ namespace Xplorer.View.Settings
         /// <value>
         ///   <c>true</c> if style is standard; flat otherwise
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public bool IsKnobStandardStyle { get; set; }
 
         /// <summary>

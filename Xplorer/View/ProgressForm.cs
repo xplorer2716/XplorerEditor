@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 using MidiApp.UIControls;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -33,6 +34,7 @@ namespace Xplorer.View
         /// <value>
         /// The label.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string Label
         {
             get { return this._label.Text; }
@@ -45,6 +47,7 @@ namespace Xplorer.View
         /// <value>
         /// The min value.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int MinValue
         {
             get { return _progressBar.Minimum; }
@@ -57,6 +60,7 @@ namespace Xplorer.View
         /// <value>
         /// The max value.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int MaxValue
         {
             get { return _progressBar.Maximum; }
@@ -69,6 +73,7 @@ namespace Xplorer.View
         /// <value>
         /// The value.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int Value
         {
             get { return _progressBar.Value; }

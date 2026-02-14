@@ -34,6 +34,7 @@ namespace Xplorer.View
         /// <value>
         /// The name of the patch.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string PatchName { get; set; }
        
         /// <summary>

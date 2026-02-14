@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using MidiApp.UIControls;
 using System;
+using System.ComponentModel;
 using System.Windows.Forms;
 using Xplorer.Model;
 
@@ -29,6 +30,8 @@ namespace Xplorer.View
     {
         private int _programNumber;
 
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int ProgramNumber
         {
             get { return _programNumber; }

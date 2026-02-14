@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using MidiApp.UIControls;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows.Forms;
 
@@ -64,6 +65,7 @@ namespace Xplorer.View
         /// <value>
         /// The version information.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public string VersionInformation
         {
             get
@@ -86,6 +88,7 @@ namespace Xplorer.View
         /// <value>
         /// The step count.
         /// </value>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int StepCount
         {
             get
