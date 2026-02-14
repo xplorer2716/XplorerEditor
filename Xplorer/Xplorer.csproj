@@ -31,6 +31,14 @@
     <ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <AssemblyTitle>Xplorer</AssemblyTitle>
+    <AssemblyCompany>Xplorer</AssemblyCompany>
+    <AssemblyProduct>Xplorer</AssemblyProduct>
+    <AssemblyDescription>Xplorer</AssemblyDescription>
+    <AssemblyVersion>2024.08.02.1</AssemblyVersion>
+    <FileVersion>2024.08.02.1</FileVersion>
+    <InformationalVersion>XplorerData</InformationalVersion>
+    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\x86\Debug\</OutputPath>
@@ -84,8 +92,9 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\MidiApp\MidiApp.MidiController\MidiApp.MidiController.csproj" />
-    <ProjectReference Include="..\..\MidiApp\MidiApp.UIControls\MidiApp.UIControls.csproj" />
+    <ProjectReference Include="..\MidiApp\MidiApp.MidiController\MidiApp.MidiController.csproj" />
+    <ProjectReference Include="..\MidiApp\MidiApp.UIControls\MidiApp.UIControls.csproj" />
+    <ProjectReference Include="..\Sanford.Multimedia.Midi\Source\Sanford.Multimedia.Midi.Core.csproj" />
   </ItemGroup>
   <ProjectExtensions>
     <VisualStudio>

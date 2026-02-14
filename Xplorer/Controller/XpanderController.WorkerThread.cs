@@ -35,7 +35,7 @@ namespace Xplorer.Controller
         {
             try
             {
-                while (true)
+                while (!IsWorkerThreadStopRequested)
                 {
                     //wait for transmission delay to elapse
                     Thread.Sleep(this.ParameterTransmitDelay);
