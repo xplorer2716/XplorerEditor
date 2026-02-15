@@ -459,37 +459,197 @@ namespace Xplorer.View.Settings
         #region HTML
 
         /// <summary>
-        /// /quick and dirty HTML prologue
+        /// Modern HTML5 prologue with print-ready styling
         /// </summary>
         private static readonly string _htmlPrologue =
-@"<html>
+$@"<!DOCTYPE html>
+<html lang=""en"">
 <head>
-    <title>Xplorer MIDI automation table</title>
-    <meta http-equiv=""Content-Type"" content=""text/html; charset=iso-8859-1"">
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+    <title>Xplorer MIDI Automation Table</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 2rem;
+            line-height: 1.6;
+        }}
+
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }}
+
+        h1 {{
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 0.5rem;
+        }}
+
+        .subtitle {{
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }}
+
+        .subtitle a {{
+            color: #3498db;
+            text-decoration: none;
+            transition: color 0.3s;
+        }}
+
+        .subtitle a:hover {{
+            color: #2980b9;
+            text-decoration: underline;
+        }}
+
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }}
+
+        thead {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }}
+
+        th {{
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+        }}
+
+        td {{
+            padding: 0.875rem 1rem;
+            border-bottom: 1px solid #ecf0f1;
+        }}
+
+        tbody tr {{
+            transition: background-color 0.2s;
+        }}
+
+        tbody tr:nth-child(even) {{
+            background-color: #f8f9fa;
+        }}
+
+        tbody tr:hover {{
+            background-color: #e3f2fd;
+        }}
+
+        .generated-info {{
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #ecf0f1;
+            border-left: 4px solid #3498db;
+            font-size: 0.875rem;
+            color: #7f8c8d;
+        }}
+
+        /* Print styles */
+        @media print {{
+            body {{
+                background: white;
+                padding: 0;
+            }}
+
+            .container {{
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }}
+
+            h1 {{
+                color: black;
+                border-bottom: 2px solid black;
+            }}
+
+            thead {{
+                background: #333 !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }}
+
+            tbody tr:nth-child(even) {{
+                background-color: #f0f0f0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }}
+
+            tbody tr:hover {{
+                background-color: transparent !important;
+            }}
+
+            .subtitle a {{
+                color: black;
+                text-decoration: none;
+            }}
+
+            table {{
+                box-shadow: none;
+            }}
+
+            /* Ensure table doesn't break across pages */
+            table {{
+                page-break-inside: auto;
+            }}
+
+            tr {{
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }}
+
+            thead {{
+                display: table-header-group;
+            }}
+        }}
+    </style>
 </head>
-<body bgcolor=""#EEEEEE"" text=""#000000"">
-    <p align=""left"">
-        <font size=""+1"">MIDI automation table</font><br>
-    </p>
-                <div align=""left"">
-                    Xplorer - Oberheim Xpander/Matrix-12 real time editor - <a href=""https://github.com/xplorer2716/XplorerEditor"">https://github.com/xplorer2716/XplorerEditor</a>
-                </div>
-    <p>
-        &nbsp;
-    </p>
-    <table width=""100%"" border=""0"" cellpadding=""0"" cellspacing=""1"">
-        <tr>
-            <td bgcolor=""#BFBFBF"" valign=""top"">
-                <b>PARAMETER</b>
-            </td>
-            <td bgcolor=""#BFBFBF"" valign=""top"">
-                    <b>CONTROL CHANGE</b>
-            </td>
-        </tr>
+<body>
+    <div class=""container"">
+        <h1>MIDI Automation Table</h1>
+        <div class=""subtitle"">
+            Xplorer - Oberheim Xpander/Matrix-12 Real-Time Editor<br>
+            <a href=""{XplorerConstants.WEBSITE_URL}"" target=""_blank"">{XplorerConstants.WEBSITE_URL}</a>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Parameter</th>
+                    <th>Control Change</th>
+                </tr>
+            </thead>
+            <tbody>
 ";
 
         private static readonly string _htmlEpilogue =
-@"    </table>
+$@"            </tbody>
+        </table>
+
+        <div class=""generated-info"">
+            Generated on {DateTime.Now:yyyy-MM-dd HH:mm:ss}
+        </div>
+    </div>
 </body>
 </html>";
 
@@ -516,26 +676,26 @@ namespace Xplorer.View.Settings
                         sw.WriteLine(_htmlPrologue);
                         foreach (DictionaryEntry entry in AutomationTable)
                         {
-                            string sEntry = @"
-                    <tr>
-                        <td bgcolor=""#DFDFDF"" valign=""top"">
-                        {0}
-                        </td>
-                        <td bgcolor=""#DFDFDF"" valign=""top"">
-                        {1}
-                        </td>
-                    </tr>";
                             string parameterString = Properties.Resources.ResourceManager.GetString((string)entry.Key);
                             if (string.IsNullOrEmpty(parameterString))
                             {
                                 parameterString = (string)entry.Key;
                             }
-                            sw.WriteLine(String.Format(sEntry, parameterString, GetControlChangeNameForNumber((int)entry.Value)));
+
+                            sw.WriteLine($@"                <tr>
+                    <td>{parameterString}</td>
+                    <td>{GetControlChangeNameForNumber((int)entry.Value)}</td>
+                </tr>");
                         }
                         sw.WriteLine(_htmlEpilogue);
                         try
                         {
-                            Process.Start(htmlExportDialog.FileName);
+                            var psi = new ProcessStartInfo
+                            {
+                                FileName = htmlExportDialog.FileName,
+                                UseShellExecute = true
+                            };
+                            Process.Start(psi);
                         }
                         catch (Exception ex)
                         {

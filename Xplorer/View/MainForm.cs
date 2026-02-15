@@ -1023,18 +1023,6 @@ namespace Xplorer.View
             }
         }
 
-        /// <summary>
-        /// Gets the help filename.
-        /// </summary>
-        private static string UserManualFilename
-        {
-            get
-            {
-                const string USER_MANUAL_FILE = "XplorerUserManual.pdf";
-                return Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), USER_MANUAL_FILE);
-            }
-        }
-
         #endregion FILES
 
         #region Menu Events
@@ -1180,20 +1168,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void helpXplorerToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            try
-            {
-                string filename = UserManualFilename;
-                if (!string.IsNullOrEmpty(filename) && File.Exists(filename))
-                {
-                    Process.Start(filename);
-                }
-            }
-            catch (Exception ex)
-            {
-                //whatever the exception is, consider it as non fatal
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                MessageBox.Show("Unable to launch help: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            OpenBrowserWithUrl(XplorerConstants.USER_MANUAL_URL);
         }
 
         /// <summary>
@@ -1503,16 +1478,8 @@ namespace Xplorer.View
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void checkForNewReleaseToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            const string releaseUrl = "https://github.com/xplorer2716/XplorerEditor/releases";
-            try
-            {
-                Process.Start(releaseUrl);
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-            }
+        {   
+            OpenBrowserWithUrl(XplorerConstants.RELEASES_URL);
         }
 
         /// <summary>
@@ -1522,10 +1489,19 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void goToWebsiteToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            const string websiteUrl = "https://github.com/xplorer2716/XplorerEditor";
+            OpenBrowserWithUrl(XplorerConstants.WEBSITE_URL);            
+        }
+
+        private void OpenBrowserWithUrl(string url)
+        {
             try
             {
-                Process.Start(websiteUrl);
+                var psi = new ProcessStartInfo
+                {
+                    FileName = url,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
             }
             catch (Exception ex)
             {
@@ -1533,23 +1509,9 @@ namespace Xplorer.View
             }
         }
 
-        /// <summary>
-        /// Handles the Click event of the goToForumToolStripMenuItem control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-        private void goToForumToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            const string forumUrl = "http://xplorer.programmer.free.fr/bb/";
-            try
-            {
-                Process.Start(forumUrl);
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-            }
-        }
+
+
+
 
         #endregion Menu Events
     }

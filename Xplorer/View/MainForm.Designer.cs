@@ -539,6 +539,9 @@ namespace Xplorer.View
             // 
             // allDataDumpToolStripMenuItem
             // 
+            this.allDataDumpToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+                this.backupToolStripMenuItem,
+                this.restoreToolStripMenuItem});
             this.allDataDumpToolStripMenuItem.Name = "allDataDumpToolStripMenuItem";
             resources.ApplyResources(this.allDataDumpToolStripMenuItem, "allDataDumpToolStripMenuItem");
             // 
