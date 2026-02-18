@@ -5,6 +5,29 @@
     <ApplicationIcon>Xplorer.ico</ApplicationIcon>
     <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
     <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
+    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    
+    <!-- Single-File Deployment Configuration -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    
+    <!-- Assembly Information -->
+    <AssemblyTitle>Xplorer</AssemblyTitle>
+    <AssemblyCompany>Xplorer</AssemblyCompany>
+    <AssemblyProduct>Xplorer</AssemblyProduct>
+    <AssemblyDescription>Xplorer</AssemblyDescription>
+    <AssemblyVersion>2026.02.18.1</AssemblyVersion>
+    <FileVersion>2026.02.18.1</FileVersion>
+    <InformationalVersion>XplorerData</InformationalVersion>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    
+    <!-- ClickOnce Publication Settings -->
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
@@ -27,18 +50,6 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <UseWindowsForms>true</UseWindowsForms>
-    <ForceDesignerDPIUnaware>true</ForceDesignerDPIUnaware>
-    <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <AssemblyTitle>Xplorer</AssemblyTitle>
-    <AssemblyCompany>Xplorer</AssemblyCompany>
-    <AssemblyProduct>Xplorer</AssemblyProduct>
-    <AssemblyDescription>Xplorer</AssemblyDescription>
-    <AssemblyVersion>2024.08.02.1</AssemblyVersion>
-    <FileVersion>2024.08.02.1</FileVersion>
-    <InformationalVersion>XplorerData</InformationalVersion>
-    <NeutralLanguage>en-US</NeutralLanguage>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <OutputPath>bin\x86\Debug\</OutputPath>
