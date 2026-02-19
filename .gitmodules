@@ -1,7 +1,7 @@
 [submodule "MidiApp"]
 	path = MidiApp
 	url = https://github.com/xplorer2716/MidiApp.git
-	branch = net8.0
+	branch = main
 [submodule "Sanford.Multimedia.Midi"]
 	path = Sanford.Multimedia.Midi
 	url = https://github.com/xplorer2716/Sanford.Multimedia.Midi.git
