@@ -1,6 +1,6 @@
 /*
 Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-Copyright (C) 2012-2024 Pascal Schmitt
+Copyright (C) 2012-2026 Pascal Schmitt
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,11 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 using MidiApp.MidiController.Service;
 using Sanford.Multimedia.Midi;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Xplorer.Common;
 
 namespace Xplorer.Model.Tone
@@ -326,8 +328,11 @@ namespace Xplorer.Model.Tone
             // preconditions
             if ((data.Length < SINGLE_PATCH_LENGTH) || (data.Length < SINGLE_PATCH_INTRO_LENGTH))
             {
-                string messsage = string.Format("Not enough sysex data. Waiting for {0} bytes (SINGLE_PATCH_LENGTH), but get only {1} bytes:{2}",
-                    SINGLE_PATCH_LENGTH, data.Length, SysExMessage.ToString(data));
+                string messsage = string.Format("Not enough sysex data. Waiting for {0} bytes (SINGLE_PATCH_LENGTH)," +
+                    " but get only {1} bytes:{2}",
+                    SINGLE_PATCH_LENGTH,
+                    data.Length,
+                    string.Join(",", data.Select(b => b.ToString("X2"))));
                 throw new NonFatalException(messsage);
             }
 

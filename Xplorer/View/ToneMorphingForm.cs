@@ -1,6 +1,6 @@
 /*
 Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-Copyright (C) 2012-2024 Pascal Schmitt
+Copyright (C) 2012-2026 Pascal Schmitt
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -142,13 +142,13 @@ namespace Xplorer.View
         private void Play()
         {
             //send note on in UI thread
-            _controller.PlayNote(true, new Sanford.Multimedia.Midi.UI.PianoKeyEventArgs(PREVIEW_NOTE));
+            _controller.PlayNote(true, new Sanford.Multimedia.Midi.UI.Windows.PianoKeyEventArgs(PREVIEW_NOTE));
 
             // wait async and send note off back in ui thread
             Task task = Task.Delay(PREVIEW_NOTE_LENGTH);
             Task noteOff = task.ContinueWith((o) =>
             {
-                _controller.PlayNote(false, new Sanford.Multimedia.Midi.UI.PianoKeyEventArgs(PREVIEW_NOTE));
+                _controller.PlayNote(false, new Sanford.Multimedia.Midi.UI.Windows.PianoKeyEventArgs(PREVIEW_NOTE));
             }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 

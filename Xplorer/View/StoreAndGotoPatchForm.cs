@@ -1,6 +1,6 @@
 /*
 Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-Copyright (C) 2012-2024 Pascal Schmitt
+Copyright (C) 2012-2026 Pascal Schmitt
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using MidiApp.UIControls;
 using System;
+using System.ComponentModel;
 using System.Windows.Forms;
 using Xplorer.Model;
 
@@ -29,6 +30,8 @@ namespace Xplorer.View
     {
         private int _programNumber;
 
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Visible)]
         public int ProgramNumber
         {
             get { return _programNumber; }

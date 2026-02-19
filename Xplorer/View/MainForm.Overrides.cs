@@ -1,6 +1,6 @@
 /*
 Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-Copyright (C) 2012-2024 Pascal Schmitt
+Copyright (C) 2012-2026 Pascal Schmitt
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -148,6 +148,7 @@ namespace Xplorer.View
                     knob.LedBorderColor = ledBorderColor;
                     knob.RotatingMode = isMovementLinear ? EnumRotatingMode.Linear : EnumRotatingMode.Rotating;
                     knob.KnobStyle = isKnobStyleStandard ? EnumKnobStyle.Standard : EnumKnobStyle.FlatStyle;
+
                 });
 
         }

@@ -76,7 +76,7 @@ namespace Xplorer.View
             this._lbCopyright.Name = "_lbCopyright";
             this._lbCopyright.Size = new System.Drawing.Size(207, 13);
             this._lbCopyright.TabIndex = 3;
-            this._lbCopyright.Text = "Copyright (c) 2009-2024 by Pascal Schmitt";
+            this._lbCopyright.Text = "Copyright (c) 2012-2026 by Pascal Schmitt";
             // 
             // _lbLink
             // 
