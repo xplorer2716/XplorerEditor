@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using MidiApp.MidiController.Controller;
 using MidiApp.UIControls;
+using Sanford.Multimedia.Midi.Core.Sanford.Multimedia.Midi.Messages;
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -143,6 +144,8 @@ namespace Xplorer.View
             string displayLine1 = string.Format("* S{0} {1} *", xController.CurrentProgramNumber.ToString("00", CultureInfo.InvariantCulture), xController.ToneName);
             string displayLine2 = string.Empty;
             string displayLine3 = string.Empty;
+            string displayLine4 = string.Empty;
+            string displayLine5 = string.Empty;
 
             // a control was tweaked
             if (_lastUpdatedControl != null)
@@ -183,6 +186,25 @@ namespace Xplorer.View
                     displayLine2 = string.Format(CultureInfo.InvariantCulture, "{0}:", string.IsNullOrEmpty(endUserParameterName) ? parameterName : endUserParameterName);
                     displayLine3 = sValue;
                 }
+
+                // lookup CC number for this parameter
+                int ccNumber = _controller.ControlChangeAutomationTable[parameterName];
+
+                // update display with CC number if defined for this parameter
+                if (ccNumber != int.MinValue && ccNumber != ControlChangesNames.Names.Length-1)
+                {
+                    string ccInfo = ccNumber != int.MinValue
+                        ? string.Format(CultureInfo.InvariantCulture, "MIDI CC: {0}", ccNumber.ToString("000", CultureInfo.InvariantCulture))
+                        : string.Empty;
+
+                    // add CC info to display line 4 if available    
+                    displayLine5 = ccInfo;
+                }else
+                {
+                    displayLine5 = string.Empty;
+                }
+              
+
                 _lastUpdatedControl = null;
             }
 
@@ -211,10 +233,12 @@ namespace Xplorer.View
                 _lastUpdatedModEntry = null;
             }
 
-            _display.SetText(string.Format(CultureInfo.InvariantCulture, "{0}{1}{2}",
+            _display.SetText(string.Format(CultureInfo.InvariantCulture, "{0}{1}{2}{3}{4}",
                     displayLine1.PadRight(_display.MaxCharsPerLine),
                     displayLine2.PadRight(_display.MaxCharsPerLine),
-                    displayLine3.PadRight(_display.MaxCharsPerLine)));
+                    displayLine3.PadRight(_display.MaxCharsPerLine),                  
+                    displayLine4.PadRight(_display.MaxCharsPerLine),
+                    displayLine5.PadRight(_display.MaxCharsPerLine)));
 
             _isVfdDisplayUpdateNeeded = false;
         }
