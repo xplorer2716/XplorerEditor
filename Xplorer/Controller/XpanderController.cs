@@ -399,6 +399,18 @@ namespace Xplorer.Controller
         }
 
         /// <summary>
+        /// override : send All Notes Off to synth output to avoid hanging notes when stopping the controller 
+        /// </summary>
+        public override void Stop()
+        {
+            if (AllUsersSettingsService.AllUsersSettings.MidiConfig.SmartAllNotesOff)
+            {
+                SendAllNotesOffToSynthOutput();
+            }
+            base.Stop();
+        }
+
+        /// <summary>
         /// Backups all data dump to file.
         /// </summary>
         /// <param name="fileName">Name of the file.</param>
