@@ -1563,5 +1563,226 @@ namespace Xplorer.View
 
 
         #endregion Menu Events
+
+        #region ModulationMatrixHighlight
+
+        // default BackColor for MOD_SRC/MOD_DEST comboboxes (from Designer)
+        private static readonly Color _modComboBoxDefaultBackColor = Color.FromArgb(54, 54, 62);
+
+        // highlight BackColor for comboboxes matching the hovered control
+        private static Color _modComboBoxHighlightBackColor =
+            ControlPaint.Dark(Color.FromArgb(AllUsersSettingsService.AllUsersSettings.UiConfig.KnobLedBorderColor),0.1f);
+
+        // cached array of the 20 MOD_SRC comboboxes
+        private ComboBoxValuedControl[] _modSourceComboBoxes;
+
+        // cached array of the 20 MOD_DEST comboboxes
+        private ComboBoxValuedControl[] _modDestComboBoxes;
+
+        // mapping from RadioButton name to EnumModulationSourcesModMatrix int value
+        private Dictionary<string, int> _radioButtonToModSourceMap;
+
+        // mapping from non-paged KnobControl tag to EnumModulationDestinations int value
+        private Dictionary<string, int> _knobTagToModDestMap;
+
+        // mapping from paged KnobControl tag to (base enum value, page count) for dynamic page resolution
+        // e.g. ENV_X_DELAY → (ENV1_DLY, 5 pages with 5 destinations each)
+        private Dictionary<string, (int baseValue, int pageStride, string pagePrefix)> _knobTagToPagedModDestMap;
+
+        /// <summary>
+        /// Initializes the modulation source and destination highlight infrastructure
+        /// </summary>
+        private void InitializeModSourceHighlight()
+        {
+            _modSourceComboBoxes =
+            [
+                MOD_SRC_1, MOD_SRC_2, MOD_SRC_3, MOD_SRC_4, MOD_SRC_5,
+                MOD_SRC_6, MOD_SRC_7, MOD_SRC_8, MOD_SRC_9, MOD_SRC_10,
+                MOD_SRC_11, MOD_SRC_12, MOD_SRC_13, MOD_SRC_14, MOD_SRC_15,
+                MOD_SRC_16, MOD_SRC_17, MOD_SRC_18, MOD_SRC_19, MOD_SRC_20
+            ];
+
+            _modDestComboBoxes =
+            [
+                MOD_DEST_1, MOD_DEST_2, MOD_DEST_3, MOD_DEST_4, MOD_DEST_5,
+                MOD_DEST_6, MOD_DEST_7, MOD_DEST_8, MOD_DEST_9, MOD_DEST_10,
+                MOD_DEST_11, MOD_DEST_12, MOD_DEST_13, MOD_DEST_14, MOD_DEST_15,
+                MOD_DEST_16, MOD_DEST_17, MOD_DEST_18, MOD_DEST_19, MOD_DEST_20
+            ];
+
+            // RadioButton names use ENV_1, LFO_1, RAMP_1, TRACK_1
+            // Enum names use ENV1, LFO1, RMP1, TRK1
+            _radioButtonToModSourceMap = new Dictionary<string, int>
+            {
+                { "ENV_1", (int)XpanderConstants.EnumModulationSourcesModMatrix.ENV1 },
+                { "ENV_2", (int)XpanderConstants.EnumModulationSourcesModMatrix.ENV2 },
+                { "ENV_3", (int)XpanderConstants.EnumModulationSourcesModMatrix.ENV3 },
+                { "ENV_4", (int)XpanderConstants.EnumModulationSourcesModMatrix.ENV4 },
+                { "ENV_5", (int)XpanderConstants.EnumModulationSourcesModMatrix.ENV5 },
+                { "LFO_1", (int)XpanderConstants.EnumModulationSourcesModMatrix.LFO1 },
+                { "LFO_2", (int)XpanderConstants.EnumModulationSourcesModMatrix.LFO2 },
+                { "LFO_3", (int)XpanderConstants.EnumModulationSourcesModMatrix.LFO3 },
+                { "LFO_4", (int)XpanderConstants.EnumModulationSourcesModMatrix.LFO4 },
+                { "LFO_5", (int)XpanderConstants.EnumModulationSourcesModMatrix.LFO5 },
+                { "RAMP_1", (int)XpanderConstants.EnumModulationSourcesModMatrix.RMP1 },
+                { "RAMP_2", (int)XpanderConstants.EnumModulationSourcesModMatrix.RMP2 },
+                { "RAMP_3", (int)XpanderConstants.EnumModulationSourcesModMatrix.RMP3 },
+                { "RAMP_4", (int)XpanderConstants.EnumModulationSourcesModMatrix.RMP4 },
+                { "TRACK_1", (int)XpanderConstants.EnumModulationSourcesModMatrix.TRK1 },
+                { "TRACK_2", (int)XpanderConstants.EnumModulationSourcesModMatrix.TRK2 },
+                { "TRACK_3", (int)XpanderConstants.EnumModulationSourcesModMatrix.TRK3 },
+            };
+
+            // non-paged knob tags to modulation destination
+            _knobTagToModDestMap = new Dictionary<string, int>
+            {
+                { "VCO1_FREQ", (int)XpanderConstants.EnumModulationDestinations.VCO1_FRQ },
+                { "VCO1_PW", (int)XpanderConstants.EnumModulationDestinations.VCO1_PW },
+                { "VCO1_VOLUME", (int)XpanderConstants.EnumModulationDestinations.VCO1_VOL },
+                { "VCO2_FREQ", (int)XpanderConstants.EnumModulationDestinations.VCO2_FRQ },
+                { "VCO2_PW", (int)XpanderConstants.EnumModulationDestinations.VCO2_PW },
+                { "VCO2_VOLUME", (int)XpanderConstants.EnumModulationDestinations.VCO2_VOL },
+                { "VCF_FREQ", (int)XpanderConstants.EnumModulationDestinations.VCF_FRQ },
+                { "VCF_RES", (int)XpanderConstants.EnumModulationDestinations.VCF_RES },
+                { "VCF_VCA1_VOLUME", (int)XpanderConstants.EnumModulationDestinations.VCA1_VOL },
+                { "VCF_VCA2_VOLUME", (int)XpanderConstants.EnumModulationDestinations.VCA2_VOL },
+                { "FM_AMP", (int)XpanderConstants.EnumModulationDestinations.FM_AMP },
+                { "FMLAG_RATE", (int)XpanderConstants.EnumModulationDestinations.LAG_RATE },
+            };
+
+            // paged knob tags: baseValue is the enum value for page 1, pageStride is the number
+            // of destinations per page (5 for ENV: DLY,ATK,DCY,REL,AMP; 2 for LFO: SPD,AMP)
+            _knobTagToPagedModDestMap = new Dictionary<string, (int baseValue, int pageStride, string pagePrefix)>
+            {
+                { "ENV_X_DELAY",   ((int)XpanderConstants.EnumModulationDestinations.ENV1_DLY, 5, "ENV_") },
+                { "ENV_X_ATTACK",  ((int)XpanderConstants.EnumModulationDestinations.ENV1_ATK, 5, "ENV_") },
+                { "ENV_X_DECAY",   ((int)XpanderConstants.EnumModulationDestinations.ENV1_DCY, 5, "ENV_") },
+                { "ENV_X_RELEASE", ((int)XpanderConstants.EnumModulationDestinations.ENV1_REL, 5, "ENV_") },
+                { "ENV_X_VOLUME",  ((int)XpanderConstants.EnumModulationDestinations.ENV1_AMP, 5, "ENV_") },
+                { "LFO_X_SPEED",   ((int)XpanderConstants.EnumModulationDestinations.LFO1_SPD, 2, "LFO_") },
+                { "LFO_X_AMP",     ((int)XpanderConstants.EnumModulationDestinations.LFO1_AMP, 2, "LFO_") },
+            };
+
+            // register MouseEnter/MouseLeave on matching page radio buttons
+            foreach (var kvp in _pagesRadioButtonsMap)
+            {
+                if (_radioButtonToModSourceMap.ContainsKey(kvp.Key))
+                {
+                    kvp.Value.MouseEnter += PageRadioButton_MouseEnter;
+                    kvp.Value.MouseLeave += PageRadioButton_MouseLeave;
+                }
+            }
+
+            // register MouseEnter/MouseLeave on knob controls that have a modulation destination
+            foreach (var kvp in _knobControlsMap)
+            {
+                string tag = (string)kvp.Value.Tag;
+                if (_knobTagToModDestMap.ContainsKey(tag) || _knobTagToPagedModDestMap.ContainsKey(tag))
+                {
+                    kvp.Value.MouseEnter += KnobControl_MouseEnter;
+                    kvp.Value.MouseLeave += KnobControl_MouseLeave;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Resolves the modulation destination value for a paged knob tag based on the currently active page
+        /// </summary>
+        private int ResolvePagedModDest(string knobTag, int baseValue, int pageStride, string pagePrefix)
+        {
+            // find which page is currently selected (1-based page number)
+            foreach (var kvp in _pagesRadioButtonsMap)
+            {
+                if (kvp.Key.StartsWith(pagePrefix) && kvp.Value.Checked)
+                {
+                    // extract page number from radio button name (e.g. "ENV_3" → 3)
+                    string pageNumberStr = kvp.Key.Substring(pagePrefix.Length);
+                    if (int.TryParse(pageNumberStr, out int pageNumber))
+                    {
+                        return baseValue + (pageNumber - 1) * pageStride;
+                    }
+                    break;
+                }
+            }
+            return baseValue;
+        }
+
+        /// <summary>
+        /// Highlights MOD_SRC comboboxes whose selected value matches the hovered RadioButton's modulation source
+        /// </summary>
+        private void PageRadioButton_MouseEnter(object sender, EventArgs e)
+        {
+            RadioButton radio = sender as RadioButton;
+            if (radio is null) return;
+
+            string name = radio.Name;
+            if (!_radioButtonToModSourceMap.TryGetValue(name, out int sourceValue)) return;
+
+            for (int i = 0; i < _modSourceComboBoxes.Length; i++)
+            {
+                if (((IValuedControl)_modSourceComboBoxes[i]).Value == sourceValue)
+                {
+                    _modSourceComboBoxes[i].BackColor = _modComboBoxHighlightBackColor;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Restores default BackColor on all MOD_SRC comboboxes
+        /// </summary>
+        private void PageRadioButton_MouseLeave(object sender, EventArgs e)
+        {
+            for (int i = 0; i < _modSourceComboBoxes.Length; i++)
+            {
+                _modSourceComboBoxes[i].BackColor = _modComboBoxDefaultBackColor;
+            }
+        }
+
+        /// <summary>
+        /// Highlights MOD_DEST comboboxes whose selected value matches the hovered KnobControl's modulation destination
+        /// </summary>
+        private void KnobControl_MouseEnter(object sender, EventArgs e)
+        {
+            KnobControl knob = sender as KnobControl;
+            if (knob is null) return;
+
+            string tag = (string)knob.Tag;
+            int destValue;
+
+            if (_knobTagToModDestMap.TryGetValue(tag, out destValue))
+            {
+                // non-paged knob
+            }
+            else if (_knobTagToPagedModDestMap.TryGetValue(tag, out var pagedInfo))
+            {
+                // paged knob: resolve based on current page
+                destValue = ResolvePagedModDest(tag, pagedInfo.baseValue, pagedInfo.pageStride, pagedInfo.pagePrefix);
+            }
+            else
+            {
+                return;
+            }
+
+            for (int i = 0; i < _modDestComboBoxes.Length; i++)
+            {
+                if (((IValuedControl)_modDestComboBoxes[i]).Value == destValue)
+                {
+                    _modDestComboBoxes[i].BackColor = _modComboBoxHighlightBackColor;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Restores default BackColor on all MOD_DEST comboboxes
+        /// </summary>
+        private void KnobControl_MouseLeave(object sender, EventArgs e)
+        {
+            for (int i = 0; i < _modDestComboBoxes.Length; i++)
+            {
+                _modDestComboBoxes[i].BackColor = _modComboBoxDefaultBackColor;
+            }
+        }
+
+        #endregion ModulationMatrixHighlight
     }
 }

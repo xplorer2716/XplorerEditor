@@ -151,6 +151,10 @@ namespace Xplorer.View
 
                 });
 
+
+            _modComboBoxHighlightBackColor = ledBorderColor;
+
+
         }
 
         /// <summary>
@@ -348,6 +352,9 @@ namespace Xplorer.View
             // controls registration before loading the settings
             RecursivelyRegisterControls();
             LoadSettings();
+
+            // initialize modulation matrix highlight on page radio buttons hover
+            InitializeModSourceHighlight();
 
             // instanciate display helper
             _vfdDisplayHelper = new VfdDisplayHelper(_vfdDisplay, Controller, GetParameterNameForValuedControlTag);
