@@ -846,25 +846,14 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchLoad_Click(object sender, EventArgs e)
         {
-            OpenFileDialog openSysexFileDialog = new OpenFileDialog();
-
-            openSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
-            openSysexFileDialog.RestoreDirectory = true;
-
-            if (openSysexFileDialog.ShowDialog() == DialogResult.OK)
+            using (OpenFileDialog openSysexFileDialog = new OpenFileDialog())
             {
-                try
+                openSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
+                openSysexFileDialog.RestoreDirectory = true;
+
+                if (openSysexFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    // read the tone sysex and fill the map with the parameters values
-                    ((XpanderController)Controller).LoadTone(openSysexFileDialog.FileName);
-                    // store the file name for save function
-                    SetToneFilename(openSysexFileDialog.FileName);
-                }
-                catch (Exception ex)
-                {
-                    // whatever the exception is, consider it as non fatal
-                    Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                    MessageBox.Show("Unable to load patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    LoadSysexFileByType(openSysexFileDialog.FileName);
                 }
             }
         }
@@ -1022,6 +1011,93 @@ namespace Xplorer.View
             {
                 const string DEFAULT_SYSEX_FILE = "oberheim.syx";
                 return Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), DEFAULT_SYSEX_FILE);
+            }
+        }
+
+        /// <summary>
+        /// Loads a single tone sysex file into the editor and sends it to the synth.
+        /// </summary>
+        /// <param name="fileName">Path to the sysex file containing a single tone.</param>
+        private void LoadToneFromFile(string fileName)
+        {
+            try
+            {
+                ((XpanderController)Controller).LoadTone(fileName);
+                SetToneFilename(fileName);
+            }
+            catch (Exception ex)
+            {
+                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
+                MessageBox.Show("Unable to load patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Restores an all data dump (bank) sysex file to the synth with progress indication.
+        /// </summary>
+        /// <param name="fileName">Path to the sysex file containing an all data dump.</param>
+        private void RestoreAllDataDumpFromFile(string fileName)
+        {
+            ProgressForm form = null;
+            try
+            {
+#warning we shoud avoid user interaction while running dump
+                form = ProgressForm.CreateInstance(this);
+                form.Show(this);
+                form.Text = "All data dump restore";
+                Action<int, int> progressAction = (current, max) =>
+                {
+                    form.MinValue = 0;
+                    form.MaxValue = max;
+                    form.Value = current;
+                    form.Label = string.Format(CultureInfo.InvariantCulture, "Sending data [{0}/{1}]", current.ToString("00", CultureInfo.InvariantCulture), max);
+                    Application.DoEvents();
+                };
+
+                XpanderController controller = (XpanderController)Controller;
+                controller.RestoreAllDataDumpToSynth(fileName, progressAction);
+                ProgressForm.DestroyInstance();
+            }
+            catch (NonFatalException nfe)
+            {
+                if (form is not null)
+                {
+                    ProgressForm.DestroyInstance();
+                }
+                MessageBox.Show(nfe.Message, "All data dump restore", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        /// <summary>
+        /// Loads a sysex file by detecting its type (single tone or all data dump) and routing
+        /// to the appropriate handler.
+        /// </summary>
+        /// <param name="fileName">Path to the sysex file.</param>
+        private void LoadSysexFileByType(string fileName)
+        {
+            XpanderController controller = (XpanderController)Controller;
+            SysexFileType fileType = controller.DetermineSysexFileType(fileName);
+
+            switch (fileType)
+            {
+                case SysexFileType.SingleTone:
+                    LoadToneFromFile(fileName);
+                    break;
+
+                case SysexFileType.AllDataDump:
+                    // always ask confirmation before sending an all data dump to the synth as it will overwrite all patches
+                    const string AllDataDumpWarningMessage = "The selected file is a bank file that may overwrite ALL patches in the synth's memory. Proceed?";
+
+                    if (MessageBox.Show(AllDataDumpWarningMessage,
+                        "Confirm All Data Dump Restore", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
+                    {
+                        RestoreAllDataDumpFromFile(fileName);
+                    }
+                    break;
+
+                default:
+                    MessageBox.Show("Unable to determine sysex file type.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    break;
             }
         }
 
@@ -1413,36 +1489,7 @@ namespace Xplorer.View
 
                 if (openSysexFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    // allows UI to show off since we will use the UI thread for a long time
-                    ProgressForm form = null;
-                    try
-                    {
-#warning we shoud avoid user interaction while running dump
-                        form = ProgressForm.CreateInstance(this);
-                        form.Show(this);
-                        form.Text = "All data dump restore";
-                        Action<int, int> progressAction = (current, max) =>
-                        {
-                            form.MinValue = 0;
-                            form.MaxValue = max;
-                            form.Value = current;
-                            form.Label = string.Format(CultureInfo.InvariantCulture, "Sending data [{0}/{1}]", current.ToString("00", CultureInfo.InvariantCulture), max);
-                            Application.DoEvents();
-                        };
-
-                        XpanderController controller = (XpanderController)Controller;
-                        controller.RestoreAllDataDumpToSynth(openSysexFileDialog.FileName, progressAction);
-                        ProgressForm.DestroyInstance();
-                    }
-                    catch (NonFatalException nfe)
-                    {
-                        if (form != null)
-                        {
-                            // close progression before showing error message
-                            ProgressForm.DestroyInstance();
-                        }
-                        MessageBox.Show(nfe.Message, "All data dump restore", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    RestoreAllDataDumpFromFile(openSysexFileDialog.FileName);
                 }
             }
         }

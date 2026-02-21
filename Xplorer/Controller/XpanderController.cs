@@ -126,6 +126,57 @@ namespace Xplorer.Controller
         }
 
         /// <summary>
+        /// Determines whether a sysex file contains a single tone or an all data dump (bank).
+        /// A file with exactly one single-patch sysex message is considered a single tone;
+        /// a file with multiple sysex messages is considered an all data dump.
+        /// </summary>
+        /// <param name="fileName">Path to the sysex file.</param>
+        /// <returns>The detected <see cref="SysexFileType"/>.</returns>
+        internal SysexFileType DetermineSysexFileType(string fileName)
+        {
+            if (!File.Exists(fileName))
+            {
+                return SysexFileType.Unknown;
+            }
+
+            try
+            {
+                using (BinaryReader reader = new BinaryReader(File.Open(fileName, FileMode.Open, FileAccess.Read)))
+                {
+                    SysexIterator iterator = new SysexIterator(reader.BaseStream);
+                    int sysexCount = 0;
+                    bool firstIsSinglePatch = false;
+
+                    foreach (byte[] sysex in iterator)
+                    {
+                        sysexCount++;
+                        if (sysexCount == 1)
+                        {
+                            firstIsSinglePatch = SinglePatchIterator.IsSinglePatch(sysex);
+                        }
+                        if (sysexCount > 1)
+                        {
+                            // more than one sysex message: this is a bank / all data dump
+                            return SysexFileType.AllDataDump;
+                        }
+                    }
+
+                    if (sysexCount == 1 && firstIsSinglePatch)
+                    {
+                        return SysexFileType.SingleTone;
+                    }
+
+                    // single sysex but not a recognized single patch (e.g. multi-patch)
+                    return sysexCount == 1 ? SysexFileType.AllDataDump : SysexFileType.Unknown;
+                }
+            }
+            catch
+            {
+                return SysexFileType.Unknown;
+            }
+        }
+
+        /// <summary>
         /// load the specified tone sysex file
         /// </summary>
         /// <param name="filename">The filename.</param>

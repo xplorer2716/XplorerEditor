@@ -870,20 +870,7 @@ namespace Xplorer.View
 
             if (files.Any() && (File.Exists(files[0]) && string.Compare(Path.GetExtension(files[0]), FileUtils.SYSEX_FILE_EXTENSION_WITH_DOT, true) == 0))
             {
-                // try to open this one as single tone
-                try
-                {
-                    // read the tone sysex and fill the map with the parameters values
-                    ((XpanderController)Controller).LoadTone(files[0]);
-                    // store the file name for save function
-                    SetToneFilename(files[0]);
-                }
-                catch (Exception ex)
-                {
-                    // whatever the exception is, consider it as non fatal
-                    Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                    MessageBox.Show("Unable to load patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
+                LoadSysexFileByType(files[0]);
             }
         }
 
