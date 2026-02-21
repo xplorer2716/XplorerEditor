@@ -26,6 +26,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Resources;
 using System.Text;
 using System.Windows.Forms;
@@ -714,5 +716,16 @@ $@"            </tbody>
         }
 
         #endregion HTML
+
+        private void toolStripMenuItemResetControlChanges_Click(object sender, EventArgs e)
+        {
+
+            foreach (ListViewItem item in LvAutomation.Items)
+            {
+                item.SubItems[1].Text = GetControlChangeNameForNumber(ControlChangesNames.Names.Length - 1);
+                item.Tag = ControlChangesNames.Names.Length - 1;
+            }
+
+        }
     }
 }
