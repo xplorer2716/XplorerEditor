@@ -100,6 +100,14 @@
     </None>
     <Content Include="xdata\Xpander.photo.about.jpg" />
     <Content Include="Xplorer.ico" />
+    <None Include="View\PatchVisualization\patch-visualizer-template.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>patch-visualizer-template.html</Link>
+    </None>
+    <None Include="View\PatchVisualization\dagre.min.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>dagre.min.js</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

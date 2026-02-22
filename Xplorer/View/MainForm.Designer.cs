@@ -61,7 +61,7 @@ namespace Xplorer.View
             this.randomizePatchToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.renameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.storeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.synchronizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.synchronizeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();            
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tuneRequestToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -494,6 +494,7 @@ namespace Xplorer.View
             this.synchronizeToolStripMenuItem.Name = "synchronizeToolStripMenuItem";
             resources.ApplyResources(this.synchronizeToolStripMenuItem, "synchronizeToolStripMenuItem");
             this.synchronizeToolStripMenuItem.Click += new System.EventHandler(this.synchronizeToolStripMenuItem_Click);
+           
             // 
             // toolsToolStripMenuItem
             // 
@@ -4470,6 +4471,7 @@ namespace Xplorer.View
         private System.Windows.Forms.ToolStripMenuItem renameToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem storeToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem synchronizeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem visualizePatchToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem tuneRequestToolStripMenuItem;
         private LedPanelControl _ledPanelControl;
         private System.Windows.Forms.ToolStripMenuItem singlePatchesToolStripMenuItem;

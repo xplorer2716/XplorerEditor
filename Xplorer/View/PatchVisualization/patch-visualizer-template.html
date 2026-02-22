@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xpander Patch Visualizer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a2e;color:#e0e0e0;font-family:'Consolas','Courier New',monospace;overflow-x:hidden}
+
+/* Tab bar */
+.tab-bar{display:flex;background:#0f0f1a;border-bottom:2px solid #333}
+.tab{padding:14px 28px;cursor:pointer;color:#888;border-bottom:2px solid transparent;transition:all .2s;font-size:15px;letter-spacing:1px}
+.tab:hover{color:#ccc}
+.tab.active{color:#00ff88;border-bottom-color:#00ff88}
+.tab-content{display:none;padding:24px}
+.tab-content.active{display:block}
+
+h2{color:#00ff88;margin-bottom:6px;font-size:22px;letter-spacing:1px}
+.subtitle{color:#999;font-size:15px;margin-bottom:20px}
+
+/* ===== NODE GRAPH ===== */
+.graph-container{position:relative;background:#12121f;border:1px solid #333;border-radius:8px;overflow:auto;cursor:grab;max-height:calc(100vh - 220px)}
+.graph-container.grabbing{cursor:grabbing;user-select:none}
+.graph-svg{position:absolute;top:0;left:0;pointer-events:none}
+
+/* Dagre group boxes */
+.group-box{position:absolute;border-radius:8px;border:1px dashed rgba(255,255,255,.12);pointer-events:none}
+.group-box .group-label{position:absolute;top:-18px;left:8px;font-size:11px;letter-spacing:1px;opacity:.5}
+.module-node{position:absolute;border-radius:6px;padding:10px 12px;font-size:12px;min-width:120px;cursor:default;transition:box-shadow .2s}
+.module-node:hover{box-shadow:0 0 18px rgba(255,255,255,.18),inset 0 0 12px rgba(255,255,255,.06);z-index:10}
+.module-node .node-title{font-weight:bold;font-size:13px;margin-bottom:5px;letter-spacing:1px}
+.module-node .node-param{display:flex;justify-content:space-between;gap:10px;padding:1px 0;color:#aaa;font-size:11px}
+.module-node .node-param .pv{color:#ddd;font-weight:bold}
+.module-node .node-param.modulated{cursor:pointer}
+.module-node .node-param.modulated:hover{background:rgba(255,170,0,.08);border-radius:3px}
+.module-node .node-param.modulated .pn::after{content:" \25CF ";color:#ffaa00;font-size:8px}
+.node-out{background:linear-gradient(135deg,#2a2a1a,#1f1f12)!important;border:1px solid #8a8a4a!important}
+.node-out .node-title{color:#cccc66!important}
+.mod-line{fill:none;pointer-events:stroke;cursor:pointer}
+.mod-line.positive{stroke:#00cc66}
+.mod-line.negative{stroke:#cc4444}
+.mod-line.quantized{stroke-dasharray:6 3}
+.signal-line{stroke:#555;stroke-width:2;fill:none}
+.graph-legend{display:flex;gap:16px;margin-bottom:14px;font-size:13px;color:#777;flex-wrap:wrap;align-items:center}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-line{width:28px;height:3px;border-radius:1px}
+.legend-line.pos{background:#00cc66}
+.legend-line.neg{background:#cc4444}
+.legend-line.qtz{background:repeating-linear-gradient(90deg,#888 0 6px,transparent 6px 9px);height:3px}
+.legend-dot{width:9px;height:9px;background:#ffaa00;border-radius:50%}
+
+/* ===== HEATMAP ===== */
+.matrix-scroll{overflow-x:auto;border:1px solid #333;border-radius:8px;background:#12121f}
+.matrix-table{border-collapse:collapse;white-space:nowrap}
+.matrix-table th,.matrix-table td{padding:6px 7px;text-align:center;border:1px solid #252540;min-width:42px}
+.matrix-table thead th{position:sticky;top:0;z-index:2}
+.matrix-table .group-header{font-size:15px;font-weight:bold;letter-spacing:1.5px;border-bottom:2px solid;padding:9px 7px}
+.matrix-table .dest-header{font-size:13px;color:#ccc;background:#0f0f1a;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);height:90px;vertical-align:bottom;padding:6px 4px;letter-spacing:.5px}
+.matrix-table .src-header{text-align:right;padding-right:12px;color:#ddd;font-size:14px;font-weight:bold;background:#0f0f1a;position:sticky;left:0;z-index:1;letter-spacing:.5px}
+.matrix-table .cell-empty{background:#16162a}
+.matrix-table .cell-active{cursor:pointer;position:relative;font-weight:bold;font-size:13px;transition:all .15s ease;border-radius:0}
+.matrix-table .cell-active:hover{outline:2px solid rgba(255,255,255,.7);box-shadow:0 0 12px rgba(255,255,255,.25),inset 0 0 20px rgba(255,255,255,.12);z-index:5;transform:scale(1.15);border-radius:3px}
+.matrix-table .cell-active .qtz-marker{font-size:10px;vertical-align:super;color:rgba(255,255,255,.6);margin-left:1px}
+.matrix-table .src-group-start td,.matrix-table .src-group-start th{border-top:2px solid #555}
+.heatmap-legend{display:flex;gap:24px;margin-top:16px;font-size:14px;color:#999;align-items:center;flex-wrap:wrap}
+.heatmap-scale{display:flex;align-items:center;gap:6px}
+.heatmap-scale .scale-bar{display:flex;height:16px;border-radius:3px;overflow:hidden}
+.heatmap-scale .scale-segment{width:18px;height:16px}
+
+/* ===== SHARED TOOLTIP ===== */
+.mod-tooltip{position:fixed;background:rgba(20,20,40,.92);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);padding:8px 14px;font-size:14px;border-radius:6px;pointer-events:none;display:none;z-index:200;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.mod-tooltip .tt-src{color:#bb77ff;font-weight:bold}
+.mod-tooltip .tt-dest{color:#ffaa44;font-weight:bold}
+.mod-tooltip .tt-amount{color:#00ff88;font-weight:bold}
+.mod-tooltip .tt-neg{color:#ff6666;font-weight:bold}
+.mod-tooltip .tt-qtz{color:#aaa;font-style:italic}
+</style>
+</head>
+<body>
+
+<div class="tab-bar">
+    <div class="tab active" data-tab="node-graph">&#9670; NODE GRAPH</div>
+    <div class="tab" data-tab="heatmap">&#9670; MODULATION MATRIX</div>
+</div>
+
+<div id="node-graph" class="tab-content active">
+    <h2 id="graphTitle"></h2>
+    <div class="subtitle">Signal flow + modulation routing &mdash; hover lines for details</div>
+    <div class="graph-legend">
+        <div class="legend-item"><div class="legend-line pos"></div> Positive mod</div>
+        <div class="legend-item"><div class="legend-line neg"></div> Negative mod</div>
+        <div class="legend-item"><div class="legend-line qtz"></div> Quantized</div>
+        <div class="legend-item"><div class="legend-dot"></div> Modulated param</div>
+        <div class="legend-item"><span style="color:#555">&#x2500;&#x25B6;</span> Signal flow</div>
+    </div>
+    <div class="graph-container" id="graphContainer">
+        <svg class="graph-svg" id="graphSvg">
+            <defs>
+                <marker id="arrSig" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="#555"/></marker>
+                <marker id="arrPos" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0,0 7,2.5 0,5" fill="#00cc66"/></marker>
+                <marker id="arrNeg" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto"><polygon points="0,0 7,2.5 0,5" fill="#cc4444"/></marker>
+            </defs>
+        </svg>
+    </div>
+</div>
+
+<div id="heatmap" class="tab-content">
+    <h2 id="heatmapTitle"></h2>
+    <div class="subtitle">Modulation matrix heatmap &mdash; hover cells for details</div>
+    <div class="matrix-scroll" id="matrixContainer"></div>
+    <div class="heatmap-legend">
+        <div class="heatmap-scale">
+            <span>-63</span><div class="scale-bar" id="negScale"></div>
+            <span>0</span><div class="scale-bar" id="posScale"></div>
+            <span>+63</span>
+        </div>
+        <div>Q = Quantized</div>
+    </div>
+</div>
+
+<div class="mod-tooltip" id="modTooltip"></div>
+
+<script>/*__DAGRE_JS__*/</script>
+<script>
+// Injected by PatchVisualizationHtmlGenerator
+const patchData = /*__PATCH_DATA_BEGIN__*/{patchName:"INIT",programNumber:0,modules:[],modulations:[]}/*__PATCH_DATA_END__*/;
+
+// ===== Module type styles =====
+const typeStyles = {
+    vco: {hue:210,sat:55,title:'#5ab8ff'},
+    vcf: {hue:30, sat:55,title:'#ffaa44'},
+    vca: {hue:90, sat:55,title:'#88dd44'},
+    lfo: {hue:270,sat:50,title:'#bb77ff'},
+    env: {hue:340,sat:50,title:'#ff6699'},
+    misc:{hue:180,sat:40,title:'#66cccc'}
+};
+
+function moduleColors(type, index) {
+    const s = typeStyles[type] || typeStyles.misc;
+    const lOdd = 28, lEven = 22;
+    const l = index % 2 === 1 ? lOdd : lEven;
+    return {
+        bg1:`hsl(${s.hue},${s.sat}%,${l}%)`,
+        bg2:`hsl(${s.hue},${s.sat}%,${l-5}%)`,
+        border:`hsl(${s.hue},${s.sat+10}%,${l+18}%)`,
+        title:s.title
+    };
+}
+
+// ===== Tab switching =====
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        tab.classList.add('active');
+    });
+});
+
+// ===== Signal flow edges (fixed topology of the Xpander) =====
+const signalEdges = [
+    {from:'mod-vco1', to:'mod-vcf'},
+    {from:'mod-vco2', to:'mod-vcf'},
+    {from:'mod-vcf',  to:'mod-vca1'},
+    {from:'mod-vcf',  to:'mod-vca2'},
+    {from:'mod-vca2', to:'mod-out'}
+];
+
+// ===== Modulator column definitions (displayed below audio path) =====
+var modColumns = [
+    {label:'RAMP',  hue:150, ids:['mod-rmp1','mod-rmp2','mod-rmp3','mod-rmp4']},
+    {label:'TRACK', hue:45,  ids:['mod-trk1','mod-trk2','mod-trk3']},
+    {label:'ENV',   hue:340, ids:['mod-env1','mod-env2','mod-env3','mod-env4','mod-env5']},
+    {label:'LFO',   hue:270, ids:['mod-lfo1','mod-lfo2','mod-lfo3','mod-lfo4','mod-lfo5']}
+];
+
+// Controls row: KBD/FM/LAG displayed as horizontal row between audio path and modulators
+var controlsRow = {label:'KBD / FM / LAG', hue:180, ids:['mod-kbd','mod-fmlag']};
+
+// Audio path node ids (always displayed, horizontal row at top)
+var audioPath = ['mod-vco1','mod-vco2','mod-vcf','mod-vca1','mod-vca2','mod-out'];
+var audioPathSet = {};
+audioPath.forEach(function(id) { audioPathSet[id] = true; });
+
+// ===== Build node graph with manual two-tier layout =====
+function buildNodeGraph() {
+    var container = document.getElementById('graphContainer');
+    var svg = document.getElementById('graphSvg');
+    var tooltip = document.getElementById('modTooltip');
+
+    var title = 'PATCH: * S' + String(patchData.programNumber).padStart(2,'0') + ' ' + patchData.patchName + ' *';
+    document.getElementById('graphTitle').textContent = title;
+    document.getElementById('heatmapTitle').textContent = title;
+
+    // Build module map
+    var moduleMap = {};
+    patchData.modules.forEach(function(m) { moduleMap[m.id] = m; });
+
+    // Determine active modulator IDs (involved in at least one modulation)
+    var activeModIds = {};
+    patchData.modulations.forEach(function(m) {
+        activeModIds[m.srcId] = true;
+        activeModIds[m.destId] = true;
+    });
+
+    // Layout constants
+    var nodeW = 150;      // width of all module nodes except OUT
+    var outW = 70;        // width of the OUT node
+    var audioGap = 48;    // horizontal gap between audio path nodes
+    var colGap = 56;      // horizontal gap between modulator columns
+    var nodeVGap = 14;    // vertical gap between nodes within a column
+    var marginX = 40;     // left/right margin around the whole graph
+    var marginY = 40;     // top/bottom margin around the whole graph
+    var tierGap = 100;    // vertical gap between the audio tier and the modulator tier
+    var groupPad = 20;    // padding inside each group box (also reserves space for the group label above)
+
+    // Compute node height from param count
+    function nodeH(id) {
+        if (id === 'mod-out') return 40;
+        var mod = moduleMap[id];
+        return mod ? 30 + mod.params.length * 16 : 40;
+    }
+
+    // ========== TIER 1: AUDIO PATH (stacked VCOs, centered VCF, stacked VCAs) ==========
+    var audioVGap = 14;
+    var vco1H = nodeH('mod-vco1');
+    var vco2H = nodeH('mod-vco2');
+    var vcfH = nodeH('mod-vcf');
+    var vca1H = nodeH('mod-vca1');
+    var vca2H = nodeH('mod-vca2');
+    var outNodeH = nodeH('mod-out');
+
+    var vcoColH = vco1H + audioVGap + vco2H;
+    var vcaColH = vca1H + audioVGap + vca2H;
+    var audioColMaxH = Math.max(vcoColH, vcfH, vcaColH, outNodeH);
+
+    var pos = {}; // id -> {x, y, w, h}
+    var audioY = marginY + groupPad + 20;
+    var audioX = marginX + groupPad;
+
+    // Column 1: VCO1 (top) + VCO2 (bottom)
+    var vcoTopY = audioY + (audioColMaxH - vcoColH) / 2;
+    pos['mod-vco1'] = { x: audioX, y: vcoTopY, w: nodeW, h: vco1H };
+    pos['mod-vco2'] = { x: audioX, y: vcoTopY + vco1H + audioVGap, w: nodeW, h: vco2H };
+
+    // Column 2: VCF (centered)
+    var col2X = audioX + nodeW + audioGap;
+    pos['mod-vcf'] = { x: col2X, y: audioY + (audioColMaxH - vcfH) / 2, w: nodeW, h: vcfH };
+
+    // Column 3: VCA1 (top) + VCA2 (bottom)
+    var col3X = col2X + nodeW + audioGap;
+    var vcaTopY = audioY + (audioColMaxH - vcaColH) / 2;
+    pos['mod-vca1'] = { x: col3X, y: vcaTopY, w: nodeW, h: vca1H };
+    pos['mod-vca2'] = { x: col3X, y: vcaTopY + vca1H + audioVGap, w: nodeW, h: vca2H };
+
+    // Column 4: OUT (centered)
+    var col4X = col3X + nodeW + audioGap;
+    pos['mod-out'] = { x: col4X, y: audioY + (audioColMaxH - outNodeH) / 2, w: outW, h: outNodeH };
+
+    var audioBoxW = col4X + outW + groupPad - marginX;
+    var audioBoxH = audioColMaxH + groupPad * 2 + 20;
+
+    // ========== TIER 1.5: CONTROLS ROW (KBD / FM / LAG - horizontal between audio and modulators) ==========
+    var controlsGap = 40;
+    var controlsStartY = marginY + audioBoxH + controlsGap;
+    var controlsActive = [];
+    controlsRow.ids.forEach(function(id) { if (activeModIds[id]) controlsActive.push(id); });
+
+    var controlsBoxH = 0;
+    var controlsBoxW = 0;
+    if (controlsActive.length > 0) {
+        var cx = marginX + groupPad;
+        var ctlY = controlsStartY + groupPad + 20;
+        var ctlMaxH = 0;
+        controlsActive.forEach(function(id) {
+            var h = nodeH(id);
+            pos[id] = { x: cx, y: ctlY, w: nodeW, h: h };
+            cx += nodeW + audioGap;
+            if (h > ctlMaxH) ctlMaxH = h;
+        });
+        controlsBoxW = cx - audioGap - marginX - groupPad + groupPad;
+        controlsBoxH = ctlMaxH + groupPad * 2 + 20;
+    }
+
+    // ========== TIER 2: MODULATOR COLUMNS (below controls or audio) ==========
+    var modStartY = controlsBoxH > 0
+        ? controlsStartY + controlsBoxH + tierGap
+        : marginY + audioBoxH + tierGap;
+    var mx = marginX;
+
+    // Only show columns that have at least one active node
+    var visibleColumns = [];
+    modColumns.forEach(function(col) {
+        var active = [];
+        col.ids.forEach(function(id) { if (activeModIds[id]) active.push(id); });
+        if (active.length > 0) visibleColumns.push({label: col.label, hue: col.hue, ids: active});
+    });
+
+    var colBoxes = []; // {x, y, w, h, label, hue}
+    visibleColumns.forEach(function(col) {
+        var colX = mx + groupPad;
+        var cy = modStartY + groupPad + 20; // 20 for label
+        var colH = 0;
+        col.ids.forEach(function(id) {
+            var h = nodeH(id);
+            pos[id] = { x: colX, y: cy, w: nodeW, h: h };
+            cy += h + nodeVGap;
+            colH = cy - nodeVGap - (modStartY + groupPad + 20);
+        });
+        var boxW = nodeW*4 + groupPad * 2;
+        var boxH = colH + groupPad * 2 + 20;
+        colBoxes.push({ x: mx, y: modStartY, w: boxW, h: boxH, label: col.label, hue: col.hue });
+        mx += boxW + colGap;
+    });
+
+    // ========== COMPUTE TOTAL SIZE ==========
+    var totalW = marginX;
+    var totalH = marginY;
+    for (var id in pos) {
+        var p = pos[id];
+        var r = p.x + p.w + marginX;
+        var b = p.y + p.h + marginY;
+        if (r > totalW) totalW = r;
+        if (b > totalH) totalH = b;
+    }
+    totalW = Math.max(totalW, audioBoxW + marginX * 2);
+    if (controlsBoxW > 0) totalW = Math.max(totalW, controlsBoxW + marginX * 2);
+
+    container.style.minWidth = totalW + 'px';
+    container.style.minHeight = totalH + 'px';
+    svg.setAttribute('width', totalW);
+    svg.setAttribute('height', totalH);
+    svg.style.width = totalW + 'px';
+    svg.style.height = totalH + 'px';
+
+    // ========== DRAW GROUP BOXES ==========
+    // Audio path box
+    drawGroupBox(container, marginX, marginY, audioBoxW, audioBoxH, 'AUDIO PATH', 60);
+
+    // Controls row box (KBD / FM / LAG)
+    if (controlsBoxH > 0) {
+        drawGroupBox(container, marginX, controlsStartY, controlsBoxW, controlsBoxH, controlsRow.label, controlsRow.hue);
+    }
+
+    // Modulator column boxes
+    colBoxes.forEach(function(cb) {
+        drawGroupBox(container, cb.x, cb.y, cb.w, cb.h, cb.label, cb.hue);
+    });
+
+    // ========== DRAW NODES ==========
+    for (var nid in pos) {
+        var np = pos[nid];
+        var mod = moduleMap[nid];
+        var div = document.createElement('div');
+        div.className = 'module-node';
+        div.id = nid;
+        div.style.left = np.x + 'px';
+        div.style.top = np.y + 'px';
+        div.style.width = np.w + 'px';
+
+        if (nid === 'mod-out') {
+            div.classList.add('node-out');
+            div.innerHTML = '<div class="node-title">OUT</div>';
+        } else if (mod) {
+            var c = moduleColors(mod.type, mod.index);
+            div.style.background = 'linear-gradient(135deg,' + c.bg1 + ',' + c.bg2 + ')';
+            div.style.border = '1px solid ' + c.border;
+            var html = '<div class="node-title" style="color:' + c.title + '">' + mod.name + '</div>';
+            for (var pi = 0; pi < mod.params.length; pi++) {
+                var param = mod.params[pi];
+                var mc = param.mod ? ' modulated' : '';
+                html += '<div class="node-param' + mc + '"><span class="pn">' + param.name + '</span><span class="pv">' + param.display + '</span></div>';
+            }
+            div.innerHTML = html;
+        }
+        container.appendChild(div);
+    }
+
+    // ========== BUILD MOD LOOKUP BY DESTINATION (for param tooltips) ==========
+    var modsByDest = {}; // destName -> [{src, amount, qtz}, ...]
+    patchData.modulations.forEach(function(m) {
+        if (!modsByDest[m.dest]) modsByDest[m.dest] = [];
+        modsByDest[m.dest].push({src: m.src, amount: m.amount, qtz: m.qtz});
+    });
+
+    // Build reverse map: module id + param display name -> dest enum names
+    // e.g. mod-vco1 + "FREQ" -> "VCO1_FRQ"
+    var paramToDestNames = {};
+    patchData.modulations.forEach(function(m) {
+        paramToDestNames[m.destId + '|' + m.dest] = true;
+    });
+
+    // Attach tooltip to modulated param rows
+    container.querySelectorAll('.node-param.modulated').forEach(function(row) {
+        var node = row.closest('.module-node');
+        if (!node) return;
+        var nodeId = node.id;
+        var paramName = row.querySelector('.pn').textContent.trim();
+
+        // Find matching dest names for this module+param
+        var matchingMods = [];
+        patchData.modulations.forEach(function(m) {
+            if (m.destId !== nodeId) return;
+            // Match: dest enum contains param abbreviation
+            // e.g. param "FREQ"->"FRQ", "VOL"->"VOL", "SPD"->"SPD", etc.
+            matchingMods.push(m);
+        });
+
+        // Filter to only mods that target this specific param
+        // Use heuristic: param display name maps to dest suffix
+        var paramMap = {'FREQ':'FRQ','RES':'RES','VOL':'VOL','PW':'PW',
+            'SPD':'SPD','AMP':'AMP','DLY':'DLY','ATK':'ATK','DCY':'DCY',
+            'SUS':'SUS','REL':'REL','FM AMP':'FM_AMP','LAG RATE':'LAG_RATE',
+            'RATE':'RATE'};
+        var destSuffix = paramMap[paramName] || paramName;
+        var filtered = matchingMods.filter(function(m) {
+            return m.dest.indexOf(destSuffix) >= 0;
+        });
+        if (filtered.length === 0) filtered = matchingMods;
+
+        row.addEventListener('mouseenter', function() {
+            if (filtered.length === 0) return;
+            var html = '<div style="margin-bottom:4px;color:#ffaa00;font-weight:bold">' + paramName + ' modulated by:</div>';
+            filtered.forEach(function(m) {
+                var sign = m.amount >= 0 ? '+' : '';
+                var cls = m.amount >= 0 ? 'tt-amount' : 'tt-neg';
+                html += '<div><span class="tt-src">' + m.src + '</span> ';
+                html += '<span class="' + cls + '">' + sign + m.amount + '</span>';
+                if (m.qtz) html += ' <span class="tt-qtz">QTZ</span>';
+                html += '</div>';
+            });
+            tooltip.innerHTML = html;
+            tooltip.style.display = 'block';
+        });
+        row.addEventListener('mousemove', function(ev) {
+            tooltip.style.left = (ev.clientX + 14) + 'px';
+            tooltip.style.top = (ev.clientY - 12) + 'px';
+        });
+        row.addEventListener('mouseleave', function() {
+            tooltip.style.display = 'none';
+        });
+    });
+
+    // ========== DRAW SIGNAL FLOW EDGES (horizontal arrows) ==========
+    signalEdges.forEach(function(e) {
+        var from = pos[e.from];
+        var to = pos[e.to];
+        if (!from || !to) return;
+        var x1 = from.x + from.w;
+        var y1 = from.y + from.h / 2;
+        var x2 = to.x;
+        var y2 = to.y + to.h / 2;
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M' + x1 + ',' + y1 + ' L' + x2 + ',' + y2);
+        path.setAttribute('class', 'signal-line');
+        path.setAttribute('marker-end', 'url(#arrSig)');
+        svg.appendChild(path);
+    });
+
+    // ========== DRAW MODULATION EDGES (bezier curves) ==========
+    patchData.modulations.forEach(function(m) {
+        var from = pos[m.srcId];
+        var to = pos[m.destId];
+        if (!from || !to) return;
+
+        // Position-based port selection: vertical ports when nodes are
+        // primarily above/below each other, horizontal ports when side by side
+        var fromCY = from.y + from.h / 2;
+        var toCY = to.y + to.h / 2;
+        var fromCX = from.x + from.w / 2;
+        var toCX = to.x + to.w / 2;
+        var sx, sy, dx, dy;
+
+        if (Math.abs(fromCY - toCY) > Math.abs(fromCX - toCX)) {
+            // Primarily vertical
+            if (fromCY > toCY) {
+                sx = fromCX; sy = from.y;
+                dx = toCX;   dy = to.y + to.h;
+            } else {
+                sx = fromCX; sy = from.y + from.h;
+                dx = toCX;   dy = to.y;
+            }
+        } else {
+            // Primarily horizontal
+            if (from.x < to.x) {
+                sx = from.x + from.w; sy = fromCY;
+                dx = to.x;            dy = toCY;
+            } else {
+                sx = from.x;           sy = fromCY;
+                dx = to.x + to.w;     dy = toCY;
+            }
+        }
+
+        drawModEdge(svg, tooltip, sx, sy, dx, dy, m);
+    });
+
+    // ========== DRAG PANNING ==========
+    var isDragging = false;
+    var panStartX, panStartY, scrollSX, scrollSY;
+    container.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.module-node')) return;
+        isDragging = true;
+        container.classList.add('grabbing');
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        scrollSX = container.scrollLeft;
+        scrollSY = container.scrollTop;
+        e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        container.scrollLeft = scrollSX - (e.clientX - panStartX);
+        container.scrollTop = scrollSY - (e.clientY - panStartY);
+    });
+    document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        container.classList.remove('grabbing');
+    });
+}
+
+function drawGroupBox(container, x, y, w, h, label, hue) {
+    var box = document.createElement('div');
+    box.className = 'group-box';
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+    box.style.width = w + 'px';
+    box.style.height = h + 'px';
+    box.style.borderColor = 'hsla(' + hue + ',40%,50%,.25)';
+    box.style.background = 'hsla(' + hue + ',30%,12%,.3)';
+    box.innerHTML = '<span class="group-label" style="color:hsl(' + hue + ',50%,60%)">' + label + '</span>';
+    container.appendChild(box);
+}
+
+function drawModEdge(svg, tooltip, x1, y1, x2, y2, m) {
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+    // Cubic bezier: control points pull toward the midpoint
+    var midY = (y1 + y2) / 2;
+    var midX = (x1 + x2) / 2;
+    var vertical = Math.abs(y2 - y1) > Math.abs(x2 - x1);
+    var d;
+    if (vertical) {
+        d = 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + midY + ' ' + x2 + ',' + midY + ' ' + x2 + ',' + y2;
+    } else {
+        d = 'M' + x1 + ',' + y1 + ' C' + midX + ',' + y1 + ' ' + midX + ',' + y2 + ' ' + x2 + ',' + y2;
+    }
+    path.setAttribute('d', d);
+
+    var thick = Math.max(1.5, Math.abs(m.amount) / 63 * 5);
+    path.setAttribute('stroke-width', thick);
+    var baseOpacity = 0.4 + (Math.abs(m.amount) / 63) * 0.5;
+    path.setAttribute('opacity', baseOpacity);
+
+    var cls = 'mod-line ' + (m.amount >= 0 ? 'positive' : 'negative');
+    if (m.qtz) cls += ' quantized';
+    path.setAttribute('class', cls);
+    path.setAttribute('marker-end', m.amount >= 0 ? 'url(#arrPos)' : 'url(#arrNeg)');
+    path.style.pointerEvents = 'stroke';
+
+    (function(path, m, baseOpacity) {
+        path.addEventListener('mouseenter', function() {
+            path.setAttribute('opacity', '1');
+            var sign = m.amount >= 0 ? '+' : '';
+            tooltip.innerHTML =
+                '<span class="tt-src">' + m.src + '</span> &rarr; <span class="tt-dest">' + m.dest + '</span> ' +
+                '<span class="' + (m.amount >= 0 ? 'tt-amount' : 'tt-neg') + '">' + sign + m.amount + '</span>' +
+                (m.qtz ? ' <span class="tt-qtz">QTZ</span>' : '');
+            tooltip.style.display = 'block';
+        });
+        path.addEventListener('mousemove', function(ev) {
+            tooltip.style.left = (ev.clientX + 14) + 'px';
+            tooltip.style.top = (ev.clientY - 12) + 'px';
+        });
+        path.addEventListener('mouseleave', function() {
+            path.setAttribute('opacity', baseOpacity);
+            tooltip.style.display = 'none';
+        });
+    })(path, m, baseOpacity);
+
+    svg.appendChild(path);
+}
+
+// ===== Heatmap functions (unchanged) =====
+function destHeaderBg(destName) {
+    const vcoMatch = destName.match(/^VCO(\d)/);
+    if (vcoMatch) { const idx = parseInt(vcoMatch[1]); return `hsl(210, 40%, ${idx % 2 === 1 ? 22 : 16}%)`; }
+    if (destName.startsWith('VCF')) return 'hsl(30, 40%, 22%)';
+    const vcaMatch = destName.match(/VCA(\d)/);
+    if (vcaMatch) { const idx = parseInt(vcaMatch[1]); return `hsl(30, 40%, ${idx % 2 === 1 ? 22 : 16}%)`; }
+    const lfoMatch = destName.match(/^LFO(\d)/);
+    if (lfoMatch) { const idx = parseInt(lfoMatch[1]); return `hsl(270, 40%, ${idx % 2 === 1 ? 22 : 16}%)`; }
+    const envMatch = destName.match(/^ENV(\d)/);
+    if (envMatch) { const idx = parseInt(envMatch[1]); return `hsl(340, 40%, ${idx % 2 === 1 ? 22 : 16}%)`; }
+    if (destName === 'FM_AMP') return 'hsl(180, 35%, 22%)';
+    if (destName === 'LAG_RATE') return 'hsl(180, 35%, 16%)';
+    return '#0f0f1a';
+}
+
+function srcRowColors(srcName) {
+    const lfoMatch = srcName.match(/^LFO(\d)/);
+    if (lfoMatch) { const idx = parseInt(lfoMatch[1]); const l = idx % 2 === 1 ? 20 : 14; return {header:`hsl(270,35%,${l}%)`,row:`hsl(270,20%,${l-6}%)`}; }
+    const envMatch = srcName.match(/^ENV(\d)/);
+    if (envMatch) { const idx = parseInt(envMatch[1]); const l = idx % 2 === 1 ? 20 : 14; return {header:`hsl(340,35%,${l}%)`,row:`hsl(340,20%,${l-6}%)`}; }
+    const trkMatch = srcName.match(/^TRK(\d)/);
+    if (trkMatch) { const idx = parseInt(trkMatch[1]); const l = idx % 2 === 1 ? 18 : 13; return {header:`hsl(45,30%,${l}%)`,row:`hsl(45,15%,${l-5}%)`}; }
+    const rmpMatch = srcName.match(/^RMP(\d)/);
+    if (rmpMatch) { const idx = parseInt(rmpMatch[1]); const l = idx % 2 === 1 ? 18 : 13; return {header:`hsl(150,30%,${l}%)`,row:`hsl(150,15%,${l-5}%)`}; }
+    const pedMatch = srcName.match(/^PED(\d)/);
+    if (pedMatch) { const idx = parseInt(pedMatch[1]); const l = idx % 2 === 1 ? 18 : 13; return {header:`hsl(200,30%,${l}%)`,row:`hsl(200,15%,${l-5}%)`}; }
+    const kbdList = ['KBD','LAG','VEL','RVEL','PRES'];
+    const kbdIdx = kbdList.indexOf(srcName);
+    if (kbdIdx >= 0) { const l = kbdIdx % 2 === 0 ? 18 : 13; return {header:`hsl(210,25%,${l}%)`,row:`hsl(210,12%,${l-5}%)`}; }
+    const miscList = ['VIB','LEV1','LEV2'];
+    const miscIdx = miscList.indexOf(srcName);
+    if (miscIdx >= 0) { const l = miscIdx % 2 === 0 ? 18 : 13; return {header:`hsl(180,25%,${l}%)`,row:`hsl(180,12%,${l-5}%)`}; }
+    return {header:'',row:''};
+}
+
+function groupHeaderColors(cls) {
+    switch(cls) {
+        case 'group-vco1': return {color:'#5ab8ff',borderColor:'#2a6aaa',bg:'#1a2a3c'};
+        case 'group-vco2': return {color:'#4a9add',borderColor:'#2a6aaa',bg:'#162636'};
+        case 'group-vcf':  return {color:'#ffaa44',borderColor:'#aa6a2a',bg:'#2a2018'};
+        case 'group-lfo':  return {color:'#bb77ff',borderColor:'#8a4aaa',bg:'#1a1228'};
+        case 'group-env':  return {color:'#ff6699',borderColor:'#aa4a6a',bg:'#281218'};
+        case 'group-misc': return {color:'#66cccc',borderColor:'#4a8a8a',bg:'#121f1f'};
+        default: return {color:'#888',borderColor:'#444',bg:'#111'};
+    }
+}
+
+function buildHeatmap() {
+    const container = document.getElementById('matrixContainer');
+    const tooltip = document.getElementById('modTooltip');
+
+    const destGroups = [
+        {name:"VCO 1",cls:"group-vco1",dests:["VCO1_FRQ","VCO1_PW","VCO1_VOL"]},
+        {name:"VCO 2",cls:"group-vco2",dests:["VCO2_FRQ","VCO2_PW","VCO2_VOL"]},
+        {name:"VCF / VCA",cls:"group-vcf",dests:["VCF_FRQ","VCF_RES","VCA1_VOL","VCA2_VOL"]},
+        {name:"LFO 1-5",cls:"group-lfo",dests:["LFO1_SPD","LFO1_AMP","LFO2_SPD","LFO2_AMP","LFO3_SPD","LFO3_AMP","LFO4_SPD","LFO4_AMP","LFO5_SPD","LFO5_AMP"]},
+        {name:"ENV 1-5",cls:"group-env",dests:["ENV1_DLY","ENV1_ATK","ENV1_DCY","ENV1_REL","ENV1_AMP","ENV2_DLY","ENV2_ATK","ENV2_DCY","ENV2_REL","ENV2_AMP","ENV3_DLY","ENV3_ATK","ENV3_DCY","ENV3_REL","ENV3_AMP","ENV4_DLY","ENV4_ATK","ENV4_DCY","ENV4_REL","ENV4_AMP","ENV5_DLY","ENV5_ATK","ENV5_DCY","ENV5_REL","ENV5_AMP"]},
+        {name:"FM / LAG",cls:"group-misc",dests:["FM_AMP","LAG_RATE"]}
+    ];
+    const srcGroups = [
+        {name:"KBD/CTL",srcs:["KBD","LAG","VEL","RVEL","PRES"]},
+        {name:"TRACK",srcs:["TRK1","TRK2","TRK3"]},
+        {name:"RAMP",srcs:["RMP1","RMP2","RMP3","RMP4"]},
+        {name:"ENV",srcs:["ENV1","ENV2","ENV3","ENV4","ENV5"]},
+        {name:"PEDAL",srcs:["PED1","PED2"]},
+        {name:"LFO",srcs:["LFO1","LFO2","LFO3","LFO4","LFO5"]},
+        {name:"MISC",srcs:["VIB","LEV1","LEV2"]}
+    ];
+
+    const allDests = destGroups.flatMap(g => g.dests);
+    const lookup = {};
+    patchData.modulations.forEach(m => { lookup[m.src + '|' + m.dest] = m; });
+
+    let html = '<table class="matrix-table"><thead><tr><th class="src-header"></th>';
+    destGroups.forEach(g => {
+        const c = groupHeaderColors(g.cls);
+        html += `<th colspan="${g.dests.length}" class="group-header" style="color:${c.color};border-bottom-color:${c.borderColor};background:${c.bg}">${g.name}</th>`;
+    });
+    html += '</tr><tr><th class="src-header"></th>';
+    allDests.forEach(d => { html += `<th class="dest-header" style="background:${destHeaderBg(d)}">${d}</th>`; });
+    html += '</tr></thead><tbody>';
+
+    srcGroups.forEach(sg => {
+        sg.srcs.forEach((src, si) => {
+            const rowCls = si === 0 ? ' class="src-group-start"' : '';
+            const srcColors = srcRowColors(src);
+            const srcStyle = srcColors.header ? ` style="background:${srcColors.header}"` : '';
+            html += `<tr${rowCls}><th class="src-header"${srcStyle}>${src}</th>`;
+            allDests.forEach(dest => {
+                const entry = lookup[src + '|' + dest];
+                if (entry) {
+                    const intensity = Math.abs(entry.amount) / 63;
+                    let r, g, b;
+                    if (entry.amount >= 0) { r = Math.round(10+intensity*10); g = Math.round(40+intensity*180); b = Math.round(20+intensity*80); }
+                    else { r = Math.round(40+intensity*180); g = Math.round(10+intensity*10); b = Math.round(20+intensity*20); }
+                    const bg = `rgb(${r},${g},${b})`;
+                    const sign = entry.amount >= 0 ? '+' : '';
+                    const qtz = entry.qtz ? '<span class="qtz-marker">Q</span>' : '';
+                    html += `<td class="cell-active" style="background:${bg};color:#fff" data-src="${src}" data-dest="${dest}" data-amount="${entry.amount}" data-qtz="${entry.qtz}">${sign}${entry.amount}${qtz}</td>`;
+                } else {
+                    const emptyBg = srcColors.row ? ` style="background:${srcColors.row}"` : '';
+                    html += `<td class="cell-empty"${emptyBg}></td>`;
+                }
+            });
+            html += '</tr>';
+        });
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    // Glassy tooltip on active cells
+    container.querySelectorAll('.cell-active').forEach(cell => {
+        cell.addEventListener('mouseenter', () => {
+            const src = cell.dataset.src, dest = cell.dataset.dest;
+            const amount = parseInt(cell.dataset.amount), qtz = cell.dataset.qtz === '1';
+            const sign = amount >= 0 ? '+' : '';
+            tooltip.innerHTML =
+                `<span class="tt-src">${src}</span> &rarr; <span class="tt-dest">${dest}</span> ` +
+                `<span class="${amount >= 0 ? 'tt-amount' : 'tt-neg'}">${sign}${amount}</span>` +
+                (qtz ? ` <span class="tt-qtz">QTZ</span>` : '');
+            tooltip.style.display = 'block';
+        });
+        cell.addEventListener('mousemove', ev => {
+            tooltip.style.left = (ev.clientX + 14) + 'px';
+            tooltip.style.top = (ev.clientY - 12) + 'px';
+        });
+        cell.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    });
+
+    // Legend scale bars
+    const negScale = document.getElementById('negScale'), posScale = document.getElementById('posScale');
+    for (let i = 8; i >= 1; i--) { const s = document.createElement('div'); s.className = 'scale-segment'; const t = i/8; s.style.background = `rgb(${Math.round(40+t*180)},${Math.round(10+t*10)},${Math.round(20+t*20)})`; negScale.appendChild(s); }
+    for (let i = 1; i <= 8; i++) { const s = document.createElement('div'); s.className = 'scale-segment'; const t = i/8; s.style.background = `rgb(${Math.round(10+t*10)},${Math.round(40+t*180)},${Math.round(20+t*80)})`; posScale.appendChild(s); }
+}
+
+window.addEventListener('load', function() {
+    try { buildNodeGraph(); } catch(e) { console.error('Node graph error:', e); }
+    try { buildHeatmap(); } catch(e) { console.error('Heatmap error:', e); }
+});
+</script>
+</body>
+</html>
