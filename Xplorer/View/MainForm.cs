@@ -50,7 +50,11 @@ namespace Xplorer.View
         /// Helper for display management
         /// </summary>
 
-        private VfdDisplayHelper _vfdDisplayHelper;
+        internal VfdDisplayHelper VfdDisplayHelper;
+
+        private SettingsManager _settingsManager;
+        private FileOperationsManager _fileOperationsManager;
+        private ModulationMatrixManager _modulationMatrixManager;
 
 
         /// <summary>
@@ -84,88 +88,7 @@ namespace Xplorer.View
         /// <returns></returns>
         private void LoadSettings()
         {
-            bool wasRunning = false;
-            XpanderController xController = XController;
-
-            try
-            {
-                if (xController.IsRunning)
-                {
-                    xController.Stop();
-                    wasRunning = true;
-                }
-
-                bool deviceNameError = false;
-                // if device names are not the same or undefined, this will throw an exception
-                // only warn the user about it, but continue to use other settings values
-                try
-                {
-                    xController.SetAutomationInputDevice(AllUsersSettingsService.AllUsersSettings.MidiConfig.AutomationInputDeviceName);
-                }
-                catch
-                {
-                    deviceNameError = true;
-                }
-                try
-                {
-                    xController.SetSynthInputDevice(AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthInputDeviceName);
-                }
-                catch
-                {
-                    deviceNameError = true;
-                }
-                try
-                {
-                    xController.SetSynthOutputDevice(AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthOutputDeviceName);
-                }
-                catch
-                {
-                    deviceNameError = true;
-                }
-                xController.ParameterTransmitDelay = AllUsersSettingsService.AllUsersSettings.MidiConfig.SysexTransmitDelay;
-                xController.SetMIDIChannel(AllUsersSettingsService.AllUsersSettings.MidiConfig.MidiChannel - 1); //0 based
-                xController.SetEditingProgramNumber(AllUsersSettingsService.AllUsersSettings.MidiConfig.EditingProgramNumber);
-
-                xController.ControlChangeAutomationTable.Clear();
-
-                foreach (String entry in AllUsersSettingsService.AllUsersSettings.MidiConfig.AutomationTable)
-                {
-                    // entries are semicolon separated
-                    int delimiter = entry.LastIndexOf(';');
-                    string parameterName = entry.Substring(0, delimiter);
-                    string controlChangeNumber = entry.Substring(delimiter + 1, entry.Length - delimiter - 1);
-                    int intControlChangeNumber;
-                    if (int.TryParse(controlChangeNumber, out intControlChangeNumber))
-                    {
-                        if (intControlChangeNumber < 1) intControlChangeNumber = 1;
-                        if (intControlChangeNumber > 128) intControlChangeNumber = 128;
-                        xController.ControlChangeAutomationTable.Add(new StringIntDualEntry(parameterName, intControlChangeNumber));
-                    }
-                }
-
-                if (deviceNameError)
-                {
-                    Logger.WriteLine(this, TraceLevel.Warning, "LoadSettings() device name error");
-                }
-
-                // apply user interface settings
-                ApplyUserInterfaceSettingsOnControls(
-                    System.Drawing.Color.FromArgb(AllUsersSettingsService.AllUsersSettings.UiConfig.KnobLedBorderColor),
-                    AllUsersSettingsService.AllUsersSettings.UiConfig.KnobMovementIsLinear,
-                    AllUsersSettingsService.AllUsersSettings.UiConfig.KnobStyleIsStandard);
-            }
-            catch (Exception ex)
-            {
-                // whatever the exception is, consider it as non fatal
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-            }
-            finally
-            {
-                if (wasRunning)
-                {
-                    xController.Start();
-                }
-            }
+            _settingsManager.LoadSettings();
         }
 
         /// <summary>
@@ -382,7 +305,7 @@ namespace Xplorer.View
             if (control != null && valuedControl != null)
             {
                 base.HandleControlValueChanged(GetParameterNameForValuedControlTag((string)control.Tag), valuedControl.Value);
-                this._vfdDisplayHelper.UpdateState(valuedControl);
+                this.VfdDisplayHelper.UpdateState(valuedControl);
             }
         }
 
@@ -454,7 +377,7 @@ namespace Xplorer.View
             sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_VOLUME.Tag);
             this.ENV_X_VOLUME.Value = Controller.GetParameter(sParameterName).Value;
 
-            this._vfdDisplayHelper.UpdateState(this.ENV_X_VOLUME);
+            this.VfdDisplayHelper.UpdateState(this.ENV_X_VOLUME);
         }
 
         /// <summary>
@@ -489,7 +412,7 @@ namespace Xplorer.View
             sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_WAVESHAPE.Tag);
             this.LFO_X_WAVESHAPE.Value = Controller.GetParameter(sParameterName).Value;
 
-            this._vfdDisplayHelper.UpdateState(this.LFO_X_AMP);
+            this.VfdDisplayHelper.UpdateState(this.LFO_X_AMP);
         }
 
         /// <summary>
@@ -524,7 +447,7 @@ namespace Xplorer.View
             sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_SINGLE_MULTI.Tag);
             this.RAMP_X_TRIG_SINGLE_MULTI.Value = Controller.GetParameter(sParameterName).Value;
 
-            this._vfdDisplayHelper.UpdateState(this.RAMP_X_RATE);
+            this.VfdDisplayHelper.UpdateState(this.RAMP_X_RATE);
         }
 
         /// <summary>
@@ -555,7 +478,7 @@ namespace Xplorer.View
             sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_PT5.Tag);
             this.TRACK_X_PT5.Value = Controller.GetParameter(sParameterName).Value;
 
-            this._vfdDisplayHelper.UpdateState(this.TRACK_X_IN);
+            this.VfdDisplayHelper.UpdateState(this.TRACK_X_IN);
         }
 
         /// <summary>
@@ -565,38 +488,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void ComboBoxValuedModDest_SelectionChangeCommitted(object sender, EventArgs e)
         {
-            //MOD_SRC_X, MOD_AMNT_SRC_X, MOD_DEST_X, MOD_QUANTIZE_X
-            int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
-            if (entryNumber != 0)
-            {
-                ComboBoxValuedControl comboSource = (ComboBoxValuedControl)this.Controls[String.Format("MOD_SRC_{0}", entryNumber)];
-                KnobControl knobAmount = (KnobControl)this.Controls[String.Format("MOD_AMNT_SRC_{0}", entryNumber)];
-                ComboBoxValuedControl comboDest = (ComboBoxValuedControl)sender;
-                CheckBoxValuedControl checkboxQuantize = (CheckBoxValuedControl)this.Controls[String.Format("MOD_QUANTIZE_{0}", entryNumber)];
-
-                // if previous value is same as current don't do anything
-                int oldDestinationValueMember = comboDest.Value;
-                int.TryParse(comboDest.ValueMember, out oldDestinationValueMember);
-                if (oldDestinationValueMember != comboDest.Value)
-                {
-                    XController.ChangeModulationDestination(comboSource.Value, knobAmount.Value, checkboxQuantize.Value, oldDestinationValueMember, comboDest.Value, entryNumber);
-                    this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the mod entry number by control tag.
-        /// </summary>
-        /// <param name="controlTag">The control tag.</param>
-        /// <returns></returns>
-        private int GetModEntryNumberByControlTag(string controlTag)
-        {
-            int separator = controlTag.LastIndexOf("_");
-            string numberString = controlTag.Substring(separator + 1, controlTag.Length - (separator + 1));
-            int number = 0;
-            int.TryParse(numberString, out number);
-            return number;
+            _modulationMatrixManager.OnModDestChanged(sender, e);
         }
 
         /// <summary>
@@ -606,17 +498,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void ComboBoxValuedModSource_SelectionChangeCommitted(object sender, EventArgs e)
         {
-            //MOD_SRC_X, MOD_AMNT_SRC_X, MOD_DEST_X, MOD_QUANTIZE_X
-            int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
-            if (entryNumber != 0)
-            {
-                ComboBoxValuedControl comboSource = (ComboBoxValuedControl)sender;
-                KnobControl knobAmount = (KnobControl)this.Controls[String.Format("MOD_AMNT_SRC_{0}", entryNumber)];
-                ComboBoxValuedControl comboDest = (ComboBoxValuedControl)this.Controls[String.Format("MOD_DEST_{0}", entryNumber)];
-                CheckBoxValuedControl checkboxQuantize = (CheckBoxValuedControl)this.Controls[String.Format("MOD_QUANTIZE_{0}", entryNumber)];
-                XController.ChangeModulationSource(comboSource.Value, knobAmount.Value, checkboxQuantize.Value, comboDest.Value, entryNumber);
-                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
-            }
+            _modulationMatrixManager.OnModSourceChanged(sender, e);
         }
 
         /// <summary>
@@ -625,18 +507,7 @@ namespace Xplorer.View
         /// <param name="sender"></param>
         private void KnobModSourceAmount_ValueChanged(object sender)
         {
-            KnobControl knob = sender as KnobControl;
-            if (knob == null) return;
-
-            //MOD_SRC_X, MOD_AMNT_SRC_X, MOD_DEST_X, MOD_QUANTIZE_X
-            int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
-            if (entryNumber != 0)
-            {
-                ComboBoxValuedControl comboSource = (ComboBoxValuedControl)this.Controls[String.Format("MOD_SRC_{0}", entryNumber)];
-                ComboBoxValuedControl comboDest = (ComboBoxValuedControl)this.Controls[String.Format("MOD_DEST_{0}", entryNumber)];
-                XController.ChangeModulationSourceAmount(comboSource.Value, knob.Value, comboDest.Value, entryNumber);
-                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
-            }
+            _modulationMatrixManager.OnModAmountChanged(sender);
         }
 
         /// <summary>
@@ -646,18 +517,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void CheckboxModSourceQuantize_CheckedChanged(object sender, EventArgs e)
         {
-            CheckBoxValuedControl check = sender as CheckBoxValuedControl;
-            if (check == null) return;
-
-            //MOD_SRC_X, MOD_AMNT_SRC_X, MOD_DEST_X, MOD_QUANTIZE_X
-            int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
-            if (entryNumber != 0)
-            {
-                ComboBoxValuedControl comboSource = (ComboBoxValuedControl)this.Controls[String.Format("MOD_SRC_{0}", entryNumber)];
-                ComboBoxValuedControl comboDest = (ComboBoxValuedControl)this.Controls[String.Format("MOD_DEST_{0}", entryNumber)];
-                XController.ChangeModulationSourceQuantize(comboSource.Value, comboDest.Value, check.Value, entryNumber);
-                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
-            }
+            _modulationMatrixManager.OnModQuantizeChanged(sender, e);
         }
 
         /// <summary>
@@ -667,36 +527,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void ComboBoxValuedModDest_DropDown(object sender, EventArgs e)
         {
-            ComboBoxValuedControl comboDest = (ComboBoxValuedControl)sender;
-            // memorize the actual value, use ValueMember as _buffer
-            comboDest.ValueMember = comboDest.Value.ToString();
-
-            int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
-
-            // give destination choices depending on matrix usage
-            IEnumerable<XpanderConstants.EnumModulationDestinations> destinations = XController.GetAvailableModulationDestinationsForEntry(entryNumber);
-
-            comboDest.BeginUpdate();
-            object oldSelectedItem = comboDest.SelectedItem;
-            comboDest.Items.Clear();
-            Type type = XpanderConstants.ModulationDestinationType;
-            foreach (XpanderConstants.EnumModulationDestinations destination in destinations)
-            {
-                string description = UIService.GetStringForEnumValue(type, (int)destination, Properties.Resources.ResourceManager);
-                ComboBoxValuedControlItem item = new ComboBoxValuedControlItem(destination, description == null ? Enum.GetName(type, destination) : description);
-                comboDest.Items.Add(item);
-            }
-            // reselect if possible
-            if (oldSelectedItem != null && comboDest.Items.Contains(oldSelectedItem))
-            {
-                comboDest.SelectedItem = oldSelectedItem;
-            }
-            else
-            {
-                comboDest.SelectedIndex = 0;
-            }
-
-            comboDest.EndUpdate();
+            _modulationMatrixManager.OnModDestDropDown(sender, e);
         }
 
         /// <summary>
@@ -706,44 +537,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void ComboBoxValuedModSource_DropDown(object sender, EventArgs e)
         {
-            ComboBoxValuedControl comboSource = (ComboBoxValuedControl)sender;
-            int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
-
-            // depending of the number of sources used for the entry, allow another source choice or none.
-            bool availability = XController.SourceAvailabilityForEntry(entryNumber);
-
-            comboSource.BeginUpdate();
-
-            if (availability)
-            {
-                object oldSelectedItem = comboSource.SelectedItem;
-                comboSource.SetEnumType(comboSource.GetEnumType(), Properties.Resources.ResourceManager);
-                // reselect if possible
-                if (oldSelectedItem != null && comboSource.Items.Contains(oldSelectedItem))
-                {
-                    comboSource.SelectedItem = oldSelectedItem;
-                }
-                else
-                {
-                    comboSource.SelectedIndex = 0;
-                }
-            }
-            else
-            {
-                // only "NONE" available
-                comboSource.Items.Clear();
-                Type type = XpanderConstants.ModulationSourcesModMatrixType;
-                int value = (int)XpanderConstants.EnumModulationSourcesModMatrix.NONE;
-
-                string description = UIService.GetStringForEnumValue(type, value, Properties.Resources.ResourceManager);
-                ComboBoxValuedControlItem item = new ComboBoxValuedControlItem(value, description == null ? Enum.GetName(type, value) : description);
-
-                comboSource.Items.Add(item);
-                comboSource.SelectedIndex = 0;
-                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), true);
-            }
-
-            comboSource.EndUpdate();
+            _modulationMatrixManager.OnModSourceDropDown(sender, e);
         }
 
         /// <summary>
@@ -757,7 +551,7 @@ namespace Xplorer.View
             this._timer.Stop();
 
             // update VFD
-            _vfdDisplayHelper.UpdateDisplay();
+            VfdDisplayHelper.UpdateDisplay();
 
             // update MIDI Led panel
             for (int i = 0; i < _ledPanelControl.LedCount; i++)
@@ -836,22 +630,13 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchLoad_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openSysexFileDialog = new OpenFileDialog())
-            {
-                openSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
-                openSysexFileDialog.RestoreDirectory = true;
-
-                if (openSysexFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    LoadSysexFileByType(openSysexFileDialog.FileName);
-                }
-            }
+            _fileOperationsManager.OpenSysexFile();
         }
 
         /// <summary>
         /// Sets the tone filename and synchronize form's title
         /// </summary>
-        private void SetToneFilename(string toneFilename)
+        internal void SetToneFilename(string toneFilename)
         {
             this.ToneFileName = toneFilename;
             this.Text = DefaultTitle() + " - " + this.ToneFileName;
@@ -864,29 +649,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchSave_Click(object sender, EventArgs e)
         {
-            char[] InvalidFileNameChars = System.IO.Path.GetInvalidFileNameChars();
-            string sFileName = this.ToneFileName;
-            if ((sFileName != null) &&
-                (sFileName.Length > 0) &&
-                (Path.GetFileName(sFileName).IndexOfAny(InvalidFileNameChars) == -1) &&
-                (sFileName != DefaultToneFilename))
-            {
-                try
-                {
-                    XController.SaveTone(sFileName);
-                }
-                catch (Exception ex)
-                {
-                    // whatever the exception is, consider it as non fatal
-                    Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                    MessageBox.Show("Unable to save patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-            else
-            {
-                // save as
-                this.saveAsToolStripMenuItem_Click(sender, e);
-            }
+            _fileOperationsManager.SaveTone(this.ToneFileName);
         }
 
         /// <summary>
@@ -914,78 +677,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void btSettings_Click(object sender, EventArgs e)
         {
-            bool settingsModified = false;
-            XController.Stop();
-
-            try
-            {
-                Settings.SettingsForm settingsDialog = new Settings.SettingsForm();
-
-                // Midi page
-                settingsDialog.MidiPage.SynthOutputDeviceName = AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthOutputDeviceName;
-                settingsDialog.MidiPage.AutomationInputDeviceName = AllUsersSettingsService.AllUsersSettings.MidiConfig.AutomationInputDeviceName;
-                settingsDialog.MidiPage.SynthInputDeviceName = AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthInputDeviceName;
-                settingsDialog.MidiPage.SysExTransmitDelay = AllUsersSettingsService.AllUsersSettings.MidiConfig.SysexTransmitDelay;
-                settingsDialog.MidiPage.MIDIChannel = AllUsersSettingsService.AllUsersSettings.MidiConfig.MidiChannel;
-                settingsDialog.MidiPage.EditingProgramNumber = AllUsersSettingsService.AllUsersSettings.MidiConfig.EditingProgramNumber;
-                settingsDialog.MidiPage.SynthTypeIsMatrix12 = AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthTypeIsMatrix12;
-                settingsDialog.MidiPage.SmartAllNotesOff = AllUsersSettingsService.AllUsersSettings.MidiConfig.SmartAllNotesOff;
-
-                foreach (StringIntDualEntry entry in Controller.ControlChangeAutomationTable)
-                {
-                    settingsDialog.MidiPage.AutomationTable.Add(entry.StringValue, entry.IntValue);
-                }
-
-                // User interface page
-                settingsDialog.UserInterfacePage.KnobLedBorderColor = System.Drawing.Color.FromArgb(AllUsersSettingsService.AllUsersSettings.UiConfig.KnobLedBorderColor);
-                settingsDialog.UserInterfacePage.IsLinearMovement = AllUsersSettingsService.AllUsersSettings.UiConfig.KnobMovementIsLinear;
-                settingsDialog.UserInterfacePage.IsKnobStandardStyle = AllUsersSettingsService.AllUsersSettings.UiConfig.KnobStyleIsStandard;
-
-                // Randomizer page
-                settingsDialog.RandomizerPage.Configuration = AllUsersSettingsService.AllUsersSettings.RandomizerConfig;
-
-                if (settingsDialog.ShowDialog() == DialogResult.OK)
-                {
-                    // update Midi properties
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthOutputDeviceName = settingsDialog.MidiPage.SynthOutputDeviceName;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.AutomationInputDeviceName = settingsDialog.MidiPage.AutomationInputDeviceName;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthInputDeviceName = settingsDialog.MidiPage.SynthInputDeviceName;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.SysexTransmitDelay = settingsDialog.MidiPage.SysExTransmitDelay;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.MidiChannel = settingsDialog.MidiPage.MIDIChannel;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.EditingProgramNumber = settingsDialog.MidiPage.EditingProgramNumber;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.SynthTypeIsMatrix12 = settingsDialog.MidiPage.SynthTypeIsMatrix12;
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.SmartAllNotesOff = settingsDialog.MidiPage.SmartAllNotesOff;
-
-                    AllUsersSettingsService.AllUsersSettings.MidiConfig.AutomationTable.Clear();
-                    foreach (DictionaryEntry entry in settingsDialog.MidiPage.AutomationTable)
-                    {
-                        // controller's control change table will be refilled thru LoadSettings()
-                        AllUsersSettingsService.AllUsersSettings.MidiConfig.AutomationTable.Add(String.Format("{0};{1}", (string)entry.Key, (int)entry.Value));
-                    }
-
-                    // update user interface properties
-                    AllUsersSettingsService.AllUsersSettings.UiConfig.KnobLedBorderColor = settingsDialog.UserInterfacePage.KnobLedBorderColor.ToArgb();
-                    AllUsersSettingsService.AllUsersSettings.UiConfig.KnobMovementIsLinear = settingsDialog.UserInterfacePage.IsLinearMovement;
-                    AllUsersSettingsService.AllUsersSettings.UiConfig.KnobStyleIsStandard = settingsDialog.UserInterfacePage.IsKnobStandardStyle;
-
-                    // Randomizer configuration
-
-                    AllUsersSettingsService.AllUsersSettings.RandomizerConfig = settingsDialog.RandomizerPage.Configuration;
-
-                    AllUsersSettingsService.SaveSettings(AllUsersSettingsService.AllUsersSettings);
-                    settingsModified = true;
-                }
-            }
-            finally
-            {
-                XController.Start();
-            }
-
-            if (settingsModified)
-            {
-                // simulate a settings reload
-                LoadSettings();
-            }
+            _settingsManager.ShowSettingsDialog();
         }
 
         #region FILES
@@ -993,7 +685,7 @@ namespace Xplorer.View
         /// <summary>
         /// Gets the default tone filename.
         /// </summary>
-        private static string DefaultToneFilename
+        internal static string DefaultToneFilename
         {
             get
             {
@@ -1008,16 +700,7 @@ namespace Xplorer.View
         /// <param name="fileName">Path to the sysex file containing a single tone.</param>
         private void LoadToneFromFile(string fileName)
         {
-            try
-            {
-                XController.LoadTone(fileName);
-                SetToneFilename(fileName);
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                MessageBox.Show("Unable to load patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            _fileOperationsManager.LoadToneFromFile(fileName);
         }
 
         /// <summary>
@@ -1026,33 +709,7 @@ namespace Xplorer.View
         /// <param name="fileName">Path to the sysex file containing an all data dump.</param>
         private void RestoreAllDataDumpFromFile(string fileName)
         {
-            ProgressForm form = null;
-            try
-            {
-#warning we shoud avoid user interaction while running dump
-                form = ProgressForm.CreateInstance(this);
-                form.Show(this);
-                form.Text = "All data dump restore";
-                Action<int, int> progressAction = (current, max) =>
-                {
-                    form.MinValue = 0;
-                    form.MaxValue = max;
-                    form.Value = current;
-                    form.Label = string.Format(CultureInfo.InvariantCulture, "Sending data [{0}/{1}]", current.ToString("00", CultureInfo.InvariantCulture), max);
-                    Application.DoEvents();
-                };
-
-                XController.RestoreAllDataDumpToSynth(fileName, progressAction);
-                ProgressForm.DestroyInstance();
-            }
-            catch (NonFatalException nfe)
-            {
-                if (form is not null)
-                {
-                    ProgressForm.DestroyInstance();
-                }
-                MessageBox.Show(nfe.Message, "All data dump restore", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            _fileOperationsManager.RestoreAllDataDumpFromFile(fileName);
         }
 
         /// <summary>
@@ -1062,29 +719,7 @@ namespace Xplorer.View
         /// <param name="fileName">Path to the sysex file.</param>
         private void LoadSysexFileByType(string fileName)
         {
-            SysexFileType fileType = XController.DetermineSysexFileType(fileName);
-
-            switch (fileType)
-            {
-                case SysexFileType.SingleTone:
-                    LoadToneFromFile(fileName);
-                    break;
-
-                case SysexFileType.AllDataDump:
-                    // always ask confirmation before sending an all data dump to the synth as it will overwrite all patches
-                    const string AllDataDumpWarningMessage = "The selected file is a bank file that may overwrite ALL patches in the synth's memory. Proceed?";
-
-                    if (MessageBox.Show(AllDataDumpWarningMessage,
-                        "Confirm All Data Dump Restore", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
-                    {
-                        RestoreAllDataDumpFromFile(fileName);
-                    }
-                    break;
-
-                default:
-                    MessageBox.Show("Unable to determine sysex file type.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    break;
-            }
+            _fileOperationsManager.LoadSysexFileByType(fileName);
         }
 
         #endregion FILES
@@ -1098,24 +733,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // load the default sysex file
-            try
-            {
-                string filename = DefaultToneFilename;
-
-                if (!string.IsNullOrEmpty(filename) && File.Exists(filename))
-                {
-                    // read the tone sysex and fill the map with the parameters values
-                    XController.LoadTone(filename);
-                    SetToneFilename(filename);
-                }
-            }
-            catch (Exception ex)
-            {
-                // whatever the exception is, consider it as non fatal
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                MessageBox.Show("Unable to create a new patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            _fileOperationsManager.NewPatch();
         }
 
         /// <summary>
@@ -1145,26 +763,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (SaveFileDialog saveSysexFileDialog = new SaveFileDialog())
-            {
-                saveSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
-                saveSysexFileDialog.RestoreDirectory = true;
-
-                if (saveSysexFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        XController.SaveTone(saveSysexFileDialog.FileName);
-                        SetToneFilename(saveSysexFileDialog.FileName);
-                    }
-                    catch (Exception ex)
-                    {
-                        //whatever the exception is, consider it as non fatal
-                        Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                        MessageBox.Show("Unable to save patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    }
-                }
-            }
+            _fileOperationsManager.SaveToneAs();
         }
 
         /// <summary>
@@ -1266,7 +865,7 @@ namespace Xplorer.View
                 if (form.ShowDialog() == DialogResult.OK)
                 {
                     XController.ToneName = form.PatchName;
-                    this._vfdDisplayHelper.UpdateState();
+                    this.VfdDisplayHelper.UpdateState();
                 }
             }
         }
@@ -1401,33 +1000,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void extractSinglePatchesFromBankToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (ExtractSingleToneForm form = new ExtractSingleToneForm())
-            {
-                if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                {
-                    try
-                    {
-                        IEnumerable<object> tones = XController.ExtractSinglePatchesFromAllDataDumpFileToDirectory(form.BankFilename, form.DestinationFolder);
-                        int count = tones.Count();
-                        if (count == 0)
-                        {
-                            MessageBox.Show("Unable to extrat single patches from file !", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        }
-                        else
-                        {
-                            MessageBox.Show(
-                            this,
-                            string.Format(CultureInfo.InvariantCulture, "{0} files extracted successfully to folder {1}",
-                            count,
-                            form.DestinationFolder));
-                        }
-                    }
-                    catch (NonFatalException nfe)
-                    {
-                        MessageBox.Show(nfe.Message, "Single patches extraction", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
+            _fileOperationsManager.ExtractPatches();
         }
 
         /// <summary>
@@ -1437,23 +1010,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void AllDataDumpBackupToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (SaveFileDialog saveSysexFileDialog = new SaveFileDialog())
-            {
-                saveSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
-                saveSysexFileDialog.RestoreDirectory = true;
-
-                if (saveSysexFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        XController.BackupAllDataDumpToFile(saveSysexFileDialog.FileName);
-                    }
-                    catch (NonFatalException nfe)
-                    {
-                        MessageBox.Show(nfe.Message, "All data dump backup", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
+            _fileOperationsManager.BackupAllData();
         }
 
         /// <summary>
@@ -1463,16 +1020,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void AllDataDumpRestoreToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (OpenFileDialog openSysexFileDialog = new OpenFileDialog())
-            {
-                openSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
-                openSysexFileDialog.RestoreDirectory = true;
-
-                if (openSysexFileDialog.ShowDialog() == DialogResult.OK)
-                {
-                    RestoreAllDataDumpFromFile(openSysexFileDialog.FileName);
-                }
-            }
+            _fileOperationsManager.RestoreAllData();
         }
 
         /// <summary>
@@ -1482,22 +1030,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void getSinglePatchesFromSynthToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (FolderBrowserDialog fbd = new FolderBrowserDialog())
-            {
-                fbd.ShowNewFolderButton = true;
-                fbd.Description = "Select a destination folder for single patch sysex files";
-                if (fbd.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        XController.GetSingleTonesFromSynth(fbd.SelectedPath);
-                    }
-                    catch (NonFatalException nfe)
-                    {
-                        MessageBox.Show(this, nfe.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
+            _fileOperationsManager.GetSinglePatchesFromSynth();
         }
 
         /// <summary>

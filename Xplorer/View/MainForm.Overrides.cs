@@ -76,7 +76,7 @@ namespace Xplorer.View
         /// <summary>
         /// Typed accessor for the controller, avoids repeated casts from AbstractController
         /// </summary>
-        private XpanderController XController => (XpanderController)Controller;
+        internal XpanderController XController => (XpanderController)Controller;
 
         /// <summary>
         /// Applies the action on form's controls.
@@ -138,7 +138,7 @@ namespace Xplorer.View
         /// <param name="ledBorderColor">Color of the led border.</param>
         /// <param name="isMovementLinear">if set to <c>true</c> [is movement linear].</param>
         /// <param name="isKnobStyleStandard">if set to <c>true</c> [is knob style standard].</param>
-        private void ApplyUserInterfaceSettingsOnControls(Color ledBorderColor, bool isMovementLinear, bool isKnobStyleStandard)
+        internal void ApplyUserInterfaceSettingsOnControls(Color ledBorderColor, bool isMovementLinear, bool isKnobStyleStandard)
         {
             _pagesRadioButtonsMap.Values.ToList().ForEach(
                 button =>
@@ -313,7 +313,7 @@ namespace Xplorer.View
                 //on set value, knob & combos don't fire an event. so the display will not be updated. do it manually
                 if ((current as KnobControl) != null || current as ComboBoxValuedControl != null)
                 {
-                    this._vfdDisplayHelper.UpdateState(current);
+                    this.VfdDisplayHelper.UpdateState(current);
                 }
                 Logger.WriteLine(this, TraceLevel.Verbose,
                                     String.Format("OnAutomationParameterChangeUpdateControl:  parameter:{0}, value:{1}", eventArg.ParameterName, eventArg.Value));
@@ -329,7 +329,7 @@ namespace Xplorer.View
         /// returns Main form default title
         /// </summary>
         /// <returns></returns>
-        private string DefaultTitle()
+        internal string DefaultTitle()
         {
             string defaultTitle;
             // show debug mode if defined
@@ -354,6 +354,10 @@ namespace Xplorer.View
 
             SplashScreen.NextStep("Loading settings");
 
+            // initialize managers
+            _settingsManager = new SettingsManager(this);
+            _fileOperationsManager = new FileOperationsManager(this);
+
             // controls registration before loading the settings
             RecursivelyRegisterControls();
             LoadSettings();
@@ -362,7 +366,10 @@ namespace Xplorer.View
             InitializeModSourceHighlight();
 
             // instanciate display helper
-            _vfdDisplayHelper = new VfdDisplayHelper(_vfdDisplay, Controller, GetParameterNameForValuedControlTag);
+            VfdDisplayHelper = new VfdDisplayHelper(_vfdDisplay, Controller, GetParameterNameForValuedControlTag);
+
+            // initialize modulation matrix manager (needs VfdDisplayHelper)
+            _modulationMatrixManager = new ModulationMatrixManager(this);
 
             //associate enums to combos
             RegisterComboBoxValuedControls();
@@ -475,7 +482,7 @@ namespace Xplorer.View
         protected override void OnActivated(EventArgs e)
         {
             base.OnActivated(e);
-            _vfdDisplayHelper?.ForceUpdate();
+            VfdDisplayHelper?.ForceUpdate();
         }
 
         private SizeF _currentFormScaleFactor = new SizeF(1F, 1F);
@@ -648,7 +655,7 @@ namespace Xplorer.View
                 i++;
             }
             comboboxes.ForEach(c => c.EndUpdate());
-            this._vfdDisplayHelper.UpdateState();
+            this.VfdDisplayHelper.UpdateState();
         }
 
         /// <summary>
@@ -712,7 +719,7 @@ namespace Xplorer.View
             }
 
             // update the display
-            this._vfdDisplayHelper.UpdateState(arg.Entry, false);
+            this.VfdDisplayHelper.UpdateState(arg.Entry, false);
         }
 
         /// <summary>
