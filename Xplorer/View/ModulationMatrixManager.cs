@@ -16,13 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+using MidiApp.MidiController.Controller;
 using MidiApp.MidiController.Service;
 using MidiApp.UIControls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Resources;
 using System.Windows.Forms;
 using Xplorer.Common;
+using Xplorer.Controller.Events;
+using Xplorer.Properties;
 
 namespace Xplorer.View
 {
@@ -218,6 +222,69 @@ namespace Xplorer.View
             }
 
             comboSource.EndUpdate();
+        }
+        /// <summary>
+        /// Handler for modulation entry change event from synth
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="arg"></param>
+        internal void OnModulationEntryChange(object sender, ModulationEntryChangeEventArgs arg)
+        {
+            // TODO too much litterals, we should unify it
+            string modulationAmountControlName = "MOD_AMNT_SRC_" + arg.EntryNumber.ToString();
+            string modulationQuantizeControlName = "MOD_QUANTIZE_" + arg.EntryNumber.ToString();
+            string modulationSourceComboboxName = "MOD_SRC_" + arg.EntryNumber.ToString();
+            string modulationDestComboboxName = "MOD_DEST_" + arg.EntryNumber.ToString();
+            AbstractController.ParameterChangeEventArgs paramArg = null;
+
+            switch (arg.ModulationParameter)
+            {
+                // for amount or quantize, simulates an AutomationParameterChange
+                case EnumModulationParameter.MODULATIONAMOUNT:
+                    {
+                        paramArg = new AbstractController.ParameterChangeEventArgs(modulationAmountControlName, arg.Entry.Amount);
+                        _form.OnAutomationParameterChange(this, paramArg);
+                    }
+                    break;
+
+                case EnumModulationParameter.MODULATIONQUANTIZE:
+                    {
+                        paramArg = new AbstractController.ParameterChangeEventArgs(modulationQuantizeControlName, arg.Entry.Quantize);
+                        _form.OnAutomationParameterChange(this, paramArg);
+                    }
+                    break;
+
+                // for modulation source, destionation and all, update all the controls of the modulation entry
+                case EnumModulationParameter.MODULATIONSOURCE:
+                case EnumModulationParameter.MODULATIONDESTINATION:
+                case EnumModulationParameter.ALL:
+
+                    // source and destination are not parameters, update manually
+
+                    ComboBoxValuedControl comboSource = (ComboBoxValuedControl)_form.Controls[modulationSourceComboboxName];
+                    ComboBoxValuedControl comboDest = (ComboBoxValuedControl)_form.Controls[modulationDestComboboxName];
+
+                    // since modulation matrix combo-boxes can have in their content only a subset of the available values
+                    // re-set the enum type in order to handle any value accordingly
+                    ResourceManager resourceManager = Resources.ResourceManager;
+                    comboSource.SetEnumType(XpanderConstants.ModulationSourcesModMatrixType, resourceManager);
+                    comboDest.SetEnumType(XpanderConstants.ModulationDestinationType, resourceManager);
+
+                    ((IValuedControl)comboSource).Value = (int)arg.Entry.Source;
+                    ((IValuedControl)comboDest).Value = (int)arg.Entry.Destination;
+
+                    // amount
+                    paramArg = new AbstractController.ParameterChangeEventArgs(modulationAmountControlName, arg.Entry.Amount);
+                    _form.OnAutomationParameterChange(this, paramArg);
+                    // quantize
+                    paramArg = new AbstractController.ParameterChangeEventArgs(modulationQuantizeControlName, arg.Entry.Quantize);
+                    _form.OnAutomationParameterChange(this, paramArg);
+
+                    break;
+            }
+
+            // update the display
+            _form.VfdDisplayHelper.UpdateState(arg.Entry, false);
         }
     }
 }

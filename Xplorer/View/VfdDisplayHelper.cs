@@ -46,6 +46,9 @@ namespace Xplorer.View
         // delegate to get parameter name from tag value
         private readonly Func<string, string> _parameterNameForTagDelegate;
 
+        // delegate to check if a parameter (identified by its control tag) is an active modulation destination
+        private readonly Func<string, bool> _isParameterModulatedForTagDelegate;
+
         // flag indicating display need to be updated
         private bool _isVfdDisplayUpdateNeeded = false;
 
@@ -68,14 +71,16 @@ namespace Xplorer.View
         /// </summary>
         /// <param name="display">the display</param>
         /// <param name="controler">the controler</param>
-        /// <param name="parameterNameForTagDelegate">elegate to get parameter name from tag value</param>
-        internal VfdDisplayHelper(VacuumFluoDisplayControl display, AbstractController controller, Func<string, string> parameterNameForTagDelegate)
+        /// <param name="parameterNameForTagDelegate">delegate to get parameter name from tag value</param>
+        /// <param name="isParameterModulatedForTagDelegate">delegate to check if a parameter is an active modulation destination</param>
+        internal VfdDisplayHelper(VacuumFluoDisplayControl display, AbstractController controller, Func<string, string> parameterNameForTagDelegate, Func<string, bool> isParameterModulatedForTagDelegate)
         {
-            Debug.Assert(display != null && display.IsHandleCreated && controller != null && parameterNameForTagDelegate != null);
+            Debug.Assert(display != null && display.IsHandleCreated && controller != null && parameterNameForTagDelegate != null && isParameterModulatedForTagDelegate != null);
 
             _display = display;
             _controller = controller;
             _parameterNameForTagDelegate = parameterNameForTagDelegate;
+            _isParameterModulatedForTagDelegate = isParameterModulatedForTagDelegate;
         }
 
         /// <summary>
@@ -176,14 +181,22 @@ namespace Xplorer.View
                     sValue = _lastUpdatedControl.Value.ToString("00", CultureInfo.InvariantCulture);
                 }
                 // get parameter name from resources
-                string parameterName = _parameterNameForTagDelegate((string)((Control)_lastUpdatedControl).Tag);
+                string controlTag = (string)((Control)_lastUpdatedControl).Tag;
+                string parameterName = _parameterNameForTagDelegate(controlTag);
                 string endUserParameterName = resourceManager.GetString(parameterName);
 
+                // append "." to the display name if the parameter is an active modulation destination
+                string displayName = string.IsNullOrEmpty(endUserParameterName) ? parameterName : endUserParameterName;
+                if (_isParameterModulatedForTagDelegate(controlTag))
+                {
+                    displayName += ".";
+                }
+
                 // depending on the length of the text, make it a single line or two.
-                displayLine2 = string.Format(CultureInfo.InvariantCulture, "{0}:{1}", string.IsNullOrEmpty(endUserParameterName) ? parameterName : endUserParameterName, sValue);
+                displayLine2 = string.Format(CultureInfo.InvariantCulture, "{0}:{1}", displayName, sValue);
                 if (displayLine2.Length > _display.MaxCharsPerLine)
                 {
-                    displayLine2 = string.Format(CultureInfo.InvariantCulture, "{0}:", string.IsNullOrEmpty(endUserParameterName) ? parameterName : endUserParameterName);
+                    displayLine2 = string.Format(CultureInfo.InvariantCulture, "{0}:", displayName);
                     displayLine3 = sValue;
                 }
 

@@ -1277,7 +1277,8 @@ namespace Xplorer.View
 
             for (int i = 0; i < _modDestComboBoxes.Length; i++)
             {
-                if (((IValuedControl)_modDestComboBoxes[i]).Value == destValue)
+                if (((IValuedControl)_modDestComboBoxes[i]).Value == destValue
+                    && ((IValuedControl)_modSourceComboBoxes[i]).Value != (int)XpanderConstants.EnumModulationSourcesModMatrix.NONE)
                 {
                     _modDestComboBoxes[i].BackColor = _modComboBoxHighlightBackColor;
                 }
@@ -1293,6 +1294,44 @@ namespace Xplorer.View
             {
                 _modDestComboBoxes[i].BackColor = _modComboBoxDefaultBackColor;
             }
+        }
+
+        /// <summary>
+        /// Returns true if the parameter identified by the control tag is a modulation destination
+        /// with at least one active source in the current patch's modulation matrix.
+        /// </summary>
+        /// <param name="controlTag">The control tag (e.g. "VCO1_FREQ", "ENV_X_DELAY").</param>
+        /// <returns><c>true</c> if the parameter is actively modulated; otherwise <c>false</c>.</returns>
+        internal bool IsParameterModulatedForTag(string controlTag)
+        {
+            int destValue;
+
+            if (_knobTagToModDestMap.TryGetValue(controlTag, out destValue))
+            {
+                // non-paged knob
+            }
+            else if (_knobTagToPagedModDestMap.TryGetValue(controlTag, out var pagedInfo))
+            {
+                // paged knob: resolve based on current page
+                destValue = ResolvePagedModDest(controlTag, pagedInfo.baseValue, pagedInfo.pageStride, pagedInfo.pagePrefix);
+            }
+            else
+            {
+                return false;
+            }
+
+            // check if any modulation matrix entry targets this destination with an active source
+            for (int i = 1; i <= XpanderConstants.MODENTRIES_COUNT; i++)
+            {
+                var entry = XController.GetModulationEntryByNumber(i);
+                if ((int)entry.Destination == destValue
+                    && entry.Source != XpanderConstants.EnumModulationSourcesModMatrix.NONE)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion ModulationMatrixHighlight
