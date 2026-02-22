@@ -74,6 +74,11 @@ namespace Xplorer.View
         }
 
         /// <summary>
+        /// Typed accessor for the controller, avoids repeated casts from AbstractController
+        /// </summary>
+        private XpanderController XController => (XpanderController)Controller;
+
+        /// <summary>
         /// Applies the action on form's controls.
         /// </summary>
         /// <param name="action">The action.</param>
@@ -563,13 +568,13 @@ namespace Xplorer.View
         {
             base.RegisterForControllerEvents();
             //register for global modulation matrix change
-            ((XpanderController)Controller).FullToneChangeEvent += OnFullToneGlobalChange;
-            ((XpanderController)Controller).ModulationEntryChangeEvent += OnModulationEntryChange;
-            ((XpanderController)Controller).PageChangeEvent += OnPageChange;
+            XController.FullToneChangeEvent += OnFullToneGlobalChange;
+            XController.ModulationEntryChangeEvent += OnModulationEntryChange;
+            XController.PageChangeEvent += OnPageChange;
 
-            ((XpanderController)Controller).AllDataDumpRequestProgressionEvent += OnAllDataDumpRequestProgression;
+            XController.AllDataDumpRequestProgressionEvent += OnAllDataDumpRequestProgression;
 
-            ((XpanderController)Controller).MIDIDataSendReceiveEvent += OnMidiDataSendReceive;
+            XController.MIDIDataSendReceiveEvent += OnMidiDataSendReceive;
         }
 
         /// <summary>
@@ -578,11 +583,11 @@ namespace Xplorer.View
         protected override void UnRegisterForControllerEvents()
         {
             base.UnRegisterForControllerEvents();
-            ((XpanderController)Controller).FullToneChangeEvent -= OnFullToneGlobalChange;
-            ((XpanderController)Controller).ModulationEntryChangeEvent -= OnModulationEntryChange;
-            ((XpanderController)Controller).PageChangeEvent -= OnPageChange;
-            ((XpanderController)Controller).AllDataDumpRequestProgressionEvent -= OnAllDataDumpRequestProgression;
-            ((XpanderController)Controller).MIDIDataSendReceiveEvent -= OnMidiDataSendReceive;
+            XController.FullToneChangeEvent -= OnFullToneGlobalChange;
+            XController.ModulationEntryChangeEvent -= OnModulationEntryChange;
+            XController.PageChangeEvent -= OnPageChange;
+            XController.AllDataDumpRequestProgressionEvent -= OnAllDataDumpRequestProgression;
+            XController.MIDIDataSendReceiveEvent -= OnMidiDataSendReceive;
         }
 
         /// <summary>

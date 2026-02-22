@@ -70,7 +70,7 @@ namespace Xplorer.View
         public MainForm(SplashScreenForm splash)
         {
             SplashScreen = splash;
-            SplashScreen.VersionInformation = ((XpanderController)Controller).GetProductNameAndVersionAsString();
+            SplashScreen.VersionInformation = XController.GetProductNameAndVersionAsString();
 
             SuspendLayout();
             SplashScreen.NextStep("Initializing");
@@ -85,7 +85,7 @@ namespace Xplorer.View
         private void LoadSettings()
         {
             bool wasRunning = false;
-            XpanderController xController = (XpanderController)Controller;
+            XpanderController xController = XController;
 
             try
             {
@@ -420,7 +420,7 @@ namespace Xplorer.View
             {
                 // this happens when the user really click on the button and not when the controller updates the view
                 // button's tag is same as page name
-                ((XpanderController)Controller).SendPageUpdate((string)button.Tag);
+                XController.SendPageUpdate((string)button.Tag);
             }
 
             // update all the controls of the selected "page", hardcoding which control is faster than enumerating all to find which
@@ -470,7 +470,7 @@ namespace Xplorer.View
             {
                 // this happens when the user really click on the button and not when the controller updates the view
                 // button's tag is same as page name
-                ((XpanderController)Controller).SendPageUpdate((string)button.Tag);
+                XController.SendPageUpdate((string)button.Tag);
             }
             // update all the controls of the selected "page", hardcoding which control is faster than enumerating all to find which
             // (order of intellisense here)
@@ -505,7 +505,7 @@ namespace Xplorer.View
             {
                 // this happens when the user really click on the button and not when the controller updates the view
                 // button's tag is same as page name
-                ((XpanderController)Controller).SendPageUpdate((string)button.Tag);
+                XController.SendPageUpdate((string)button.Tag);
             }
             // update all the controls of the selected "page", hardcoding which control is faster than enumerating all to find which
             // (order of intellisense here)
@@ -540,7 +540,7 @@ namespace Xplorer.View
             {
                 // this happens when the user really click on the button and not when the controller updates the view
                 // button's tag is same as page name
-                ((XpanderController)Controller).SendPageUpdate((string)button.Tag);
+                XController.SendPageUpdate((string)button.Tag);
             }
             string sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_IN.Tag);
             this.TRACK_X_IN.Value = Controller.GetParameter(sParameterName).Value;
@@ -579,9 +579,8 @@ namespace Xplorer.View
                 int.TryParse(comboDest.ValueMember, out oldDestinationValueMember);
                 if (oldDestinationValueMember != comboDest.Value)
                 {
-                    XpanderController controller = (XpanderController)Controller;
-                    controller.ChangeModulationDestination(comboSource.Value, knobAmount.Value, checkboxQuantize.Value, oldDestinationValueMember, comboDest.Value, entryNumber);
-                    this._vfdDisplayHelper.UpdateState(((XpanderController)Controller).GetModulationEntryByNumber(entryNumber), false);
+                    XController.ChangeModulationDestination(comboSource.Value, knobAmount.Value, checkboxQuantize.Value, oldDestinationValueMember, comboDest.Value, entryNumber);
+                    this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
                 }
             }
         }
@@ -615,9 +614,8 @@ namespace Xplorer.View
                 KnobControl knobAmount = (KnobControl)this.Controls[String.Format("MOD_AMNT_SRC_{0}", entryNumber)];
                 ComboBoxValuedControl comboDest = (ComboBoxValuedControl)this.Controls[String.Format("MOD_DEST_{0}", entryNumber)];
                 CheckBoxValuedControl checkboxQuantize = (CheckBoxValuedControl)this.Controls[String.Format("MOD_QUANTIZE_{0}", entryNumber)];
-                XpanderController controller = (XpanderController)Controller;
-                controller.ChangeModulationSource(comboSource.Value, knobAmount.Value, checkboxQuantize.Value, comboDest.Value, entryNumber);
-                this._vfdDisplayHelper.UpdateState(((XpanderController)Controller).GetModulationEntryByNumber(entryNumber), false);
+                XController.ChangeModulationSource(comboSource.Value, knobAmount.Value, checkboxQuantize.Value, comboDest.Value, entryNumber);
+                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
             }
         }
 
@@ -636,9 +634,8 @@ namespace Xplorer.View
             {
                 ComboBoxValuedControl comboSource = (ComboBoxValuedControl)this.Controls[String.Format("MOD_SRC_{0}", entryNumber)];
                 ComboBoxValuedControl comboDest = (ComboBoxValuedControl)this.Controls[String.Format("MOD_DEST_{0}", entryNumber)];
-                XpanderController controller = (XpanderController)Controller;
-                controller.ChangeModulationSourceAmount(comboSource.Value, knob.Value, comboDest.Value, entryNumber);
-                this._vfdDisplayHelper.UpdateState(((XpanderController)Controller).GetModulationEntryByNumber(entryNumber), false);
+                XController.ChangeModulationSourceAmount(comboSource.Value, knob.Value, comboDest.Value, entryNumber);
+                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
             }
         }
 
@@ -658,9 +655,8 @@ namespace Xplorer.View
             {
                 ComboBoxValuedControl comboSource = (ComboBoxValuedControl)this.Controls[String.Format("MOD_SRC_{0}", entryNumber)];
                 ComboBoxValuedControl comboDest = (ComboBoxValuedControl)this.Controls[String.Format("MOD_DEST_{0}", entryNumber)];
-                XpanderController controller = (XpanderController)Controller;
-                controller.ChangeModulationSourceQuantize(comboSource.Value, comboDest.Value, check.Value, entryNumber);
-                this._vfdDisplayHelper.UpdateState(((XpanderController)Controller).GetModulationEntryByNumber(entryNumber), false);
+                XController.ChangeModulationSourceQuantize(comboSource.Value, comboDest.Value, check.Value, entryNumber);
+                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), false);
             }
         }
 
@@ -678,9 +674,7 @@ namespace Xplorer.View
             int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
 
             // give destination choices depending on matrix usage
-            XpanderController controller = (XpanderController)Controller;
-
-            IEnumerable<XpanderConstants.EnumModulationDestinations> destinations = controller.GetAvailableModulationDestinationsForEntry(entryNumber);
+            IEnumerable<XpanderConstants.EnumModulationDestinations> destinations = XController.GetAvailableModulationDestinationsForEntry(entryNumber);
 
             comboDest.BeginUpdate();
             object oldSelectedItem = comboDest.SelectedItem;
@@ -716,8 +710,7 @@ namespace Xplorer.View
             int entryNumber = GetModEntryNumberByControlTag((string)((Control)sender).Tag);
 
             // depending of the number of sources used for the entry, allow another source choice or none.
-            XpanderController controller = (XpanderController)Controller;
-            bool availability = controller.SourceAvailabilityForEntry(entryNumber);
+            bool availability = XController.SourceAvailabilityForEntry(entryNumber);
 
             comboSource.BeginUpdate();
 
@@ -747,7 +740,7 @@ namespace Xplorer.View
 
                 comboSource.Items.Add(item);
                 comboSource.SelectedIndex = 0;
-                this._vfdDisplayHelper.UpdateState(controller.GetModulationEntryByNumber(entryNumber), true);
+                this._vfdDisplayHelper.UpdateState(XController.GetModulationEntryByNumber(entryNumber), true);
             }
 
             comboSource.EndUpdate();
@@ -793,8 +786,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchPlus_Click(object sender, EventArgs e)
         {
-            XpanderController xController = (XpanderController)Controller;
-            xController.IncreaseCurrentProgramNumber();
+            XController.IncreaseCurrentProgramNumber();
         }
 
         /// <summary>
@@ -804,8 +796,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchMinus_Click(object sender, EventArgs e)
         {
-            XpanderController xController = (XpanderController)Controller;
-            xController.DecreaseCurrentProgramNumber();
+            XController.DecreaseCurrentProgramNumber();
         }
 
         /// <summary>
@@ -815,14 +806,13 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchGoto_Click(object sender, EventArgs e)
         {
-            XpanderController controller = (XpanderController)Controller;
             using (StoreAndGotoPatchForm form = new StoreAndGotoPatchForm())
             {
                 form.Text = "Go to patch";
-                form.ProgramNumber = controller.CurrentProgramNumber;
+                form.ProgramNumber = XController.CurrentProgramNumber;
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    controller.SendProgramChangeAndGetSinglePatchFromSynth(form.ProgramNumber);
+                    XController.SendProgramChangeAndGetSinglePatchFromSynth(form.ProgramNumber);
                 }
             }
         }
@@ -835,7 +825,7 @@ namespace Xplorer.View
         private void btPatchRandom_Click(object sender, EventArgs e)
         {
             // controller will define itself the randomization depending on the configuration
-            ((XpanderController)Controller)
+            XController
                 .RandomizeTone(new MidiApp.MidiController.Controller.Arguments.RandomizeToneArgument(null, null));
         }
 
@@ -883,7 +873,7 @@ namespace Xplorer.View
             {
                 try
                 {
-                    ((XpanderController)Controller).SaveTone(sFileName);
+                    XController.SaveTone(sFileName);
                 }
                 catch (Exception ex)
                 {
@@ -906,14 +896,13 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void btPatchStore_Click(object sender, EventArgs e)
         {
-            XpanderController controller = (XpanderController)Controller;
             using (StoreAndGotoPatchForm form = new StoreAndGotoPatchForm())
             {
                 form.Text = "Store";
-                form.ProgramNumber = controller.CurrentProgramNumber;
+                form.ProgramNumber = XController.CurrentProgramNumber;
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    controller.StoreSinglePatchToSynth(form.ProgramNumber);
+                    XController.StoreSinglePatchToSynth(form.ProgramNumber);
                 }
             }
         }
@@ -926,8 +915,7 @@ namespace Xplorer.View
         private void btSettings_Click(object sender, EventArgs e)
         {
             bool settingsModified = false;
-            XpanderController controller = (XpanderController)Controller;
-            controller.Stop();
+            XController.Stop();
 
             try
             {
@@ -990,7 +978,7 @@ namespace Xplorer.View
             }
             finally
             {
-                controller.Start();
+                XController.Start();
             }
 
             if (settingsModified)
@@ -1022,7 +1010,7 @@ namespace Xplorer.View
         {
             try
             {
-                ((XpanderController)Controller).LoadTone(fileName);
+                XController.LoadTone(fileName);
                 SetToneFilename(fileName);
             }
             catch (Exception ex)
@@ -1054,8 +1042,7 @@ namespace Xplorer.View
                     Application.DoEvents();
                 };
 
-                XpanderController controller = (XpanderController)Controller;
-                controller.RestoreAllDataDumpToSynth(fileName, progressAction);
+                XController.RestoreAllDataDumpToSynth(fileName, progressAction);
                 ProgressForm.DestroyInstance();
             }
             catch (NonFatalException nfe)
@@ -1075,8 +1062,7 @@ namespace Xplorer.View
         /// <param name="fileName">Path to the sysex file.</param>
         private void LoadSysexFileByType(string fileName)
         {
-            XpanderController controller = (XpanderController)Controller;
-            SysexFileType fileType = controller.DetermineSysexFileType(fileName);
+            SysexFileType fileType = XController.DetermineSysexFileType(fileName);
 
             switch (fileType)
             {
@@ -1120,7 +1106,7 @@ namespace Xplorer.View
                 if (!string.IsNullOrEmpty(filename) && File.Exists(filename))
                 {
                     // read the tone sysex and fill the map with the parameters values
-                    ((XpanderController)Controller).LoadTone(filename);
+                    XController.LoadTone(filename);
                     SetToneFilename(filename);
                 }
             }
@@ -1159,22 +1145,24 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SaveFileDialog saveSysexFileDialog = new SaveFileDialog();
-            saveSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
-            saveSysexFileDialog.RestoreDirectory = true;
-
-            if (saveSysexFileDialog.ShowDialog() == DialogResult.OK)
+            using (SaveFileDialog saveSysexFileDialog = new SaveFileDialog())
             {
-                try
+                saveSysexFileDialog.Filter = FileUtils.SYSEX_FILE_FILTER;
+                saveSysexFileDialog.RestoreDirectory = true;
+
+                if (saveSysexFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    ((XpanderController)Controller).SaveTone(saveSysexFileDialog.FileName);
-                    SetToneFilename(saveSysexFileDialog.FileName);
-                }
-                catch (Exception ex)
-                {
-                    //whatever the exception is, consider it as non fatal
-                    Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-                    MessageBox.Show("Unable to save patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    try
+                    {
+                        XController.SaveTone(saveSysexFileDialog.FileName);
+                        SetToneFilename(saveSysexFileDialog.FileName);
+                    }
+                    catch (Exception ex)
+                    {
+                        //whatever the exception is, consider it as non fatal
+                        Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
+                        MessageBox.Show("Unable to save patch: " + ex.Message, "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 }
             }
         }
@@ -1256,14 +1244,13 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void aboutdeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            using (AboutForm form = new AboutForm((XpanderController)Controller))
+            using (AboutForm form = new AboutForm(XController))
             {
                 form.ShowDialog();
             }
 
             // needed to resynch synth's display (argh...)
-            XpanderController controller = (XpanderController)Controller;
-            controller.ForceSendPageSubPage();
+            XController.ForceSendPageSubPage();
         }
 
         /// <summary>
@@ -1273,13 +1260,12 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void renameToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            XpanderController controller = (XpanderController)Controller;
             using (RenamePatchForm form = new RenamePatchForm())
             {
-                form.PatchName = controller.ToneName;
+                form.PatchName = XController.ToneName;
                 if (form.ShowDialog() == DialogResult.OK)
                 {
-                    controller.ToneName = form.PatchName;
+                    XController.ToneName = form.PatchName;
                     this._vfdDisplayHelper.UpdateState();
                 }
             }
@@ -1303,7 +1289,7 @@ namespace Xplorer.View
         private void toneMorphingToolStripMenuItem_Click(object sender, EventArgs e)
         {
 #warning TODO implement as singletion instance, see ProgressForm
-            ToneMorphingForm form = new ToneMorphingForm((XpanderController)Controller);
+            ToneMorphingForm form = new ToneMorphingForm(XController);
 
             form.StartPosition = FormStartPosition.Manual;
             form.Location = new Point(this.Location.X + (this.Width - form.Width) / 2, this.Location.Y + (this.Height - form.Height) / 2);
@@ -1318,8 +1304,7 @@ namespace Xplorer.View
         private void synchronizeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // re-gets the current patch from X
-            XpanderController controller = (XpanderController)Controller;
-            controller.SendProgramChangeAndGetSinglePatchFromSynth(controller.CurrentProgramNumber);
+            XController.SendProgramChangeAndGetSinglePatchFromSynth(XController.CurrentProgramNumber);
         }
 
         /// <summary>
@@ -1329,14 +1314,13 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void tuneRequestToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            XpanderController controller = (XpanderController)Controller;
-            controller.SendTuneRequestToSynth();
+            XController.SendTuneRequestToSynth();
 
             // we have no way to check when the request is finished.
             // so warn the user about it.
-            int programNumber = controller.CurrentProgramNumber;
+            int programNumber = XController.CurrentProgramNumber;
             MessageBox.Show("Please click OK when the tune procedure is finished", "Tune request");
-            controller.SendProgramChangeAndGetSinglePatchFromSynth(programNumber);
+            XController.SendProgramChangeAndGetSinglePatchFromSynth(programNumber);
         }
 
         #region page context menu
@@ -1352,7 +1336,7 @@ namespace Xplorer.View
             if (SourceControl != null)
             {
                 string sDestinationTag = SourceControl.Tag as string;
-                if (((XpanderController)Controller).CanClipboardPasteTo(sDestinationTag))
+                if (XController.CanClipboardPasteTo(sDestinationTag))
                 {
                     this.toolStripPageMenuItemPaste.Enabled = true;
                 }
@@ -1381,7 +1365,7 @@ namespace Xplorer.View
 
             if (SourceControl != null)
             {
-                ((XpanderController)Controller).ClipboardSource = (SourceControl.Tag as string);
+                XController.ClipboardSource = (SourceControl.Tag as string);
             }
         }
 
@@ -1403,9 +1387,8 @@ namespace Xplorer.View
 
             if (SourceControl != null)
             {
-                XpanderController xControl = ((XpanderController)Controller);
-                xControl.PasteClipboardTo(SourceControl.Tag as string);
-                xControl.ClearClipboard();
+                XController.PasteClipboardTo(SourceControl.Tag as string);
+                XController.ClearClipboard();
             }
         }
 
@@ -1422,10 +1405,9 @@ namespace Xplorer.View
             {
                 if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    XpanderController controller = (XpanderController)Controller;
                     try
                     {
-                        IEnumerable<object> tones = controller.ExtractSinglePatchesFromAllDataDumpFileToDirectory(form.BankFilename, form.DestinationFolder);
+                        IEnumerable<object> tones = XController.ExtractSinglePatchesFromAllDataDumpFileToDirectory(form.BankFilename, form.DestinationFolder);
                         int count = tones.Count();
                         if (count == 0)
                         {
@@ -1462,10 +1444,9 @@ namespace Xplorer.View
 
                 if (saveSysexFileDialog.ShowDialog() == DialogResult.OK)
                 {
-                    XpanderController controller = (XpanderController)Controller;
                     try
                     {
-                        controller.BackupAllDataDumpToFile(saveSysexFileDialog.FileName);
+                        XController.BackupAllDataDumpToFile(saveSysexFileDialog.FileName);
                     }
                     catch (NonFatalException nfe)
                     {
@@ -1507,11 +1488,9 @@ namespace Xplorer.View
                 fbd.Description = "Select a destination folder for single patch sysex files";
                 if (fbd.ShowDialog() == DialogResult.OK)
                 {
-                    XpanderController controller = (XpanderController)Controller;
-
                     try
                     {
-                        controller.GetSingleTonesFromSynth(fbd.SelectedPath);
+                        XController.GetSingleTonesFromSynth(fbd.SelectedPath);
                     }
                     catch (NonFatalException nfe)
                     {
