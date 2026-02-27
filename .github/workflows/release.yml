@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 2026.02.27.1)'
+        required: true
+        type: string
+      release_name:
+        description: 'Release title displayed on GitHub'
+        required: true
+        type: string
+        default: 'Xplorer Release'
+      release_notes:
+        description: 'Release notes / changelog (Markdown supported)'
+        required: false
+        type: string
+        default: ''
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore Xplorer.sln
+
+      - name: Update assembly version
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          $assemblyInfoPath = "Xplorer/Properties/AssemblyInfo.cs"
+          (Get-Content $assemblyInfoPath) `
+            -replace 'AssemblyVersion\(".*"\)', "AssemblyVersion(""$version"")" `
+            -replace 'AssemblyFileVersion\(".*"\)', "AssemblyFileVersion(""$version"")" |
+            Set-Content $assemblyInfoPath
+          Write-Host "Assembly version updated to $version"
+
+      - name: Publish single-file executable
+        run: >
+          dotnet publish Xplorer/Xplorer.csproj
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishReadyToRun=true
+          -p:AssemblyVersion=${{ inputs.version }}
+          -p:FileVersion=${{ inputs.version }}
+          --output publish/
+
+      - name: Create release archive
+        shell: pwsh
+        run: |
+          $version = "${{ inputs.version }}"
+          $archiveName = "Xplorer-$version-win-x64.zip"
+          Compress-Archive -Path publish/* -DestinationPath $archiveName
+          Write-Host "Archive created: $archiveName"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: ${{ inputs.release_name }}
+          body: ${{ inputs.release_notes }}
+          prerelease: ${{ inputs.prerelease }}
+          files: Xplorer-${{ inputs.version }}-win-x64.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
