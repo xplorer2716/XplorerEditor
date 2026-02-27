@@ -33,7 +33,7 @@ using System.Windows.Forms;
 using Xplorer.Common;
 using Xplorer.Controller;
 using Xplorer.Controller.Service.Settings;
-using Xplorer.View.PatchVisualization;
+
 
 namespace Xplorer.View
 {
@@ -905,24 +905,6 @@ namespace Xplorer.View
         {
             // re-gets the current patch from X
             XController.SendProgramChangeAndGetSinglePatchFromSynth(XController.CurrentProgramNumber);
-        }
-
-        /// <summary>
-        /// Handles the Click event of the visualizePatchToolStripMenuItem control.
-        /// Generates an HTML visualization of the current patch and opens it in the default browser.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-        private void visualizePatchToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                PatchVisualizationHtmlGenerator.GenerateAndOpen(XController);
-            }
-            catch (Exception ex)
-            {
-                Logger.WriteLine(this, TraceLevel.Warning, BugReportFactory.CreateDetailsFromException(ex));
-            }
         }
 
         /// <summary>
