@@ -16,6 +16,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8B5342B8-4585-4ABA-8F04-6D2ECECB914D}"
 	ProjectSection(SolutionItems) = preProject
 		.mcp.json = .mcp.json
+		.github\instructions\dotnet-architecture-good-practices.instructions.md = .github\instructions\dotnet-architecture-good-practices.instructions.md
+		.github\instructions\expert-dotnet-software-engineer.agent.md = .github\instructions\expert-dotnet-software-engineer.agent.md
 	EndProjectSection
 EndProject
 Global
@@ -71,8 +73,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		BuildVersion_UpdateAssemblyVersion = True
-		BuildVersion_UpdateFileVersion = True
 		SolutionGuid = {BA60D993-6A17-4DD1-904C-E4514AA62ECA}
+		BuildVersion_UpdateFileVersion = True
+		BuildVersion_UpdateAssemblyVersion = True
 	EndGlobalSection
 EndGlobal
