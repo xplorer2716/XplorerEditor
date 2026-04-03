@@ -31,6 +31,29 @@ namespace Xplorer.Common
     }
 
     /// <summary>
+    /// Describes a family of multi-page controls sharing the same tag prefix (e.g. ENV_X, LFO_X).
+    /// Used for data-driven tag-to-parameter-name resolution in the view layer,
+    /// replacing hard-coded StartsWith chains and the associated #warning TODO.
+    /// </summary>
+    internal readonly struct PageFamilyDescriptor
+    {
+        /// <summary>Tag prefix as it appears on the WinForms control tag (e.g. "ENV_X", "TRACK_X").</summary>
+        internal string ControlTagPrefix { get; init; }
+
+        /// <summary>Parameter name prefix used in the tone's ParameterMap (e.g. "ENV_", "TRACK_").</summary>
+        internal string ParameterNamePrefix { get; init; }
+
+        /// <summary>
+        /// Zero-based index of the digit character within a concrete parameter name
+        /// (e.g. in "ENV_1_ATTACK" the digit '1' is at index 4, in "TRACK_1_PT1" at index 6).
+        /// </summary>
+        internal int DigitIndex { get; init; }
+
+        /// <summary>Number of instances of this page family (e.g. 5 for ENV, 4 for RAMP).</summary>
+        internal int Count { get; init; }
+    }
+
+    /// <summary>
     /// Common constants and enums, mainly concerning the tone
     /// </summary>
     internal static class XpanderConstants
@@ -53,6 +76,20 @@ namespace Xplorer.Common
         internal const int TRACK_COUNT = 3;
         internal const int TRACK_POINTS_COUNTS = 5;
         internal const int RAMP_COUNT = 4;
+
+        /// <summary>
+        /// Describes all multi-page control families in declaration order.
+        /// Drives tag-to-parameter-name resolution in the view layer without hard-coded string literals.
+        /// Order matches the visual layout: ENV, LFO, RAMP, TRACK.
+        /// </summary>
+        internal static readonly IReadOnlyList<PageFamilyDescriptor> PageFamilies =
+            new List<PageFamilyDescriptor>
+            {
+                new PageFamilyDescriptor { ControlTagPrefix = "ENV_X",   ParameterNamePrefix = "ENV_",   DigitIndex = 4, Count = ENV_COUNT   },
+                new PageFamilyDescriptor { ControlTagPrefix = "LFO_X",   ParameterNamePrefix = "LFO_",   DigitIndex = 4, Count = LFO_COUNT   },
+                new PageFamilyDescriptor { ControlTagPrefix = "RAMP_X",  ParameterNamePrefix = "RAMP_",  DigitIndex = 5, Count = RAMP_COUNT  },
+                new PageFamilyDescriptor { ControlTagPrefix = "TRACK_X", ParameterNamePrefix = "TRACK_", DigitIndex = 6, Count = TRACK_COUNT },
+            };
 
         // Synthesizer type/display command, see MIDI spec.
         internal const int DISPLAY_CONTROL_COMMAND_XPANDER = 0x05;
