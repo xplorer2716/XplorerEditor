@@ -56,6 +56,7 @@ namespace Xplorer.View
         private SettingsManager _settingsManager;
         private FileOperationsManager _fileOperationsManager;
         private ModulationMatrixManager _modulationMatrixManager;
+        private TriggerRuleManager _triggerRuleManager;
 
 
         /// <summary>
@@ -177,20 +178,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void ENV_X_TRIG_EXTRIG_CheckedChanged(object sender, EventArgs e)
         {
-            if (ENV_X_TRIG_EXTRIG.Checked)
-            {
-                this.ENV_X_TRIG_LFOTRIG.Checked = false;
-                this.ENV_X_TRIG_LFO_SOURCE.Enabled = false;
-                this.ENV_X_TRIG_GATED.Enabled = true;
-            }
-            else
-            {
-                this.ENV_X_TRIG_LFO_SOURCE.Enabled = false;
-                if (!this.ENV_X_TRIG_LFOTRIG.Checked)
-                {
-                    this.ENV_X_TRIG_GATED.Enabled = false;
-                }
-            }
+            _triggerRuleManager.ApplyExTrigRule(ENV_X_TRIG_EXTRIG, ENV_X_TRIG_LFOTRIG, ENV_X_TRIG_LFO_SOURCE, ENV_X_TRIG_GATED);
             CheckBoxValuedControl_CheckedChanged(sender, e);
         }
 
@@ -201,20 +189,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void ENV_X_TRIG_LFOTRIG_CheckedChanged(object sender, EventArgs e)
         {
-            if (ENV_X_TRIG_LFOTRIG.Checked)
-            {
-                this.ENV_X_TRIG_EXTRIG.Checked = false;
-                this.ENV_X_TRIG_LFO_SOURCE.Enabled = true;
-                this.ENV_X_TRIG_GATED.Enabled = true;
-            }
-            else
-            {
-                this.ENV_X_TRIG_LFO_SOURCE.Enabled = false;
-                if (this.ENV_X_TRIG_EXTRIG.Checked)
-                {
-                    this.ENV_X_TRIG_GATED.Enabled = false;
-                }
-            }
+            _triggerRuleManager.ApplyLfoTrigRule(ENV_X_TRIG_EXTRIG, ENV_X_TRIG_LFOTRIG, ENV_X_TRIG_LFO_SOURCE, ENV_X_TRIG_GATED);
             CheckBoxValuedControl_CheckedChanged(sender, e);
         }
 
@@ -253,20 +228,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void RAMP_X_TRIG_EXTRIG_CheckedChanged(object sender, EventArgs e)
         {
-            if (RAMP_X_TRIG_EXTRIG.Checked)
-            {
-                this.RAMP_X_TRIG_LFOTRIG.Checked = false;
-                this.RAMP_X_TRIG_LFO_SOURCE.Enabled = false;
-                this.RAMP_X_TRIG_GATED.Enabled = true;
-            }
-            else
-            {
-                this.RAMP_X_TRIG_LFO_SOURCE.Enabled = false;
-                if (!this.RAMP_X_TRIG_LFOTRIG.Checked)
-                {
-                    this.RAMP_X_TRIG_GATED.Enabled = false;
-                }
-            }
+            _triggerRuleManager.ApplyExTrigRule(RAMP_X_TRIG_EXTRIG, RAMP_X_TRIG_LFOTRIG, RAMP_X_TRIG_LFO_SOURCE, RAMP_X_TRIG_GATED);
             CheckBoxValuedControl_CheckedChanged(sender, e);
         }
 
@@ -277,20 +239,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void RAMP_X_TRIG_LFOTRIG_CheckedChanged(object sender, EventArgs e)
         {
-            if (RAMP_X_TRIG_LFOTRIG.Checked)
-            {
-                this.RAMP_X_TRIG_EXTRIG.Checked = false;
-                this.RAMP_X_TRIG_LFO_SOURCE.Enabled = true;
-                this.RAMP_X_TRIG_GATED.Enabled = true;
-            }
-            else
-            {
-                this.RAMP_X_TRIG_LFO_SOURCE.Enabled = false;
-                if (!this.RAMP_X_TRIG_EXTRIG.Checked)
-                {
-                    this.RAMP_X_TRIG_GATED.Enabled = false;
-                }
-            }
+            _triggerRuleManager.ApplyLfoTrigRule(RAMP_X_TRIG_EXTRIG, RAMP_X_TRIG_LFOTRIG, RAMP_X_TRIG_LFO_SOURCE, RAMP_X_TRIG_GATED);
             CheckBoxValuedControl_CheckedChanged(sender, e);
         }
 

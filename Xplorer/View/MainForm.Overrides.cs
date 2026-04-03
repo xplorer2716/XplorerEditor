@@ -357,6 +357,7 @@ namespace Xplorer.View
             // initialize managers
             _settingsManager = new SettingsManager(this);
             _fileOperationsManager = new FileOperationsManager(this);
+            _triggerRuleManager = new TriggerRuleManager(this);
 
             // controls registration before loading the settings
             RecursivelyRegisterControls();
