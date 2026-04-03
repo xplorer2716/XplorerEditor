@@ -169,9 +169,88 @@ sequenceDiagram
 
 ---
 
-## 4. All Data Dump (Backup / Restore)
+## 4. Page Refresh (Page Change Handler)
 
-### 4a. Backup from Synth
+When the user clicks a page radio button or the controller receives a page-select message from the synth, `PageRefreshManager` coordinates the page switch and control refresh.
+
+```mermaid
+sequenceDiagram
+    participant User as User / Synth
+    participant XCtrl as XpanderController
+    participant Events as Controller.PageChangeEvent
+    participant MainForm as MainForm
+    participant PageMgr as PageRefreshManager
+    participant ControlsMap as RegisteredControlsMap
+
+    User->>XCtrl: Send page-select SysEx
+    alt User clicks radio button
+        User->>MainForm: Click Radio_ENV_2
+    else Synth sends page change
+        XCtrl->>Events: NotifyPageChangeEvent("ENV_2")
+    end
+
+    Events->>MainForm: OnPageChange(sender, "ENV_2")
+    MainForm->>MainForm: radio.Checked = true
+    MainForm->>PageMgr: RefreshPage(radio, eventArgs)
+
+    PageMgr->>PageMgr: GetFamilyPrefixForButton(radio) → "ENV_X"
+    PageMgr->>PageMgr: Lookup page tags ["ENV_X_ATTACK", "ENV_X_DECAY", ...]
+
+    loop For each control tag in page
+        PageMgr->>MainForm: ResolveParameterNameForTag(tag)
+        MainForm->>MainForm: Query PageFamilies for tag.StartsWith + digit
+        MainForm-->>PageMgr: Resolved name "ENV_2_ATTACK"
+
+        PageMgr->>ControlsMap: Get control for tag
+        PageMgr->>PageMgr: vc.Value = controller.GetParameter(resolvedName).Value
+    end
+
+    PageMgr->>MainForm: VfdDisplayHelper.UpdateState(firstControl)
+
+    Note right of PageMgr: All done in one central place<br/>replaces 4 × ~15-line handlers
+```
+
+---
+
+## 5. Trigger Mutual-Exclusion Rules
+
+When the user changes an ENV or RAMP trigger mode (external, LFO, gated), `TriggerRuleManager` enforces the synthesizer's mutual-exclusion rules.
+
+```mermaid
+sequenceDiagram
+    participant User as User
+    participant MainForm as MainForm
+    participant TrigMgr as TriggerRuleManager
+    participant Tone as XpanderTone
+    participant Queue as Parameter Queue
+
+    User->>MainForm: Click ENV_X_TRIG_EXTRIG checkbox
+    MainForm->>MainForm: ENV_X_TRIG_EXTRIG_CheckedChanged()
+    MainForm->>TrigMgr: ApplyExTrigRule(exTrig, lfoTrig, lfoSource, gated)
+
+    alt exTrig checked
+        TrigMgr->>MainForm: Uncheck lfoTrig
+        TrigMgr->>MainForm: Disable lfoSource
+        TrigMgr->>MainForm: Enable gated
+    else exTrig unchecked
+        TrigMgr->>MainForm: Disable lfoSource
+        TrigMgr->>MainForm: Uncheck gated (if lfoTrig also unchecked)
+    end
+
+    MainForm->>MainForm: CheckBoxValuedControl_CheckedChanged()
+    Note right of MainForm: Enqueue parameter change<br/>to synth
+
+    MainForm->>Tone: SetParameterValue(exTrigParameterName, checked)
+    Tone->>Queue: EnQueueParameter()
+
+    Note right of Queue: WorkerThread will<br/>send to synth
+```
+
+---
+
+## 6. All Data Dump (Backup / Restore)
+
+### 6a. Backup from Synth
 
 ```mermaid
 sequenceDiagram
@@ -204,7 +283,7 @@ sequenceDiagram
     State->>State: BinaryWriter → file
 ```
 
-### 4b. Restore to Synth
+### 6b. Restore to Synth
 
 ```mermaid
 sequenceDiagram
@@ -233,7 +312,7 @@ sequenceDiagram
 
 ---
 
-## 5. Modulation Matrix Editing
+## 7. Modulation Matrix Editing
 
 ```mermaid
 sequenceDiagram
@@ -263,7 +342,7 @@ sequenceDiagram
 
 ---
 
-## 6. Page Clipboard (Copy / Paste)
+## 8. Page Clipboard (Copy / Paste)
 
 ```mermaid
 sequenceDiagram
@@ -292,7 +371,7 @@ sequenceDiagram
 
 ---
 
-## 7. Tone Morphing
+## 9. Tone Morphing
 
 ```mermaid
 sequenceDiagram
@@ -330,7 +409,7 @@ sequenceDiagram
 
 ---
 
-## 8. Randomization (Xplorer-specific additions)
+## 10. Randomization (Xplorer-specific additions)
 
 The base randomization is described in the MidiApp docs. Xplorer adds synthesizer-specific logic:
 

@@ -429,6 +429,8 @@ classDiagram
         -SettingsManager _settingsManager
         -FileOperationsManager _fileOperationsManager
         -ModulationMatrixManager _modulationMatrixManager
+        -TriggerRuleManager _triggerRuleManager
+        -PageRefreshManager _pageRefreshManager
         -Dictionary _pagesRadioButtonsMap
         -Dictionary _knobControlsMap
         #Controller : AbstractController
@@ -461,6 +463,21 @@ classDiagram
         +UpdateModulationMatrixUI()
     }
 
+    class TriggerRuleManager {
+        <<sealed>>
+        -MainForm _form
+        +ApplyExTrigRule()
+        +ApplyLfoTrigRule()
+    }
+
+    class PageRefreshManager {
+        <<sealed>>
+        -MainForm _form
+        +RefreshPage(button, e)
+        +ResolveParameterNameForTag(tag, map)$
+        +TryResolveControlAndButtonNameForParameterName(name)$
+    }
+
     class VfdDisplayHelper {
         <<sealed>>
         -AbstractController _controller
@@ -474,6 +491,8 @@ classDiagram
     MainForm *-- SettingsManager
     MainForm *-- FileOperationsManager
     MainForm *-- ModulationMatrixManager
+    MainForm *-- TriggerRuleManager
+    MainForm *-- PageRefreshManager
     MainForm *-- VfdDisplayHelper
     MainForm --> XpanderController : uses
 ```
@@ -552,6 +571,14 @@ classDiagram
 classDiagram
     direction TB
 
+    class PageFamilyDescriptor {
+        <<readonly struct>>
+        +ControlTagPrefix : string
+        +ParameterNamePrefix : string
+        +DigitIndex : int
+        +Count : int
+    }
+
     class XpanderConstants {
         <<static>>
         +SINGLE_TONES_MAX_COUNT = 100$
@@ -559,6 +586,7 @@ classDiagram
         +TONE_NAME_LENGTH = 8$
         +MODENTRIES_COUNT = 20$
         +MAX_MODULATION_SOURCE = 6$
+        +PageFamilies : IReadOnlyList~PageFamilyDescriptor~$
         +EnumPages
         +EnumModulationDestinations
         +EnumModulationSourcesModMatrix
@@ -580,6 +608,8 @@ classDiagram
         AllDataDump
         Unknown
     }
+
+    XpanderConstants o-- PageFamilyDescriptor : contains
 ```
 
 ---
@@ -637,6 +667,8 @@ graph LR
         SM[SettingsManager.cs]
         FOM[FileOperationsManager.cs]
         MMM[ModulationMatrixManager.cs]
+        TRM[TriggerRuleManager.cs]
+        PRM[PageRefreshManager.cs]
         VFD[VfdDisplayHelper.cs]
         SSF[SplashScreenForm.cs]
         AF[AboutForm.cs]
@@ -655,6 +687,7 @@ graph LR
     end
 
     subgraph Common
+        PFD[PageFamilyDescriptor.cs]
         XConst[XpanderConstants.cs]
         XpConst[XplorerConstants.cs]
         SFType[SysexFileType.cs]
@@ -705,6 +738,8 @@ graph TD
 | **Singleton (lazy)** | `MainForm.Controller` property | Lazy-init of `XpanderController` |
 | **State Machine** | `AllDataDumpRequestState` | Tracks multi-step all-data-dump reception |
 | **Page Clipboard** | `XpanderController.Clipboard` | Copy/paste of parameter pages (ENV, LFO, RAMP, TRACK) by name prefix matching |
-| **Manager Delegation** | `SettingsManager`, `FileOperationsManager`, `ModulationMatrixManager` | Main form delegates complex operations to focused manager classes |
+| **Manager Delegation** | `SettingsManager`, `FileOperationsManager`, `ModulationMatrixManager`, `TriggerRuleManager`, `PageRefreshManager` | Main form delegates complex operations to focused manager classes |
+| **Data-Driven Resolution** | `PageRefreshManager` + `PageFamilyDescriptor` | Multi-page control tag ↔ parameter-name resolution driven by `PageFamilies` list instead of hard-coded `StartsWith` chains |
+| **Trigger Mutual-Exclusion Rules** | `TriggerRuleManager` | Encapsulates ENV/RAMP trigger mode rules (external, LFO, gated) — replaces inline logic in event handlers |
 | **Packetized I/O** | `PacketizedBinaryReader`/`Writer` | Oberheim's 7-bit SysEx encoding for binary data |
 | **Filtered Iterator** | `SinglePatchIterator` | Extends `SysexIterator` to skip non-single-patch data |
