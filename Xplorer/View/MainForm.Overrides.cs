@@ -79,6 +79,16 @@ namespace Xplorer.View
         internal XpanderController XController => (XpanderController)Controller;
 
         /// <summary>
+        /// Internal accessor for the base controller, used by manager classes in this assembly.
+        /// </summary>
+        internal MidiApp.MidiController.Controller.AbstractController BaseController => Controller;
+
+        /// <summary>
+        /// Internal accessor for the registered controls map, used by manager classes in this assembly.
+        /// </summary>
+        internal Dictionary<string, Control> InternalRegisteredControlsMap => RegisteredControlsMap;
+
+        /// <summary>
         /// Applies the action on form's controls.
         /// </summary>
         /// <param name="action">The action.</param>
@@ -163,103 +173,21 @@ namespace Xplorer.View
         }
 
         /// <summary>
-        /// return the parameter name for the given knob control tag and current active radio button
+        /// Returns the concrete parameter name for the given multi-page control tag and currently
+        /// active page radio button. Non-multi-page tags are returned unchanged.
         /// </summary>
-        /// <param name="tag"></param>
-        /// <returns></returns>
-        private string GetParameterNameForValuedControlTag(string valuedControlTag)
+        internal string ResolveParameterNameForTag(string valuedControlTag)
         {
-            string tag = valuedControlTag;
-
-            if (tag.StartsWith("ENV_X") || tag.StartsWith("LFO_X"))
-            {
-                for (int iX = 1; iX < XpanderConstants.LFO_COUNT + 1; iX++) // LFO and ENV have same count
-                {
-                    string sRadioButtonName = tag.Substring(0, 5).Replace('X', iX.ToString()[0]);
-                    // search for a checked radio button
-                    RadioButton rdButton = _pagesRadioButtonsMap[sRadioButtonName];
-                    if (rdButton.Checked)
-                    {
-                        tag = tag.Replace("_X_", String.Format("_{0}_", iX.ToString()[0]));
-                        break;
-                    }
-                }
-            }
-            else if (tag.StartsWith("TRACK_X"))
-            {
-                for (int iX = 1; iX < XpanderConstants.TRACK_COUNT + 1; iX++)
-                {
-                    string sRadioButtonName = tag.Substring(0, 7).Replace('X', iX.ToString()[0]);
-                    // search for a checked radio button
-                    RadioButton rdButton = _pagesRadioButtonsMap[sRadioButtonName];
-                    if (rdButton.Checked)
-                    {
-                        tag = tag.Replace("_X_", String.Format("_{0}_", iX.ToString()[0]));
-                        break;
-                    }
-                }
-            }
-            else if (tag.StartsWith("RAMP_X"))
-            {
-                for (int iX = 1; iX < XpanderConstants.RAMP_COUNT + 1; iX++)
-                {
-                    string sRadioButtonName = tag.Substring(0, 6).Replace('X', iX.ToString()[0]);
-                    // search for a checked radio button
-                    RadioButton rdButton = _pagesRadioButtonsMap[sRadioButtonName];
-                    if (rdButton.Checked)
-                    {
-                        tag = tag.Replace("_X_", String.Format("_{0}_", iX.ToString()[0]));
-                        break;
-                    }
-                }
-            }
-
-            return tag;
+            return PageRefreshManager.ResolveParameterNameForTag(valuedControlTag, _pagesRadioButtonsMap);
         }
 
         /// <summary>
-        /// return the knob control tag and page button tag given the parameter name
+        /// Returns the valued-control tag and radio-button name for the given concrete parameter name.
+        /// Returns false for non-multi-page parameter names.
         /// </summary>
-        /// <param name="parameterName"></param>
-        /// <param name="knobControlTag"></param>
-        /// <param name="radioButtonTag"></param>
         private bool GetValuedControlAndButtonNameForParameterName(string parameterName, out string valuedControlTag, out string radioButtonTag)
         {
-#warning TODO too much litterals, we should unify it
-            // voir ce qui a été fait avec IsPageEnvLfoRampTrack, mais ici separer en fonction du nombre de char; idem code plus haut à revoir
-            string tag = parameterName;
-
-            if (tag.StartsWith("ENV_") || tag.StartsWith("LFO_"))
-            {
-                string sNumber = tag.Substring(4, 1);
-                valuedControlTag = tag.Replace(sNumber, "X");
-                radioButtonTag = tag.Substring(0, 5);
-                return true;
-            }
-            else if (tag.StartsWith("TRACK_"))
-            {
-                const int numberIndex = 6;
-                // TRACK_N_POINT_M => TRACK_X_POINT_M
-                valuedControlTag = tag.Substring(0, numberIndex) + "X" + tag.Substring(numberIndex + 1, tag.Length - (numberIndex + 1));
-                radioButtonTag = tag.Substring(0, numberIndex + 1);
-                return true;
-            }
-            else if (tag.StartsWith("RAMP_"))
-            {
-                string sNumber = tag.Substring(5, 1);
-                valuedControlTag = tag.Replace(sNumber, "X");
-                radioButtonTag = tag.Substring(0, 6);
-                return true;
-            }
-
-            // not a multipage control
-            else
-            {
-                valuedControlTag = null;
-                radioButtonTag = null;
-            }
-
-            return false;
+            return PageRefreshManager.TryResolveControlAndButtonNameForParameterName(parameterName, out valuedControlTag, out radioButtonTag);
         }
 
         /// <summary>
@@ -358,6 +286,7 @@ namespace Xplorer.View
             _settingsManager = new SettingsManager(this);
             _fileOperationsManager = new FileOperationsManager(this);
             _triggerRuleManager = new TriggerRuleManager(this);
+            _pageRefreshManager = new PageRefreshManager(this);
 
             // controls registration before loading the settings
             RecursivelyRegisterControls();
@@ -367,7 +296,7 @@ namespace Xplorer.View
             InitializeModSourceHighlight();
 
             // instanciate display helper
-            VfdDisplayHelper = new VfdDisplayHelper(_vfdDisplay, Controller, GetParameterNameForValuedControlTag, IsParameterModulatedForTag);
+            VfdDisplayHelper = new VfdDisplayHelper(_vfdDisplay, Controller, ResolveParameterNameForTag, IsParameterModulatedForTag);
 
             // initialize modulation matrix manager (needs VfdDisplayHelper)
             _modulationMatrixManager = new ModulationMatrixManager(this);

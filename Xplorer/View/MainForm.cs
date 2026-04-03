@@ -57,6 +57,7 @@ namespace Xplorer.View
         private FileOperationsManager _fileOperationsManager;
         private ModulationMatrixManager _modulationMatrixManager;
         private TriggerRuleManager _triggerRuleManager;
+        private PageRefreshManager _pageRefreshManager;
 
 
         /// <summary>
@@ -254,7 +255,7 @@ namespace Xplorer.View
             Control control = sender as Control;
             if (control != null && valuedControl != null)
             {
-                base.HandleControlValueChanged(GetParameterNameForValuedControlTag((string)control.Tag), valuedControl.Value);
+                base.HandleControlValueChanged(ResolveParameterNameForTag((string)control.Tag), valuedControl.Value);
                 this.VfdDisplayHelper.UpdateState(valuedControl);
             }
         }
@@ -286,48 +287,7 @@ namespace Xplorer.View
         /// <param name="e"></param>
         private void Radio_ENV_X_Click(object sender, EventArgs e)
         {
-            RadioButton button = sender as RadioButton;
-            if (button == null) return;
-
-            if (e != null)
-            {
-                // this happens when the user really click on the button and not when the controller updates the view
-                // button's tag is same as page name
-                XController.SendPageUpdate((string)button.Tag);
-            }
-
-            // update all the controls of the selected "page", hardcoding which control is faster than enumerating all to find which
-            // (order of intellisense here)
-            string sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_ATTACK.Tag);
-            this.ENV_X_ATTACK.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_DECAY.Tag);
-            this.ENV_X_DECAY.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_DELAY.Tag);
-            this.ENV_X_DELAY.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_MODE_DADR.Tag);
-            this.ENV_X_MODE_DADR.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_MODE_FREERUN.Tag);
-            this.ENV_X_MODE_FREERUN.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_MODE_RESET.Tag);
-            this.ENV_X_MODE_RESET.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_RELEASE.Tag);
-            this.ENV_X_RELEASE.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_SUSTAIN.Tag);
-            this.ENV_X_SUSTAIN.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_TRIG_EXTRIG.Tag);
-            this.ENV_X_TRIG_EXTRIG.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_TRIG_GATED.Tag);
-            this.ENV_X_TRIG_GATED.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_TRIG_LFOTRIG.Tag);
-            this.ENV_X_TRIG_LFOTRIG.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_TRIG_LFO_SOURCE.Tag);
-            this.ENV_X_TRIG_LFO_SOURCE.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_TRIG_SINGLE_MULTI.Tag);
-            this.ENV_X_TRIG_SINGLE_MULTI.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.ENV_X_VOLUME.Tag);
-            this.ENV_X_VOLUME.Value = Controller.GetParameter(sParameterName).Value;
-
-            this.VfdDisplayHelper.UpdateState(this.ENV_X_VOLUME);
+            _pageRefreshManager.RefreshPage(sender as RadioButton, e);
         }
 
         /// <summary>
@@ -337,32 +297,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void Radio_LFO_X_Click(object sender, EventArgs e)
         {
-            RadioButton button = sender as RadioButton;
-            if (button == null) return;
-            if (e != null)
-            {
-                // this happens when the user really click on the button and not when the controller updates the view
-                // button's tag is same as page name
-                XController.SendPageUpdate((string)button.Tag);
-            }
-            // update all the controls of the selected "page", hardcoding which control is faster than enumerating all to find which
-            // (order of intellisense here)
-            string sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_AMP.Tag);
-            this.LFO_X_AMP.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_LAG.Tag);
-            this.LFO_X_LAG.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_RETRIG.Tag);
-            this.LFO_X_RETRIG.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_RETRIG_MODE.Tag);
-            this.LFO_X_RETRIG_MODE.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_SAMPLE_INPUT.Tag);
-            this.LFO_X_SAMPLE_INPUT.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_SPEED.Tag);
-            this.LFO_X_SPEED.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.LFO_X_WAVESHAPE.Tag);
-            this.LFO_X_WAVESHAPE.Value = Controller.GetParameter(sParameterName).Value;
-
-            this.VfdDisplayHelper.UpdateState(this.LFO_X_AMP);
+            _pageRefreshManager.RefreshPage(sender as RadioButton, e);
         }
 
         /// <summary>
@@ -372,32 +307,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void Radio_RAMP_X_Click(object sender, EventArgs e)
         {
-            RadioButton button = sender as RadioButton;
-            if (button == null) return;
-            if (e != null)
-            {
-                // this happens when the user really click on the button and not when the controller updates the view
-                // button's tag is same as page name
-                XController.SendPageUpdate((string)button.Tag);
-            }
-            // update all the controls of the selected "page", hardcoding which control is faster than enumerating all to find which
-            // (order of intellisense here)
-            string sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_RATE.Tag);
-            this.RAMP_X_RATE.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_EXTRIG.Tag);
-            this.RAMP_X_TRIG_EXTRIG.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_GATED.Tag);
-            this.RAMP_X_TRIG_GATED.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_LFO_SOURCE.Tag);
-            this.RAMP_X_TRIG_LFO_SOURCE.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_LFOTRIG.Tag);
-            this.RAMP_X_TRIG_LFOTRIG.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_LFO_SOURCE.Tag);
-            this.RAMP_X_TRIG_LFO_SOURCE.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.RAMP_X_TRIG_SINGLE_MULTI.Tag);
-            this.RAMP_X_TRIG_SINGLE_MULTI.Value = Controller.GetParameter(sParameterName).Value;
-
-            this.VfdDisplayHelper.UpdateState(this.RAMP_X_RATE);
+            _pageRefreshManager.RefreshPage(sender as RadioButton, e);
         }
 
         /// <summary>
@@ -407,28 +317,7 @@ namespace Xplorer.View
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void Radio_TRACK_X_Click(object sender, EventArgs e)
         {
-            RadioButton button = sender as RadioButton;
-            if (button == null) return;
-            if (e != null)
-            {
-                // this happens when the user really click on the button and not when the controller updates the view
-                // button's tag is same as page name
-                XController.SendPageUpdate((string)button.Tag);
-            }
-            string sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_IN.Tag);
-            this.TRACK_X_IN.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_PT1.Tag);
-            this.TRACK_X_PT1.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_PT2.Tag);
-            this.TRACK_X_PT2.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_PT3.Tag);
-            this.TRACK_X_PT3.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_PT4.Tag);
-            this.TRACK_X_PT4.Value = Controller.GetParameter(sParameterName).Value;
-            sParameterName = GetParameterNameForValuedControlTag((string)this.TRACK_X_PT5.Tag);
-            this.TRACK_X_PT5.Value = Controller.GetParameter(sParameterName).Value;
-
-            this.VfdDisplayHelper.UpdateState(this.TRACK_X_IN);
+            _pageRefreshManager.RefreshPage(sender as RadioButton, e);
         }
 
         /// <summary>
