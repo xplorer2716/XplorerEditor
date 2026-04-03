@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.3.11505.172 d18.3
+VisualStudioVersion = 18.3.11505.172
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xplorer", "Xplorer\Xplorer.csproj", "{D35E00CB-D5DE-48C3-917E-D95674768F24}"
 EndProject
@@ -12,6 +12,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanford.Multimedia.Midi.Core", "Sanford.Multimedia.Midi\Source\Sanford.Multimedia.Midi.Core.csproj", "{7A248C2F-1B75-410E-1A9C-4E45E7309993}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanford.Multimedia.Midi.UI.Windows", "Sanford.Multimedia.Midi\UI\WindowsForms\Sanford.Multimedia.Midi.UI.Windows.csproj", "{DAD45C81-F2A8-EAFC-2BA3-B2D849A78807}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8B5342B8-4585-4ABA-8F04-6D2ECECB914D}"
+	ProjectSection(SolutionItems) = preProject
+		.mcp.json = .mcp.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -66,8 +71,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {BA60D993-6A17-4DD1-904C-E4514AA62ECA}
-		BuildVersion_UpdateFileVersion = True
 		BuildVersion_UpdateAssemblyVersion = True
+		BuildVersion_UpdateFileVersion = True
+		SolutionGuid = {BA60D993-6A17-4DD1-904C-E4514AA62ECA}
 	EndGlobalSection
 EndGlobal

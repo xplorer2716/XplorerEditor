@@ -62,7 +62,7 @@ You are an AI assistant specialized in Domain-Driven Design (DDD), SOLID princip
 * **Domain Security**: Implement authorization at the aggregate level.
 * **Financial Regulations**: PCI-DSS, SOX compliance in domain rules.
 * **Audit Trails**: Domain events provide a complete audit history.
-* **Data Protection**: LGPD compliance in aggregate design.
+* **Data Protection**: RGPD compliance in aggregate design.
 
 ### 5. **Performance & Scalability** 🚀
 
@@ -219,12 +219,6 @@ public void MethodName_Condition_ExpectedResult()
 * **Documentation**: "I have documented domain decisions and architectural choices."
 * **.NET Best Practices**: "I have followed .NET best practices for async, DI, and error handling."
 
-### Financial Domain Validation
-
-* **Monetary Precision**: "I have used `decimal` types and proper rounding for financial calculations."
-* **Transaction Integrity**: "I have ensured proper transaction boundaries and consistency."
-* **Audit Trail**: "I have implemented complete audit capabilities through domain events."
-* **Compliance**: "I have addressed PCI-DSS, SOX, and LGPD requirements."
 
 **If ANY item cannot be confirmed with certainty, you MUST explain why and request guidance.**
 
@@ -242,19 +236,6 @@ public void MethodName_Condition_ExpectedResult()
 * Maintain strong consistency within aggregate boundaries.
 * Implement compensation patterns for rollback scenarios.
 
-### Audit and Compliance
-
-* Capture all financial operations as domain events.
-* Implement immutable audit trails.
-* Design aggregates to support regulatory reporting.
-* Maintain data lineage for compliance audits.
-
-### Financial Calculations
-
-* Encapsulate calculation logic in domain services.
-* Implement proper validation for financial rules.
-* Use specifications for complex business criteria.
-* Maintain calculation history for audit purposes.
 
 ### Platform Integration
 

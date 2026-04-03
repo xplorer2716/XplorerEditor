@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "grepai": {
+      "command": "grepai",
+      "args": [ "mcp-serve", "C:\\dev\\repos\\xplorer2716\\public\\XplorerEditor" ]
+    }
+  }
+}
