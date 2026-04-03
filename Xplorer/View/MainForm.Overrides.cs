@@ -593,7 +593,8 @@ namespace Xplorer.View
         /// <summary>
         /// Handler for page change event
         /// </summary>
-        /// <param name="PageName"></param>
+        /// <param name="sender"></param>
+        /// <param name="arg"></param>
         private void OnPageChange(object sender, PageChangeEventArgs arg)
         {
             string sPageName = arg.PageName;
@@ -601,22 +602,7 @@ namespace Xplorer.View
             if (_pagesRadioButtonsMap.TryGetValue(sPageName, out radio))
             {
                 radio.Checked = true;
-                if (sPageName.StartsWith("ENV"))
-                {
-                    this.Radio_ENV_X_Click(radio, null);
-                }
-                else if (sPageName.StartsWith("LFO"))
-                {
-                    Radio_LFO_X_Click(radio, null);
-                }
-                else if (sPageName.StartsWith("RAMP"))
-                {
-                    Radio_RAMP_X_Click(radio, null);
-                }
-                else if (sPageName.StartsWith("TRACK"))
-                {
-                    Radio_TRACK_X_Click(radio, null);
-                }
+                _pageRefreshManager.RefreshPage(radio, null);
             }
         }
 
