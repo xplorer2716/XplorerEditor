@@ -17,72 +17,73 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 using MidiApp.MidiController.Controller;
 using MidiApp.MidiController.Model;
-using System.Collections;
 using System.Threading;
 using Xplorer.Model;
 
 namespace Xplorer.Controller
 {
     /// <summary>
-    /// Application Controller - old school worker thread
+    /// Application Controller - worker thread
     /// </summary>
     internal partial class XpanderController : AbstractController
     {
         /// <summary>
-        /// WorkerThreadProc override
+        /// WorkerThreadProc override.
+        /// Cooperative shutdown via <see cref="AbstractController.IsWorkerThreadStopRequested"/>;
+        /// Thread.Abort() is not supported on .NET 5+ so ThreadAbortException is never raised.
         /// </summary>
         protected override void WorkerThreadProc()
         {
-            try
+            while (!IsWorkerThreadStopRequested)
             {
-                while (!IsWorkerThreadStopRequested)
-                {
-                    //wait for transmission delay to elapse
-                    Thread.Sleep(this.ParameterTransmitDelay);
-
-                    // iterate thru each parameter of the edited tone
-                    // if value of parameter has changed since last scan, enqueue the parameter to send
-                    foreach (DictionaryEntry entry in Tone.ParameterMap)
-                    {
-                        AbstractParameter parameter = (AbstractParameter)entry.Value;
-                        if (parameter.Changed)
-                        {
-                            // this value is taken in account
-                            parameter.Changed = false;
-                            // enqueue a copy of the parameter, to keep an image of it's current state
-                            // value can change between now and the time when it'll be really sent.
-                            AbstractParameter clone = (AbstractParameter)parameter.Clone();
-                            EnQueueParameter(clone);
-                        }
-                    }
-
-                    // dequeue the oldest parameter and send it
-                    AbstractParameter paramToSend;
-                    if (DequeueParameter(out paramToSend))
-                    {
-                        if (VerifySynthOutputDevice())
-                        {
-                            // send page select only if needed
-                            int lastPageSelected, lastSubPageSelected;
-                            _pageSubPageHelper.GetPageSubPage(out lastPageSelected, out lastSubPageSelected);
-                            if ((lastPageSelected != ((XpanderParameter)paramToSend).Page) ||
-                                 (lastSubPageSelected != ((XpanderParameter)paramToSend).SubPage))
-                            {
-                                // send it synchronously right now
-                                SendDataToSynthOutputDevice(((XpanderParameter)paramToSend).PageSelectMessage);
-                                _pageSubPageHelper.UpdatePageSubPage(((XpanderParameter)paramToSend).Page, ((XpanderParameter)paramToSend).SubPage);
-                                Thread.Sleep(this.ParameterTransmitDelay);
-                            }
-
-                            SendDataToSynthOutputDevice(paramToSend.Message);
-                        }
-                    } // dequeue
-                } // while
-            }//try
-            catch (ThreadAbortException)
-            {
-                //thread abortion (call to StopWorkerThread())
+                Thread.Sleep(ParameterTransmitDelay);
+                ScanAndEnqueueChangedParameters();
+                TrySendNextParameter();
             }
+        }
+
+        /// <summary>
+        /// Scans all tone parameters and enqueues a clone of each one whose value has changed
+        /// since the last scan cycle.
+        /// </summary>
+        private void ScanAndEnqueueChangedParameters()
+        {
+            foreach (AbstractParameter parameter in Tone.ParameterMap.Values)
+            {
+                if (!parameter.Changed)
+                    continue;
+
+                // Mark as taken into account before cloning so a concurrent
+                // UI update on the same parameter is not silently dropped.
+                parameter.Changed = false;
+                EnQueueParameter((AbstractParameter)parameter.Clone());
+            }
+        }
+
+        /// <summary>
+        /// Dequeues the oldest pending parameter and sends it to the synth output device,
+        /// issuing a page-select message first when the target page or sub-page has changed.
+        /// </summary>
+        private void TrySendNextParameter()
+        {
+            if (!DequeueParameter(out AbstractParameter paramToSend))
+                return;
+
+            if (!VerifySynthOutputDevice())
+                return;
+
+            var xpanderParam = (XpanderParameter)paramToSend;
+
+            // Send page select only when the page or sub-page has changed.
+            _pageSubPageHelper.GetPageSubPage(out int lastPage, out int lastSubPage);
+            if (lastPage != xpanderParam.Page || lastSubPage != xpanderParam.SubPage)
+            {
+                SendDataToSynthOutputDevice(xpanderParam.PageSelectMessage);
+                _pageSubPageHelper.UpdatePageSubPage(xpanderParam.Page, xpanderParam.SubPage);
+                Thread.Sleep(ParameterTransmitDelay);
+            }
+
+            SendDataToSynthOutputDevice(paramToSend.Message);
         }
     }
 }
