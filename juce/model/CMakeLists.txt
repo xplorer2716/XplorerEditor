@@ -2,6 +2,8 @@
 add_library(xpl_model STATIC
     src/LibraryInfo.cpp
     src/XpanderParameter.cpp
-    src/XpanderSinglePatch.cpp)
+    src/XpanderSinglePatch.cpp
+    src/XpanderTone.cpp
+    src/XpanderToneModulationMatrix.cpp)
 target_include_directories(xpl_model PUBLIC include)
 target_link_libraries(xpl_model PUBLIC xpl_framework PRIVATE xpl::warnings)

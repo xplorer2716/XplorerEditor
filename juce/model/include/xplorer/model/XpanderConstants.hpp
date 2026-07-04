@@ -261,6 +261,30 @@ namespace xplorer::model
         SIXTH = 0x1D,
     };
 
+    // --- randomization options (reference XplorerConstants randomizer enums) ---
+
+    enum class EnumRandomVCOFreq
+    {
+        Free = 0, SameNote, Third, Fifth, Seventh, Octave, Ninth, Eleventh, Thirteenth,
+    };
+
+    enum class EnumRandomVCODetune
+    {
+        Free = 0, Digital, Analog,
+    };
+
+    enum class EnumRandomVCAEnv
+    {
+        Free = 0, Organ, String, Percusive, PercusiveWithRelease,
+    };
+
+    enum class EnumRandomModMatrix : unsigned
+    {
+        EnableAmount = 1,
+        EnableSourcesAndDestinations = 2,
+        EnableQuantize = 4,
+    };
+
     struct PageSubPage
     {
         EnumPages page;
