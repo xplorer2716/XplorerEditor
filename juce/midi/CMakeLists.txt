@@ -3,7 +3,10 @@
 # to JUCE module sources compiled into the target. [RQ-BLD-003, ADR-004]
 
 add_library(xpl_midi STATIC
-    src/LibraryInfo.cpp)
+    src/LibraryInfo.cpp
+    src/MidiMessage.cpp
+    src/MockMidiBackend.cpp
+    src/SysexStreamIterator.cpp)
 target_include_directories(xpl_midi PUBLIC include)
 target_link_libraries(xpl_midi PRIVATE xpl::warnings)
 

@@ -10,3 +10,13 @@ target_link_libraries(xpl_tests_smoke PRIVATE
     xpl::warnings
     Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_smoke)
+
+add_executable(xpl_tests_midi
+    midi/MidiMessageTests.cpp
+    midi/MockMidiBackendTests.cpp
+    midi/SysexStreamIteratorTests.cpp)
+target_compile_definitions(xpl_tests_midi PRIVATE
+    XPL_FIXTURES_DIR="${XPL_FIXTURES_DIR}")
+target_link_libraries(xpl_tests_midi PRIVATE
+    xpl_midi xpl::warnings Catch2::Catch2WithMain)
+catch_discover_tests(xpl_tests_midi)
