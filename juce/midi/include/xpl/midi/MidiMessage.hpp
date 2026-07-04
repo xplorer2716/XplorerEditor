@@ -78,7 +78,11 @@ namespace xpl::midi
         static MidiMessage fromRawBytes(std::span<const std::uint8_t> bytes);
 
         [[nodiscard]] MessageType type() const;
-        [[nodiscard]] std::span<const std::uint8_t> bytes() const { return _bytes; }
+        /// Lvalue-only: the span points into this message's storage and must
+        /// not outlive it (calling bytes() on a temporary is a compile error).
+        [[nodiscard]] std::span<const std::uint8_t> bytes() const& { return _bytes; }
+        [[nodiscard]] std::span<const std::uint8_t> bytes() const&& = delete;
+        [[nodiscard]] std::vector<std::uint8_t> toBytes() const { return _bytes; }
         [[nodiscard]] std::size_t size() const { return _bytes.size(); }
         [[nodiscard]] std::uint8_t operator[](std::size_t index) const { return _bytes[index]; }
 
