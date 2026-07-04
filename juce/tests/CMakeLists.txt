@@ -38,7 +38,8 @@ target_link_libraries(xpl_tests_framework PRIVATE
 catch_discover_tests(xpl_tests_framework)
 
 add_executable(xpl_tests_model
-    model/XpanderParameterTests.cpp)
+    model/XpanderParameterTests.cpp
+    model/XpanderSinglePatchTests.cpp)
 target_compile_definitions(xpl_tests_model PRIVATE
     XPL_FIXTURES_DIR="${XPL_FIXTURES_DIR}")
 target_link_libraries(xpl_tests_model PRIVATE
