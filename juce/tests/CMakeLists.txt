@@ -20,3 +20,9 @@ target_compile_definitions(xpl_tests_midi PRIVATE
 target_link_libraries(xpl_tests_midi PRIVATE
     xpl_midi xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_midi)
+
+add_executable(xpl_tests_midi_juce
+    midi/JuceMidiBackendTests.cpp)
+target_link_libraries(xpl_tests_midi_juce PRIVATE
+    xpl_midi_juce xpl::warnings Catch2::Catch2WithMain)
+catch_discover_tests(xpl_tests_midi_juce)

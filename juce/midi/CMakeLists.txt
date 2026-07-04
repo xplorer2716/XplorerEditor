@@ -11,7 +11,8 @@ target_include_directories(xpl_midi PUBLIC include)
 target_link_libraries(xpl_midi PRIVATE xpl::warnings)
 
 add_library(xpl_midi_juce STATIC
-    src/juce/JuceBackendInfo.cpp)
+    src/juce/JuceBackendInfo.cpp
+    src/juce/JuceMidiBackend.cpp)
 target_compile_definitions(xpl_midi_juce PRIVATE
     JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
     JUCE_STANDALONE_APPLICATION=1
