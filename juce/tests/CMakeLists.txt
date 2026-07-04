@@ -26,3 +26,11 @@ add_executable(xpl_tests_midi_juce
 target_link_libraries(xpl_tests_midi_juce PRIVATE
     xpl_midi_juce xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_midi_juce)
+
+add_executable(xpl_tests_framework
+    framework/AbstractParameterTests.cpp
+    framework/AbstractToneTests.cpp
+    framework/DualDictionaryTests.cpp)
+target_link_libraries(xpl_tests_framework PRIVATE
+    xpl_framework xpl::warnings Catch2::Catch2WithMain)
+catch_discover_tests(xpl_tests_framework)

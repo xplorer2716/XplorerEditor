@@ -1,5 +1,9 @@
-# xpl_framework layer library [RQ-BLD-005, ADR-002]
+# xpl_framework layer library: port of MidiApp.MidiController core [RQ-FMW, ADR-002]
 add_library(xpl_framework STATIC
-    src/LibraryInfo.cpp)
+    src/LibraryInfo.cpp
+    src/AbstractParameter.cpp
+    src/OrderedParameterMap.cpp
+    src/AbstractTone.cpp
+    src/DualDictionary.cpp)
 target_include_directories(xpl_framework PUBLIC include)
 target_link_libraries(xpl_framework PUBLIC xpl_midi PRIVATE xpl::warnings)
