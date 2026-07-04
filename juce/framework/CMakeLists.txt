@@ -4,6 +4,9 @@ add_library(xpl_framework STATIC
     src/AbstractParameter.cpp
     src/OrderedParameterMap.cpp
     src/AbstractTone.cpp
-    src/DualDictionary.cpp)
+    src/DualDictionary.cpp
+    src/AbstractController.cpp
+    src/AbstractControllerDevices.cpp
+    src/AbstractControllerWorker.cpp)
 target_include_directories(xpl_framework PUBLIC include)
 target_link_libraries(xpl_framework PUBLIC xpl_midi PRIVATE xpl::warnings)
