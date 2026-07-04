@@ -1,0 +1,26 @@
+# CI for the JUCE (C++) port: headless build + tests of the non-UI layers. [RQ-BLD-007]
+name: juce-ci
+
+on:
+  push:
+    paths: ['juce/**', '.github/workflows/juce-ci.yml']
+  pull_request:
+    paths: ['juce/**', '.github/workflows/juce-ci.yml']
+
+jobs:
+  linux-headless:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ALSA headers (juce_audio_devices)
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Configure
+        run: cmake -S juce -B juce/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build juce/build -j"$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir juce/build --output-on-failure
