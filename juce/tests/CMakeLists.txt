@@ -53,3 +53,11 @@ add_executable(xpl_tests_settings
 target_link_libraries(xpl_tests_settings PRIVATE
     xpl_settings xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_settings)
+
+add_executable(xpl_tests_controller
+    controller/XpanderControllerTests.cpp)
+target_compile_definitions(xpl_tests_controller PRIVATE
+    XPL_FIXTURES_DIR="${XPL_FIXTURES_DIR}")
+target_link_libraries(xpl_tests_controller PRIVATE
+    xpl_controller xpl::warnings Catch2::Catch2WithMain)
+catch_discover_tests(xpl_tests_controller)
