@@ -60,6 +60,7 @@ add_subdirectory(framework)
 add_subdirectory(model)
 add_subdirectory(controller)
 add_subdirectory(settings)
+add_subdirectory(app/core)
 
 if(XPL_BUILD_TESTS)
     add_subdirectory(tests)
