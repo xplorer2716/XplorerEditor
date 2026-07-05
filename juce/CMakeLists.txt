@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.22)
 project(XplorerJuce
     VERSION 0.1.0
     DESCRIPTION "Xplorer JUCE port - real-time editor for Oberheim Xpander/Matrix-12"
-    LANGUAGES CXX)
+    LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
