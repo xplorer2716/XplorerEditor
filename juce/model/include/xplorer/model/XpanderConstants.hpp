@@ -263,6 +263,13 @@ namespace xplorer::model
 
     // --- randomization options (reference XplorerConstants randomizer enums) ---
 
+    enum class EnumRandomVCO2 : unsigned // [Flags]
+    {
+        EnableFM = 1,
+        EnableNoise = 2,
+        EnableSync = 4,
+    };
+
     enum class EnumRandomVCOFreq
     {
         Free = 0, SameNote, Third, Fifth, Seventh, Octave, Ninth, Eleventh, Thirteenth,

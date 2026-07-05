@@ -47,3 +47,9 @@ target_compile_definitions(xpl_tests_model PRIVATE
 target_link_libraries(xpl_tests_model PRIVATE
     xpl_model xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_model)
+
+add_executable(xpl_tests_settings
+    settings/SettingsServiceTests.cpp)
+target_link_libraries(xpl_tests_settings PRIVATE
+    xpl_settings xpl::warnings Catch2::Catch2WithMain)
+catch_discover_tests(xpl_tests_settings)
