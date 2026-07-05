@@ -54,6 +54,23 @@ def main() -> None:
         types.setdefault(ctrl, typ)
     tags = dict(re.findall(r'this\.([A-Za-z_0-9]+)\.Tag = "([^"]*)";', src))
 
+    # Parent-child tree: a WinForms control's Location is relative to its
+    # parent container, so nested controls (e.g. the family selector radios
+    # inside PanelENV) need their ancestors' Locations added to become
+    # absolute canvas coordinates.
+    parent_of = dict((child, parent) for parent, child
+                     in re.findall(r'this\.([A-Za-z_0-9]+)\.Controls\.Add\(this\.([A-Za-z_0-9]+)\)', src))
+
+    def absolute_loc(ctrl):
+        x, y = geo.get(ctrl, {}).get('loc', (0, 0))
+        node = ctrl
+        while node in parent_of:
+            node = parent_of[node]
+            px, py = geo.get(node, {}).get('loc', (0, 0))
+            x += px
+            y += py
+        return x, y
+
     rows = []
     for ctrl, g in sorted(geo.items()):
         if ctrl.startswith('$'):
@@ -61,7 +78,7 @@ def main() -> None:
         kind = types.get(ctrl, '?').split('.')[-1]
         if any(s in kind for s in SKIPPED_KINDS):
             continue
-        (x, y), (w, h) = g.get('loc', (0, 0)), g.get('size', (0, 0))
+        (x, y), (w, h) = absolute_loc(ctrl), g.get('size', (0, 0))
         rows.append((ctrl, kind, x, y, w, h, tags.get(ctrl, '')))
 
     with open(TABLE_OUT, 'w') as f:

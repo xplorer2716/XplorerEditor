@@ -6,6 +6,7 @@
 
 #include "BoundControls.hpp"
 #include "JuceEventDispatcher.hpp"
+#include "PageFamilyBlock.hpp"
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 #include "xplorer/controller/XpanderController.hpp"
@@ -29,6 +30,8 @@ namespace xplorer::app
 
     private:
         void placeFixedBlockControls();
+        void createPageFamilyBlocks();
+        void onSynthPageChanged(const controller::PageChangeEvent& event);
 
         juce::Image _background;
 
@@ -38,6 +41,7 @@ namespace xplorer::app
         std::unique_ptr<controller::XpanderController> _controller;
         std::unique_ptr<ParameterBindingRegistry> _registry;
         std::vector<std::unique_ptr<juce::Component>> _controls;
+        std::vector<std::unique_ptr<PageFamilyBlock>> _familyBlocks;
     };
 
     /// Resizable host applying the uniform scale transform to the canvas.

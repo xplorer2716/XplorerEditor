@@ -52,9 +52,13 @@ namespace xplorer::app
             [this](const std::string& name, int value) { _registry->onParameterChanged(name, value); });
         _controller->setFullToneChangeHandler(
             [this](const controller::FullToneChangeEvent&) { _registry->refreshAllFromModel(); });
+        _controller->setPageChangeHandler(
+            [this](const controller::PageChangeEvent& event) { onSynthPageChanged(event); });
 
         setSize(LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
         placeFixedBlockControls();
+        createPageFamilyBlocks();
+        _registry->refreshAllFromModel(); // seed all controls with the current tone
     }
 
     MainComponent::~MainComponent() = default;
@@ -138,8 +142,64 @@ namespace xplorer::app
             }
             _controls.push_back(std::move(component));
         }
+    }
 
-        _registry->refreshAllFromModel(); // seed controls with the current tone
+    void MainComponent::createPageFamilyBlocks()
+    {
+        int radioGroup = 100;
+        for (const auto& family : pageFamilies())
+        {
+            std::vector<ControlSpec> controlSpecs;
+            std::vector<ControlSpec> selectorSpecs;
+            const std::string selectorPrefix =
+                family.controlTagPrefix.substr(0, family.controlTagPrefix.size() - 1); // "ENV_"
+            for (const auto& spec : controlTable())
+            {
+                const std::string tag = spec.tag;
+                const std::string id = spec.id;
+                if (tag.rfind(family.controlTagPrefix, 0) == 0)
+                {
+                    controlSpecs.push_back(spec); // "ENV_X_*"
+                }
+                else if (spec.kind == ControlKind::RadioButton
+                         && id.rfind(selectorPrefix, 0) == 0
+                         && id.size() == selectorPrefix.size() + 1
+                         && id.back() >= '1' && id.back() <= '9')
+                {
+                    selectorSpecs.push_back(spec); // "ENV_1".."ENV_5"
+                }
+            }
+            _familyBlocks.push_back(std::make_unique<PageFamilyBlock>(
+                *this, *_registry, *_controller, family, controlSpecs, selectorSpecs, radioGroup++));
+        }
+    }
+
+    void MainComponent::onSynthPageChanged(const controller::PageChangeEvent& event)
+    {
+        // Map the synth page to a family + instance and activate the selector. [RQ-GUI-012]
+        struct Range { model::EnumPages first; model::EnumPages last; const char* prefix; };
+        static const Range ranges[] = {
+            {model::EnumPages::ENV_1, model::EnumPages::ENV_5, "ENV_X"},
+            {model::EnumPages::LFO_1, model::EnumPages::LFO_5, "LFO_X"},
+            {model::EnumPages::RAMP_1, model::EnumPages::RAMP_4, "RAMP_X"},
+            {model::EnumPages::TRACK_1, model::EnumPages::TRACK_3, "TRACK_X"},
+        };
+        const int page = static_cast<int>(event.page);
+        for (const auto& range : ranges)
+        {
+            if (page >= static_cast<int>(range.first) && page <= static_cast<int>(range.last))
+            {
+                const int instance = page - static_cast<int>(range.first) + 1;
+                for (auto& block : _familyBlocks)
+                {
+                    if (block->familyPrefix() == range.prefix)
+                    {
+                        block->setActiveInstanceFromSynth(instance);
+                    }
+                }
+                return;
+            }
+        }
     }
 
     void MainComponent::paint(juce::Graphics& g)

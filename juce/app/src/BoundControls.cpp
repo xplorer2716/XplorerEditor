@@ -4,7 +4,7 @@ namespace xplorer::app
 {
     BoundKnob::BoundKnob(ParameterBindingRegistry& registry, std::string parameterName,
                          int minValue, int maxValue, int step)
-        : _registry(registry), _parameterName(std::move(parameterName))
+        : BoundControl(registry, std::move(parameterName))
     {
         setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         setTextBoxStyle(juce::Slider::TextBoxBelow, false, 44, 14);
@@ -17,15 +17,12 @@ namespace xplorer::app
 
     void BoundKnob::setDisplayedValue(int value)
     {
-        // Do not fire onValueChange back into the registry; the registry's
-        // anti-echo guard covers re-entrancy, but avoiding the notification
-        // keeps things clean. [RQ-GUI-003]
-        setValue(value, juce::dontSendNotification);
+        setValue(value, juce::dontSendNotification); // [RQ-GUI-003]
     }
 
     BoundComboBox::BoundComboBox(ParameterBindingRegistry& registry, std::string parameterName,
                                  const std::vector<std::pair<std::string, int>>& options)
-        : _registry(registry), _parameterName(std::move(parameterName))
+        : BoundControl(registry, std::move(parameterName))
     {
         int row = 1;
         for (const auto& [label, value] : options)
@@ -59,7 +56,7 @@ namespace xplorer::app
 
     BoundCheckBox::BoundCheckBox(ParameterBindingRegistry& registry, std::string parameterName,
                                  const juce::String& text)
-        : juce::ToggleButton(text), _registry(registry), _parameterName(std::move(parameterName))
+        : juce::ToggleButton(text), BoundControl(registry, std::move(parameterName))
     {
         onClick = [this]
         {
