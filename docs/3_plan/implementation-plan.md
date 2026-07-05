@@ -60,15 +60,22 @@
 
 ## Phase 5 — View (JUCE app)
 
+> Refined 2026-07 after owner review of the reference UI (screenshot + description; ADR-006).
+> Order: assets → shell → binding → blocks → matrix → display → menus/dialogs → skin.
+> UI logic (registry, family substitution, matrix glue) is headless-tested; visual validation on Windows by the owner at each milestone (M1 = after 064, M2 = after 067, M3 = after 069).
+
 | Task | Deliverable | Tier | Requirements |
 |---|---|---|---|
-| TASK-JUCE-060 | App shell: main window frame, event marshalling, exception dialog, splash | L | RQ-GUI-006, 030, RQ-GUI-020 (partial) |
-| TASK-JUCE-061 | Custom widgets: knob, valued combo/checkbox, trackbar, radio panel, LED panel | L | RQ-GUI-010 |
-| TASK-JUCE-062 | VFD display component + display helper behavior | L | RQ-GUI-011 |
-| TASK-JUCE-063 | Control⇄parameter binding registry + automation-disable on edit | L | RQ-GUI-002..004 |
-| TASK-JUCE-064 | Main window full layout (all pages) + DPI scaling | L | RQ-GUI-001, 005 |
-| TASK-JUCE-065 | Mod-matrix view + copy/paste actions + MIDI LEDs + piano window | L | RQ-GUI-022..025 |
-| TASK-JUCE-066 | Dialogs: settings, rename, store/goto, extract, morphing, progress (async), about | L | RQ-GUI-020, 021 |
+| TASK-JUCE-060 | Asset & layout extraction: background PNG + button GIFs out of `MainForm.resx`; mechanical extraction of the 234-control table (id, type, bounds, tag) from `MainForm.Designer.cs` into a declarative C++ table | M | RQ-GUI-007, RQ-GUI-001 |
+| TASK-JUCE-061 | App shell: JUCE app target (`XPL_BUILD_APP`), main window with logical-canvas scaling + background bitmap, `JuceEventDispatcher`, single-instance guard, splash, top-level exception dialog | L | RQ-GUI-005..007, RQ-GUI-035 |
+| TASK-JUCE-062 | `ParameterBindingRegistry`: id→parameter wiring, anti-echo guard, automation-disable on edit, full-tone refresh — headless tests against mock backend | L | RQ-GUI-002..004 |
+| TASK-JUCE-063 | Fixed blocks (VCO1, VCO2, FM, LAG, VCF/VCA): standard JUCE controls placed from the extracted table, bound via registry | L | RQ-GUI-001, RQ-GUI-030, RQ-GUI-032 |
+| TASK-JUCE-064 | `PageFamilyBlock` ×4 (ENV/LFO/RAMP/TRACK): shared controls, selector buttons, digit substitution, synth page-change sync — logic headless-tested. **Milestone M1: owner Windows build** | L | RQ-GUI-010..012 |
+| TASK-JUCE-065 | Modulation matrix panel: 20 rows, availability rules, entry/full-tone refresh | L | RQ-GUI-015..017 |
+| TASK-JUCE-066 | Display panel (fixed-font text: program, name, last parameter, typewriter) + 8 shortcut buttons + MIDI activity indicator | L | RQ-GUI-020..022 |
+| TASK-JUCE-067 | Menu bar + dialogs: settings (3 pages), rename, store/goto, extract, morphing, async progress (ThreadPool + cancellation), about. **Milestone M2** | L | RQ-GUI-008, RQ-GUI-025..027 |
+| TASK-JUCE-068 | Piano-keyboard window | M | RQ-GUI-028 |
+| TASK-JUCE-069 | Skin pass: `XplorerLookAndFeel` (knobs + LED ring per UiConfiguration, image buttons, custom checks/radios), VFD-style display rendering. **Milestone M3** | L | RQ-GUI-031, RQ-GUI-020 |
 
 ## Phase 6 — Integration & cut-over
 
