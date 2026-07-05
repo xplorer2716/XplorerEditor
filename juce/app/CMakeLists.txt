@@ -8,6 +8,7 @@ juce_add_gui_app(XplorerApp
 target_sources(XplorerApp PRIVATE
     src/Main.cpp
     src/MainComponent.cpp
+    src/BoundControls.cpp
     src/JuceEventDispatcher.cpp)
 
 # UI assets (background, button images) embedded as binary data

@@ -76,3 +76,57 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
+
+
+# --- enum combo labels ---------------------------------------------------
+# (invoked separately from main(); kept in this file so extraction stays in
+# one place). Emits GeneratedEnumLabels.inc: ordered display labels per enum
+# type used by ComboBoxValuedControl, from Resources.resx with fall-back to
+# the C# enum value name. [RQ-GUI-032]
+import xml.etree.ElementTree as _ET
+CONSTANTS = 'Xplorer/Common/XpanderConstants.cs'
+RESOURCES = 'Xplorer/Properties/Resources.resx'
+LABELS_OUT = 'juce/app/core/src/GeneratedEnumLabels.inc'
+COMBO_ENUMS = {
+    'VCFFilterModes': 'EnumVCFFilterModes',
+    'ModulationSources': 'EnumModulationSources',
+    'LFOWaveShapes': 'EnumLFOWaveShapes',
+    'LFOTriggerSource': 'EnumLFOTriggerSources',
+    'LFORetrigModes': 'EnumLFORetrigModes',
+}
+
+
+def enum_members(enum_name):
+    src = open(CONSTANTS).read()
+    m = re.search(r'enum ' + enum_name + r'\s*\{(.*?)\}', src, re.S)
+    body = re.sub(r'//.*', '', m.group(1))
+    members = []
+    for tok in body.split(','):
+        tok = tok.strip()
+        if not tok:
+            continue
+        name = tok.split('=')[0].strip()
+        members.append(name)
+    return members
+
+
+def extract_enum_labels():
+    root = _ET.parse(RESOURCES).getroot()
+    labels = {d.get('name'): (d.find('value').text or '')
+              for d in root.findall('data') if d.find('value') is not None}
+    with open(LABELS_OUT, 'w') as f:
+        f.write('// Ordered ComboBox display labels per enum type, extracted from\n'
+                '// Resources.resx (key "{EnumName}_{ValueName}") with fall-back to the\n'
+                '// enum value name. Ordinal = declaration order. [RQ-GUI-032]\n')
+        for prop, enum_name in sorted(COMBO_ENUMS.items()):
+            members = enum_members(enum_name)
+            f.write(f'    {{"{prop}", {{')
+            f.write(', '.join(
+                '"' + labels.get(f'{enum_name}_{name}', name).replace('"', '\\"') + '"'
+                for name in members))
+            f.write('}},\n')
+    print(f'enum labels: {list(COMBO_ENUMS)}')
+
+
+if __name__ == '__main__':
+    extract_enum_labels()
