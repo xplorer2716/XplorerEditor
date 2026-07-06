@@ -54,4 +54,26 @@ namespace xplorer::app
             g.fillRoundedRectangle(box.reduced(2.0F), 1.5F);
         }
     }
+
+    void XplorerLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
+                                              bool, bool)
+    {
+        // A small square tick box on the left, then the caption in a compact
+        // font sized to the control height so short captions (e.g. "TRI") do
+        // not get ellipsized in the tight reference bounds. [RQ-GUI-032]
+        const auto bounds = button.getLocalBounds();
+        const auto boxSize = juce::jmin(14, bounds.getHeight());
+        const auto box = juce::Rectangle<float>(0.0F, (bounds.getHeight() - boxSize) * 0.5F,
+                                                static_cast<float>(boxSize), static_cast<float>(boxSize));
+        drawTickBox(g, button, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
+                    button.getToggleState(), button.isEnabled(), false, false);
+
+        if (button.getButtonText().isNotEmpty())
+        {
+            g.setColour(button.findColour(juce::ToggleButton::textColourId));
+            g.setFont(juce::Font(juce::jmin(12.0F, static_cast<float>(bounds.getHeight()) - 3.0F)));
+            const auto textArea = bounds.withTrimmedLeft(boxSize + 2);
+            g.drawText(button.getButtonText(), textArea, juce::Justification::centredLeft, false);
+        }
+    }
 }

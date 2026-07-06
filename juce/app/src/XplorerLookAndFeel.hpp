@@ -21,6 +21,11 @@ namespace xplorer::app
                          bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted,
                          bool shouldDrawButtonAsDown) override;
 
+        // Compact box + caption laid out to fit tight reference bounds (no
+        // ellipsis on short captions like "TRI"). [RQ-GUI-032]
+        void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
+                              bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
+
     private:
         juce::Colour _ledColour;
     };
