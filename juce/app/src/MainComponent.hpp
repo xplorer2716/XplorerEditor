@@ -22,13 +22,18 @@
 
 namespace xplorer::app
 {
-    class MainComponent final : public juce::Component
+    class MainComponent final : public juce::Component, public juce::MenuBarModel
     {
     public:
         MainComponent();
         ~MainComponent() override;
 
         void paint(juce::Graphics& g) override;
+
+        // MenuBarModel (File / Patch / Tools / Help). [RQ-GUI-008]
+        juce::StringArray getMenuBarNames() override;
+        juce::PopupMenu getMenuForIndex(int index, const juce::String& name) override;
+        void menuItemSelected(int menuItemId, int topLevelMenuIndex) override;
 
     private:
         void placeFixedBlockControls();
@@ -66,16 +71,19 @@ namespace xplorer::app
         MidiActivityLed _midiLed;
     };
 
-    /// Resizable host applying the uniform scale transform to the canvas.
+    /// Resizable host: a menu bar strip on top, the uniformly-scaled canvas
+    /// below. [RQ-GUI-008, RQ-GUI-005]
     class ScaledCanvasComponent final : public juce::Component
     {
     public:
         ScaledCanvasComponent();
+        ~ScaledCanvasComponent() override;
 
         void resized() override;
         void paint(juce::Graphics& g) override;
 
     private:
         MainComponent _canvas;
+        juce::MenuBarComponent _menuBar;
     };
 }
