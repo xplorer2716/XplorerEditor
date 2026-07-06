@@ -9,6 +9,7 @@
 #include "JuceEventDispatcher.hpp"
 #include "ModMatrixPanel.hpp"
 #include "PageFamilyBlock.hpp"
+#include "PianoWindow.hpp"
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 #include "xplorer/controller/XpanderController.hpp"
@@ -56,6 +57,7 @@ namespace xplorer::app
         DisplayPanel _display;
         std::vector<std::unique_ptr<juce::TextButton>> _shortcutButtons;
         std::unique_ptr<juce::FileChooser> _fileChooser;
+        std::unique_ptr<PianoWindow> _pianoWindow;
 
         // MIDI activity indicator (LedPanelControl replacement).
         class MidiActivityLed final : public juce::Component, private juce::Timer

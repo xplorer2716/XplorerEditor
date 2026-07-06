@@ -13,6 +13,7 @@ target_sources(XplorerApp PRIVATE
     src/ModMatrixPanel.cpp
     src/DisplayPanel.cpp
     src/Dialogs.cpp
+    src/PianoWindow.cpp
     src/JuceEventDispatcher.cpp)
 
 # UI assets (background, button images) embedded as binary data
@@ -29,5 +30,6 @@ target_link_libraries(XplorerApp PRIVATE
     XplorerAssets
     xpl_app_core
     xpl_midi_juce
+    juce::juce_audio_utils
     juce::juce_gui_extra
     juce::juce_audio_devices)

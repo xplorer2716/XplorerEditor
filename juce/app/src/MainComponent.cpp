@@ -393,6 +393,7 @@ namespace xplorer::app
             case 2: // Tools
                 menu.addItem(20, "MIDI settings...");
                 menu.addItem(21, "Tune request");
+                menu.addItem(22, "Piano keyboard");
                 break;
             case 3: // Help
                 menu.addItem(30, "About");
@@ -451,6 +452,17 @@ namespace xplorer::app
                 break;
             case 21:
                 _controller->sendTuneRequestToSynth();
+                break;
+            case 22: // [RQ-GUI-028]
+                if (_pianoWindow == nullptr)
+                {
+                    _pianoWindow = std::make_unique<PianoWindow>(*_controller);
+                }
+                else
+                {
+                    _pianoWindow->setVisible(true);
+                    _pianoWindow->toFront(true);
+                }
                 break;
             case 30:
                 showAboutDialog("Xplorer 0.1.0");
