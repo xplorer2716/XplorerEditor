@@ -10,6 +10,9 @@
 #include "ModMatrixPanel.hpp"
 #include "PageFamilyBlock.hpp"
 #include "PianoWindow.hpp"
+#include "XplorerLookAndFeel.hpp"
+
+#include <map>
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 #include "xplorer/controller/XpanderController.hpp"
@@ -54,8 +57,10 @@ namespace xplorer::app
         std::vector<std::unique_ptr<PageFamilyBlock>> _familyBlocks;
         std::unique_ptr<ModMatrixPanel> _matrixPanel;
 
+        std::unique_ptr<XplorerLookAndFeel> _lookAndFeel;
         DisplayPanel _display;
-        std::vector<std::unique_ptr<juce::TextButton>> _shortcutButtons;
+        std::vector<std::unique_ptr<juce::Button>> _shortcutButtons;
+        std::map<std::string, std::function<void()>> _shortcutActions;
         std::unique_ptr<juce::FileChooser> _fileChooser;
         std::unique_ptr<PianoWindow> _pianoWindow;
 

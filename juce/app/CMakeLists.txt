@@ -14,11 +14,36 @@ target_sources(XplorerApp PRIVATE
     src/DisplayPanel.cpp
     src/Dialogs.cpp
     src/PianoWindow.cpp
+    src/XplorerLookAndFeel.cpp
     src/JuceEventDispatcher.cpp)
 
 # UI assets (background, button images) embedded as binary data
 juce_add_binary_data(XplorerAssets SOURCES
-    assets/main-background.jpg)
+    assets/main-background.jpg
+    assets/gotodown.gif
+    assets/gotohover.gif
+    assets/gotopatch.gif
+    assets/load.gif
+    assets/loaddown.gif
+    assets/loadhover.gif
+    assets/minus.gif
+    assets/minusdown.gif
+    assets/minushover.gif
+    assets/plus.gif
+    assets/plusdown.gif
+    assets/plushover.gif
+    assets/random.gif
+    assets/randomdown.gif
+    assets/randomhover.gif
+    assets/save.gif
+    assets/savedown.gif
+    assets/savehover.gif
+    assets/settings.gif
+    assets/settingsdown.gif
+    assets/settingshover.gif
+    assets/store.gif
+    assets/storedown.gif
+    assets/storehover.gif)
 
 target_include_directories(XplorerApp PRIVATE src)
 target_compile_definitions(XplorerApp PRIVATE

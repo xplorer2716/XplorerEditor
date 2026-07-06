@@ -47,6 +47,11 @@ namespace xplorer::app
         _controller = std::make_unique<controller::XpanderController>(
             _backend, *_settingsService, _dispatcher, "XPLORER");
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);
+        _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
+            juce::Colour(static_cast<juce::uint32>(
+                _settingsService->allUsersSettings().uiConfig.knobLedBorderColor))); // [RQ-GUI-031]
+        // Global skin: covers fixed-block, page-family and matrix controls alike.
+        juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
 
         // Route controller parameter changes to the registry (UI refresh). [RQ-GUI-003]
         _controller->setAutomationParameterChangeHandler(
@@ -91,7 +96,10 @@ namespace xplorer::app
         applyMidiSettings(*_controller, *_settingsService, _backend);
     }
 
-    MainComponent::~MainComponent() = default;
+    MainComponent::~MainComponent()
+    {
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+    }
 
     void MainComponent::placeFixedBlockControls()
     {
@@ -164,6 +172,7 @@ namespace xplorer::app
                     continue;
             }
 
+            // Skinned via the default LookAndFeel (set in the ctor). [RQ-GUI-031]
             component->setBounds(spec.x, spec.y, spec.width, spec.height);
             addAndMakeVisible(*component);
             if (bound != nullptr)
@@ -261,69 +270,88 @@ namespace xplorer::app
             }
         }
 
-        // 8 shortcut buttons (functional-first labels; GIF skin in TASK-JUCE-069).
-        // [RQ-GUI-021]
-        struct Shortcut { const char* id; const char* label; std::function<void()> action; };
-        const std::vector<Shortcut> shortcuts = {
-            {"btPatchMinus", "-", [this] { _controller->decreaseCurrentProgramNumber(); }},
-            {"btPatchPlus", "+", [this] { _controller->increaseCurrentProgramNumber(); }},
-            {"btPatchGoto", "GO", [this]
-             {
-                 showStoreOrGotoDialog("Go to patch", _controller->currentProgramNumber(),
-                                       [this](int program)
-                                       { _controller->sendProgramChangeAndGetSinglePatchFromSynth(program); });
-             }},
-            {"btPatchRandom", "R", [this]
-             { _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{}); }},
-            {"btPatchLoad", "LD", [this]
-             {
-                 _fileChooser = std::make_unique<juce::FileChooser>("Load patch", juce::File(), "*.syx");
-                 _fileChooser->launchAsync(
-                     juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-                     [this](const juce::FileChooser& chooser)
-                     {
-                         const auto file = chooser.getResult();
-                         if (file.existsAsFile())
-                         {
-                             _controller->loadTone(file.getFullPathName().toStdString());
-                         }
-                     });
-             }},
-            {"btPatchSave", "SV", [this]
-             {
-                 _fileChooser = std::make_unique<juce::FileChooser>("Save patch", juce::File(), "*.syx");
-                 _fileChooser->launchAsync(
-                     juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-                     [this](const juce::FileChooser& chooser)
-                     {
-                         const auto file = chooser.getResult();
-                         if (file != juce::File())
-                         {
-                             _controller->saveTone(file.getFullPathName().toStdString());
-                         }
-                     });
-             }},
-            {"btPatchStore", "ST", [this]
-             {
-                 showStoreOrGotoDialog("Store", _controller->currentProgramNumber(),
-                                       [this](int program) { _controller->storeSinglePatchToSynth(program); });
-             }},
-            {"btSettings", "SET",
-             [this] { showMidiSettingsDialog(*_controller, *_settingsService, _backend); }},
+        // 8 shortcut buttons using the reference GIF triples (normal/hover/down).
+        // [RQ-GUI-021, RQ-GUI-031]
+        _shortcutActions["btPatchMinus"] = [this] { _controller->decreaseCurrentProgramNumber(); };
+        _shortcutActions["btPatchPlus"] = [this] { _controller->increaseCurrentProgramNumber(); };
+        _shortcutActions["btPatchGoto"] = [this]
+        {
+            showStoreOrGotoDialog("Go to patch", _controller->currentProgramNumber(),
+                                  [this](int program)
+                                  { _controller->sendProgramChangeAndGetSinglePatchFromSynth(program); });
         };
-        for (const auto& shortcut : shortcuts)
+        _shortcutActions["btPatchRandom"] = [this]
+        { _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{}); };
+        _shortcutActions["btPatchLoad"] = [this]
+        {
+            _fileChooser = std::make_unique<juce::FileChooser>("Load patch", juce::File(), "*.syx");
+            _fileChooser->launchAsync(
+                juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                [this](const juce::FileChooser& chooser)
+                {
+                    const auto file = chooser.getResult();
+                    if (file.existsAsFile())
+                    {
+                        _controller->loadTone(file.getFullPathName().toStdString());
+                    }
+                });
+        };
+        _shortcutActions["btPatchSave"] = [this]
+        {
+            _fileChooser = std::make_unique<juce::FileChooser>("Save patch", juce::File(), "*.syx");
+            _fileChooser->launchAsync(
+                juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                [this](const juce::FileChooser& chooser)
+                {
+                    const auto file = chooser.getResult();
+                    if (file != juce::File())
+                    {
+                        _controller->saveTone(file.getFullPathName().toStdString());
+                    }
+                });
+        };
+        _shortcutActions["btPatchStore"] = [this]
+        {
+            showStoreOrGotoDialog("Store", _controller->currentProgramNumber(),
+                                  [this](int program) { _controller->storeSinglePatchToSynth(program); });
+        };
+        _shortcutActions["btSettings"] = [this]
+        { showMidiSettingsDialog(*_controller, *_settingsService, _backend); };
+
+        // GIF base names (goto's "normal" image is gotopatch.gif in the assets).
+        const std::map<std::string, std::string> gifBase = {
+            {"btPatchMinus", "minus"}, {"btPatchPlus", "plus"},   {"btPatchGoto", "goto"},
+            {"btPatchRandom", "random"}, {"btPatchLoad", "load"}, {"btPatchSave", "save"},
+            {"btPatchStore", "store"},   {"btSettings", "settings"}};
+
+        auto loadGif = [](const std::string& fileName) -> juce::Image
+        {
+            int size = 0;
+            const std::string resource = fileName + "_gif";
+            const auto* data = BinaryData::getNamedResource(resource.c_str(), size);
+            return data != nullptr ? juce::ImageFileFormat::loadFrom(data, static_cast<std::size_t>(size))
+                                   : juce::Image();
+        };
+
+        for (const auto& [id, base] : gifBase)
         {
             for (const auto& spec : controlTable())
             {
-                if (std::string(spec.id) == shortcut.id)
+                if (std::string(spec.id) != id)
                 {
-                    auto button = std::make_unique<juce::TextButton>(shortcut.label);
-                    button->setBounds(spec.x, spec.y, spec.width, spec.height);
-                    button->onClick = shortcut.action;
-                    addAndMakeVisible(*button);
-                    _shortcutButtons.push_back(std::move(button));
-                    break;
+                    continue;
                 }
+                const std::string normalName = (base == "goto") ? "gotopatch" : base;
+                const auto normal = loadGif(normalName);
+                const auto hover = loadGif(base + "hover");
+                const auto down = loadGif(base + "down");
+                auto button = std::make_unique<juce::ImageButton>(id);
+                button->setImages(true, true, true, normal, 1.0F, {}, hover, 1.0F, {}, down, 1.0F, {});
+                button->setBounds(spec.x, spec.y, spec.width, spec.height);
+                button->onClick = _shortcutActions[id];
+                addAndMakeVisible(*button);
+                _shortcutButtons.push_back(std::move(button));
+                break;
             }
         }
     }
@@ -408,15 +436,11 @@ namespace xplorer::app
     {
         switch (menuItemId)
         {
+            case 2: // Open — reuse the load action
+                _shortcutActions["btPatchLoad"]();
+                break;
             case 3: // Save
-            case 2: // Open — reuse the shortcut buttons' file choosers
-                for (auto& button : _shortcutButtons)
-                {
-                    if (button->getButtonText() == (menuItemId == 3 ? "SV" : "LD"))
-                    {
-                        button->onClick();
-                    }
-                }
+                _shortcutActions["btPatchSave"]();
                 break;
             case 4:
                 juce::JUCEApplication::getInstance()->systemRequestedQuit();
