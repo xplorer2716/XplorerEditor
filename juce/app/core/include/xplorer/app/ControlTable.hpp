@@ -35,6 +35,7 @@ namespace xplorer::app
         ControlKind kind;
         int x, y, width, height; ///< logical canvas bounds
         const char* tag;  ///< parameter name / binding tag ("" when none)
+        const char* label; ///< caption (checkbox/label .Text from the resx; "" when none)
     };
 
     /// All positioned main-window controls, in extraction order.

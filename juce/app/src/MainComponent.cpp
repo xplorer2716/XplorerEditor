@@ -86,6 +86,7 @@ namespace xplorer::app
 
         setSize(LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
         placeFixedBlockControls();
+        placeStaticLabels();
         createPageFamilyBlocks();
         _matrixPanel = std::make_unique<ModMatrixPanel>(*this, *_controller);
         createShortcutButtonsAndDisplay();
@@ -134,7 +135,8 @@ namespace xplorer::app
                     {
                         continue;
                     }
-                    auto check = std::make_unique<BoundCheckBox>(*_registry, tag, juce::String());
+                    auto check = std::make_unique<BoundCheckBox>(*_registry, tag,
+                                                                juce::String(spec.label)); // [RQ-GUI-032]
                     bound = check.get();
                     component = std::move(check);
                     break;
@@ -180,6 +182,27 @@ namespace xplorer::app
                 _registry->bind(tag, *bound);
             }
             _controls.push_back(std::move(component));
+        }
+    }
+
+    void MainComponent::placeStaticLabels()
+    {
+        // Standalone Label controls carry captions in the resx (e.g. the
+        // "VCO1 MOD =" and matrix column headers) that are not baked into the
+        // background bitmap. [RQ-GUI-032]
+        for (const auto& spec : controlTable())
+        {
+            if (spec.kind != ControlKind::Label || std::string(spec.label).empty())
+            {
+                continue;
+            }
+            auto label = std::make_unique<juce::Label>(juce::String(spec.id), juce::String(spec.label));
+            label->setBounds(spec.x, spec.y, spec.width, spec.height);
+            label->setJustificationType(juce::Justification::centredLeft);
+            label->setColour(juce::Label::textColourId, juce::Colours::white);
+            label->setInterceptsMouseClicks(false, false);
+            addAndMakeVisible(*label);
+            _controls.push_back(std::move(label));
         }
     }
 

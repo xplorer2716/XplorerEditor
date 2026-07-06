@@ -26,7 +26,7 @@ namespace xplorer::app
                     if (parameter != nullptr)
                     {
                         return std::make_unique<BoundCheckBox>(registry, concreteParameterName,
-                                                               juce::String());
+                                                               juce::String(spec.label)); // [RQ-GUI-032]
                     }
                     return nullptr;
                 case ControlKind::ComboBoxValuedControl:

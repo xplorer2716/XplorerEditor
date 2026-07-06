@@ -41,6 +41,7 @@ namespace xplorer::app
 
     private:
         void placeFixedBlockControls();
+        void placeStaticLabels();
         void createPageFamilyBlocks();
         void createShortcutButtonsAndDisplay();
         void onSynthPageChanged(const controller::PageChangeEvent& event);

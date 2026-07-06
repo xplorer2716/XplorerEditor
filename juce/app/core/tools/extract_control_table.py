@@ -54,6 +54,13 @@ def main() -> None:
         types.setdefault(ctrl, typ)
     tags = dict(re.findall(r'this\.([A-Za-z_0-9]+)\.Tag = "([^"]*)";', src))
 
+    # Control .Text (checkbox / label captions). The form is localizable, so
+    # these live in the .resx, not the Designer. [RQ-GUI-032]
+    labels = {}
+    for name, (val, _) in data.items():
+        if name.endswith('.Text') and val and val.strip():
+            labels[name[:-5]] = val
+
     # Parent-child tree: a WinForms control's Location is relative to its
     # parent container, so nested controls (e.g. the family selector radios
     # inside PanelENV) need their ancestors' Locations added to become
@@ -79,15 +86,19 @@ def main() -> None:
         if any(s in kind for s in SKIPPED_KINDS):
             continue
         (x, y), (w, h) = absolute_loc(ctrl), g.get('size', (0, 0))
-        rows.append((ctrl, kind, x, y, w, h, tags.get(ctrl, '')))
+        rows.append((ctrl, kind, x, y, w, h, tags.get(ctrl, ''), labels.get(ctrl, '')))
+
+    def cpp_escape(text):
+        return text.replace('\\', '\\\\').replace('"', '\\"')
 
     with open(TABLE_OUT, 'w') as f:
-        f.write('// Mechanically extracted from Xplorer/View/MainForm.resx (geometry)\n'
-                '// and MainForm.Designer.cs (types, tags). Do not edit by hand;\n'
-                '// regenerate with juce/app/core/tools/extract_control_table.py.\n'
+        f.write('// Mechanically extracted from Xplorer/View/MainForm.resx (geometry,\n'
+                '// captions) and MainForm.Designer.cs (types, tags). Do not edit by\n'
+                '// hand; regenerate with juce/app/core/tools/extract_control_table.py.\n'
                 '// Logical canvas coordinates. [RQ-GUI-001]\n')
-        for ctrl, kind, x, y, w, h, tag in rows:
-            f.write(f'    {{"{ctrl}", ControlKind::{kind}, {x}, {y}, {w}, {h}, "{tag}"}},\n')
+        for ctrl, kind, x, y, w, h, tag, label in rows:
+            f.write(f'    {{"{ctrl}", ControlKind::{kind}, {x}, {y}, {w}, {h}, '
+                    f'"{tag}", "{cpp_escape(label)}"}},\n')
     print(f'{len(rows)} controls: {Counter(r[1] for r in rows).most_common()}')
 
 

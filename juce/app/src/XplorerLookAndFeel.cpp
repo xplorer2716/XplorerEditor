@@ -8,6 +8,8 @@ namespace xplorer::app
         setColour(juce::ComboBox::backgroundColourId, juce::Colour::fromRGB(30, 36, 44));
         setColour(juce::ComboBox::textColourId, juce::Colours::white);
         setColour(juce::PopupMenu::backgroundColourId, juce::Colour::fromRGB(30, 36, 44));
+        setColour(juce::ToggleButton::textColourId, juce::Colours::white);
+        setColour(juce::Label::textColourId, juce::Colours::white);
     }
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
