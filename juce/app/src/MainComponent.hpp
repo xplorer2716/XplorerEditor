@@ -5,6 +5,7 @@
 // extracted table. [RQ-GUI-001, RQ-GUI-005, RQ-GUI-007, ADR-006]
 
 #include "BoundControls.hpp"
+#include "DisplayPanel.hpp"
 #include "JuceEventDispatcher.hpp"
 #include "ModMatrixPanel.hpp"
 #include "PageFamilyBlock.hpp"
@@ -32,7 +33,9 @@ namespace xplorer::app
     private:
         void placeFixedBlockControls();
         void createPageFamilyBlocks();
+        void createShortcutButtonsAndDisplay();
         void onSynthPageChanged(const controller::PageChangeEvent& event);
+        void flashMidiActivity();
 
         juce::Image _background;
 
@@ -44,6 +47,23 @@ namespace xplorer::app
         std::vector<std::unique_ptr<juce::Component>> _controls;
         std::vector<std::unique_ptr<PageFamilyBlock>> _familyBlocks;
         std::unique_ptr<ModMatrixPanel> _matrixPanel;
+
+        DisplayPanel _display;
+        std::vector<std::unique_ptr<juce::TextButton>> _shortcutButtons;
+        std::unique_ptr<juce::FileChooser> _fileChooser;
+
+        // MIDI activity indicator (LedPanelControl replacement).
+        class MidiActivityLed final : public juce::Component, private juce::Timer
+        {
+        public:
+            void flash();
+            void paint(juce::Graphics& g) override;
+
+        private:
+            void timerCallback() override;
+            bool _lit = false;
+        };
+        MidiActivityLed _midiLed;
     };
 
     /// Resizable host applying the uniform scale transform to the canvas.

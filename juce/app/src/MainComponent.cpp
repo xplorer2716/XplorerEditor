@@ -49,7 +49,13 @@ namespace xplorer::app
 
         // Route controller parameter changes to the registry (UI refresh). [RQ-GUI-003]
         _controller->setAutomationParameterChangeHandler(
-            [this](const std::string& name, int value) { _registry->onParameterChanged(name, value); });
+            [this](const std::string& name, int value)
+            {
+                _registry->onParameterChanged(name, value);
+                _display.showParameter(name, value); // [RQ-GUI-020]
+            });
+        _controller->setMidiActivityHandler(
+            [this](controller::EnumMidiDevice) { flashMidiActivity(); }); // [RQ-GUI-022]
         _controller->setFullToneChangeHandler(
             [this](const controller::FullToneChangeEvent&)
             {
@@ -58,6 +64,8 @@ namespace xplorer::app
                 {
                     _matrixPanel->refreshAll(); // [RQ-GUI-017]
                 }
+                _display.showToneInfo(_controller->currentProgramNumber(),
+                                      _controller->toneName()); // [RQ-GUI-020]
             });
         _controller->setPageChangeHandler(
             [this](const controller::PageChangeEvent& event) { onSynthPageChanged(event); });
@@ -74,7 +82,9 @@ namespace xplorer::app
         placeFixedBlockControls();
         createPageFamilyBlocks();
         _matrixPanel = std::make_unique<ModMatrixPanel>(*this, *_controller);
+        createShortcutButtonsAndDisplay();
         _registry->refreshAllFromModel(); // seed all controls with the current tone
+        _display.showToneInfo(_controller->currentProgramNumber(), _controller->toneName());
     }
 
     MainComponent::~MainComponent() = default;
@@ -216,6 +226,119 @@ namespace xplorer::app
                 return;
             }
         }
+    }
+
+    void MainComponent::createShortcutButtonsAndDisplay()
+    {
+        // Display panel over the VFD area.
+        if (const auto* spec = [&]() -> const ControlSpec*
+            {
+                for (const auto& s : controlTable())
+                {
+                    if (std::string(s.id) == "_vfdDisplay")
+                    {
+                        return &s;
+                    }
+                }
+                return nullptr;
+            }())
+        {
+            _display.setBounds(spec->x, spec->y, spec->width, spec->height);
+            addAndMakeVisible(_display);
+        }
+
+        // MIDI activity LED.
+        for (const auto& spec : controlTable())
+        {
+            if (spec.kind == ControlKind::LedPanelControl)
+            {
+                _midiLed.setBounds(spec.x, spec.y, spec.width, spec.height);
+                addAndMakeVisible(_midiLed);
+            }
+        }
+
+        // 8 shortcut buttons (functional-first labels; GIF skin in TASK-JUCE-069).
+        // [RQ-GUI-021]
+        struct Shortcut { const char* id; const char* label; std::function<void()> action; };
+        const std::vector<Shortcut> shortcuts = {
+            {"btPatchMinus", "-", [this] { _controller->decreaseCurrentProgramNumber(); }},
+            {"btPatchPlus", "+", [this] { _controller->increaseCurrentProgramNumber(); }},
+            {"btPatchGoto", "GO", [this]
+             { /* StoreAndGotoPatchForm dialog: TASK-JUCE-067 */ }},
+            {"btPatchRandom", "R", [this]
+             { _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{}); }},
+            {"btPatchLoad", "LD", [this]
+             {
+                 _fileChooser = std::make_unique<juce::FileChooser>("Load patch", juce::File(), "*.syx");
+                 _fileChooser->launchAsync(
+                     juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                     [this](const juce::FileChooser& chooser)
+                     {
+                         const auto file = chooser.getResult();
+                         if (file.existsAsFile())
+                         {
+                             _controller->loadTone(file.getFullPathName().toStdString());
+                         }
+                     });
+             }},
+            {"btPatchSave", "SV", [this]
+             {
+                 _fileChooser = std::make_unique<juce::FileChooser>("Save patch", juce::File(), "*.syx");
+                 _fileChooser->launchAsync(
+                     juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                     [this](const juce::FileChooser& chooser)
+                     {
+                         const auto file = chooser.getResult();
+                         if (file != juce::File())
+                         {
+                             _controller->saveTone(file.getFullPathName().toStdString());
+                         }
+                     });
+             }},
+            {"btPatchStore", "ST", [this]
+             { /* StoreAndGotoPatchForm dialog: TASK-JUCE-067 */ }},
+            {"btSettings", "SET", [this] { /* settings dialog: TASK-JUCE-067 */ }},
+        };
+        for (const auto& shortcut : shortcuts)
+        {
+            for (const auto& spec : controlTable())
+            {
+                if (std::string(spec.id) == shortcut.id)
+                {
+                    auto button = std::make_unique<juce::TextButton>(shortcut.label);
+                    button->setBounds(spec.x, spec.y, spec.width, spec.height);
+                    button->onClick = shortcut.action;
+                    addAndMakeVisible(*button);
+                    _shortcutButtons.push_back(std::move(button));
+                    break;
+                }
+            }
+        }
+    }
+
+    void MainComponent::flashMidiActivity()
+    {
+        _midiLed.flash();
+    }
+
+    void MainComponent::MidiActivityLed::flash()
+    {
+        _lit = true;
+        repaint();
+        startTimer(120);
+    }
+
+    void MainComponent::MidiActivityLed::timerCallback()
+    {
+        _lit = false;
+        stopTimer();
+        repaint();
+    }
+
+    void MainComponent::MidiActivityLed::paint(juce::Graphics& g)
+    {
+        g.setColour(_lit ? juce::Colour::fromRGB(255, 120, 40) : juce::Colour::fromRGB(60, 30, 10));
+        g.fillRoundedRectangle(getLocalBounds().toFloat(), 2.0F);
     }
 
     void MainComponent::paint(juce::Graphics& g)
