@@ -6,6 +6,7 @@
 
 #include "BoundControls.hpp"
 #include "JuceEventDispatcher.hpp"
+#include "ModMatrixPanel.hpp"
 #include "PageFamilyBlock.hpp"
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
@@ -42,6 +43,7 @@ namespace xplorer::app
         std::unique_ptr<ParameterBindingRegistry> _registry;
         std::vector<std::unique_ptr<juce::Component>> _controls;
         std::vector<std::unique_ptr<PageFamilyBlock>> _familyBlocks;
+        std::unique_ptr<ModMatrixPanel> _matrixPanel;
     };
 
     /// Resizable host applying the uniform scale transform to the canvas.

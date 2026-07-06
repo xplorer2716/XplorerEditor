@@ -10,6 +10,7 @@ target_sources(XplorerApp PRIVATE
     src/MainComponent.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
+    src/ModMatrixPanel.cpp
     src/JuceEventDispatcher.cpp)
 
 # UI assets (background, button images) embedded as binary data

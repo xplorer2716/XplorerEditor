@@ -107,6 +107,8 @@ LABELS_OUT = 'juce/app/core/src/GeneratedEnumLabels.inc'
 COMBO_ENUMS = {
     'VCFFilterModes': 'EnumVCFFilterModes',
     'ModulationSources': 'EnumModulationSources',
+    'ModulationSourcesModMatrix': 'EnumModulationSourcesModMatrix',
+    'ModulationDestination': 'EnumModulationDestinations',
     'LFOWaveShapes': 'EnumLFOWaveShapes',
     'LFOTriggerSource': 'EnumLFOTriggerSources',
     'LFORetrigModes': 'EnumLFORetrigModes',

@@ -51,13 +51,29 @@ namespace xplorer::app
         _controller->setAutomationParameterChangeHandler(
             [this](const std::string& name, int value) { _registry->onParameterChanged(name, value); });
         _controller->setFullToneChangeHandler(
-            [this](const controller::FullToneChangeEvent&) { _registry->refreshAllFromModel(); });
+            [this](const controller::FullToneChangeEvent&)
+            {
+                _registry->refreshAllFromModel();
+                if (_matrixPanel != nullptr)
+                {
+                    _matrixPanel->refreshAll(); // [RQ-GUI-017]
+                }
+            });
         _controller->setPageChangeHandler(
             [this](const controller::PageChangeEvent& event) { onSynthPageChanged(event); });
+        _controller->setModulationEntryChangeHandler(
+            [this](const controller::ModulationEntryChangeEvent& event)
+            {
+                if (_matrixPanel != nullptr)
+                {
+                    _matrixPanel->refreshRow(event.entryNumber); // [RQ-GUI-017]
+                }
+            });
 
         setSize(LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
         placeFixedBlockControls();
         createPageFamilyBlocks();
+        _matrixPanel = std::make_unique<ModMatrixPanel>(*this, *_controller);
         _registry->refreshAllFromModel(); // seed all controls with the current tone
     }
 
