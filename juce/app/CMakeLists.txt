@@ -13,6 +13,8 @@ target_sources(XplorerApp PRIVATE
     src/ModMatrixPanel.cpp
     src/DisplayPanel.cpp
     src/Dialogs.cpp
+    src/SettingsDialog.cpp
+    src/ProgressWindow.cpp
     src/PianoWindow.cpp
     src/XplorerLookAndFeel.cpp
     src/JuceEventDispatcher.cpp)

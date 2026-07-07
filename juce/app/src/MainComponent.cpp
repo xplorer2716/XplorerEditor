@@ -2,8 +2,10 @@
 
 #include "BinaryData.h"
 #include "Dialogs.hpp"
+#include "SettingsDialog.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
+#include "xplorer/model/XpanderConstants.hpp"
 
 #include <juce_core/juce_core.h>
 
@@ -83,6 +85,9 @@ namespace xplorer::app
                     _matrixPanel->refreshRow(event.entryNumber); // [RQ-GUI-017]
                 }
             });
+        _controller->setAllDataDumpProgressionHandler(
+            [this](const controller::AllDataDumpProgressionEvent& event)
+            { onAllDataDumpProgression(event); }); // [RQ-GUI-026]
 
         setSize(LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
         placeFixedBlockControls();
@@ -338,8 +343,7 @@ namespace xplorer::app
             showStoreOrGotoDialog("Store", _controller->currentProgramNumber(),
                                   [this](int program) { _controller->storeSinglePatchToSynth(program); });
         };
-        _shortcutActions["btSettings"] = [this]
-        { showMidiSettingsDialog(*_controller, *_settingsService, _backend); };
+        _shortcutActions["btSettings"] = [this] { openSettingsDialog(); };
 
         // GIF base names (goto's "normal" image is gotopatch.gif in the assets).
         const std::map<std::string, std::string> gifBase = {
@@ -442,10 +446,20 @@ namespace xplorer::app
                 menu.addItem(15, "Randomize");
                 break;
             case 2: // Tools
-                menu.addItem(20, "MIDI settings...");
+            {
+                menu.addItem(20, "Settings...");
                 menu.addItem(21, "Tune request");
                 menu.addItem(22, "Piano keyboard");
+                juce::PopupMenu singlePatches;
+                singlePatches.addItem(40, "Get all single patches from synth");
+                singlePatches.addItem(41, "Extract all single patches from file");
+                menu.addSubMenu("Single patches...", singlePatches);
+                juce::PopupMenu allDataDump;
+                allDataDump.addItem(42, "Backup all data");
+                allDataDump.addItem(43, "Restore all data");
+                menu.addSubMenu("Backup/Restore...", allDataDump);
                 break;
+            }
             case 3: // Help
                 menu.addItem(30, "About");
                 break;
@@ -495,7 +509,7 @@ namespace xplorer::app
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
                 break;
             case 20:
-                showMidiSettingsDialog(*_controller, *_settingsService, _backend);
+                openSettingsDialog();
                 break;
             case 21:
                 _controller->sendTuneRequestToSynth();
@@ -514,8 +528,141 @@ namespace xplorer::app
             case 30:
                 showAboutDialog("Xplorer 0.1.0");
                 break;
+            case 40:
+                getAllSinglePatchesFromSynth();
+                break;
+            case 41:
+                showExtractSingleTonesDialog(*_controller);
+                break;
+            case 42:
+                backupAllData();
+                break;
+            case 43:
+                restoreAllData();
+                break;
             default:
                 break;
+        }
+    }
+
+    void MainComponent::openSettingsDialog()
+    {
+        showSettingsDialog(*_controller, *_settingsService, _backend,
+                           [this](int argb) { updateLedColour(argb); }); // [RQ-GUI-025]
+    }
+
+    void MainComponent::updateLedColour(int argb)
+    {
+        // Rebuild the skin with the new LED colour and repaint the tree. [RQ-GUI-031]
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+        _lookAndFeel = std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(argb)));
+        juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
+        if (auto* top = getTopLevelComponent())
+        {
+            top->sendLookAndFeelChange();
+        }
+    }
+
+    void MainComponent::backupAllData()
+    {
+        _fileChooser = std::make_unique<juce::FileChooser>("Backup all data", juce::File(), "*.syx");
+        _fileChooser->launchAsync(
+            juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+            [this](const juce::FileChooser& chooser)
+            {
+                const auto file = chooser.getResult();
+                if (file == juce::File())
+                {
+                    return;
+                }
+                _allDataDumpModeIsAll = true;
+                try
+                {
+                    _controller->backupAllDataDumpToFile(file.getFullPathName().toStdString()); // [RQ-CTL-005]
+                }
+                catch (const std::exception& e)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "All data dump backup", e.what());
+                }
+            });
+    }
+
+    void MainComponent::restoreAllData()
+    {
+        _fileChooser = std::make_unique<juce::FileChooser>("Restore all data", juce::File(), "*.syx");
+        _fileChooser->launchAsync(
+            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+            [this](const juce::FileChooser& chooser)
+            {
+                const auto file = chooser.getResult();
+                if (file.existsAsFile())
+                {
+                    runRestoreAllDataWithProgress(*_controller, file.getFullPathName().toStdString());
+                }
+            });
+    }
+
+    void MainComponent::getAllSinglePatchesFromSynth()
+    {
+        _fileChooser = std::make_unique<juce::FileChooser>(
+            "Destination folder for single patch sysex files", juce::File(), juce::String());
+        _fileChooser->launchAsync(
+            juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+            [this](const juce::FileChooser& chooser)
+            {
+                const auto folder = chooser.getResult();
+                if (folder == juce::File())
+                {
+                    return;
+                }
+                _allDataDumpModeIsAll = false;
+                try
+                {
+                    _controller->getSingleTonesFromSynth(folder.getFullPathName().toStdString()); // [RQ-CTL-004]
+                }
+                catch (const std::exception& e)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "Single patches", e.what());
+                }
+            });
+    }
+
+    void MainComponent::onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event)
+    {
+        // Event-driven progress for backup / get-all-single-patches (the
+        // reception is fed by incoming MIDI). Port of MainForm's progression
+        // handler. [RQ-GUI-026]
+        const int received = event.singlePatchCount + event.multiPatchCount;
+        const int maxValue = _allDataDumpModeIsAll
+                                 ? model::constants::SINGLE_TONES_MAX_COUNT + model::constants::MULTI_PATCHES_MAX_COUNT
+                                 : model::constants::SINGLE_TONES_MAX_COUNT;
+
+        if (_progressWindow == nullptr)
+        {
+            _progressWindow = std::make_unique<ProgressWindow>();
+            _progressWindow->begin(_allDataDumpModeIsAll ? "All data dump request in progress..."
+                                                         : "Receiving single patches...",
+                                   maxValue);
+        }
+
+        const bool finished = !event.isWaitingForAllDataDumpRequest || received >= maxValue;
+        if (finished)
+        {
+            _progressWindow.reset();
+        }
+        else if (event.multiPatchCount == 0)
+        {
+            _progressWindow->setStatus("Receiving single patch [" + juce::String(event.singlePatchCount) + "/"
+                                           + juce::String(model::constants::SINGLE_TONES_MAX_COUNT) + "]",
+                                       received);
+        }
+        else
+        {
+            _progressWindow->setStatus("Receiving multi patch [" + juce::String(event.multiPatchCount) + "/"
+                                           + juce::String(model::constants::MULTI_PATCHES_MAX_COUNT) + "]",
+                                       received);
         }
     }
 

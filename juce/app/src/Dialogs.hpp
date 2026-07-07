@@ -21,11 +21,14 @@ namespace xplorer::app
                            settings::ISettingsService& settingsService,
                            xpl::midi::MidiBackend& backend);
 
-    /// MIDI settings dialog: device selection + channel + transmit delay +
-    /// synth type + smart all-notes-off. On accept, persists and re-applies.
-    void showMidiSettingsDialog(controller::XpanderController& controller,
-                                settings::ISettingsService& settingsService,
-                                xpl::midi::MidiBackend& backend);
+    /// Extract-single-tones dialog: bank sysex file + destination folder, then
+    /// runs the extraction and reports the file count. [RQ-GUI-025]
+    void showExtractSingleTonesDialog(controller::XpanderController& controller);
+
+    /// Runs the (blocking) all-data-dump restore off the message thread with a
+    /// modal progress window; reports any error. [RQ-GUI-026]
+    void runRestoreAllDataWithProgress(controller::XpanderController& controller,
+                                       const std::string& fileName);
 
     /// Program-number chooser; `title` is "Go to patch" or "Store". Calls
     /// `onAccept(programNumber)`.

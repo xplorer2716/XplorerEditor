@@ -73,7 +73,7 @@
 | TASK-JUCE-064 | `PageFamilyBlock` ×4 (ENV/LFO/RAMP/TRACK): shared controls, selector buttons, digit substitution, synth page-change sync — logic headless-tested. **Milestone M1: owner Windows build** | L | RQ-GUI-010..012 |
 | TASK-JUCE-065 | Modulation matrix panel: 20 rows, availability rules, entry/full-tone refresh | L | RQ-GUI-015..017 |
 | TASK-JUCE-066 | Display panel (fixed-font text: program, name, last parameter, typewriter) + 8 shortcut buttons + MIDI activity indicator | L | RQ-GUI-020..022 |
-| TASK-JUCE-067 | Menu bar + dialogs: settings (3 pages), rename, store/goto, extract, morphing, async progress (ThreadPool + cancellation), about. **Milestone M2** | L | RQ-GUI-008, RQ-GUI-025..027 |
+| TASK-JUCE-067 | Menu bar + dialogs: settings (3 pages: MIDI/UI/randomizer), rename, store/goto, extract single tones, backup/restore + get-all-patches with progress, about. **Milestone M2**. *Morphing deferred: the reference `ToneMorphingForm` is flagged work-in-progress (empty OK/Cancel, not wired to any menu) — see architecture-analysis_juce §11.* | L | RQ-GUI-008, RQ-GUI-025..027 |
 | TASK-JUCE-068 | Piano-keyboard window | M | RQ-GUI-028 |
 | TASK-JUCE-069 | Skin pass: `XplorerLookAndFeel` (knobs + LED ring per UiConfiguration, image buttons, custom checks/radios), VFD-style display rendering. **Milestone M3** | L | RQ-GUI-031, RQ-GUI-020 |
 

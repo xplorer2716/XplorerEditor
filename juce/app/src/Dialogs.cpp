@@ -23,80 +23,148 @@ namespace xplorer::app
                          midi.editingProgramNumber));
     }
 
-    void showMidiSettingsDialog(controller::XpanderController& controller,
-                                settings::ISettingsService& settingsService,
-                                xpl::midi::MidiBackend& backend)
+    namespace
     {
-        auto* window = new juce::AlertWindow("MIDI settings",
-                                             "Configure MIDI devices and options",
-                                             juce::MessageBoxIconType::NoIcon);
-        const auto& midi = settingsService.allUsersSettings().midiConfig;
+        const juce::String SYSEX_WILDCARD = "*.syx;*.mid";
 
-        auto addDeviceCombo = [&](const juce::String& label, const std::vector<std::string>& names,
-                                  const std::string& current)
+        /// Two-step file/folder picker for the extract dialog: chooses a bank
+        /// sysex file, then a destination folder, then runs the extraction.
+        class ExtractFlow final : private juce::DeletedAtShutdown
         {
-            juce::StringArray items;
-            items.add("(none)");
-            for (const auto& name : names)
+        public:
+            explicit ExtractFlow(controller::XpanderController& controller) : _controller(controller) {}
+
+            void start()
             {
-                items.add(name);
+                _bankChooser = std::make_unique<juce::FileChooser>(
+                    "Choose a bank (all data dump) sysex file", juce::File(), SYSEX_WILDCARD);
+                _bankChooser->launchAsync(
+                    juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                    [this](const juce::FileChooser& fc)
+                    {
+                        const auto file = fc.getResult();
+                        if (file == juce::File())
+                        {
+                            delete this;
+                            return;
+                        }
+                        _bankFile = file;
+                        chooseFolder();
+                    });
             }
-            window->addComboBox(label, items);
-            auto* combo = window->getComboBoxComponent(label);
-            combo->setSelectedItemIndex(0);
-            for (int i = 0; i < static_cast<int>(names.size()); ++i)
+
+        private:
+            void chooseFolder()
             {
-                if (names[static_cast<std::size_t>(i)] == current)
+                _folderChooser = std::make_unique<juce::FileChooser>(
+                    "Choose a destination folder", juce::File(), juce::String());
+                _folderChooser->launchAsync(
+                    juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                    [this](const juce::FileChooser& fc)
+                    {
+                        const auto folder = fc.getResult();
+                        if (folder == juce::File())
+                        {
+                            delete this;
+                            return;
+                        }
+                        runExtraction(folder);
+                        delete this;
+                    });
+            }
+
+            void runExtraction(const juce::File& folder)
+            {
+                try
                 {
-                    combo->setSelectedItemIndex(i + 1);
+                    const auto tones = _controller.extractSinglePatchesFromAllDataDumpFileToDirectory(
+                        _bankFile.getFullPathName().toStdString(), folder.getFullPathName().toStdString());
+                    if (tones.empty())
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                              "Single patches",
+                                                              "Unable to extract single patches from file!");
+                    }
+                    else
+                    {
+                        juce::AlertWindow::showMessageBoxAsync(
+                            juce::MessageBoxIconType::InfoIcon, "Single patches",
+                            juce::String(static_cast<int>(tones.size()))
+                                + " files extracted successfully to folder "
+                                + folder.getFullPathName());
+                    }
+                }
+                catch (const std::exception& e)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "Single patches extraction", e.what());
                 }
             }
+
+            controller::XpanderController& _controller;
+            juce::File _bankFile;
+            std::unique_ptr<juce::FileChooser> _bankChooser;
+            std::unique_ptr<juce::FileChooser> _folderChooser;
         };
 
-        addDeviceCombo("Synth output", backend.outputDeviceNames(), midi.synthOutputDeviceName);
-        addDeviceCombo("Synth input", backend.inputDeviceNames(), midi.synthInputDeviceName);
-        addDeviceCombo("Automation input", backend.inputDeviceNames(), midi.automationInputDeviceName);
-        window->addTextEditor("MIDI channel (1-16)", juce::String(midi.midiChannel));
-        window->addTextEditor("SysEx transmit delay (ms)", juce::String(midi.sysexTransmitDelay));
-        window->addTextEditor("Synth type (Xpander/Matrix12)",
-                              midi.synthTypeIsMatrix12 ? "Matrix12" : "Xpander");
-        window->addTextEditor("Smart all notes off (yes/no)", midi.smartAllNotesOff ? "yes" : "no");
-        window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
-        window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+        /// Background thread that runs the blocking restore loop and mirrors
+        /// its progression into the modal progress window. [RQ-GUI-026]
+        class RestoreThread final : public juce::ThreadWithProgressWindow
+        {
+        public:
+            RestoreThread(controller::XpanderController& controller, std::string fileName)
+                : juce::ThreadWithProgressWindow("All data dump restore", true, false),
+                  _controller(controller), _fileName(std::move(fileName))
+            {
+            }
 
-        window->enterModalState(true,
-            juce::ModalCallbackFunction::create(
-                [window, &controller, &settingsService, &backend](int result)
+            void run() override
+            {
+                try
                 {
-                    std::unique_ptr<juce::AlertWindow> owner(window);
-                    if (result == 0)
-                    {
-                        return;
-                    }
-                    auto settings = settingsService.allUsersSettings();
-                    auto& midiConfig = settings.midiConfig;
-                    auto comboText = [window](const juce::String& label)
-                    {
-                        const auto text = window->getComboBoxComponent(label)->getText();
-                        return text == "(none)" ? juce::String() : text;
-                    };
-                    midiConfig.synthOutputDeviceName = comboText("Synth output").toStdString();
-                    midiConfig.synthInputDeviceName = comboText("Synth input").toStdString();
-                    midiConfig.automationInputDeviceName = comboText("Automation input").toStdString();
-                    midiConfig.midiChannel =
-                        juce::jlimit(1, 16, window->getTextEditorContents("MIDI channel (1-16)").getIntValue());
-                    midiConfig.sysexTransmitDelay =
-                        juce::jmax(0, window->getTextEditorContents("SysEx transmit delay (ms)").getIntValue());
-                    midiConfig.synthTypeIsMatrix12 =
-                        window->getTextEditorContents("Synth type (Xpander/Matrix12)")
-                            .trim()
-                            .equalsIgnoreCase("Matrix12");
-                    midiConfig.smartAllNotesOff =
-                        window->getTextEditorContents("Smart all notes off (yes/no)").trim().equalsIgnoreCase("yes");
-                    settingsService.saveSettings(settings);
-                    applyMidiSettings(controller, settingsService, backend);
-                }),
-            false);
+                    _controller.restoreAllDataDumpToSynth(
+                        _fileName,
+                        [this](int current, int count)
+                        {
+                            setProgress(count > 0 ? static_cast<double>(current) / static_cast<double>(count)
+                                                  : 0.0);
+                            setStatusMessage("Sending data [" + juce::String(current) + "/"
+                                             + juce::String(count) + "]");
+                        });
+                }
+                catch (const std::exception& e)
+                {
+                    _error = e.what();
+                }
+            }
+
+            void threadComplete(bool /*userPressedCancel*/) override
+            {
+                if (_error.isNotEmpty())
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "All data dump restore", _error);
+                }
+                delete this; // self-owned; launched detached. [RQ-GUI-026]
+            }
+
+        private:
+            controller::XpanderController& _controller;
+            std::string _fileName;
+            juce::String _error;
+        };
+    }
+
+    void showExtractSingleTonesDialog(controller::XpanderController& controller)
+    {
+        (new ExtractFlow(controller))->start();
+    }
+
+    void runRestoreAllDataWithProgress(controller::XpanderController& controller, const std::string& fileName)
+    {
+        // Detached, self-deleting: keeps the message thread responsive while
+        // the blocking send loop runs on the worker. [RQ-GUI-026]
+        (new RestoreThread(controller, fileName))->launchThread();
     }
 
     void showStoreOrGotoDialog(const std::string& title, int currentProgram,

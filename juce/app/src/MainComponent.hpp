@@ -10,6 +10,7 @@
 #include "ModMatrixPanel.hpp"
 #include "PageFamilyBlock.hpp"
 #include "PianoWindow.hpp"
+#include "ProgressWindow.hpp"
 #include "XplorerLookAndFeel.hpp"
 
 #include <map>
@@ -45,7 +46,13 @@ namespace xplorer::app
         void createPageFamilyBlocks();
         void createShortcutButtonsAndDisplay();
         void onSynthPageChanged(const controller::PageChangeEvent& event);
+        void onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event);
         void flashMidiActivity();
+        void openSettingsDialog();
+        void updateLedColour(int argb);
+        void backupAllData();
+        void restoreAllData();
+        void getAllSinglePatchesFromSynth();
 
         juce::Image _background;
 
@@ -64,6 +71,10 @@ namespace xplorer::app
         std::map<std::string, std::function<void()>> _shortcutActions;
         std::unique_ptr<juce::FileChooser> _fileChooser;
         std::unique_ptr<PianoWindow> _pianoWindow;
+        std::unique_ptr<ProgressWindow> _progressWindow;
+        // Reception mode of the in-flight all-data-dump request, so the
+        // progress window shows the right range/labels (event has no mode).
+        bool _allDataDumpModeIsAll = false;
 
         // MIDI activity indicator (LedPanelControl replacement).
         class MidiActivityLed final : public juce::Component, private juce::Timer
