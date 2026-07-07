@@ -200,7 +200,6 @@ namespace xplorer::app
                 selector->setCurrentColour(_ledColour);
                 selector->setSize(300, 300);
                 selector->addChangeListener(this);
-                _selector = selector.get();
                 juce::CallOutBox::launchAsynchronously(std::move(selector), _chooseColour.getScreenBounds(),
                                                        nullptr);
             }
@@ -244,7 +243,6 @@ namespace xplorer::app
             juce::TextButton _chooseColour;
             juce::Component _swatch;
             juce::ToggleButton _linear, _circular, _standard, _flat;
-            juce::ColourSelector* _selector = nullptr;
         };
 
         // ---- Randomizer page ----------------------------------------------

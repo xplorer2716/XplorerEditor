@@ -1,0 +1,48 @@
+# Native Windows (MSVC, x64) build of the JUCE GUI application. JUCE does not
+# support MinGW (juce_TargetPlatform.h #errors on it), so the amd64 binary is
+# produced here with the Visual Studio toolchain and uploaded as an artifact
+# the owner can download and validate. [RQ-BLD-002, RQ-BLD-004, RQ-GUI]
+name: juce-windows
+
+on:
+  push:
+    paths: ['juce/**', '.github/workflows/juce-windows.yml']
+  pull_request:
+    paths: ['juce/**', '.github/workflows/juce-windows.yml']
+  workflow_dispatch:
+
+jobs:
+  windows-app:
+    name: Build Xplorer.exe (x64)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (MSVC, x64, GUI app)
+        run: >
+          cmake -S juce -B juce/build-win -G "Visual Studio 17 2022" -A x64
+          -DXPL_BUILD_APP=ON -DXPL_BUILD_TESTS=ON
+
+      - name: Build tests + app (Release)
+        run: cmake --build juce/build-win --config Release -j
+
+      - name: Run unit tests
+        run: ctest --test-dir juce/build-win --build-config Release --output-on-failure
+
+      - name: Locate the produced binary
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter Xplorer.exe juce/build-win |
+                 Select-Object -First 1
+          if (-not $exe) { throw "Xplorer.exe was not produced" }
+          Write-Host "Built: $($exe.FullName)"
+          & $exe.FullName --version 2>$null; # smoke: image loads (may no-op)
+          "XPLORER_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload Windows binary (amd64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-win-x64
+          path: ${{ env.XPLORER_EXE }}
+          if-no-files-found: error

@@ -81,7 +81,7 @@
 
 | Task | Deliverable | Tier | Requirements |
 |---|---|---|---|
-| TASK-JUCE-070 | Windows build validation + packaging | L | RQ-BLD-002 |
+| TASK-JUCE-070 | Windows build validation + packaging: native MSVC `windows-latest` CI (`juce-windows.yml`) building `XplorerApp` (x64) + tests, uploading `Xplorer.exe` as an artifact. *MinGW cross-compile ruled out — JUCE `#error`s on it (RQ-BLD-008).* | L | RQ-BLD-002, RQ-BLD-008 |
 | TASK-JUCE-071 | Manual hardware validation checklist executed by owner (real Xpander/Matrix-12) | — | RQ-TST-006 |
 | TASK-JUCE-072 | Cross-compat campaign: patch libraries and settings exchanged between .NET and JUCE builds | M | RQ-MOD-050, RQ-SET-006, RQ-NFR-003 |
 
