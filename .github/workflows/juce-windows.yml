@@ -2,6 +2,10 @@
 # support MinGW (juce_TargetPlatform.h #errors on it), so the amd64 binary is
 # produced here with the Visual Studio toolchain and uploaded as an artifact
 # the owner can download and validate. [RQ-BLD-002, RQ-BLD-004, RQ-GUI]
+#
+# Tests run by default on push / pull_request. To build only the binary
+# without tests, trigger the workflow manually (Actions -> juce-windows ->
+# "Run workflow") and untick "Build and run the unit tests".
 name: juce-windows
 
 on:
@@ -10,6 +14,16 @@ on:
   pull_request:
     paths: ['juce/**', '.github/workflows/juce-windows.yml']
   workflow_dispatch:
+    inputs:
+      run_tests:
+        description: 'Build and run the unit tests'
+        type: boolean
+        default: true
+
+env:
+  # 'true' on push/PR (inputs unset) and on a dispatch with the box ticked;
+  # only an explicit manual "false" turns tests off.
+  RUN_TESTS: ${{ github.event.inputs.run_tests != 'false' }}
 
 jobs:
   windows-app:
@@ -22,12 +36,13 @@ jobs:
       - name: Configure (MSVC, x64, GUI app)
         run: >
           cmake -S juce -B juce/build-win -G "Visual Studio 17 2022" -A x64
-          -DXPL_BUILD_APP=ON -DXPL_BUILD_TESTS=ON
+          -DXPL_BUILD_APP=ON -DXPL_BUILD_TESTS=${{ env.RUN_TESTS == 'true' && 'ON' || 'OFF' }}
 
-      - name: Build tests + app (Release)
+      - name: Build app${{ env.RUN_TESTS == 'true' && ' + tests' || '' }} (Release)
         run: cmake --build juce/build-win --config Release -j
 
       - name: Run unit tests
+        if: env.RUN_TESTS == 'true'
         run: ctest --test-dir juce/build-win --build-config Release --output-on-failure
 
       - name: Locate the produced binary
