@@ -593,7 +593,8 @@ namespace xplorer::controller
             return text;
         };
         std::string line1 = _productNameAndVersion;
-        std::transform(line1.begin(), line1.end(), line1.begin(), ::toupper);
+        std::transform(line1.begin(), line1.end(), line1.begin(),
+            [](char c) { return static_cast<char>(::toupper(static_cast<unsigned char>(c))); });
         line1 = padRight(line1, PADDING_LENGTH);
         const auto line2 = padRight("GITHUB.COM/XPLORER2716/XPLOREREDITOR", PADDING_LENGTH);
         sendDisplayOffOnToSynth();
