@@ -25,6 +25,7 @@ SCENARIO("The logger filters by level and writes timestamped lines", "[RQ-FMW-07
     GIVEN("a configured logger at Info level")
     {
         const auto logPath = std::filesystem::temp_directory_path() / "xpl_logger_test.log";
+        Logger::shutdown(); // release any handle left open by a previous section (Windows locks open files)
         std::filesystem::remove(logPath);
         REQUIRE(Logger::configure(logPath.string()));
         Logger::setLevel(TraceLevel::Info);

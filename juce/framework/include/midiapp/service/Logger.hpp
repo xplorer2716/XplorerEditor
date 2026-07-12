@@ -26,6 +26,9 @@ namespace midiapp::service
         static void setLevel(TraceLevel level);
         [[nodiscard]] static TraceLevel level();
 
+        /// Closes the sink file, releasing its handle (e.g. before deleting it).
+        static void shutdown();
+
         /// `source` mirrors the reference's caller argument.
         static void writeLine(const std::string& source, TraceLevel level, const std::string& message);
     };

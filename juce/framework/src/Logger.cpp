@@ -47,6 +47,12 @@ namespace midiapp::service
         return g_level;
     }
 
+    void Logger::shutdown()
+    {
+        const std::lock_guard lock(g_mutex);
+        g_sink.close();
+    }
+
     void Logger::writeLine(const std::string& source, TraceLevel level, const std::string& message)
     {
         if (level == TraceLevel::Off || static_cast<int>(level) > static_cast<int>(g_level.load()))
