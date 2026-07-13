@@ -75,7 +75,8 @@
 | TASK-JUCE-066 | Display panel (fixed-font text: program, name, last parameter, typewriter) + 8 shortcut buttons + MIDI activity indicator. *M2 owner review (#9): `VfdDisplayHelper` ported so the last-parameter line shows the friendly name + value-by-control-type (combo/radio label, checkbox Y/N, knob numeric) + MIDI CC, and modulation-matrix edits display SRC/DEST/AMNT/QTZ; the `.` active-mod-destination marker is deferred.* | L | RQ-GUI-020..022 |
 | TASK-JUCE-067 | Menu bar + dialogs: settings (3 pages: MIDI/UI/randomizer), rename, store/goto, extract single tones, backup/restore + get-all-patches with progress, about; window-wide `.syx` drag & drop + shared load-by-type. **Milestone M2**. *Morphing deferred: the reference `ToneMorphingForm` is flagged work-in-progress (empty OK/Cancel, not wired to any menu) — see architecture-analysis_juce §11.* | L | RQ-GUI-008, RQ-GUI-025..027, RQ-GUI-029 |
 | TASK-JUCE-068 | Piano-keyboard window | M | RQ-GUI-028 |
-| TASK-JUCE-069 | Skin pass: `XplorerLookAndFeel` (knobs + LED ring per UiConfiguration, image buttons, custom checks/radios), VFD-style display rendering. **Milestone M3** | L | RQ-GUI-031, RQ-GUI-020 |
+| TASK-JUCE-069 | Skin pass: `XplorerLookAndFeel` (knobs + LED ring per UiConfiguration, image buttons, custom checks/radios). **Milestone M3**. *The VFD rendering piece is split out into TASK-JUCE-073.* | L | RQ-GUI-031 |
+| TASK-JUCE-073 | VFD bitmap glyph rendering (added 2026-07 after M2 review): extract `MATRIXTINY` sheet to assets, `DisplayPanel` paints 12×16 glyph cells per ADR-007 (direct sprite-sheet paint + `setBufferedToImage`, reference grid formula, nearest-neighbour scaling); `VfdDisplayHelper` wrap width unified with the computed grid. *Awaiting owner arbitration on the 4-vs-5-line open point (ADR-007) before implementation.* | L | RQ-GUI-033 |
 
 ## Phase 6 — Integration & cut-over
 
