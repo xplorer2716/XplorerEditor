@@ -57,7 +57,7 @@ The main features of Xplorer are:
 I have no time to develop new features, still I maintain the app (bug fixing) for my own needs.
 You are free to fork, contribute and submit PRs.
 
-## IMPORTANT - Future of Xplorer
+## IMPORTANT - Future of Xplorer (WORK IN PROGRESS)
 
 Xplorer was started about ten years ago as a personal project, and then commercialized for a few years.
 
