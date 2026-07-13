@@ -1,35 +1,88 @@
 # Xplorer (JUCE Port) – Software Architecture Analysis
 
 > **Author**: Claude (JUCE migration, branch `claude/xplorer-editor-juce-wl25q7`)
-> **Date**: 2026
-> **Target**: C++20 · JUCE 8.0.9 · CMake · 1 Git repository · 6 library targets + tests
+> **Date**: 2026-07 (updated after Phase 5 — full GUI — completion)
+> **Target**: C++20 · JUCE 8.0.9 · CMake · 1 Git repository · 7 library targets + GUI app + tests
 > **Purpose**: Oberheim Xpander / Matrix-12 real-time MIDI patch editor
-> **Scope**: non-UI layers only — the View layer (Phase 5) does not exist yet.
-> Structure mirrors [`architecture-analysis.md`](architecture-analysis.md) for side-by-side comparison.
+> **Scope**: the complete port — all layers including the JUCE View. The application is now
+> a near-total functional equivalent of the .NET original (remaining gaps: §10).
+
+## Document structure
+
+| Section | Content |
+|---|---|
+| [1. Executive summary](#1-executive-summary) | Where the port stands, at a glance |
+| [2. Repository & build architecture](#2-repository--build-architecture) | Targets, dependencies, CI pipelines |
+| [3. Layered architecture](#3-layered-architecture) | The four layers and their seams |
+| [4. The JUCE application architecture](#4-the-juce-application-architecture) | **The View layer in detail** — shell, canvas, extraction pipeline, binding, panels, dialogs, threading |
+| [5. Core subsystems](#5-core-subsystems) | Worker queue, bidirectional MIDI flow, settings, tone model |
+| [6. SOLID analysis](#6-solid-analysis) | Principle-by-principle assessment |
+| [7. Key design patterns](#7-key-design-patterns) | Patterns and where they live |
+| [8. Threading model](#8-threading-model) | Every thread in the running application |
+| [9. Testing architecture](#9-testing-architecture) | What is machine-tested vs owner-validated |
+| [10. Remaining gaps & improvement backlog](#10-remaining-gaps--improvement-backlog) | Open items, each with a status |
+| [11. Architecture summary](#11-architecture-summary) | Context diagram, strengths, weaknesses |
+| [12. Notable differences vs the C# implementation](#12-notable-differences-vs-the-c-implementation) | Every deliberate deviation (comparison heritage of this document) |
+| [13. Edge cases, reference quirks and verbatim conversions](#13-edge-cases-reference-quirks-and-verbatim-conversions) | Latent reference bugs and how each was handled |
+
+Sections 12–13 preserve this document's original 1:1-comparison role; sections 4, 8 and 9
+carry the new emphasis: **how the JUCE application itself is built**.
 
 ---
 
-## 1. Repository & Project Map
+## 1. Executive summary
 
-The port lives in **one repository** (this one, under `juce/`), replacing the 3-repo split. The MidiApp and Sanford submodules remain as read-only behavioral references; JUCE and Catch2 are pinned external dependencies fetched at configure time.
+All five migration phases are implemented and the GUI application runs the full reference
+feature set: the single main window with all ~230 controls over the reference artwork,
+page families, the 20-row modulation matrix, the bitmap-glyph VFD, the 3-LED MIDI traffic
+panel, menus and every dialog workflow (settings, store/goto, rename, extract, backup /
+restore with progress, piano keyboard, about), plus `.syx` drag & drop. Wire and file
+formats are byte-compatible with the .NET version (verified against real hardware dumps);
+settings files interchange in both directions.
+
+- **79 Catch2 scenarios** run headless in CI (Linux); a native Windows CI job builds
+  `Xplorer.exe` (x64, MSVC) and runs the same suite.
+- Every UI *logic* concern (control table, binding registry, page-family resolution,
+  metadata) lives in a UI-framework-free library (`xpl_app_core`) and is machine-tested;
+  thin JUCE wrappers stay visual-validation-only (owner, on Windows).
+- Eight ADRs document every structural decision and deviation.
+- Not ported (deliberate): tone morphing UX (reference form is unfinished), multi-patch
+  mode (out of scope, as reference), `BugReportFactory` payload (§10).
+
+---
+
+## 2. Repository & build architecture
+
+One repository; the .NET solution remains untouched and buildable during the whole
+migration (RQ-BLD-004) and serves as the behavioral reference. The C++ tree builds with a
+single CMake invocation (RQ-BLD-005); JUCE and Catch2 are pinned FetchContent dependencies
+— no copied binaries.
 
 ```mermaid
 graph TD
-    subgraph repo-xplorer ["🗂 Repo: XplorerEditor / juce/"]
-        Controller["📦 xpl_controller\n(XpanderController port)"]
-        Settings["📦 xpl_settings\n(settings service)"]
-        Model["📦 xpl_model\n(Xpander tone, parameters, SysEx I/O)"]
-        Framework["📦 xpl_framework\n(MidiApp.MidiController port)"]
-        Midi["📦 xpl_midi\n(backend-agnostic MIDI abstraction)"]
-        MidiJuce["📦 xpl_midi_juce\n(JUCE adapter)"]
-        Tests["🧪 tests/ (Catch2, 65 scenarios)"]
+    subgraph repo ["🗂 Repo: XplorerEditor / juce/"]
+        App["🖥 XplorerApp (GUI, XPL_BUILD_APP=ON)\napp/src — JUCE components"]
+        AppCore["📦 xpl_app_core\napp/core — UI-framework-free app logic"]
+        Controller["📦 xpl_controller"]
+        Settings["📦 xpl_settings"]
+        Model["📦 xpl_model"]
+        Framework["📦 xpl_framework"]
+        MidiJuce["📦 xpl_midi_juce (JUCE adapter)"]
+        Midi["📦 xpl_midi (backend-agnostic)"]
+        Assets["🎨 XplorerAssets (BinaryData)\nbackground, button GIFs, VFD glyph sheet"]
+        Tests["🧪 tests/ (Catch2, 79 scenarios)"]
     end
 
     subgraph external ["⬇ FetchContent (pinned)"]
-        JUCE["JUCE 8.0.9\n(juce_audio_devices, juce_core)"]
+        JUCE["JUCE 8.0.9"]
         Catch2["Catch2 v3.9.1"]
     end
 
+    App --> AppCore
+    App --> MidiJuce
+    App --> Assets
+    App --> JUCE
+    AppCore --> Controller
     Controller --> Model
     Controller --> Settings
     Settings --> Model
@@ -38,79 +91,327 @@ graph TD
     MidiJuce --> Midi
     MidiJuce --> JUCE
     Settings -.private.-> JUCE
-    Tests --> Controller
+    Tests --> AppCore
     Tests --> MidiJuce
     Tests --> Catch2
 ```
 
+**CI pipelines** (GitHub Actions):
+
+| Workflow | Runner | Role |
+|---|---|---|
+| `juce-ci.yml` | ubuntu-latest | Configure, build, `ctest` — the 79 headless scenarios on every push (RQ-BLD-007) |
+| `juce-windows.yml` | windows-2022 | MSVC x64 build of `Xplorer.exe` + same test suite; uploads the binary as artifact for owner validation. `workflow_dispatch` input `run_tests` allows a binary-only run. MinGW cross-compile is not viable — JUCE `#error`s on it (RQ-BLD-008). |
+
 ---
 
-## 2. Layered Architecture
+## 3. Layered architecture
 
-Same 3-layer MVC-inspired separation; the View layer is **not yet implemented** (Phase 5). A new seam exists that the reference did not have: the **MIDI backend interface** (ADR-004), with a JUCE implementation and an in-memory mock.
+Same 3-layer MVC-inspired separation as the reference, plus two seams the reference did
+not have: the **MIDI backend interface** (ADR-004) and the split of the View into
+**headless app logic** (`xpl_app_core`) vs **JUCE components** (`app/src`, ADR-006).
 
 ```mermaid
 flowchart TB
-    subgraph VIEW ["🖥 View Layer — NOT YET IMPLEMENTED (Phase 5)"]
-        Future["JUCE app: main window, custom widgets,\ndialogs, control⇄parameter binding"]
+    subgraph VIEW ["🖥 View Layer"]
+        JuceApp["app/src — JUCE components\nMainComponent, panels, dialogs, LookAndFeel"]
+        AppCore["app/core — xpl_app_core (headless)\nControlTable, ControlMetadata,\nParameterBindingRegistry, PageFamilyModel"]
     end
 
     subgraph CTRL ["⚙️ Controller Layer  [xpl_controller + xpl_framework]"]
-        XpanderController["XpanderController\n─ XpanderController.cpp (core)\n─ XpanderControllerMidiEvents.cpp\n─ PageSubPageHelper\n─ AllDataDumpRequestState"]
-        AbstractController["AbstractController (abstract)\n─ AbstractController.cpp (core)\n─ AbstractControllerDevices.cpp\n─ AbstractControllerWorker.cpp"]
-        SettingsSvc["ISettingsService (interface)\n├ XmlSettingsService (.NET-schema XML)\n└ InMemorySettingsService (tests)"]
-        Dispatcher["EventDispatcher (interface)\n(UI-thread marshalling seam)"]
+        XpanderController["XpanderController\n(core / MIDI events / page helper / dump state)"]
+        AbstractController["AbstractController (abstract)\n(core / devices / worker)"]
+        SettingsSvc["ISettingsService\n├ XmlSettingsService (.NET-schema XML)\n└ InMemorySettingsService (tests)"]
+        Dispatcher["EventDispatcher (interface)\n└ JuceEventDispatcher (message thread)"]
     end
 
     subgraph MODEL ["📐 Model Layer  [xplorer::model + midiapp::model]"]
-        XpanderTone["XpanderTone\n─ XpanderTone.cpp (227-parameter map)\n─ XpanderToneModulationMatrix.cpp"]
-        AbstractTone["AbstractTone (abstract)\n+ OrderedParameterMap (typed)"]
-        Params["Parameters\nXpanderParameter\nXpanderSignedParameter\nXpanderModMatrixParameter\nXpanderFullToneParameter\nAbstractParameter"]
-        IO["Tone I/O\nIToneReader → XpanderToneReader\nIToneWriter → XpanderToneWriter\nPacketizedBinary (7-bit split)\nXpanderSinglePatch (399-byte layout)"]
+        XpanderTone["XpanderTone (227-parameter map,\n20-entry modulation matrix)"]
+        Params["Parameter hierarchy + tone I/O\n(399-byte patch, 7-bit packetization)"]
     end
 
     subgraph MIDI ["🎹 MIDI Infrastructure  [xpl_midi / xpl_midi_juce]"]
-        Backend["MidiBackend (interface)\nMidiInputPort / MidiOutputPort"]
-        JuceBackend["JuceMidiBackend\n(juce::MidiInput/MidiOutput)"]
-        MockBackend["MockMidiBackend\n(scriptable, loopback, captured output)"]
+        Backend["MidiBackend interface"]
+        JuceBackend["JuceMidiBackend"]
+        MockBackend["MockMidiBackend (tests)"]
     end
 
+    JuceApp --> AppCore
+    AppCore --> XpanderController
     XpanderController -->|inherits| AbstractController
     XpanderController -->|injected| SettingsSvc
     AbstractController -->|owns| XpanderTone
     AbstractController -->|injected| Dispatcher
-    XpanderTone -->|inherits| AbstractTone
-    XpanderTone -->|contains| Params
-    XpanderController -->|uses| IO
+    XpanderTone --- Params
     AbstractController -->|injected| Backend
-    Backend <|.. JuceBackend
-    Backend <|.. MockBackend
+    JuceBackend -.implements.-> Backend
+    MockBackend -.implements.-> Backend
 ```
 
 ---
 
-## 3. Key Subsystems
+## 4. The JUCE application architecture
 
-### 3.1 Parameter Queue & Worker Thread
+This section is the detailed map of the View layer — the largest part of the port and the
+main subject of this revision.
 
-Same observable pacing as the reference (scan → enqueue clones → send at most one per tick, page-select first when the page changes), implemented with modern interruptible primitives instead of `Thread.Sleep` polling (ADR-005).
+### 4.1 Application shell
+
+`Main.cpp` hosts the JUCE application object and the top-level window:
+
+- `XplorerApplication` (`juce::JUCEApplication`): single-instance enforcement
+  (`moreThanOneInstanceAllowed() = false`, RQ-FMW-072), splash screen (reference
+  behavior: auto-dismissed), and the **top-level exception dialog**
+  (`unhandledException` override → alert with file/line and a bug-report pointer,
+  RQ-GUI-035 — the reference `TopLevelExceptionHandler`).
+- `MainWindow` (`juce::DocumentWindow`): native title bar, **freely resizable**
+  (owner decision, RQ-GUI-005), owns a `ScaledCanvasComponent`.
+
+### 4.2 Logical canvas & uniform scaling
+
+Every control is laid out **once**, in the fixed logical pixel space of the reference
+background bitmap. `ScaledCanvasComponent` hosts the menu bar strip and applies one
+`AffineTransform` on resize; nothing else knows about scaling (ADR-006 §1).
+
+```mermaid
+flowchart LR
+    subgraph Window ["MainWindow (resizable)"]
+        subgraph SCC ["ScaledCanvasComponent"]
+            Menu["juce::MenuBarComponent (24 px strip)"]
+            Canvas["MainComponent — fixed logical canvas\n(background bitmap pixel space)\ntransform = scale(min(w/W, h/H)), centered"]
+        end
+    end
+    Resize["resized()"] -->|"recompute one AffineTransform"| Canvas
+```
+
+`ScaledCanvasComponent` is also the window-wide **`FileDragAndDropTarget`**: the first
+dropped `.syx` goes through `MainComponent::loadSysexFileByType` — classification
+(RQ-MOD-043), then load / confirm-and-restore / warn — the same path as File → Open
+(RQ-GUI-029).
+
+### 4.3 The extraction pipeline
+
+The reference UI is not re-described by hand: a single script,
+`app/core/tools/extract_control_table.py`, regenerates **all** UI facts from the WinForms
+sources. This is what makes the 1:1 layout tractable and re-checkable.
+
+```mermaid
+flowchart LR
+    subgraph dotnet [".NET reference sources (read-only)"]
+        Designer["MainForm.Designer.cs\n(types, tags, parent chain)"]
+        Resx["MainForm.resx\n(geometry, captions, background)"]
+        Resources["Resources.resx\n(enum labels, parameter names)"]
+        UIRes["MidiApp.UIControls resx\n(MATRIXTINY glyph sheet BMP)"]
+        Constants["XpanderConstants.cs\n(enum declarations)"]
+    end
+
+    Script["extract_control_table.py\n(mechanical, deterministic)"]
+
+    subgraph generated ["Generated (committed)"]
+        Table["GeneratedControlTable.inc\n208 ControlSpec rows\n(id, kind, absolute bounds, tag, caption)"]
+        Enums["GeneratedEnumLabels.inc\nordered combo labels per enum"]
+        Combo["GeneratedComboEnumMap.inc\ncontrol id → enum type"]
+        Names["GeneratedParameterNames.inc\n227 tag → display-name pairs"]
+        Bg["assets/main-background.jpg + GIFs"]
+        Vfd["assets/vfd-matrix.png\n(BMP→PNG, pure python)"]
+    end
+
+    Designer --> Script
+    Resx --> Script
+    Resources --> Script
+    UIRes --> Script
+    Constants --> Script
+    Script --> Table & Enums & Combo & Names & Bg & Vfd
+```
+
+Key detail: WinForms `Location` is parent-relative; the script resolves each control
+through the `Controls.Add` parent chain to **absolute canvas coordinates**, which is what
+`ControlSpec` stores. A headless test locks the table against known anchors.
+
+### 4.4 Control ⇄ parameter binding
+
+The heart of the UI: `ParameterBindingRegistry` (headless, `xpl_app_core`) maps parameter
+names (= the reference WinForms tags, unchanged) to `IBoundControl`s. Thin JUCE wrappers
+(`BoundKnob`/`BoundComboBox`/`BoundCheckBox`, radio panels rendered as combos in the
+functional phase) implement the interface.
 
 ```mermaid
 sequenceDiagram
-    participant UI as View (future, any thread)
+    participant U as User
+    participant BC as BoundKnob (JUCE)
+    participant Reg as ParameterBindingRegistry
+    participant Ctrl as XpanderController
+    participant VFD as VfdDisplayHelper
+
+    U->>BC: drag start
+    BC->>Reg: onControlEditBegan(name)
+    Reg->>Ctrl: disable mapped CC automation [RQ-GUI-004]
+    U->>BC: value change
+    BC->>Reg: onControlEdited(name, value)
+    alt refreshing (anti-echo guard)
+        Reg--xCtrl: dropped [RQ-GUI-003]
+    else user edit
+        Reg->>Ctrl: setParameter(name, value)
+        Reg->>VFD: localEditHandler(name) → showControlEdit [RQ-GUI-020]
+    end
+    U->>BC: drag end
+    BC->>Reg: onControlEditEnded() → re-enable CC
+
+    Note over Ctrl,Reg: reverse path (synth/automation)
+    Ctrl->>Reg: onParameterChanged(name, value)
+    Reg->>BC: setDisplayedValue(value)  — guard set, no echo
+```
+
+Two registry fan-outs beyond `setParameter`:
+- `setLocalEditHandler` — fires only on genuine user edits (guard-checked); the app wires
+  it to the VFD.
+- `displayTextFor(name)` — asks the bound control to format its own value for display
+  (`IBoundControl::displayText()`: combo label, checkbox Y/N, knob numeric), so the VFD
+  shows `VCF MODE:4 POLE LOW`, not `:3`.
+
+### 4.5 Page-family blocks (ENV / LFO / RAMP / TRACK)
+
+One shared block of controls per family edits the selected instance. The resolution logic
+(`PageFamilyModel`: tag `ENV_X_ATTACK` + instance 3 → `ENV_3_ATTACK`, and the reverse
+mapping for synth-driven page changes) is headless-tested; `PageFamilyBlock` (JUCE) owns
+the selector buttons and rebinds each control through the registry on switch — the
+rebinding is just `unbind` + `bind`, values refreshed from the model, then a page-select
+goes to the synth (RQ-GUI-010..012).
+
+```mermaid
+flowchart LR
+    Sel["Selector click (ENV 3)"] --> PFM["PageFamilyModel\nENV_X_* → ENV_3_*"]
+    PFM --> Rebind["registry.unbind(old) / bind(new)\n+ setDisplayedValue from model"]
+    Rebind --> Page["controller.sendPageUpdate(ENV_3)"]
+    Synth["Synth page-change event"] --> PFM2["reverse lookup → activate selector"] --> Rebind
+```
+
+### 4.6 Modulation matrix panel
+
+`ModMatrixPanel`: 20 rows × {source combo, amount knob, destination combo, quantize
+check}, placed from the extracted table, wired to the controller's dedicated matrix
+operations (not plain parameters — port of `ModulationMatrixManager`). It tracks the
+previous destination per row (the change-destination operation needs old + new), refreshes
+row-wise on the modulation-entry event and wholesale on full-tone changes, and exposes an
+edit callback the app routes to the VFD (`SRC TO DEST: / AMNT / QTZ`).
+
+### 4.7 VFD display
+
+Two cleanly separated halves (ADR-006 §4, ADR-007):
+
+- **Content** — `VfdDisplayHelper` (port of the reference class): builds the 5 text lines
+  — `* Snn NAME *`, parameter line (friendly name from the generated table + value by
+  control type, wrapped at the panel's column count), `MIDI CC:` line, or the
+  modulation-entry lines. Pure logic over the display's grid metrics.
+- **Rendering** — `DisplayPanel`: paints each character as a 12×16 cell blitted from the
+  reference `MATRIXTINY` sprite sheet (96 glyphs, ASCII 32–126, cell = `(c−32)%32`,
+  `(c−32)/32`), black background, block centered, grid = `⌊w/12⌋ × ⌊h/16⌋` — the
+  reference formula. The reference's hand-managed buffer bitmap and changed-cell diffing
+  are replaced by `setBufferedToImage(true)` + an identical-text early-out: JUCE's image
+  cache gives the same "no work when nothing changed" property with no manual state
+  (ADR-007). Nearest-neighbour resampling keeps the dot matrix crisp under the canvas
+  transform. Display grown to 5 rows (267×82, upward) per owner arbitration so the
+  `MIDI CC:` line is always visible.
+
+```mermaid
+flowchart LR
+    Reg["registry local-edit fan-out"] --> Helper
+    Auto["automation/synth parameter event"] --> Helper
+    Matrix["ModMatrixPanel edit callback"] --> Helper
+    Tone["full-tone change / rename"] --> Helper
+    Helper["VfdDisplayHelper\n(builds ≤5 lines, wraps at grid width)"] -->|setLines| Panel["DisplayPanel\nMATRIXTINY glyph blits\nsetBufferedToImage"]
+```
+
+### 4.8 MIDI LED panel
+
+`LedPanelComponent` (port of `LedPanelControl`, ADR-008): three 5 px square LEDs at the
+extracted bounds — automation-in **green**, synth-in **blue**, synth-out **red**, exact
+reference geometry and colours. Each MIDI-activity event stamps its LED's expiry
+(now + 100 ms); a 30 ms decay timer runs **only while a LED is lit** and stops itself —
+same observable behaviour as the reference's permanent 30 ms UI poll (which also drove the
+VFD there; both are event-driven here), with zero idle work.
+
+### 4.9 Menus, dialogs & long operations
+
+`MainComponent` implements `juce::MenuBarModel` (File / Patch / Tools / Help, reference
+menu tree, RQ-GUI-008). Dialog inventory:
+
+| Dialog | Implementation | Notes |
+|---|---|---|
+| Settings | `SettingsDialog` — `TabbedComponent`, 3 pages (MIDI / User interface / Randomizer) | Persists via `ISettingsService`, re-applies MIDI devices live, LED-ring colour change rebuilds the LookAndFeel without restart |
+| Store / Goto program | shared numeric prompt | |
+| Rename | reference character-set validation | rename triggers the reference's full retransmission side effect |
+| Extract single tones | chained file→folder pickers (`ExtractFlow`) | |
+| Backup / Get-all-patches | **modeless** `ProgressWindow` | progression is event-driven (fed by incoming MIDI dumps) |
+| Restore all data | `RestoreThread` (`ThreadWithProgressWindow`) | blocking paced send loop off the message thread; progression marshalled — no `DoEvents` equivalent |
+| Piano keyboard | `PianoWindow` (`MidiKeyboardComponent`) | Note On/Off to the synth |
+| About | standard alert | |
+
+All file choosers are async (`launchAsync`) — JUCE 8 removes modal loops by default; the
+port never relies on `JUCE_MODAL_LOOPS_PERMITTED`.
+
+### 4.10 Skin — `XplorerLookAndFeel`
+
+A single `LookAndFeel` subclass, installed as the global default, restyles every control
+with zero behavioral code: rotary knobs with the configurable LED-ring colour
+(`UiConfiguration.knobLedBorderColor`, live-rebuilt from the settings dialog), compact
+tick-boxes with height-fitted caption fonts (short captions like TRI/SAW/PULSE fit the
+tight reference bounds), white control text. Shortcut buttons use the reference GIF
+triples (normal/hover/down) as `ImageButton`s.
+
+### 4.11 Application event flow & threading
+
+The controller emits 7 event channels (parameter change, full tone, page change,
+modulation entry, MIDI activity, all-data-dump progression, and the local-edit fan-out at
+registry level). Everything reaching JUCE components is marshalled to the message thread
+by `JuceEventDispatcher` (`MessageManager::callAsync`) — components never see a foreign
+thread.
+
+```mermaid
+flowchart TB
+    subgraph SRC ["Event sources (any thread)"]
+        MidiCb["MIDI backend callbacks"]
+        Worker["transmit worker"]
+        Restore["RestoreThread"]
+    end
+    Dispatcher["JuceEventDispatcher\n(callAsync → message thread)"]
+    subgraph UI ["JUCE message thread"]
+        Registry["ParameterBindingRegistry → controls"]
+        Vfd["VfdDisplayHelper → DisplayPanel"]
+        Leds["LedPanelComponent"]
+        MatrixP["ModMatrixPanel rows"]
+        Progress["ProgressWindow / progress bar"]
+    end
+    MidiCb --> Dispatcher
+    Worker --> Dispatcher
+    Restore --> Dispatcher
+    Dispatcher --> Registry & Vfd & Leds & MatrixP & Progress
+```
+
+---
+
+## 5. Core subsystems
+
+### 5.1 Parameter queue & worker thread
+
+Same observable pacing as the reference (scan → enqueue clones → send at most one per
+tick, page-select first when the page changes), implemented with interruptible primitives
+instead of `Thread.Sleep` polling (ADR-005).
+
+```mermaid
+sequenceDiagram
+    participant UI as View (message thread)
     participant Ctrl as XpanderController
     participant Queue as FIFO deque (mutex)
     participant WT as Worker (std::jthread)
     participant Synth as Oberheim Xpander (MIDI Out)
 
     UI->>Ctrl: setParameter(name, value)
-    Ctrl->>Ctrl: parameterMap.at(name).setValue(value)
-    Ctrl->>Ctrl: parameter.changed = true
+    Ctrl->>Ctrl: parameterMap.at(name).setValue(value); changed = true
     Note over WT: cv.wait_for(transmitDelay, stop_token)
     WT->>Ctrl: scan parameterMap for changed
     Ctrl->>Queue: enqueue(parameter.clone())
     WT->>Queue: dequeue()
-    WT->>Ctrl: pageSubPageHelper.getPageSubPage()
     alt Page or sub-page changed
         WT->>Synth: send(pageSelectMessage)
         Note over WT: interruptible wait(transmitDelay)
@@ -118,9 +419,10 @@ sequenceDiagram
     WT->>Synth: send(parameter.message)
 ```
 
-### 3.2 MIDI Event Flow (Bidirectional)
+### 5.2 MIDI event flow (bidirectional)
 
-Same 3 simultaneous devices; handlers are virtual methods receiving a backend-agnostic `MidiMessage` value type.
+Three simultaneous devices; handlers are virtual methods receiving a backend-agnostic
+`MidiMessage` value type.
 
 ```mermaid
 flowchart LR
@@ -128,329 +430,240 @@ flowchart LR
     SynthIn["🔌 Synth Input\n(Xpander → PC)"]
     SynthOut["🔌 Synth Output\n(PC → Xpander)"]
 
-    AutoIn -->|CC| AutoHandler["automationInputDeviceChannelMessageReceived\n→ map CC# → parameter names\n→ autoscale (interleave==1 mid-range case)\n→ update tone"]
-    AutoIn -->|ProgramChange| AutoPC["in 0-99 → steer edited program\n(controller override)"]
-    AutoIn -->|SysEx| AutoSysEx["notify MIDI activity only (no redirect)"]
-
-    SynthIn -->|SinglePatchDump SysEx| ToneUpdate["fromByteArray()\n→ stop worker\n→ reload full tone\n→ FullToneChange handler\n→ restart worker"]
-    SynthIn -->|PageEditFollows SysEx| ParamUpdate["getParameterForPageSubPageAndId\n→ setValueUnchanged (abs/relative)\n→ parameter-change handler"]
-    SynthIn -->|ModulationEdit SysEx| ModMatrix["handleModulationEditFromSynth\n→ 7 commands → sync local matrix"]
-    SynthIn -->|PageSelect / ProgUp / ProgDown| ProgChange["update page tracking /\ncurrent program + dump request"]
-    SynthIn -->|MultiPatchDump| Multi["ignored outside dump requests\n(multi mode out of scope)"]
-
+    AutoIn -->|CC| AutoHandler["map CC# → parameter names\n→ autoscale → update tone"]
+    AutoIn -->|ProgramChange| AutoPC["0-99 → steer edited program"]
+    SynthIn -->|SinglePatchDump| ToneUpdate["fromByteArray → full-tone event\n→ registry + matrix + VFD refresh"]
+    SynthIn -->|PageEditFollows| ParamUpdate["page/subpage/id → parameter\n→ parameter-change event"]
+    SynthIn -->|ModulationEdit| ModMatrix["7 commands → sync local matrix\n→ entry-change event"]
+    SynthIn -->|PageSelect / ProgUp/Down| ProgChange["page tracking / program + dump request"]
     AutoHandler --> SynthOut
     ToneUpdate -->|full resync| SynthOut
 ```
 
-### 3.3 Settings Architecture
+### 5.3 Settings
 
-The static service becomes an **injected interface**; the XML file format stays schema-compatible with the .NET `XmlSerializer` output so existing `xplorer.users.config` files import unchanged.
+Injected `ISettingsService`; the XML format stays schema-compatible with the .NET
+`XmlSerializer` output so existing `xplorer.users.config` files import unchanged
+(round-trip and .NET-import scenarios in CI). `AllUsersSettings` aggregates
+`MidiConfiguration`, `UiConfiguration` (knob LED colour, mouse mode, style) and
+`RandomizerConfiguration` (VCO2 flags, matrix flags, VCO freq/detune, VCA2 env) — all three
+editable from the settings dialog.
 
-```mermaid
-classDiagram
-    class ISettingsService {
-        <<interface>>
-        +allUsersSettings() AllUsersSettings&
-        +saveSettings(settings)
-        +resetSettings()
-    }
-    class XmlSettingsService {
-        -juce::XmlDocument (private impl)
-        +settingsFilePath()
-    }
-    class InMemorySettingsService
-    class AllUsersSettings {
-        +MidiConfiguration midiConfig
-        +UiConfiguration uiConfig
-        +RandomizerConfiguration randomizerConfig
-    }
-    class MidiConfiguration {
-        +string synthInputDeviceName
-        +string synthOutputDeviceName
-        +string automationInputDeviceName
-        +int sysexTransmitDelay
-        +int midiChannel
-        +int editingProgramNumber
-        +bool synthTypeIsMatrix12
-        +bool smartAllNotesOff
-        +vector~string~ automationTable
-    }
-    class UiConfiguration
-    class RandomizerConfiguration
+### 5.4 Tone model & I/O
 
-    ISettingsService <|.. XmlSettingsService
-    ISettingsService <|.. InMemorySettingsService
-    XmlSettingsService --> AllUsersSettings
-    AllUsersSettings *-- MidiConfiguration
-    AllUsersSettings *-- UiConfiguration
-    AllUsersSettings *-- RandomizerConfiguration
-```
-
-### 3.4 Tone Model & I/O
-
-```mermaid
-classDiagram
-    class AbstractTone {
-        +string toneName()*
-        +OrderedParameterMap parameterMap
-        +int midiChannel
-        +randomizeToneParameters(excluded, humanize, seed)
-        +morphTones(a, b, result, factor)$
-    }
-    class XpanderTone {
-        +int currentProgramNumber (wraps 0-99)
-        +int editingProgramNumber
-        +array~ModulationMatrixEntry,20~ modulationMatrix
-        +fromByteArray() / toByteArray()
-        +getNameFromByteArray()$
-        +changeModulationSource/Amount/Quantize/Destination()
-        +randomizeModulationMatrix()
-    }
-    class AbstractParameter {
-        +string name
-        +int value (step-quantized, clamped)
-        +int minValue / maxValue / step
-        +bool changed
-        +MidiMessage message
-        +clone()*
-    }
-    class XpanderParameter {
-        +int page / subPage
-        +MidiMessage pageSelectMessage
-        +int buttonId
-        +setValueUnchanged()
-    }
-    class XpanderModMatrixParameter
-    class XpanderSignedParameter
-    class XpanderFullToneParameter
-
-    class IToneReader {
-        +readTone(filename, tone)
-        +readTones(filename) vector
-    }
-    class IToneWriter {
-        +writeTone(filename, tone)
-    }
-    class XpanderToneReader
-    class XpanderToneWriter
-    class XpanderSinglePatch {
-        399-byte dump layout
-        7-bit packetized payload
-    }
-
-    AbstractTone <|-- XpanderTone
-    XpanderTone *-- AbstractParameter
-    AbstractParameter <|-- XpanderParameter
-    XpanderParameter <|-- XpanderModMatrixParameter
-    XpanderParameter <|-- XpanderSignedParameter
-    AbstractParameter <|-- XpanderFullToneParameter
-    IToneReader <|.. XpanderToneReader
-    IToneWriter <|.. XpanderToneWriter
-    XpanderToneReader --> XpanderSinglePatch
-```
+Unchanged since the Phase 3 analysis: `XpanderTone` (227-parameter ordered map + 20-entry
+matrix), parameter hierarchy (`XpanderParameter` / signed / mod-matrix / full-tone),
+`IToneReader/Writer`, 399-byte single-patch layout with 7-bit packetization; byte-exact
+round-trips against a real hardware dump are CI-verified.
 
 ---
 
-## 4. Class Inheritance Overview
-
-The View classes do not exist yet; the controller-side hierarchy mirrors the reference, with dependency injection replacing hidden construction.
-
-```mermaid
-classDiagram
-    class AbstractController {
-        #MidiBackend& backend (injected)
-        #unique_ptr~AbstractTone~ tone (injected)
-        #shared_ptr~EventDispatcher~ dispatcher (injected)
-        +start() / stop()
-        +setParameter(name, value)
-        +DualDictionary controlChangeAutomationTable
-        #virtual workerThreadProc(stop_token)
-        #virtual automation/synth input handlers
-    }
-    class XpanderController {
-        -ISettingsService& settings (injected)
-        -PageSubPageHelper
-        -AllDataDumpRequestState
-        +loadTone() / saveTone() / morphTones()
-        +backup/restore/getSingleTonesFromSynth()
-        +storeSinglePatchToSynth() / randomizeTone()
-        +changeModulation*() / pasteClipboardTo()
-        +sendGreetings/TypeWriter/TuneRequest()
-        +set*Handler() : 6 event channels
-    }
-    AbstractController <|-- XpanderController
-    note for XpanderController "instantiated by the app,\nno singleton"
-```
-
----
-
-## 5. SOLID Analysis
+## 6. SOLID analysis
 
 | Principle | Assessment | Detail |
 |---|---|---|
-| **S** – Single Responsibility | ✅ Respected | One class per concern; large classes split across `.cpp` files by topic (core / devices / worker / MIDI events), mirroring the reference partial-class decomposition. |
-| **O** – Open/Closed | ✅ Good | `AbstractController` / `AbstractTone` extension points preserved (virtual handlers, worker override); `IToneReader/Writer` unchanged; `MidiBackend` allows new MIDI implementations without touching upper layers. |
-| **L** – Liskov Substitution | ✅ Respected | `XpanderController` fully substitutes `AbstractController`; `MockMidiBackend` and `JuceMidiBackend` are interchangeable in every test. |
-| **I** – Interface Segregation | ✅ Good | `MidiBackend`/`MidiInputPort`/`MidiOutputPort`, `IToneReader`, `IToneWriter`, `ISettingsService`, `EventDispatcher` are small and focused. |
-| **D** – Dependency Inversion | ✅ **Fixed vs reference** | The three partial violations noted in the original analysis are resolved: MIDI devices behind `MidiBackend` (was: direct Sanford types), settings behind `ISettingsService` (was: static class), UI marshalling behind `EventDispatcher` (was: `SynchronizationContext`). Residual: `XpanderController` still downcasts `AbstractTone` → `XpanderTone` internally (kept for port fidelity; contained in one accessor). |
+| **S** – Single Responsibility | ✅ Respected | One class per concern throughout; in the View, content vs rendering are split (VfdDisplayHelper / DisplayPanel), logic vs widgets are split (`xpl_app_core` / `app/src`), and large controller classes are split across `.cpp` files by topic, mirroring the reference partial-class decomposition. |
+| **O** – Open/Closed | ✅ Good | Extension points preserved (virtual handlers, worker override, `IToneReader/Writer`, `MidiBackend`); `IBoundControl` lets new control kinds join the registry without touching it. |
+| **L** – Liskov Substitution | ✅ Respected | Mock and JUCE backends interchangeable in every test; bound-control fakes substitute JUCE wrappers in registry tests. |
+| **I** – Interface Segregation | ✅ Good | `MidiBackend`/ports, `IToneReader`, `IToneWriter`, `ISettingsService`, `EventDispatcher`, `IBoundControl` are small and focused. |
+| **D** – Dependency Inversion | ✅ **Fixed vs reference** | The reference's three partial violations resolved (MIDI behind `MidiBackend`, settings behind `ISettingsService`, UI marshalling behind `EventDispatcher`); the View depends on the controller's abstractions only. Residual: `XpanderController` downcasts `AbstractTone` → `XpanderTone` in one private accessor (port fidelity). |
 
 ---
 
-## 6. Key Design Patterns Used
+## 7. Key design patterns
 
 | Pattern | Where |
 |---|---|
 | **Template Method** | `AbstractController` (worker proc, input handlers), `AbstractTone`, `AbstractParameter::updateMessageFromValue` |
-| **Ports & Adapters (Hexagonal)** | `MidiBackend` interface + `JuceMidiBackend` / `MockMidiBackend` (new vs reference) |
-| **Observer / Callbacks** | 6 controller event channels as `std::function` handlers, marshalled via `EventDispatcher` |
-| **Command Queue** | `std::deque<unique_ptr<AbstractParameter>>` + worker — decouples UI from MIDI timing |
+| **Ports & Adapters** | `MidiBackend` + `JuceMidiBackend` / `MockMidiBackend`; `IBoundControl` + JUCE wrappers / test fakes |
+| **Observer / Callbacks** | 7 controller/registry event channels as `std::function`, marshalled via `EventDispatcher` |
+| **Command Queue** | parameter clone deque + worker — decouples UI from MIDI timing |
+| **Registry** | `ParameterBindingRegistry` — name-keyed control bindings, rebindable (page families) |
 | **Strategy** | `IToneReader` / `IToneWriter`; `ISettingsService` implementations |
-| **Dependency Injection** | Backend, tone, dispatcher, settings service all constructor-injected (no singletons, no statics) |
-| **Clone (Prototype)** | `AbstractParameter::clone()` before enqueuing, as the reference |
-| **Pimpl** | `XmlSettingsService`, `JuceMidiBackend` (keeps JUCE types out of public headers) |
+| **Dependency Injection** | backend, tone, dispatcher, settings — constructor-injected; no singletons |
+| **Clone (Prototype)** | `AbstractParameter::clone()` before enqueuing |
+| **Pimpl** | `XmlSettingsService`, `JuceMidiBackend` (JUCE types out of public headers) |
+| **Flyweight** | VFD sprite sheet: one image, per-character source rectangles (ADR-007) |
+| **Table-driven construction** | the whole main window is built from `GeneratedControlTable.inc` — no per-control code |
 
 ---
 
-## 7. Threading Model
+## 8. Threading model
 
 ```mermaid
 flowchart TB
-    subgraph UIThread ["🧵 JUCE Message Thread (future View)"]
-        Handlers["event handlers via EventDispatcher\n(juce::MessageManager::callAsync planned;\nsynchronous dispatcher in tests)"]
+    subgraph UIThread ["🧵 JUCE message thread"]
+        Handlers["all component updates\n(events arrive via JuceEventDispatcher)"]
+        LedTimer["LED decay juce::Timer (30 ms)\nruns only while a LED is lit"]
     end
 
-    subgraph WorkerThread ["🧵 Worker (std::jthread)"]
-        Loop["while (cv.wait_for(transmitDelay, stop_token))\n  scan changed → enqueue clones\n  dequeue one → page select? → send"]
+    subgraph WorkerThread ["🧵 Transmit worker (std::jthread)"]
+        Loop["cv.wait_for(transmitDelay, stop_token)\nscan changed → enqueue clones → paced send"]
     end
 
-    subgraph MidiCallbackThread ["🧵 MIDI Backend Callback Thread"]
-        JuceCb["JUCE: one thread per MidiInput,\nserialized delivery"]
-        MockCb["Mock: synchronous on injecting thread"]
+    subgraph MidiCallbackThread ["🧵 MIDI backend callback threads"]
+        JuceCb["JUCE: one thread per MidiInput"]
     end
 
-    subgraph TaskThread ["🧵 Caller-provided task thread"]
-        Dump["restoreAllDataDumpToSynth\n(paced sends + progression callback,\nno UI pumping)"]
+    subgraph RestoreThread ["🧵 RestoreThread (ThreadWithProgressWindow)"]
+        Dump["restore paced send loop\n+ progression callback"]
     end
 
-    Handlers -->|setParameter| WorkerThread
-    JuceCb -->|virtual handlers| Handlers
+    JuceCb -->|dispatcher| Handlers
     Loop -->|send| OUT[(MIDI Out)]
+    Dump -->|dispatcher| Handlers
+    Handlers -->|setParameter| WorkerThread
 ```
 
-> ✅ The reference's two known threading defects are gone: no `Application.DoEvents()` (long operations run on a task thread with progression callbacks) and no busy-sleep (interruptible `condition_variable` wait honoring the stop token; cooperative shutdown, no thread abort).
+The reference's two threading defects remain absent (no `DoEvents` pumping, no busy-sleep)
+and its permanent 30 ms UI timer has no equivalent — the UI is fully event-driven; the
+only periodic work (LED decay) is self-stopping (ADR-008).
+
+Known reference-faithful blocking spots: `storeSinglePatchToSynth`,
+`sendProgramChangeAndGetSinglePatchFromSynth` and the VFD typewriter sleep on their
+calling thread (the message thread when invoked from menus) — verbatim from the reference,
+tracked as a post-migration async candidate (§10).
 
 ---
 
-## 8. Improvement Proposals
+## 9. Testing architecture
 
-Status of the original analysis' proposals in the port, plus remaining items.
+Two-tier strategy (ADR-003, ADR-006 §6): everything with logic is headless-testable by
+construction; only thin JUCE wrappers need eyes.
 
-### 8.1 🔴 High Priority (from reference analysis)
-
-| # | Reference issue | Status in JUCE port |
+| Tier | What | How verified |
 |---|---|---|
-| 1 | `Application.DoEvents()` in ProgressForm | ✅ Resolved by design: blocking operations expose progression callbacks; the future View runs them on a task thread (ADR-005). |
-| 2 | Worker `Thread.Sleep` polling | ✅ Replaced by interruptible cv-wait with `std::stop_token`; observable pacing preserved. |
-| 3 | Static `AllUsersSettingsService` | ✅ `ISettingsService` interface, constructor-injected, in-memory test double. |
+| Machine (CI, 79 scenarios) | MIDI framing/splitting, parameter semantics, tone byte-exact round-trips, controller state machines (dump, page follow, matrix ops), settings round-trip + .NET import, control-table anchors, binding registry (anti-echo, CC disable, rebinding, local-edit fan-out), page-family resolution, friendly-name/label tables | Catch2, requirement-tagged (`[RQ-…]`), Linux + Windows CI |
+| Machine (opportunistic) | JUCE backend against a virtual MIDI cable | auto-skipped when no cable exists |
+| Human (owner, Windows) | pixel fidelity, colours, drag feel, real-synth timing | milestone builds (M1/M2/M3) from the Windows CI artifact |
 
-### 8.2 🟡 Medium Priority (from reference analysis)
-
-| # | Reference issue | Status in JUCE port |
-|---|---|---|
-| 4 | `XpanderTone` cast from `AbstractTone` | ⚠️ Kept (single private accessor) for port fidelity; generics-style redesign deferred post-migration. |
-| 5 | `FileOperationsManager` → concrete `MainForm` | ⏳ View layer not yet ported (Phase 5 concern). |
-| 6 | Non-generic `OrderedDictionary` | ✅ Typed `OrderedParameterMap` (insertion-ordered, unique names). |
-| 7 | No DI container | ✅ Manual constructor injection everywhere; a container is unnecessary at this scale. |
-
-### 8.3 🟢 Remaining / New items
-
-| # | Issue | Recommendation |
-|---|---|---|
-| 8 | Unit tests | ✅ 65 Catch2 scenarios tagged with requirement IDs; CI on Linux. Remaining: hardware validation checklist (RQ-TST-006). |
-| 9 | Multi patch support | Still out of scope (multi dumps ignored, as reference); tracked backlog item. |
-| 10 | `BugReportFactory` equivalent | Deferred to the app phase (needs app/version/device context) — RQ-FMW-071. |
-| 11 | Blocking `sleep` in some controller operations (`storeSinglePatchToSynth`, `sendProgramChangeAndGetSinglePatchFromSynth`, VFD typewriter) | Verbatim from reference (it sleeps on the UI thread). The future View should call these off the message thread; candidate for async refactor post-migration (would need an ADR). |
-| 12 | View layer | Phase 5: JUCE components, control⇄parameter binding registry, dialogs. |
+Development-time smoke: the app is launched under Xvfb after GUI changes (render + clean
+exit + screenshot inspection).
 
 ---
 
-## 9. Architecture Summary
+## 10. Remaining gaps & improvement backlog
+
+Consolidated status of the original analysis' proposals plus items discovered during the
+port.
+
+| # | Item | Status |
+|---|---|---|
+| 1 | `Application.DoEvents()` / UI pumping | ✅ Gone — progression callbacks + worker threads everywhere |
+| 2 | Worker `Thread.Sleep` polling | ✅ Interruptible cv-wait (ADR-005) |
+| 3 | Static settings service | ✅ Injected interface |
+| 4 | `AbstractTone` → `XpanderTone` downcast | ⚠️ Kept (single accessor, port fidelity); post-migration redesign candidate |
+| 5 | `FileOperationsManager` → god-form coupling | ✅ Dissolved into focused components (load-by-type on `MainComponent`, dialogs in `Dialogs.cpp`) |
+| 6 | Non-generic `OrderedDictionary` | ✅ Typed `OrderedParameterMap` |
+| 7 | Unit tests | ✅ 79 scenarios, requirement-tagged, dual-platform CI |
+| 8 | Multi-patch support | Out of scope (as reference); backlog |
+| 9 | `BugReportFactory` payload | ❌ Not ported — the top-level exception dialog exists (RQ-GUI-035) but without the full diagnostic payload (RQ-FMW-071); app-phase follow-up |
+| 10 | Blocking sleeps inside some controller ops (store, program-change+dump, typewriter) | ⚠️ Verbatim from reference; called from the message thread via menus. Async refactor candidate (needs an ADR) |
+| 11 | Tone morphing UX | Deferred — reference form is unfinished (empty OK/Cancel, unwired); controller primitive ported & tested; awaits owner UX spec |
+| 12 | VFD `.` active-modulation-destination marker | Deferred — needs live page-family state in the display path (noted on issue #9) |
+| 13 | Character scaling of the VFD | Owner announced a later spec pass (nearest vs smooth under canvas scale) |
+| 14 | Hardware validation | TASK-JUCE-071 checklist (real Xpander/Matrix-12) still to run |
+| 15 | Cross-compat campaign | TASK-JUCE-072 (patch libraries + settings exchanged .NET ⇄ JUCE) still to run |
+
+---
+
+## 11. Architecture summary
 
 ```mermaid
 C4Context
-    title Xplorer JUCE Port – Context Diagram (non-UI scope)
+    title Xplorer JUCE Port – Context Diagram
 
-    Person(user, "Musician", "Will use the JUCE editor; today drives the layers via tests")
-    System(xplorer, "Xplorer Core (C++/JUCE)", "Model + Controller + MIDI layers, headless-testable")
+    Person(user, "Musician", "Edits Xpander/Matrix-12 patches in real time")
+    System(xplorer, "Xplorer (C++/JUCE)", "Single-window editor: 230+ controls, VFD, mod matrix, dialogs; Model/Controller/MIDI layers headless-testable")
     System_Ext(synth, "Oberheim Xpander / Matrix-12", "Vintage polyphonic synthesizer")
-    System_Ext(daw, "DAW / MIDI Controller", "Sends CC automation messages")
-    System_Ext(fs, "File System", "Stores .syx patch files + xplorer.users.config")
+    System_Ext(daw, "DAW / MIDI Controller", "Sends CC automation")
+    System_Ext(fs, "File System", ".syx patches + xplorer.users.config (.NET-compatible)")
 
-    Rel(user, xplorer, "Edits parameters, loads/saves patches (via future View)")
-    Rel(xplorer, synth, "SysEx parameter edits, dumps, VFD text", "JUCE MIDI OUT/IN")
+    Rel(user, xplorer, "Edits parameters, manages patches")
+    Rel(xplorer, synth, "SysEx edits, dumps, VFD text", "MIDI OUT/IN")
     Rel(daw, xplorer, "CC automation", "MIDI IN (Automation)")
-    Rel(xplorer, fs, "Reads/writes .syx and settings (.NET-compatible)")
+    Rel(xplorer, fs, "Reads/writes patches & settings")
 ```
 
 ### Strengths
-- **Wire and file compatibility**: byte-exact SysEx generation and 399-byte patch round-trips verified against a real hardware dump; settings files interchange with the .NET version
-- **Testability by construction**: every external dependency (MIDI, settings, UI thread) is an injected interface; 65 headless scenarios cover the full non-UI behavior including the bidirectional handlers and the dump state machine
-- Clean bottom-up layering enforced by separate static libraries
-- Modern, cooperative threading with the reference's timing behavior preserved
-- Requirement-tagged tests and commits (mechanical traceability)
+- **Wire and file compatibility**: byte-exact SysEx and 399-byte patch round-trips
+  verified against real hardware dumps; settings interchange with .NET
+- **Testability by construction**: every seam is an injected interface; UI logic is a
+  headless library; 79 requirement-tagged scenarios on two platforms
+- **Mechanical UI fidelity**: layout, captions, enum labels, parameter names and both
+  bitmap assets are regenerated from the WinForms sources by one script — no hand-copied
+  facts to drift
+- Fully event-driven UI (no polling timers), modern cooperative threading, reference
+  timing preserved
+- Every structural decision recorded (ADR-001…008); deviations enumerated per RQ-NFR-009
 
 ### Weaknesses
-- **No View layer yet** — the largest effort (Phase 5) remains
-- `AbstractTone` → `XpanderTone` downcast retained (port fidelity)
-- Several reference-faithful blocking sleeps inside controller operations (see §8.3-11)
-- Windows build/packaging not yet exercised (developed and tested headless on Linux)
-- Hardware-only behaviors (dump timing against a real synth, VFD rendering) still unvalidated
+- Hardware-only behaviors (dump timing against a real synth, VFD look at real scale
+  factors, LED colours under traffic) still await owner validation
+- A few reference-faithful blocking sleeps reachable from the message thread (§10-10)
+- The `AbstractTone` downcast and the morphing/bug-report gaps carry over (§10)
+- Single developer-validated visual pass so far — pixel-level UI review is milestone-gated
 
 ---
 
-## 10. Notable Differences vs the C# Implementation
+## 12. Notable differences vs the C# implementation
 
-Deliberate deviations, each bounded and documented (RQ-NFR-009 requires observable behavior preserved; ADR references given).
+Deliberate deviations, each bounded and documented (RQ-NFR-009 requires observable
+behavior preserved; ADR references given).
 
 | # | Area | C# reference | JUCE port | Impact |
 |---|---|---|---|---|
 | 1 | MIDI coupling | Controller holds Sanford `InputDevice`/`OutputDevice` directly | `MidiBackend` interface + JUCE/mock adapters (ADR-004) | None on the wire; enables hardware-free tests |
-| 2 | Worker loop | `Thread.Sleep` polling; `Join(2000)` then abandon | `std::jthread` + interruptible cv-wait; cooperative join (ADR-005) | Same pacing; clean shutdown, no abandoned thread |
+| 2 | Worker loop | `Thread.Sleep` polling; `Join(2000)` then abandon | `std::jthread` + interruptible cv-wait; cooperative join (ADR-005) | Same pacing; clean shutdown |
 | 3 | Settings access | Static class, read at call sites | Injected `ISettingsService` | None functionally; testable |
-| 4 | Display-control command (0x05/0x06) | Frozen in `static readonly` fields at first class use — changing synth type needs an app restart | Read from settings **per call** | Behavior differs only after changing the synth type mid-session (port applies it immediately) |
-| 5 | Events | .NET events + `SynchronizationContext.Post` | `std::function` handlers + injected `EventDispatcher` | Same delivery guarantees; the dispatcher is explicit |
-| 6 | Automation SysEx/Common/Realtime forwarding (framework level) | Posted through `SynchronizationContext` then sent | Sent directly from the callback thread | Ordering per device preserved; removes a UI-thread round-trip |
+| 4 | Display-control command (0x05/0x06) | Frozen in `static readonly` at first use — synth-type change needs restart | Read from settings per call | Port applies a synth-type change immediately |
+| 5 | Events | .NET events + `SynchronizationContext.Post` | `std::function` handlers + injected `EventDispatcher` | Same delivery guarantees, explicit dispatcher |
+| 6 | Automation SysEx/Common/Realtime forwarding | Posted through `SynchronizationContext` then sent | Sent directly from the callback thread | Per-device ordering preserved; one less UI round-trip |
 | 7 | Parameter map container | Non-generic `OrderedDictionary` | Typed `OrderedParameterMap` | Type safety; same iteration order |
-| 8 | `StringIntDualDictionary` miss | Returns `int.MinValue` | Returns `std::optional<int>` | Internal API only |
-| 9 | Construction | Base constructors virtual-dispatch (`CreateToneInstance`, `UpdateMessageFromValue`) | Two-phase: tone injected into controller ctor; parameters call `initializeValue()` last (C++ cannot virtual-dispatch in ctors) | None observable |
-| 10 | Randomizer determinism | Seeded from the clock only | Optional explicit seed (tests); clock by default | None in production paths |
-| 11 | Morph failure handling | `AbstractTone.MorphTones` swallows exceptions and nulls the result → controller assigns `Tone = null` (latent `NullReferenceException` on next use) | Exceptions propagate; controller restores state (re-enable parameters, restart) and rethrows | **Safer than reference**; failure now surfaces instead of corrupting state |
-| 12 | `CanClipboardPasteTo` | Substring(0,4) on the destination without length check (throws on names < 4 chars) | Length-checked, returns false | Defensive only; real page names are ≥ 4 chars |
-| 13 | `FileUtils` sanitization | Regex over `GetInvalidFileNameChars() + ":.)&"` (platform-dependent set on .NET) | Fixed character set = Windows-invalid ∪ `":.)&"` | Same output on Windows; deterministic cross-platform |
-| 14 | Logger | `TraceSwitch`-driven, object caller | Level-filtered file sink, string source | Same intent; simpler API |
-| 15 | `SendPageUpdate(pageName)` | `Enum.Parse` of the page name with CASSETTE fallback | String check (`empty`/`"CASSETTE"`), same side effect | Equivalent for all real page names |
-| 16 | BugReportFactory | Full exception+MIDI context report | **Not yet ported** (app phase) | Gap tracked (RQ-FMW-071) |
+| 8 | `StringIntDualDictionary` miss | Returns `int.MinValue` | `std::optional<int>` | Internal API only |
+| 9 | Construction | Virtual dispatch from base constructors | Two-phase init (tone injected; `initializeValue()` last) | None observable |
+| 10 | Randomizer determinism | Clock-seeded only | Optional explicit seed (tests) | None in production paths |
+| 11 | Morph failure handling | Exceptions swallowed → tone nulled (latent NRE) | Exceptions propagate; state restored and rethrown | **Safer than reference** |
+| 12 | `CanClipboardPasteTo` | `Substring(0,4)` without length check | Length-checked, returns false | Defensive only |
+| 13 | `FileUtils` sanitization | Platform-dependent invalid-char set | Fixed set = Windows-invalid ∪ `":.)&"` | Same output on Windows; deterministic |
+| 14 | Logger | `TraceSwitch`-driven, object caller | Level-filtered file sink + explicit `shutdown()` (Windows file-lock test fix) | Same intent |
+| 15 | `SendPageUpdate(pageName)` | `Enum.Parse` with CASSETTE fallback | String check, same side effect | Equivalent for all real page names |
+| 16 | BugReportFactory | Full exception+MIDI context report | Top-level exception dialog only (§10-9) | Gap tracked (RQ-FMW-071) |
+| 17 | Window sizing | Fixed size, WinForms DPI autoscale at launch | Freely resizable; logical canvas + one `AffineTransform` (ADR-006) | Owner decision; layout identical at any size |
+| 18 | UI layout source | Hand-maintained `MainForm.Designer.cs` | Generated declarative tables from the same sources (§4.3) | Regenerable, drift-proof |
+| 19 | VFD rendering mechanics | Offscreen buffer + changed-cell diffing + `DrawImageUnscaled` | Direct sprite-sheet paint + `setBufferedToImage` (ADR-007) | Same glyph artwork & behaviour; less state |
+| 20 | VFD size | 267×75 (4 lines at 100 % DPI; 5th line needs DPI autoscale) | 267×82, grown upward — 5 lines always visible | Owner-arbitrated (ADR-007 option b) |
+| 21 | LED decay | Permanent 30 ms UI timer decrementing stamps | Event-driven retriggerable hold; timer only while lit (ADR-008) | Same visible behaviour; zero idle work |
+| 22 | UI update timer | One 30 ms timer drives VFD + LEDs | Fully event-driven UI | No polling |
+| 23 | Radio button panels | Custom `RadioButtonPanel` widgets | Rendered as combos in the functional phase | Skin-phase revisit if owner wants radios back |
+| 24 | Settings UI | Separate modal Forms | One `TabbedComponent` dialog, 3 pages; LED colour applies live | Same fields; restart not required |
 
-## 11. Edge Cases, Reference Quirks and Verbatim Conversions
+---
 
-Items found in the C# source that look like latent bugs or were hard to interpret. Policy applied: **when in doubt, port verbatim** and mark with a comment; each is listed here for your review.
+## 13. Edge cases, reference quirks and verbatim conversions
+
+Items found in the C# source that look like latent bugs or were hard to interpret. Policy
+applied: **when in doubt, port verbatim** and mark with a comment; each is listed here for
+owner review.
 
 | # | Location (reference) | Observation | Port decision |
 |---|---|---|---|
-| 1 | `XpanderController.SendProgrammerModeSinglePatch` | The frame is `{F0, F0, 10, 02, 0D, 01, 00, F7}` — **duplicated leading 0xF0** (`SysExType.Start` prepended to an array that already starts with 0xF0). Likely a bug; the synth may tolerate or ignore the message. | Verbatim, commented. Worth testing on hardware. |
-| 2 | `XpanderController.SendTuneRequestToSynth` | Tune Request is sent as `{F0, F6, F7}` — a raw System Common byte wrapped inside a SysEx frame, which is not standard MIDI. | Verbatim, commented. |
-| 3 | `SendAllNotesOffToSynthOutput` | CC 123 goes out on `MidiConfig.MidiChannel` from **settings** (default **1**), while every other message uses `Tone.MIDIChannel` (default 0). If the two diverge, all-notes-off targets another channel. | Verbatim, commented. Possible off-by-one/channel mismatch to confirm with you. |
-| 4 | `PageSubPageHelper.IsLfoRetrig` | Condition is `parameterPage >= LFO_1 && parameterSubPage <= LFO_5` — the second clause compares the **sub-page** to a page constant (0x34), so it is almost always true. Probably meant `parameterPage <= LFO_5`. Affects which rotary gets the button-to-rotary offset on non-LFO pages' sub-page 1. | Verbatim, commented. |
-| 5 | `AbstractTone.GetNextRandomValueForParameter` (humanize branch) | `randomizer.Next(0, 1)` always returns 0, so `addValue` is always false and only min-clamping applies in this branch (the value setter clamps the max anyway). Also, for a negative current value the humanize range is inverted (`low > high`), which .NET's `Random.Next` would reject. | Behavior preserved (`addValue = false` hard-coded with comment); inverted ranges are swapped to avoid UB — unreachable for the reference's parameter defaults. |
-| 6 | Same, humanize with current value 0 | Range collapses to {0}: humanized randomization never moves a parameter whose current value is 0. | Verbatim. |
-| 7 | `SysexIterator` | An unterminated trailing frame (0xF0 without 0xF7) is silently dropped; garbage between frames is skipped; after a yield the scan resumes **on** the closing 0xF7. | Verbatim (covered by tests). |
-| 8 | `XPanderSinglePatch` unused matrix entries | Unused entries encode source 0x1F / destination 0x3F on the wire; the in-memory model uses NONE markers. Round-tripping normalizes through these constants. | Verbatim (round-trip test against the real hardware dump passes byte-identical). |
-| 9 | `DetermineSysexFileType` | A file with exactly one frame that is **not** a single patch is classified `AllDataDump` (not `Unknown`). | Verbatim. |
-| 10 | `AutomationInputDeviceChannelMessageReceived` (controller override) | The override **duplicates** the base CC-scaling code instead of calling base, then adds ProgramChange steering. | Not duplicated: the C++ override delegates the CC branch to the base class and adds the ProgramChange branch — byte-identical output, verified by tests. |
-| 11 | `XpanderController.ToneName` setter | Renaming a patch triggers a full tone transmission, a program change and a patch dump request — a heavy side effect for a property setter (the UI must expect it). | Verbatim (`setToneName` override). |
-| 12 | Parameter count | The README announces **226** parameters; the reference `InitializeParameterMap` actually registers **227** entries (187 patch parameters + 40 modulation-matrix parameters). The C++ map is generated from the C# source and asserts 227. | Kept 227 (source of truth = code). |
-| 13 | `ChangeModulationSourceAmount` via `SETUNSIGNEDVALUE`/`DIALVALUEAMOUNTOFCHANGE` | Sign handling mixes the entry's current sign with the incoming unsigned value (`value * amountSign`); amounts clamp to ±63 in the entry but the wire encodes sign+quantize in one byte. | Verbatim; matrix consistency covered by model tests. |
-| 14 | `LoadTone`/`RandomizeTone`/`MorphTones` epilogues | Each clears every `Changed` flag *after* transmitting the full tone, so the worker never re-sends individual parameters; order matters. | Verbatim (same sequence). |
-| 15 | `MockMidiBackend` delivery | (Port-specific) callbacks run synchronously on the injecting thread, unlike JUCE's per-device thread; documented in the header — tests relying on ordering stay valid, tests must not assume cross-thread async. | Documented design choice. |
-| 16 | `ToneMorphingForm` | Flagged *"Work in progress"* in the reference: its OK/Cancel handlers are empty `//TODO`, it is not attached to any menu, and it carries a `#warning` about not restoring the current tone on cancel. | **Deferred, not ported.** The controller primitive (`morphTones`) is fully ported and tested; only the unfinished view is omitted. To be picked up when the owner specifies the intended UX (TASK-JUCE-067 note). |
-| 17 | All-data-dump **restore** | Reference `RestoreAllDataDumpFromFile` runs the blocking send loop on the UI thread and pumps it with `Application.DoEvents()` (re-entrancy hazard, RQ-GUI-026). | Runs on a `ThreadWithProgressWindow` worker; the progression callback marshals to the modal progress window. **Improves on reference**: no event pumping, UI stays responsive. |
+| 1 | `XpanderController.SendProgrammerModeSinglePatch` | Frame `{F0, F0, 10, 02, 0D, 01, 00, F7}` — duplicated leading 0xF0 | Verbatim, commented. Worth testing on hardware. |
+| 2 | `XpanderController.SendTuneRequestToSynth` | Tune Request sent as `{F0, F6, F7}` — System Common wrapped in SysEx, non-standard | Verbatim, commented. |
+| 3 | `SendAllNotesOffToSynthOutput` | CC 123 on settings `MidiChannel` (default 1) while everything else uses `Tone.MIDIChannel` (default 0) | Verbatim, commented. Channel mismatch to confirm. |
+| 4 | `PageSubPageHelper.IsLfoRetrig` | `parameterSubPage <= LFO_5` compares a sub-page to a page constant — almost always true | Verbatim, commented. |
+| 5 | `AbstractTone.GetNextRandomValueForParameter` | `randomizer.Next(0, 1)` always 0 → humanize `addValue` always false; inverted ranges for negatives | Behavior preserved; inverted ranges swapped (unreachable) to avoid UB. |
+| 6 | Same, current value 0 | Humanize range collapses to {0} | Verbatim. |
+| 7 | `SysexIterator` | Unterminated trailing frame dropped; scan resumes on the closing 0xF7 | Verbatim (tested). |
+| 8 | `XPanderSinglePatch` unused matrix entries | 0x1F/0x3F wire markers vs NONE in memory | Verbatim (byte-identical round-trip test). |
+| 9 | `DetermineSysexFileType` | One non-single-patch frame → `AllDataDump`, not `Unknown` | Verbatim. |
+| 10 | Automation CC handler override | Reference duplicates base scaling code | C++ delegates to base + adds ProgramChange branch — byte-identical, tested. |
+| 11 | `ToneName` setter | Rename triggers full transmission + program change + dump request | Verbatim (heavy side effect expected by the UI). |
+| 12 | Parameter count | README says 226; code registers 227 | Kept 227 (source of truth = code). |
+| 13 | `ChangeModulationSourceAmount` | Sign mixing between entry sign and unsigned value | Verbatim; covered by model tests. |
+| 14 | Load/Randomize/Morph epilogues | `Changed` flags cleared **after** full-tone send; order matters | Verbatim (same sequence). |
+| 15 | `MockMidiBackend` delivery | (Port-specific) synchronous on the injecting thread | Documented design choice. |
+| 16 | `ToneMorphingForm` | Flagged work-in-progress: empty OK/Cancel, unwired, cancel-restore `#warning` | **Deferred, not ported**; controller primitive fully ported & tested (§10-11). |
+| 17 | All-data-dump restore | Blocking send loop on the UI thread pumped by `DoEvents` | `ThreadWithProgressWindow` worker; **improves on reference** (RQ-GUI-026). |
+| 18 | TRACK page-family tags | Designer tags `TRACK_X_PT_n` while the parameter map registers `TRACK_n_POINT_m` — the reference resolves through its own map at runtime | Extraction normalized to the parameter names, **with explicit owner approval** (page-family review). |
+| 19 | VFD line count | `VfdDisplayHelper` writes 5 lines but the 267×75 control fits 4 at 100 % DPI — the CC line only appears under Windows DPI autoscale | Surfaced to owner; display grown to 82 px (ADR-007 option b). |
