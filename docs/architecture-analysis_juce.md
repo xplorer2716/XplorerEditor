@@ -407,7 +407,8 @@ sequenceDiagram
     participant Synth as Oberheim Xpander (MIDI Out)
 
     UI->>Ctrl: setParameter(name, value)
-    Ctrl->>Ctrl: parameterMap.at(name).setValue(value); changed = true
+    Ctrl->>Ctrl: parameterMap.at(name).setValue(value)
+    Ctrl->>Ctrl: mark parameter as changed
     Note over WT: cv.wait_for(transmitDelay, stop_token)
     WT->>Ctrl: scan parameterMap for changed
     Ctrl->>Queue: enqueue(parameter.clone())
@@ -574,7 +575,7 @@ C4Context
     title Xplorer JUCE Port – Context Diagram
 
     Person(user, "Musician", "Edits Xpander/Matrix-12 patches in real time")
-    System(xplorer, "Xplorer (C++/JUCE)", "Single-window editor: 230+ controls, VFD, mod matrix, dialogs; Model/Controller/MIDI layers headless-testable")
+    System(xplorer, "Xplorer (C++/JUCE)", "Single-window editor: 230+ controls, VFD, mod matrix, dialogs. Model/Controller/MIDI layers headless-testable")
     System_Ext(synth, "Oberheim Xpander / Matrix-12", "Vintage polyphonic synthesizer")
     System_Ext(daw, "DAW / MIDI Controller", "Sends CC automation")
     System_Ext(fs, "File System", ".syx patches + xplorer.users.config (.NET-compatible)")
