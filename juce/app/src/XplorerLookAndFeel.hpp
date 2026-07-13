@@ -13,6 +13,11 @@ namespace xplorer::app
     public:
         explicit XplorerLookAndFeel(juce::Colour ledColour);
 
+        /// The single runtime source of truth for the knob LED colour; every
+        /// consumer (knobs, tick boxes, matrix highlight) derives from it, so a
+        /// colour change only rebuilds this object. [ADR-011]
+        [[nodiscard]] juce::Colour ledColour() const { return _ledColour; }
+
         void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                               float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle,
                               juce::Slider& slider) override;

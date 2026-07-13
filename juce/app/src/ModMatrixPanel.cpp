@@ -1,5 +1,6 @@
 #include "ModMatrixPanel.hpp"
 
+#include "XplorerLookAndFeel.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/model/ModulationMatrixEntry.hpp"
 
@@ -19,8 +20,22 @@ namespace xplorer::app
         _defaultComboBackground = _rows[0].source != nullptr
                                       ? _rows[0].source->findColour(juce::ComboBox::backgroundColourId)
                                       : juce::Colour::fromRGB(30, 36, 44);
-        _highlightColour = _defaultComboBackground.brighter(0.5F); // until the app sets the LED colour
         refreshAll();
+    }
+
+    juce::Colour ModMatrixPanel::highlightColour() const
+    {
+        // Single source of truth: the knob LED colour owned by the LookAndFeel
+        // (ADR-011). Re-read on every highlight, so a settings change applies
+        // immediately with no cached copy.
+        if (_rows[0].source != nullptr)
+        {
+            if (const auto* laf = dynamic_cast<const XplorerLookAndFeel*>(&_rows[0].source->getLookAndFeel()))
+            {
+                return laf->ledColour();
+            }
+        }
+        return _defaultComboBackground.brighter(0.5F); // neutral fallback
     }
 
     const ControlSpec* ModMatrixPanel::specFor(const std::string& id) const
@@ -141,7 +156,7 @@ namespace xplorer::app
             auto& combo = _rows[static_cast<std::size_t>(entryNumber - 1)].source;
             if (combo != nullptr && static_cast<int>(entry.source) == sourceValue)
             {
-                combo->setColour(juce::ComboBox::backgroundColourId, _highlightColour);
+                combo->setColour(juce::ComboBox::backgroundColourId, highlightColour());
             }
         }
     }
@@ -155,7 +170,7 @@ namespace xplorer::app
             if (combo != nullptr && static_cast<int>(entry.destination) == destValue
                 && entry.source != model::EnumModulationSourcesModMatrix::NONE)
             {
-                combo->setColour(juce::ComboBox::backgroundColourId, _highlightColour);
+                combo->setColour(juce::ComboBox::backgroundColourId, highlightColour());
             }
         }
     }

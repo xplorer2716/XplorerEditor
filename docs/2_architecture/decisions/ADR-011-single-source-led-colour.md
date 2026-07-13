@@ -1,7 +1,9 @@
 # ADR-011: Single Runtime Source of Truth for the Knob LED Colour
 
 ## Status
-Proposed (awaiting owner validation before implementation)
+Accepted (owner, 2026-07-13). Implemented: `XplorerLookAndFeel::ledColour()`
+is the sole runtime source; `ModMatrixPanel` derives the highlight colour from
+it live (no cached copy).
 
 ## Requirements
 RQ-GUI-018, RQ-GUI-031, RQ-SET-003

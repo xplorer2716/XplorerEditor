@@ -1,7 +1,10 @@
 # ADR-012: MIDI CC Automation Table — Load Path, Editor UI & CC-Name Port
 
 ## Status
-Proposed (awaiting owner validation before implementation)
+Accepted (owner, 2026-07-13 — reference behaviour is authoritative; editable
+parameter set and CC range mirror the reference exactly). Implemented: CC-name
+extraction, headless parser + load path in `applyMidiSettings`, and the
+`TableListBox` editor on the MIDI settings page.
 
 ## Requirements
 RQ-GUI-036, RQ-SET-002, RQ-FMW-032, RQ-FMW-050..052

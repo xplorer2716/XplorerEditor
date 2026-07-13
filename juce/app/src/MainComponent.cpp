@@ -113,10 +113,9 @@ namespace xplorer::app
                                           false); // [RQ-GUI-020]
             });
 
-        // Modulation-matrix hover highlight: colour = knob LED-border colour;
-        // knobs and page-family selectors forward their hover. [RQ-GUI-018]
-        _matrixPanel->setHighlightColour(juce::Colour(static_cast<juce::uint32>(
-            _settingsService->allUsersSettings().uiConfig.knobLedBorderColor)));
+        // Modulation-matrix hover highlight: the colour is derived from the
+        // LookAndFeel (single source of truth, ADR-011); knobs and page-family
+        // selectors forward their hover. [RQ-GUI-018]
         _hover.onEnter = [this](juce::Component* component) { onControlHovered(component); };
         _hover.onExit = [this]
         {

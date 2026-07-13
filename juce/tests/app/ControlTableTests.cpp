@@ -2,6 +2,7 @@
 
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
+#include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
@@ -229,6 +230,49 @@ SCENARIO("Knobs and selectors resolve to their modulation destination/source", "
         THEN("an unknown selector yields nothing")
         {
             CHECK_FALSE(modulationSourceForSelector("ENV_9").has_value());
+        }
+    }
+}
+
+SCENARIO("The MIDI CC automation table parses and names entries", "[RQ-GUI-036]")
+{
+    GIVEN("the reference CC-name list")
+    {
+        THEN("it has 129 entries with 'None' last")
+        {
+            CHECK(controlChangeNameCount() == 129);
+            CHECK(unassignedControlChange() == 128);
+            CHECK(controlChangeName(0) == "Bank Select");
+            CHECK(controlChangeName(128) == "None");
+            CHECK(controlChangeName(999) == "None"); // out of range → None
+        }
+    }
+
+    GIVEN("persisted 'NAME;CC' entries")
+    {
+        THEN("a well-formed entry parses and clamps CC to 1..128")
+        {
+            const auto ok = parseAutomationEntry("VCO1_VOLUME;12");
+            REQUIRE(ok.has_value());
+            CHECK(ok->first == "VCO1_VOLUME");
+            CHECK(ok->second == 12);
+            CHECK(parseAutomationEntry("X;0")->second == 1);   // clamped up
+            CHECK(parseAutomationEntry("X;200")->second == 128); // clamped down
+        }
+
+        THEN("a parameter name is split on the last ';'")
+        {
+            const auto ok = parseAutomationEntry("A;B;7");
+            REQUIRE(ok.has_value());
+            CHECK(ok->first == "A;B");
+            CHECK(ok->second == 7);
+        }
+
+        THEN("malformed entries are rejected")
+        {
+            CHECK_FALSE(parseAutomationEntry("no-delimiter").has_value());
+            CHECK_FALSE(parseAutomationEntry("name;notanumber").has_value());
+            CHECK_FALSE(parseAutomationEntry(";5").has_value());
         }
     }
 }

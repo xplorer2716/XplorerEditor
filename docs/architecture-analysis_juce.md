@@ -40,7 +40,7 @@ restore with progress, piano keyboard, about), plus `.syx` drag & drop. Wire and
 formats are byte-compatible with the .NET version (verified against real hardware dumps);
 settings files interchange in both directions.
 
-- **79 Catch2 scenarios** run headless in CI (Linux); a native Windows CI job builds
+- **81 Catch2 scenarios** run headless in CI (Linux); a native Windows CI job builds
   `Xplorer.exe` (x64, MSVC) and runs the same suite.
 - Every UI *logic* concern (control table, binding registry, page-family resolution,
   metadata) lives in a UI-framework-free library (`xpl_app_core`) and is machine-tested;
@@ -70,7 +70,7 @@ graph TD
         MidiJuce["📦 xpl_midi_juce (JUCE adapter)"]
         Midi["📦 xpl_midi (backend-agnostic)"]
         Assets["🎨 XplorerAssets (BinaryData)\nbackground, button GIFs, VFD glyph sheet"]
-        Tests["🧪 tests/ (Catch2, 79 scenarios)"]
+        Tests["🧪 tests/ (Catch2, 81 scenarios)"]
     end
 
     subgraph external ["⬇ FetchContent (pinned)"]
@@ -100,7 +100,7 @@ graph TD
 
 | Workflow | Runner | Role |
 |---|---|---|
-| `juce-ci.yml` | ubuntu-latest | Configure, build, `ctest` — the 79 headless scenarios on every push (RQ-BLD-007) |
+| `juce-ci.yml` | ubuntu-latest | Configure, build, `ctest` — the 81 headless scenarios on every push (RQ-BLD-007) |
 | `juce-windows.yml` | windows-2022 | MSVC x64 build of `Xplorer.exe` + same test suite; uploads the binary as artifact for owner validation. `workflow_dispatch` input `run_tests` allows a binary-only run. MinGW cross-compile is not viable — JUCE `#error`s on it (RQ-BLD-008). |
 
 ---
@@ -534,7 +534,7 @@ construction; only thin JUCE wrappers need eyes.
 
 | Tier | What | How verified |
 |---|---|---|
-| Machine (CI, 79 scenarios) | MIDI framing/splitting, parameter semantics, tone byte-exact round-trips, controller state machines (dump, page follow, matrix ops), settings round-trip + .NET import, control-table anchors, binding registry (anti-echo, CC disable, rebinding, local-edit fan-out), page-family resolution, friendly-name/label tables | Catch2, requirement-tagged (`[RQ-…]`), Linux + Windows CI |
+| Machine (CI, 81 scenarios) | MIDI framing/splitting, parameter semantics, tone byte-exact round-trips, controller state machines (dump, page follow, matrix ops), settings round-trip + .NET import, control-table anchors, binding registry (anti-echo, CC disable, rebinding, local-edit fan-out), page-family resolution, friendly-name/label tables | Catch2, requirement-tagged (`[RQ-…]`), Linux + Windows CI |
 | Machine (opportunistic) | JUCE backend against a virtual MIDI cable | auto-skipped when no cable exists |
 | Human (owner, Windows) | pixel fidelity, colours, drag feel, real-synth timing | milestone builds (M1/M2/M3) from the Windows CI artifact |
 
@@ -556,7 +556,7 @@ port.
 | 4 | `AbstractTone` → `XpanderTone` downcast | ⚠️ Kept (single accessor, port fidelity); post-migration redesign candidate |
 | 5 | `FileOperationsManager` → god-form coupling | ✅ Dissolved into focused components (load-by-type on `MainComponent`, dialogs in `Dialogs.cpp`) |
 | 6 | Non-generic `OrderedDictionary` | ✅ Typed `OrderedParameterMap` |
-| 7 | Unit tests | ✅ 79 scenarios, requirement-tagged, dual-platform CI |
+| 7 | Unit tests | ✅ 81 scenarios, requirement-tagged, dual-platform CI |
 | 8 | Multi-patch support | Out of scope (as reference); backlog |
 | 9 | `BugReportFactory` payload | ❌ Not ported — the top-level exception dialog exists (RQ-GUI-035) but without the full diagnostic payload (RQ-FMW-071); app-phase follow-up |
 | 10 | Blocking sleeps inside some controller ops (store, program-change+dump, typewriter) | ⚠️ Verbatim from reference; called from the message thread via menus. Async refactor candidate (needs an ADR) |
@@ -565,8 +565,8 @@ port.
 | 13 | Character scaling of the VFD | Owner announced a later spec pass (nearest vs smooth under canvas scale) |
 | 14 | Hardware validation | TASK-JUCE-071 checklist (real Xpander/Matrix-12) still to run |
 | 15 | Cross-compat campaign | TASK-JUCE-072 (patch libraries + settings exchanged .NET ⇄ JUCE) still to run |
-| 16 | CC automation table not loaded into the controller | 📋 Scheduled — TASK-JUCE-078 / ADR-012: `applyMidiSettings` persists but never parses `automationTable` into the controller dictionary, so incoming CCs drive nothing and the VFD CC line is blank; fixed together with the mapping editor (RQ-GUI-036) |
-| 17 | Duplicated runtime LED-colour state | 📋 Scheduled — TASK-JUCE-077 / ADR-011: the matrix highlight cached its own colour copy; moving to a single LookAndFeel-owned source fixes the stale-colour-on-change bug |
+| 16 | CC automation table not loaded into the controller | ✅ Done — TASK-JUCE-078 / ADR-012: `applyMidiSettings` persists but never parses `automationTable` into the controller dictionary, so incoming CCs drive nothing and the VFD CC line is blank; fixed together with the mapping editor (RQ-GUI-036) |
+| 17 | Duplicated runtime LED-colour state | ✅ Done — TASK-JUCE-077 / ADR-011: the matrix highlight cached its own colour copy; moving to a single LookAndFeel-owned source fixes the stale-colour-on-change bug |
 
 ---
 
@@ -592,7 +592,7 @@ C4Context
 - **Wire and file compatibility**: byte-exact SysEx and 399-byte patch round-trips
   verified against real hardware dumps; settings interchange with .NET
 - **Testability by construction**: every seam is an injected interface; UI logic is a
-  headless library; 79 requirement-tagged scenarios on two platforms
+  headless library; 81 requirement-tagged scenarios on two platforms
 - **Mechanical UI fidelity**: layout, captions, enum labels, parameter names and both
   bitmap assets are regenerated from the WinForms sources by one script — no hand-copied
   facts to drift

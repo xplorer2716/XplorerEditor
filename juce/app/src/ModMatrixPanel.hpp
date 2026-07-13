@@ -32,8 +32,9 @@ namespace xplorer::app
         /// The app wires this to the VFD, like the reference. [RQ-GUI-020]
         void setEditHandler(std::function<void(int)> handler) { _editHandler = std::move(handler); }
 
-        // Hover highlight (reference ModulationMatrixHighlight). [RQ-GUI-018]
-        void setHighlightColour(juce::Colour colour) { _highlightColour = colour; }
+        // Hover highlight (reference ModulationMatrixHighlight). The colour is
+        // derived from the live LookAndFeel, not cached, so it tracks the LED
+        // setting (ADR-011). [RQ-GUI-018]
         /// Highlight source combos currently set to sourceValue.
         void highlightSources(int sourceValue);
         /// Highlight destination combos set to destValue whose row has an
@@ -58,11 +59,12 @@ namespace xplorer::app
         void onDestinationChanged(int entryNumber);
         void onQuantizeChanged(int entryNumber);
 
+        [[nodiscard]] juce::Colour highlightColour() const;
+
         controller::XpanderController& _controller;
         std::array<Row, 20> _rows;
         std::array<int, 20> _currentDestination{}; // tracks old destination for change ops
         std::function<void(int)> _editHandler;
-        juce::Colour _highlightColour;
         juce::Colour _defaultComboBackground;
         bool _refreshing = false;
     };

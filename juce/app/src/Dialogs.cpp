@@ -1,5 +1,6 @@
 #include "Dialogs.hpp"
 
+#include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
@@ -21,6 +22,18 @@ namespace xplorer::app
         controller.setEditingProgramNumber(
             juce::jlimit(model::XpanderTone::MIN_PROGRAM_NUMBER, model::XpanderTone::MAX_PROGRAM_NUMBER,
                          midi.editingProgramNumber));
+
+        // Load the persisted "NAME;CC" table into the controller dictionary so
+        // incoming CCs drive the mapped parameters and the VFD shows the CC.
+        // Reference SettingsManager.LoadSettings. [RQ-GUI-036, ADR-012]
+        controller.controlChangeAutomationTable().clear();
+        for (const auto& entry : midi.automationTable)
+        {
+            if (const auto parsed = parseAutomationEntry(entry))
+            {
+                controller.controlChangeAutomationTable().add(parsed->first, parsed->second);
+            }
+        }
     }
 
     namespace

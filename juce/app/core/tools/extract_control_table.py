@@ -234,7 +234,30 @@ def extract_parameter_names():
     print(f'parameter names: {len(entries)}')
 
 
+# --- MIDI Continuous-Controller names --------------------------------------
+# Emits GeneratedControlChangeNames.inc: the reference ControlChangesNames.Names
+# array (index = CC number, last entry = "None" / unassigned), used by the MIDI
+# automation-table editor. [RQ-GUI-036, ADR-012]
+CC_NAMES_SRC = ('Sanford.Multimedia.Midi/Source/Sanford.Multimedia.Midi/'
+                'Messages/ControlChangesNames.cs')
+CC_NAMES_OUT = 'juce/app/core/src/GeneratedControlChangeNames.inc'
+
+
+def extract_control_change_names():
+    src = open(CC_NAMES_SRC).read()
+    body = re.search(r'string\[\]\s*Names\s*=\s*\{(.*?)\}', src, re.S).group(1)
+    names = re.findall(r'"((?:[^"\\]|\\.)*)"', body)
+    with open(CC_NAMES_OUT, 'w') as f:
+        f.write('// MIDI Continuous-Controller names, extracted from the reference\n'
+                '// Sanford ControlChangesNames.Names (index = CC number, last = "None").\n'
+                '// Regenerate with extract_control_table.py. [RQ-GUI-036]\n')
+        for name in names:
+            f.write(f'    "{name}",\n')
+    print(f'control-change names: {len(names)}')
+
+
 if __name__ == '__main__':
     extract_enum_labels()
     extract_parameter_names()
     extract_vfd_sheet()
+    extract_control_change_names()

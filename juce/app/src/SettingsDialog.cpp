@@ -2,12 +2,16 @@
 
 #include "Dialogs.hpp"
 
+#include "xplorer/app/ControlMetadata.hpp"
+#include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 #include "xplorer/settings/AllUsersSettings.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <array>
+#include <string>
+#include <vector>
 
 namespace xplorer::app
 {
@@ -16,6 +20,91 @@ namespace xplorer::app
         constexpr int LABEL_WIDTH = 150;
         constexpr int ROW_HEIGHT = 28;
         constexpr int MARGIN = 12;
+
+        // Editable CC automation table (reference MidiPage LvAutomation): one
+        // row per parameter, CC picked from the reference CC-name list.
+        // [RQ-GUI-036, ADR-012]
+        class AutomationTableModel final : public juce::TableListBoxModel
+        {
+        public:
+            struct Row
+            {
+                std::string tag;
+                juce::String friendly;
+                int cc;
+            };
+            std::vector<Row> rows;
+
+            int getNumRows() override { return static_cast<int>(rows.size()); }
+
+            void paintRowBackground(juce::Graphics& g, int, int, int, bool selected) override
+            {
+                g.fillAll(selected ? juce::Colour::fromRGB(50, 58, 68) : juce::Colour::fromRGB(30, 36, 44));
+            }
+
+            void paintCell(juce::Graphics& g, int row, int column, int width, int height, bool) override
+            {
+                if (column == 1 && row < static_cast<int>(rows.size()))
+                {
+                    g.setColour(juce::Colours::white);
+                    g.setFont(14.0F);
+                    g.drawText(rows[static_cast<std::size_t>(row)].friendly, 4, 0, width - 6, height,
+                               juce::Justification::centredLeft, true);
+                }
+                g.setColour(juce::Colour::fromRGB(60, 66, 74));
+                g.fillRect(width - 1, 0, 1, height);
+            }
+
+            struct CcCombo final : juce::ComboBox
+            {
+                AutomationTableModel& model;
+                int row = -1;
+                explicit CcCombo(AutomationTableModel& owner) : model(owner)
+                {
+                    for (int i = 0; i < controlChangeNameCount(); ++i)
+                    {
+                        addItem(controlChangeName(i), i + 1);
+                    }
+                    onChange = [this]
+                    {
+                        if (row >= 0 && row < static_cast<int>(model.rows.size()))
+                        {
+                            model.rows[static_cast<std::size_t>(row)].cc = getSelectedId() - 1;
+                        }
+                    };
+                }
+                void setRow(int r)
+                {
+                    row = r;
+                    setSelectedId(model.rows[static_cast<std::size_t>(r)].cc + 1, juce::dontSendNotification);
+                }
+            };
+
+            juce::Component* refreshComponentForCell(int row, int column, bool,
+                                                     juce::Component* existing) override
+            {
+                if (column != 2)
+                {
+                    delete existing;
+                    return nullptr;
+                }
+                auto* combo = dynamic_cast<CcCombo*>(existing);
+                if (combo == nullptr)
+                {
+                    combo = new CcCombo(*this);
+                }
+                combo->setRow(row);
+                return combo;
+            }
+
+            void resetAll()
+            {
+                for (auto& r : rows)
+                {
+                    r.cc = unassignedControlChange();
+                }
+            }
+        };
 
         /// Lays a "caption: control" row and returns the control's bounds.
         juce::Rectangle<int> rowBounds(juce::Rectangle<int>& area)
@@ -56,6 +145,32 @@ namespace xplorer::app
                 _smartNotesOff.setButtonText("Smart all notes off");
                 _smartNotesOff.setToggleState(midi.smartAllNotesOff, juce::dontSendNotification);
                 addAndMakeVisible(_smartNotesOff);
+
+                // CC automation table editor. [RQ-GUI-036]
+                for (const auto& entry : midi.automationTable)
+                {
+                    if (const auto parsed = parseAutomationEntry(entry))
+                    {
+                        _automationModel.rows.push_back(
+                            {parsed->first, juce::String(parameterDisplayName(parsed->first)), parsed->second});
+                    }
+                }
+                _automationLabel.setText("MIDI automation table", juce::dontSendNotification);
+                _automationLabel.setJustificationType(juce::Justification::centredLeft);
+                addAndMakeVisible(_automationLabel);
+                _automationTable.setModel(&_automationModel);
+                _automationTable.getHeader().addColumn("Parameter", 1, LABEL_WIDTH);
+                _automationTable.getHeader().addColumn("MIDI CC", 2, 240);
+                _automationTable.setRowHeight(ROW_HEIGHT);
+                addAndMakeVisible(_automationTable);
+                _resetAutomation.setButtonText("Reset all to unassigned");
+                _resetAutomation.onClick = [this]
+                {
+                    _automationModel.resetAll();
+                    _automationTable.updateContent();
+                    _automationTable.repaint();
+                };
+                addAndMakeVisible(_resetAutomation);
             }
 
             void applyTo(settings::AllUsersSettings::MidiConfiguration& midi) const
@@ -71,6 +186,13 @@ namespace xplorer::app
                 midi.sysexTransmitDelay = juce::jmax(0, _delay.getText().getIntValue());
                 midi.synthTypeIsMatrix12 = _synthType.getSelectedId() == 2;
                 midi.smartAllNotesOff = _smartNotesOff.getToggleState();
+
+                // Persist the automation rows as "NAME;CC" (reference format).
+                midi.automationTable.clear();
+                for (const auto& row : _automationModel.rows)
+                {
+                    midi.automationTable.push_back(row.tag + ";" + std::to_string(row.cc));
+                }
             }
 
             void resized() override
@@ -82,6 +204,13 @@ namespace xplorer::app
                 }
                 place(_delay, rowBounds(area));
                 _smartNotesOff.setBounds(area.removeFromTop(ROW_HEIGHT).withTrimmedLeft(LABEL_WIDTH));
+
+                area.removeFromTop(MARGIN);
+                _automationLabel.setBounds(area.removeFromTop(ROW_HEIGHT));
+                _resetAutomation.setBounds(
+                    area.removeFromBottom(ROW_HEIGHT).removeFromLeft(200).reduced(0, 2));
+                area.removeFromBottom(4);
+                _automationTable.setBounds(area);
             }
 
         private:
@@ -134,6 +263,10 @@ namespace xplorer::app
             juce::Label _synthOutLabel, _synthInLabel, _autoInLabel, _channelLabel, _synthTypeLabel, _delayLabel;
             juce::TextEditor _delay;
             juce::ToggleButton _smartNotesOff;
+            juce::Label _automationLabel;
+            AutomationTableModel _automationModel; // declared before the table it backs
+            juce::TableListBox _automationTable;
+            juce::TextButton _resetAutomation;
         };
 
         // ---- User interface page ------------------------------------------
@@ -426,7 +559,8 @@ namespace xplorer::app
                 addAndMakeVisible(_ok);
                 addAndMakeVisible(_cancel);
 
-                setSize(460, 300);
+                // Taller: the MIDI page now hosts the scrollable automation table.
+                setSize(520, 600);
             }
 
             void resized() override
@@ -490,7 +624,7 @@ namespace xplorer::app
         options.dialogBackgroundColour = juce::Colour::fromRGB(24, 28, 34);
         options.escapeKeyTriggersCloseButton = true;
         options.useNativeTitleBar = true;
-        options.resizable = false;
+        options.resizable = true; // the automation table benefits from more height
         options.launchAsync();
     }
 }
