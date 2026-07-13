@@ -275,4 +275,26 @@ SCENARIO("The MIDI CC automation table parses and names entries", "[RQ-GUI-036]"
             CHECK_FALSE(parseAutomationEntry(";5").has_value());
         }
     }
+
+    GIVEN("the HTML export")
+    {
+        const auto html = buildMidiMappingHtml(
+            {{"VCO1 FREQ", "None"}, {"VCF MODE", "Damper Pedal on/off"}}, "2026-07-13 10:00:00");
+
+        THEN("it is a self-contained HTML document with a row per mapping")
+        {
+            CHECK(html.rfind("<!DOCTYPE html>", 0) == 0);
+            CHECK(html.find("<style>") != std::string::npos); // inline CSS, self-contained
+            CHECK(html.find("<td>VCO1 FREQ</td>") != std::string::npos);
+            CHECK(html.find("<td>VCF MODE</td>") != std::string::npos);
+            CHECK(html.find("Generated on 2026-07-13 10:00:00") != std::string::npos);
+        }
+
+        THEN("special characters are HTML-escaped")
+        {
+            const auto escaped = buildMidiMappingHtml({{"A & B", "x<y>z"}}, "t");
+            CHECK(escaped.find("A &amp; B") != std::string::npos);
+            CHECK(escaped.find("x&lt;y&gt;z") != std::string::npos);
+        }
+    }
 }

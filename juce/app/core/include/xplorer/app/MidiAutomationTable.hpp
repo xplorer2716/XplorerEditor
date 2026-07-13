@@ -8,9 +8,18 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace xplorer::app
 {
+    /// Builds a compact, light, print-friendly HTML document listing the CC
+    /// automation mapping (rows = {parameter display name, CC name}). Port of
+    /// the reference MidiPage HTML export; `generatedOn` is injected so the
+    /// output is deterministic and headless-testable. [RQ-GUI-036]
+    [[nodiscard]] std::string
+    buildMidiMappingHtml(const std::vector<std::pair<std::string, std::string>>& rows,
+                         const std::string& generatedOn);
+
     /// Number of CC names (reference ControlChangesNames.Names length; the last
     /// index is "None"/unassigned).
     [[nodiscard]] int controlChangeNameCount();

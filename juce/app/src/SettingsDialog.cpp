@@ -10,7 +10,9 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <array>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace xplorer::app
@@ -171,6 +173,10 @@ namespace xplorer::app
                     _automationTable.repaint();
                 };
                 addAndMakeVisible(_resetAutomation);
+
+                _exportHtml.setButtonText("Export as HTML");
+                _exportHtml.onClick = [this] { exportMappingAsHtml(); };
+                addAndMakeVisible(_exportHtml);
             }
 
             void applyTo(settings::AllUsersSettings::MidiConfiguration& midi) const
@@ -207,13 +213,55 @@ namespace xplorer::app
 
                 area.removeFromTop(MARGIN);
                 _automationLabel.setBounds(area.removeFromTop(ROW_HEIGHT));
-                _resetAutomation.setBounds(
-                    area.removeFromBottom(ROW_HEIGHT).removeFromLeft(200).reduced(0, 2));
+                auto buttonRow = area.removeFromBottom(ROW_HEIGHT).reduced(0, 2);
+                _resetAutomation.setBounds(buttonRow.removeFromLeft(200));
+                buttonRow.removeFromLeft(8);
+                _exportHtml.setBounds(buttonRow.removeFromLeft(140));
                 area.removeFromBottom(4);
                 _automationTable.setBounds(area);
             }
 
         private:
+            void exportMappingAsHtml()
+            {
+                std::vector<std::pair<std::string, std::string>> rows;
+                rows.reserve(_automationModel.rows.size());
+                for (const auto& row : _automationModel.rows)
+                {
+                    rows.emplace_back(row.friendly.toStdString(), controlChangeName(row.cc));
+                }
+                const auto generatedOn =
+                    juce::Time::getCurrentTime().toString(true, true).toStdString();
+                const auto html = buildMidiMappingHtml(rows, generatedOn);
+
+                _htmlChooser = std::make_unique<juce::FileChooser>(
+                    "Export MIDI mapping", juce::File(), "*.html");
+                _htmlChooser->launchAsync(
+                    juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                    [html](const juce::FileChooser& fc)
+                    {
+                        auto file = fc.getResult();
+                        if (file == juce::File())
+                        {
+                            return;
+                        }
+                        if (file.getFileExtension().isEmpty())
+                        {
+                            file = file.withFileExtension("html");
+                        }
+                        if (file.replaceWithText(html))
+                        {
+                            file.startAsProcess(); // open in the default browser
+                        }
+                        else
+                        {
+                            juce::AlertWindow::showMessageBoxAsync(
+                                juce::MessageBoxIconType::WarningIcon, "Export MIDI mapping",
+                                "Unable to write " + file.getFullPathName());
+                        }
+                    });
+            }
+
             void place(juce::Component& control, juce::Rectangle<int> row)
             {
                 control.setBounds(row.withTrimmedLeft(LABEL_WIDTH));
@@ -267,6 +315,8 @@ namespace xplorer::app
             AutomationTableModel _automationModel; // declared before the table it backs
             juce::TableListBox _automationTable;
             juce::TextButton _resetAutomation;
+            juce::TextButton _exportHtml;
+            std::unique_ptr<juce::FileChooser> _htmlChooser;
         };
 
         // ---- User interface page ------------------------------------------

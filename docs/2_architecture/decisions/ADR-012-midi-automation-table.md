@@ -61,6 +61,16 @@ Three coordinated parts.
    rows back as `"NAME;CC"` and applies them (part 2). Parameter set / order =
    the persisted table's keys (reference parity).
 
+4. **HTML export.** A headless `buildMidiMappingHtml(rows, generatedOn)` in
+   `xpl_app_core` produces a self-contained (inline-CSS) light, compact,
+   print-friendly document (Parameter / Control Change columns, title, project
+   link, timestamp; HTML-escaped cells); the injected timestamp keeps it
+   deterministic and unit-tested. An "Export as HTML" button on the page writes
+   it via a `FileChooser` and opens it in the default browser
+   (`File::startAsProcess`). Compact by design — tight cell padding, no
+   decorative whitespace — per the owner's preference over the reference's
+   more spacious layout.
+
 ## Consequences
 - CC automation actually functions (input CCs move parameters; VFD shows the
   mapped CC) — a latent functional gap closed, independent of the UI.
