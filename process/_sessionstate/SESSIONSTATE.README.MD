@@ -1,0 +1,1 @@
+This folder contains the session's state

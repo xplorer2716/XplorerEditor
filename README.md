@@ -1,145 +1,146 @@
+# AGNOS Software Engineering Process v1
 
-# XPLORER - A real time editor for the Oberheim Xpander and Matrix-12 synthesizers
+**AGNOS** is a lightweight, agentic AI-driven software engineering process designed for high traceability, maintainability, and rapid feature delivery. It enforces a clear workflow from requirements through architecture decisions to implementation, with version-controlled session state.
 
-![Platform](https://img.shields.io/badge/platform-.NET-blue)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0)
+## Supported Tools & Platforms
 
-![Xplorer](https://github.com/xplorer2716/XplorerEditor/blob/main/README.XplorerFullScreen.jpg?raw=true)
+| | Supported |
+|---|---|
+| **AI coding tools** | GitHub Copilot (`.github/instructions/`, `.github/skills/`) and Claude Code (`CLAUDE.md`, `.claude/skills/`) — one canonical process, two entry points  |
+| **Operating systems** | Windows (PowerShell), Linux / macOS (bash) — the git-workflow skill dispatches to the matching validator script  |
 
-Xplorer is a real-time and bi-directional software editor for the Oberheim Matrix-12 and Xpander synthesizers.
+## Quick Start
 
-Xplorer is not just another generic synthesizer editor with ranges of slider controls that are all the same and don’t really tell you what you are doing.
-Xplorer was developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix.
+Every session follows these steps:
 
-With Xplorer you can tweak the sound simultaneously using a computer mouse, a hardware MIDI controller, your DAW software, or directly on your Xpander or Matrix-12. Use the method you prefer to change the sound. Xplorer’s display shows you in real-time which parameter is currently being modified.
+1. **Load instructions** — Copilot auto-loads `.github/instructions/agnos-sw-eng.v1.instructions.md`; Claude Code auto-loads the root `CLAUDE.md`, which imports the same file
+2. **Resolve session state** — Detect platform, ask user about unit tests (`askQuestion` on Copilot, `AskUserQuestion` on Claude Code), write `session.yaml`
+3. **Scan artifacts** — Check for open requirements, ADRs, and plans
+4. **Create branch** — Use the `agnos-git-workflow` skill's `start-session <TRI>` sub-command
+5. **Execute tasks** — Follow the plan, tier, and delivery checklist
+6. **Commit with skill** — Use the `agnos-git-workflow` skill's `commit-task` sub-command with proper IDs
+7. **Close session** — Generate a summary report
 
-“Real-time and bi-directional” means that every change you make in Xplorer is reflected into the synthesizer memory with minimal latency, and vice-versa. Whether you change the sound parameters on the synthesizer, in Xplorer, or with a MIDI controller, the software and the synthesizer will simultaneously update the parameters of the sound, without needing to reload the patch into the synthesizer memory.
+## Folder Structure
 
-The main features of Xplorer are:
-
-- Single patch tone file load/save on disk
-- Extract single patches from an “all data data dump” SysEx file into a given folder
-- Get all single patches from synthesizer into a given folder
-- All data dump request backup and restore (save and restore synthesizer whole memory to/from a sysex file)
-- Modification of the 226 parameters of a single patch
-- Real-time MIDI automation for all parameters with freely assignable control changes, even for filter modes (except Modulation Matrix)
-- Copy/paste page for TRACK, ENV, LFO, and RAMP pages (e.g., you can copy all ENV1 page parameters and paste them to ENV3)
-- Rename patch, go to patch, store patch, save patch to disk
-- Real-time update of all parameters when the user tweaks the synthesizer knobs (dual editing can be done without needing to reload the patch and resynchronize the synthesizer and the PC as most editors need to do)
-- Patch randomizer (generates a new patch from random values)
-- Auto-sized user interface depending on system’s default font size
-- ...
-
-
-# Requirements
-
-- Windows 7,8,10,11 (x86/x64) [*]
-- Display: 1280 x 900, 256 colors (Minimum); 1680 x 1050 high color, 32-bit (Recommended)
-- a MIDI interface (recommended: a MIDI interface with one MIDI OUT and one MIDI IN, one Virtual MIDI cable driver - like LoopBe1: http://www.nerds.de/en/loopbe1.html)
-
-[*] for MAC users:
-- Mac/Intel users can use virtualization to run Xplorer. See this FAQ: http://xplorer.programmer.free.fr/bb/viewtopic.php?id=10
-- Alternatively any old PC/cheap x64 NUC will run Xplorer perfectly.
-
-
-# Installation
-
-- Download the latest release: https://github.com/xplorer2716/XplorerEditor/releases (archive + manual)
-- Unzip the archive
-- Launch Xplorer.exe from the extracted archive
-- **Read the manual** to configure Xplorer as required
-
-
-
-
-# Contributing
-
-I have no time to develop new features, still I maintain the app (bug fixing) for my own needs.
-You are free to fork, contribute and submit PRs.
-
-## IMPORTANT - Future of Xplorer
-
-Xplorer was started about ten years ago as a personal project, and then commercialized for a few years.
-
-**It is today the only truly functional editor for the Oberheim Xpander and Matrix-12 synthesizers.**
-
-**In order to perpetuate the life of the application and these mythical synthesizers, it would be advisable to migrate the source code to a perennial framework such as JUCE - https://juce.com/.**
-
-Overall, 3 main parts need to be migrated, with different levels of complexity:
-1. Replacement of the MIDI implementation based on Leslie Sanford's C# MIDI toolkit by its C++ equivalent in JUCE. This could be strictly limited to the functions used in Xplorer (configuration of MIDI ports, sending and receiving MIDI messages). For someone who knows JUCE, this should be easy to do.
-2. Convert the MidiApp framework implementation and its use in Xplorer (Model and Controller parts) to C++. This should be relatively straightforward, for a guy that is familiar with both C# and C++ languages.
-3. The big one, complete reimplementation of the UI in JUCE. The UI part of Xplorer is implemented in .NET Winforms, which has been pushed to the limit, notably for the management of all controls, transparency management and in-house binding with the controller part. I think this is the most important effort, and requires some knowledge of Winforms and UI with JUCE.
-
-
-## Installation
-
-### Prerequisites
-
-- [Visual Studio 2022](https://visualstudio.microsoft.com/downloads/)
-- .NET Desktop Runtime (4.8+)
-
-### Steps
-
-1. Clone the repository
-
-The project is made of 2 repos:
-- the MidiApp repo, which is a framework to develop MIDI apps with .NET desktop.
-- the XplorerEditor itself
-- The MidiApp repo is used as a submodule into XplorerEditor. You have to fetch submodules to get everything:
-    ```sh
-    git clone --recurse-submodules https://github.com/xplorer2716/XplorerEditor.git
-    ```
-
-2. Open the Xplorer.sln solution in Visual Studio
-- **Ensure to select x86 as target platform in the solution**, due to x86 platform invoke mapping in 3rd party library.
-
-3. Build the application
-- if Visual Studio does not find the Sanford.Multimedia DLL, reference it from MidiApp subfolder:
-`.\MidiApp\3rdParty\Sanford.Multimedia.Midi`
-- DO NOT add an external reference to Sanford.Multimedia nuget packages you could find on Github, binaries may not match.
-- Launch `XplorerEditor\Xplorer\bin\x86\Debug\xplorer.exe`
-- **Read the manual** to configure Xplorer as required
-
-4. Troobleshooting
-
-Traces can be activated in xplorer.config file:
 ```
-  <system.diagnostics>
-    <switches>
-      <add name="MidiApp.MidiController.Service.Logger" value="0" />
-    </switches>
-  </system.diagnostics>
-  ```
-  
-  - value 0 = off, 4 = verbose.
-  - logfile is located in `\ProgramData\Xplorer\Xplorer\applog.txt`
-  - MIDI-OX (http://www.midiox.com/) is your companion to debug MIDI messages
-  - The latest Oberheim Xpander/Matrix-12 MIDI specification is available here: https://github.com/xplorer2716/OberheimXpanderMidiSpec
-    
+process/
+├── 1.requirements/          # FTR-* features and RQ-* requirements (EARS format)
+├── 2.architecture/          # ADR-* architecture decision records (Mermaid diagrams required)
+├── 3.plan/                  # PLAN-* plans and TASK-* tasks (Gherkin acceptance criteria)
+└── _sessionstate/           # session.yaml (version-controlled session variables)
+```
 
-## Submit your contribution
+## Key Concepts
 
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request and describe your changes
+### Artifact Identifiers
 
+All artifacts follow `<TYPE>-<TRI>-<NNN>` format:
+- `<TYPE>`: RQ (requirement), ADR (architecture), TASK (task), PLAN (plan), FTR (feature), DEC (decision)
+- `<TRI>`: 3-letter uppercase trigram (e.g., USR, GIT, VAR)
+- `<NNN>`: Zero-padded sequence (001, 002, ...)
 
-## Credits
+**Example**: `RQ-USR-001`, `TASK-GIT-002`, `ADR-VAR-001`
 
-- C# MIDI Toolkit by Leslie Sanford (original source code: https://www.codeproject.com/Articles/6228/C-MIDI-Toolkit)
+### Core Workflow
 
+| Phase | File | Format | Responsible |
+|-------|------|--------|-------------|
+| **Requirements** | FTR-*.md | EARS (Ubiquitous, Event-driven, State-driven, Unwanted-behavior) | Team |
+| **Architecture** | ADR-*.md | Context → Decision → Consequences + Mermaid diagram | Team |
+| **Planning** | PLAN-*.md, TASK-*.md | Gherkin acceptance criteria, tier (S/M/L) | AI Agent |
+| **Implementation** | Code + tests | SOLID principles, no magic literals, traceable IDs | AI Agent |
 
-## License
+### Session State Variables
 
-This project is licensed under the GPL v3.
+Stored in `process/_sessionstate/session.yaml`, controlled at session start:
 
-see https://github.com/xplorer2716/XplorerEditor/blob/main/LICENSE
+```yaml
+unit_tests: true          # User variable: generate/run tests? (affects Testing section)
+platform: windows         # System variable: detect OS (affects shell commands)
+```
 
+**Guard syntax:**
+- `WHILE session.unit_tests = false`: skip all Testing steps
+- `ALWAYS use session.platform`: use platform-specific shell syntax
 
-# Links
-- website: http://xplorer.programmer.free.fr
-- former forum: http://xplorer.programmer.free.fr/bb/
+### Task Tiers
 
+| Tier | Scope | Tests | ADR | Plan |
+|------|-------|-------|-----|------|
+| **S** | Edit ≤5 lines, no files, no API | No | No | No |
+| **M** | New method/class/file, one module | Yes | No | No |
+| **L** | Cross-cutting, new API, new dependency | Yes | Yes | Yes |
 
+### Delivery Checklist (DoD)
+
+All tasks must:
+- ✓ Reference a requirement ID (S, M, L)
+- ✓ Have no duplicated/magic literals (M, L)
+- ✓ Pass tests (M, L)
+- ✓ Compile without errors (S, M, L)
+
+## Git Workflow
+
+The **`agnos-git-workflow`** skill automates deterministic git operations, with the same canonical
+procedure available from either tool:
+- GitHub Copilot: `.github/skills/agnos-git-workflow/SKILL.md` (invoke via `/agnos-git-workflow`)
+- Claude Code: `.claude/skills/agnos-git-workflow/SKILL.md` (thin pointer to the file above)
+
+Sub-commands:
+```
+start-session <TRI>
+commit-task <TASK> [<ADR>] <description>
+```
+
+Commit messages:
+- With ADR: `ADR-USR-001/TASK-USR-001 add login handler`
+- Without ADR: `TASK-USR-002 add logout handler`
+
+Artifact-ID validation runs a script chosen from `session.platform`:
+- `windows` → `powershell -NoProfile -File .github/skills/agnos-git-workflow/scripts/validate-ids.ps1` (Windows PowerShell 5.1 — not `pwsh`)
+- `linux` / `macos` → `bash .github/skills/agnos-git-workflow/scripts/validate-ids.sh`
+
+Both scripts enforce identical `TRI`/`TASK`/`ADR` patterns and are kept exit-code-equivalent.
+
+## Best Practices
+
+### Before editing any file
+Read the file in the current session first (Rule: "Read before editing").
+
+### For shell commands
+Check `session.platform` — use PowerShell on Windows, bash on macOS/Linux. Never use bash-only commands on Windows.
+
+### For unit tests
+WHILE `session.unit_tests = false`, skip all Testing section steps. If the variable is not in context, read `session.yaml` before proceeding.
+
+### For traceability
+Every artifact, every code file, every comment must reference its requirement ID. The user shall be able to `grep` any RQ-* ID and find all related code and docs.
+
+## Adding New Variables
+
+To add a new session variable:
+
+1. Update the schema in the SESSION STATE VARIABLES section (keep existing keys)
+2. Document its kind (user or system) and allowed values
+3. Add the conditional guard(s) where it's used
+
+Example: `debug_mode: false` (user variable, affects logging)
+
+## File References
+
+- **Full instructions**: [.github/instructions/agnos-sw-eng.v1.instructions.md](.github/instructions/agnos-sw-eng.v1.instructions.md)
+- **Claude Code bridge**: [CLAUDE.md](CLAUDE.md)
+- **Git workflow skill (canonical)**: [.github/skills/agnos-git-workflow/SKILL.md](.github/skills/agnos-git-workflow/SKILL.md)
+- **Git workflow skill (Claude Code entry point)**: [.claude/skills/agnos-git-workflow/SKILL.md](.claude/skills/agnos-git-workflow/SKILL.md)
+
+## Context Management
+
+Long sessions degrade output quality. If you exceed 10 tasks in a session:
+1. Generate a checkpoint summary in `process/3.plan/CHECKPOINT-<TRI>-<NNN>.md`
+2. Start a new session with a reference to the checkpoint
+3. Next session reads the checkpoint before proceeding
+
+---
+
+**Version**: v1 | **Last Updated**: April 9, 2026 | **Process Owner**: AGNOS Team

@@ -18,6 +18,36 @@
 | TST | Testing & verification | [RQ-TST-testing.md](RQ-TST-testing.md) |
 | NFR | Non-functional requirements | [RQ-NFR-non-functional.md](RQ-NFR-non-functional.md) |
 
+## Requirements statistics
+
+- Total requirements: 140
+
+| Functional area | Requirements |
+|---|---:|
+| MID | 19 |
+| FMW | 28 |
+| MOD | 26 |
+| CTL | 28 |
+| SET | 7 |
+| GUI | 25 |
+| BLD | 8 |
+| TST | 8 |
+| NFR | 9 |
+| Total | 140 |
+
+```mermaid
+pie title Requirements by functional area
+    "Base MIDI layer" : 19
+    "MidiApp framework" : 28
+    "Xplorer model" : 26
+    "Xplorer controller" : 28
+    "Settings service" : 7
+    "User interface" : 25
+    "Build system and tooling" : 8
+    "Testing and verification" : 8
+    "Non-functional requirements" : 9
+```
+
 ## Traceability
 
 - Every ADR, source file, test and commit references the `RQ-` IDs it fulfils.
