@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
@@ -150,6 +151,38 @@ SCENARIO("Known anchor controls are present with their reference kinds", "[RQ-GU
                 }
             }
             CHECK(found);
+        }
+    }
+}
+
+SCENARIO("Parameter tags resolve to their reference display names", "[RQ-GUI-020]")
+{
+    GIVEN("the friendly-name table")
+    {
+        THEN("known parameters map to the reference resource strings")
+        {
+            CHECK(parameterDisplayName("VCF_MODE") == "VCF MODE");
+            CHECK(parameterDisplayName("VCO1_FREQ") == "VCO1 FREQ");
+            CHECK(parameterDisplayName("ENV_1_ATTACK") == "ENV1 ATTACK");
+        }
+
+        THEN("an unknown tag falls back to itself")
+        {
+            CHECK(parameterDisplayName("NOT_A_PARAM") == "NOT_A_PARAM");
+        }
+    }
+
+    GIVEN("the modulation matrix label sets used by the VFD")
+    {
+        THEN("source and destination labels are indexable by enum value")
+        {
+            const auto sources = comboLabelsForControl("MOD_SRC_1");
+            const auto destinations = comboLabelsForControl("MOD_DEST_1");
+            REQUIRE(sources.size() > static_cast<std::size_t>(
+                        xplorer::model::EnumModulationSourcesModMatrix::NONE));
+            CHECK(sources.back() == "NONE");
+            CHECK(destinations.at(static_cast<std::size_t>(
+                      xplorer::model::EnumModulationDestinations::VCF_FRQ)) == "VCF FREQ");
         }
     }
 }

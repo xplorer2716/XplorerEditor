@@ -138,6 +138,10 @@ namespace xplorer::app
                                            static_cast<int>(row.amount->getValue()),
                                            row.quantize->getToggleState() ? 1 : 0,
                                            comboValue(*row.destination), entryNumber);
+        if (_editHandler)
+        {
+            _editHandler(entryNumber);
+        }
     }
 
     void ModMatrixPanel::onAmountChanged(int entryNumber)
@@ -150,6 +154,10 @@ namespace xplorer::app
         _controller.changeModulationSourceAmount(comboValue(*row.source),
                                                  static_cast<int>(row.amount->getValue()),
                                                  comboValue(*row.destination), entryNumber);
+        if (_editHandler)
+        {
+            _editHandler(entryNumber);
+        }
     }
 
     void ModMatrixPanel::onDestinationChanged(int entryNumber)
@@ -170,6 +178,10 @@ namespace xplorer::app
                                                 row.quantize->getToggleState() ? 1 : 0,
                                                 oldDestination, newDestination, entryNumber);
         _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = newDestination;
+        if (_editHandler)
+        {
+            _editHandler(entryNumber);
+        }
     }
 
     void ModMatrixPanel::onQuantizeChanged(int entryNumber)
@@ -181,5 +193,9 @@ namespace xplorer::app
         auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
         _controller.changeModulationSourceQuantize(comboValue(*row.source), comboValue(*row.destination),
                                                    row.quantize->getToggleState() ? 1 : 0, entryNumber);
+        if (_editHandler)
+        {
+            _editHandler(entryNumber);
+        }
     }
 }

@@ -55,18 +55,22 @@ namespace xplorer::app
                 _settingsService->allUsersSettings().uiConfig.knobLedBorderColor))); // [RQ-GUI-031]
         // Global skin: covers fixed-block, page-family and matrix controls alike.
         juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
+        _vfd = std::make_unique<VfdDisplayHelper>(_display, *_controller);
 
         // Route controller parameter changes to the registry (UI refresh). [RQ-GUI-003]
+        // Automation from the synth moves the control, then the VFD shows it —
+        // the reference updates the display on programmatic value changes too.
         _controller->setAutomationParameterChangeHandler(
             [this](const std::string& name, int value)
             {
                 _registry->onParameterChanged(name, value);
-                _display.showParameter(name, value); // [RQ-GUI-020]
+                _vfd->showControlEdit(name, _registry->displayTextFor(name)); // [RQ-GUI-020]
             });
         // Local panel edits refresh the VFD too, like the reference
         // MainForm.AnyValuedControl_ValueChanged. [RQ-GUI-020]
         _registry->setLocalEditHandler(
-            [this](const std::string& name, int value) { _display.showParameter(name, value); });
+            [this](const std::string& name)
+            { _vfd->showControlEdit(name, _registry->displayTextFor(name)); });
         _controller->setMidiActivityHandler(
             [this](controller::EnumMidiDevice) { flashMidiActivity(); }); // [RQ-GUI-022]
         _controller->setFullToneChangeHandler(
@@ -77,8 +81,7 @@ namespace xplorer::app
                 {
                     _matrixPanel->refreshAll(); // [RQ-GUI-017]
                 }
-                _display.showToneInfo(_controller->currentProgramNumber(),
-                                      _controller->toneName()); // [RQ-GUI-020]
+                _vfd->showToneInfo(); // [RQ-GUI-020]
             });
         _controller->setPageChangeHandler(
             [this](const controller::PageChangeEvent& event) { onSynthPageChanged(event); });
@@ -101,7 +104,13 @@ namespace xplorer::app
         _matrixPanel = std::make_unique<ModMatrixPanel>(*this, *_controller);
         createShortcutButtonsAndDisplay();
         _registry->refreshAllFromModel(); // seed all controls with the current tone
-        _display.showToneInfo(_controller->currentProgramNumber(), _controller->toneName());
+        _vfd->showToneInfo();
+        _matrixPanel->setEditHandler(
+            [this](int entryNumber)
+            {
+                _vfd->showModulationEntry(_controller->getModulationEntryByNumber(entryNumber),
+                                          false); // [RQ-GUI-020]
+            });
 
         // Apply persisted MIDI device/channel/delay settings at startup. [RQ-GUI-025]
         applyMidiSettings(*_controller, *_settingsService, _backend);
@@ -507,7 +516,7 @@ namespace xplorer::app
                                  [this](const std::string& name)
                                  {
                                      _controller->setToneName(name);
-                                     _display.showToneInfo(_controller->currentProgramNumber(), name);
+                                     _vfd->showToneInfo();
                                  });
                 break;
             case 15:

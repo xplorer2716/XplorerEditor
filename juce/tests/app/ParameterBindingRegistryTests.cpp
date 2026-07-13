@@ -26,13 +26,17 @@ namespace
         void setDisplayedValue(int value) override
         {
             _displayed = value;
+            _current = value;
             // A real JUCE control fires its change callback here; reproduce it
             // so the anti-echo guard is exercised.
             _registry.onControlEdited(_parameterName, value);
         }
 
+        [[nodiscard]] std::string displayText() const override { return std::to_string(_current); }
+
         void simulateUserEdit(int value)
         {
+            _current = value;
             _registry.onControlEditBegan(_parameterName);
             _registry.onControlEdited(_parameterName, value);
             _registry.onControlEditEnded();
@@ -44,6 +48,7 @@ namespace
         app::ParameterBindingRegistry& _registry;
         std::string _parameterName;
         int _displayed = -1;
+        int _current = 0;
     };
 
     struct Fixture
@@ -107,18 +112,18 @@ SCENARIO("Local edits are fanned out to the display, model refreshes are not", "
         FakeControl knob(f.registry, "VCF_FREQ");
         REQUIRE(f.registry.bind("VCF_FREQ", knob));
 
-        std::vector<std::pair<std::string, int>> shown;
-        f.registry.setLocalEditHandler(
-            [&shown](const std::string& name, int value) { shown.emplace_back(name, value); });
+        std::vector<std::string> shown;
+        f.registry.setLocalEditHandler([&](const std::string& name)
+                                       { shown.push_back(name + "=" + f.registry.displayTextFor(name)); });
 
         WHEN("the user edits the control")
         {
             knob.simulateUserEdit(42);
 
-            THEN("the handler receives the parameter and value (for the VFD)")
+            THEN("the handler receives the parameter and its formatted value (for the VFD)")
             {
                 REQUIRE(shown.size() == 1);
-                CHECK(shown.front() == std::pair<std::string, int>{"VCF_FREQ", 42});
+                CHECK(shown.front() == "VCF_FREQ=42");
             }
         }
 

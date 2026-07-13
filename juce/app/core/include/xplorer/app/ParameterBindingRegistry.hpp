@@ -26,6 +26,11 @@ namespace xplorer::app
         /// Pushes a model value into the control's display. Implementations
         /// may fire their change callback; the registry's guard absorbs it.
         virtual void setDisplayedValue(int value) = 0;
+
+        /// The current value formatted for the VFD, by control type: combo
+        /// selection label, checkbox "Y"/"N", knob numeric. Mirrors the
+        /// reference VfdDisplayHelper value formatting. [RQ-GUI-020]
+        [[nodiscard]] virtual std::string displayText() const = 0;
     };
 
     class ParameterBindingRegistry
@@ -40,11 +45,16 @@ namespace xplorer::app
         void unbind(const std::string& parameterName);
         [[nodiscard]] std::size_t bindingCount() const { return _bindings.size(); }
 
-        /// Fan-out for local (user) edits, invoked after the model is updated
-        /// and skipped during model refreshes. The application wires this to
-        /// the VFD display so a panel tweak shows the parameter/value, like
-        /// the reference MainForm.AnyValuedControl_ValueChanged. [RQ-GUI-020]
-        void setLocalEditHandler(std::function<void(const std::string&, int)> handler);
+        /// Fan-out for local (user) edits, invoked with the edited parameter
+        /// name after the model is updated and skipped during model refreshes.
+        /// The application wires this to the VFD display so a panel tweak shows
+        /// the parameter/value, like the reference
+        /// MainForm.AnyValuedControl_ValueChanged. [RQ-GUI-020]
+        void setLocalEditHandler(std::function<void(const std::string&)> handler);
+
+        /// The bound control's value formatted for the VFD, or empty when the
+        /// name is unbound. [RQ-GUI-020]
+        [[nodiscard]] std::string displayTextFor(const std::string& parameterName) const;
 
         // --- from controls (user interaction) ---
         /// Interactive edit started: disable the mapped CC automation. [RQ-GUI-004]
@@ -66,7 +76,7 @@ namespace xplorer::app
 
         controller::XpanderController& _controller;
         std::map<std::string, IBoundControl*> _bindings;
-        std::function<void(const std::string&, int)> _localEditHandler;
+        std::function<void(const std::string&)> _localEditHandler;
         bool _refreshing = false;
     };
 }

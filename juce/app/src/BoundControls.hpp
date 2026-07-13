@@ -44,6 +44,7 @@ namespace xplorer::app
                   int minValue, int maxValue, int step);
 
         void setDisplayedValue(int value) override;
+        [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
     };
 
@@ -54,6 +55,7 @@ namespace xplorer::app
                       const std::vector<std::pair<std::string, int>>& options);
 
         void setDisplayedValue(int value) override;
+        [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
 
     private:
@@ -67,6 +69,7 @@ namespace xplorer::app
                       const juce::String& text);
 
         void setDisplayedValue(int value) override;
+        [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
     };
 }

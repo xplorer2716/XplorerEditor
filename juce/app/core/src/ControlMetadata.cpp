@@ -50,6 +50,16 @@ namespace xplorer::app
             };
             return panels;
         }
+
+        struct ParameterName
+        {
+            std::string_view tag;
+            std::string_view displayName;
+        };
+
+        constexpr ParameterName PARAMETER_NAMES[] = {
+#include "GeneratedParameterNames.inc"
+        };
     }
 
     std::vector<std::string> comboLabelsForControl(const std::string& controlId)
@@ -87,5 +97,17 @@ namespace xplorer::app
             }
         }
         return {};
+    }
+
+    std::string parameterDisplayName(const std::string& parameterName)
+    {
+        for (const auto& entry : PARAMETER_NAMES)
+        {
+            if (entry.tag == parameterName)
+            {
+                return std::string(entry.displayName);
+            }
+        }
+        return parameterName; // fall back to the raw tag, like the reference
     }
 }

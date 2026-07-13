@@ -19,4 +19,9 @@ namespace xplorer::app
     /// Options (label, value) for a RadioButtonPanel control id; empty when
     /// the id is not a known radio panel.
     [[nodiscard]] std::vector<std::pair<std::string, int>> radioPanelOptions(const std::string& controlId);
+
+    /// End-user display name for a parameter tag (reference VfdDisplayHelper
+    /// resource lookup); returns the tag unchanged when no friendly name
+    /// exists. [RQ-GUI-020]
+    [[nodiscard]] std::string parameterDisplayName(const std::string& parameterName);
 }

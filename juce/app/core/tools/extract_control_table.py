@@ -158,5 +158,35 @@ def extract_enum_labels():
     print(f'enum labels: {list(COMBO_ENUMS)}')
 
 
+# --- friendly parameter display names ------------------------------------
+# Emits GeneratedParameterNames.inc: parameter tag -> end-user display name,
+# as the reference VfdDisplayHelper resolves via Resources.ResourceManager
+# .GetString(parameterName). A parameter key is an all-caps identifier (no
+# dot) with a single-line value; enum/message keys (mixed case) are excluded.
+# [RQ-GUI-020]
+NAMES_OUT = 'juce/app/core/src/GeneratedParameterNames.inc'
+
+
+def extract_parameter_names():
+    root = _ET.parse(RESOURCES).getroot()
+    entries = []
+    for d in root.findall('data'):
+        name = d.get('name')
+        value = d.find('value')
+        text = value.text if value is not None else None
+        if (name and text and re.fullmatch(r'[A-Z][A-Z0-9_]*', name)
+                and '\n' not in text and text.strip()):
+            entries.append((name, text))
+    entries.sort()
+    with open(NAMES_OUT, 'w') as f:
+        f.write('// Parameter tag -> end-user display name, extracted from\n'
+                '// Resources.resx. Mirrors the reference VfdDisplayHelper name\n'
+                '// resolution. Regenerate with extract_control_table.py. [RQ-GUI-020]\n')
+        for name, text in entries:
+            f.write(f'    {{"{name}", "{text.replace(chr(92), chr(92) * 2).replace(chr(34), chr(92) + chr(34))}"}},\n')
+    print(f'parameter names: {len(entries)}')
+
+
 if __name__ == '__main__':
     extract_enum_labels()
+    extract_parameter_names()

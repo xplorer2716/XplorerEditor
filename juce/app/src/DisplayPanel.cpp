@@ -1,26 +1,15 @@
 #include "DisplayPanel.hpp"
 
-#include <iomanip>
-#include <sstream>
-
 namespace xplorer::app
 {
     DisplayPanel::DisplayPanel()
     {
-        showToneInfo(0, "");
+        setLines({});
     }
 
-    void DisplayPanel::showToneInfo(int programNumber, const std::string& toneName)
+    void DisplayPanel::setLines(juce::StringArray lines)
     {
-        std::ostringstream line;
-        line << "* S" << std::setw(2) << std::setfill('0') << programNumber << ' ' << toneName << " *";
-        _line1 = juce::String(line.str());
-        repaint();
-    }
-
-    void DisplayPanel::showParameter(const std::string& parameterName, int value)
-    {
-        _line2 = juce::String(parameterName) + ":" + juce::String(value);
+        _lines = std::move(lines);
         repaint();
     }
 
@@ -29,11 +18,17 @@ namespace xplorer::app
         // Green-on-black, monospaced — evokes the hardware VFD. [RQ-GUI-020]
         g.fillAll(juce::Colour::fromRGB(6, 20, 6));
         g.setColour(juce::Colour::fromRGB(120, 255, 120));
+
+        const auto bounds = getLocalBounds().reduced(6);
+        const int rowHeight = juce::jmax(1, bounds.getHeight() / LINE_COUNT);
         g.setFont(juce::Font(juce::Font::getDefaultMonospacedFontName(),
-                             juce::jmax(10.0F, static_cast<float>(getHeight()) * 0.22F),
+                             juce::jmax(9.0F, static_cast<float>(rowHeight) * 0.8F),
                              juce::Font::bold));
-        auto bounds = getLocalBounds().reduced(6);
-        g.drawText(_line1, bounds.removeFromTop(bounds.getHeight() / 3), juce::Justification::centredLeft);
-        g.drawText(_line2, bounds.removeFromTop(bounds.getHeight() / 2), juce::Justification::centredLeft);
+
+        for (int row = 0; row < LINE_COUNT && row < _lines.size(); ++row)
+        {
+            g.drawText(_lines[row], bounds.getX(), bounds.getY() + row * rowHeight,
+                       bounds.getWidth(), rowHeight, juce::Justification::centredLeft);
+        }
     }
 }

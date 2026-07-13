@@ -12,6 +12,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <array>
+#include <functional>
 #include <memory>
 
 namespace xplorer::app
@@ -25,6 +26,11 @@ namespace xplorer::app
         void refreshRow(int entryNumber);
         /// Refreshes all 20 rows (on full-tone change).
         void refreshAll();
+
+        /// Fan-out for a user edit of a matrix row (source/amount/dest/qtz),
+        /// invoked with the 1-based entry number after the controller update.
+        /// The app wires this to the VFD, like the reference. [RQ-GUI-020]
+        void setEditHandler(std::function<void(int)> handler) { _editHandler = std::move(handler); }
 
     private:
         struct Row
@@ -45,6 +51,7 @@ namespace xplorer::app
         controller::XpanderController& _controller;
         std::array<Row, 20> _rows;
         std::array<int, 20> _currentDestination{}; // tracks old destination for change ops
+        std::function<void(int)> _editHandler;
         bool _refreshing = false;
     };
 }

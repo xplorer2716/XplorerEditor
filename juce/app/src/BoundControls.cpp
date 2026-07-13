@@ -20,6 +20,12 @@ namespace xplorer::app
         setValue(value, juce::dontSendNotification); // [RQ-GUI-003]
     }
 
+    std::string BoundKnob::displayText() const
+    {
+        // Reference: KnobControl.Value.ToString("00") — two-digit minimum.
+        return juce::String::formatted("%02d", static_cast<int>(getValue())).toStdString();
+    }
+
     BoundComboBox::BoundComboBox(ParameterBindingRegistry& registry, std::string parameterName,
                                  const std::vector<std::pair<std::string, int>>& options)
         : BoundControl(registry, std::move(parameterName))
@@ -54,6 +60,12 @@ namespace xplorer::app
         }
     }
 
+    std::string BoundComboBox::displayText() const
+    {
+        // Reference: the selected ComboBoxValuedControlItem's label.
+        return getText().toStdString();
+    }
+
     BoundCheckBox::BoundCheckBox(ParameterBindingRegistry& registry, std::string parameterName,
                                  const juce::String& text)
         : juce::ToggleButton(text), BoundControl(registry, std::move(parameterName))
@@ -69,5 +81,11 @@ namespace xplorer::app
     void BoundCheckBox::setDisplayedValue(int value)
     {
         setToggleState(value != 0, juce::dontSendNotification);
+    }
+
+    std::string BoundCheckBox::displayText() const
+    {
+        // Reference: CheckBoxValuedControl -> "Y" / "N".
+        return getToggleState() ? "Y" : "N";
     }
 }

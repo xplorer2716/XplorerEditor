@@ -37,9 +37,15 @@ namespace xplorer::app
     }
 
     void ParameterBindingRegistry::setLocalEditHandler(
-        std::function<void(const std::string&, int)> handler)
+        std::function<void(const std::string&)> handler)
     {
         _localEditHandler = std::move(handler);
+    }
+
+    std::string ParameterBindingRegistry::displayTextFor(const std::string& parameterName) const
+    {
+        const auto found = _bindings.find(parameterName);
+        return found == _bindings.end() ? std::string{} : found->second->displayText();
     }
 
     void ParameterBindingRegistry::onControlEdited(const std::string& parameterName, int value)
@@ -51,7 +57,7 @@ namespace xplorer::app
         _controller.setParameter(parameterName, value);
         if (_localEditHandler)
         {
-            _localEditHandler(parameterName, value); // e.g. VFD refresh [RQ-GUI-020]
+            _localEditHandler(parameterName); // e.g. VFD refresh [RQ-GUI-020]
         }
     }
 
