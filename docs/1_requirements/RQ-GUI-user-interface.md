@@ -29,7 +29,7 @@ Owner decisions (2026-07): reuse the existing background bitmap; **resizable** m
 
 ## VFD display & shortcut buttons
 
-- **RQ-GUI-020** — The UI shall show a display area at top-right presenting at minimum: current program number and patch name, and the last edited parameter (name/value) on change. Initial implementation = multiline text with a fixed-width font (owner decision); hardware-accurate VFD rendering (dot-matrix glyphs, reference `VacuumFluoDisplayControl`) is a later skin-phase item.
+- **RQ-GUI-020** — The UI shall show a display area at top-right presenting at minimum: current program number and patch name, and the last edited parameter on change. The parameter line shall follow the reference `VfdDisplayHelper` content: the parameter's end-user display name (Resources.resx string, tag as fallback) and its value formatted by control type — combo/radio selection **label**, checkbox `Y`/`N`, knob numeric — plus the mapped `MIDI CC:` number when one exists; a modulation-matrix edit shall instead show `SRC TO DEST:` with `AMNT:/QTZ:`. The display updates both on local panel edits and on incoming automation/synth changes. Initial implementation = multiline text with a fixed-width font (owner decision); hardware-accurate VFD rendering (dot-matrix glyphs, reference `VacuumFluoDisplayControl`) is a later skin-phase item. *Not yet ported: the trailing `.` active-modulation-destination marker (needs live page-family state).*
 - **RQ-GUI-021** — Under the display, the UI shall provide the 8 reference shortcut buttons: program − / program +, goto patch, randomize, load patch, save patch, store patch, MIDI settings — each triggering the same controller operation as its menu counterpart.
 - **RQ-GUI-022** — The UI shall display MIDI activity indication driven by the MIDI-activity event (RQ-CTL-027).
 
@@ -39,6 +39,7 @@ Owner decisions (2026-07): reuse the existing background bitmap; **resizable** m
 - **RQ-GUI-026** — Long operations (all-data dump backup/restore, get-all-patches) shall run off the message thread with progression display and shall keep the UI responsive (no event pumping); cancellation where the reference offers it.
 - **RQ-GUI-027** — The UI shall provide the copy/paste page actions for ENV/LFO/RAMP/TRACK families (menu Patch → Copy/Paste) with paste-eligibility feedback (RQ-CTL-040).
 - **RQ-GUI-028** — The UI shall provide a piano-keyboard window sending Note On/Off to the synth (RQ-MID-010).
+- **RQ-GUI-029** — The main window shall accept a dropped `.syx` file (reference `MainForm` `AllowDrop`): the first dropped `.syx` is classified (RQ-MOD-043) and loaded by type — a single tone replaces and transmits the edited tone (RQ-CTL-001), an all-data dump is restored after an explicit confirmation (with progress, RQ-GUI-026), an unknown file raises a warning. The File → Open menu shares the same load-by-type path.
 
 ## Controls & look
 
