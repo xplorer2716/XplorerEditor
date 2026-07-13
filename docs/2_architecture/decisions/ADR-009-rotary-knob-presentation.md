@@ -1,7 +1,7 @@
 # ADR-009: Rotary Knob Presentation & Interaction — LED-Ring-Only, VFD-Backed Value Entry
 
 ## Status
-Proposed (awaiting owner validation before implementation)
+Accepted (owner, 2026-07-13)
 
 ## Requirements
 RQ-GUI-030, RQ-GUI-031, RQ-GUI-034

@@ -14,7 +14,7 @@ namespace xplorer::app
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                                               float sliderPos, float startAngle, float endAngle,
-                                              juce::Slider&)
+                                              juce::Slider& slider)
     {
         const auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(2.0F);
         const auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0F;
@@ -25,19 +25,20 @@ namespace xplorer::app
         g.setColour(juce::Colour::fromRGB(24, 28, 34));
         g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.0F, radius * 2.0F);
 
-        // LED ring: filled arc from start to the current position.
+        // Unlit ring track (full sweep), so the coloured arc reads against it.
         const auto ringRadius = radius - 1.0F;
+        juce::Path track;
+        track.addCentredArc(centre.x, centre.y, ringRadius, ringRadius, 0.0F, startAngle, endAngle, true);
+        g.setColour(juce::Colour::fromRGB(40, 46, 54));
+        g.strokePath(track, juce::PathStrokeType(2.4F));
+
+        // Coloured LED value arc from start to the current position. Brighter
+        // while the mouse is over or dragging the knob (reference _isMouseEntered
+        // light-colour highlight); no centre pointer (owner decision). [RQ-GUI-031]
         juce::Path ring;
         ring.addCentredArc(centre.x, centre.y, ringRadius, ringRadius, 0.0F, startAngle, angle, true);
-        g.setColour(_ledColour);
+        g.setColour(slider.isMouseOverOrDragging(true) ? _ledColour.brighter(0.4F) : _ledColour);
         g.strokePath(ring, juce::PathStrokeType(2.4F));
-
-        // Pointer.
-        juce::Path pointer;
-        const auto pointerLength = radius * 0.7F;
-        pointer.addRectangle(-1.0F, -pointerLength, 2.0F, pointerLength);
-        g.setColour(_ledColour.brighter(0.3F));
-        g.fillPath(pointer, juce::AffineTransform::rotation(angle).translated(centre.x, centre.y));
     }
 
     void XplorerLookAndFeel::drawTickBox(juce::Graphics& g, juce::Component&, float x, float y, float w,

@@ -71,23 +71,25 @@ namespace xplorer::app
             _controls.push_back({spec.tag, std::move(control)});
         }
 
-        // Instance selector buttons (radio group).
+        // Instance selector buttons (radio group). Caption is the reference
+        // '.label' ("ENV 1"…), not the bare digit. [RQ-GUI-011]
         for (const auto& spec : selectorSpecs)
         {
-            auto button = std::make_unique<juce::TextButton>(juce::String(spec.id).fromLastOccurrenceOf(
-                "_", false, false));
+            const std::string selectorId = spec.id;
+            const int instance = selectorId.back() - '0';
+            auto button = std::make_unique<juce::TextButton>(
+                juce::String(spec.label).isNotEmpty() ? juce::String(spec.label)
+                                                       : juce::String(instance));
             button->setClickingTogglesState(true);
             button->setRadioGroupId(radioGroupId);
             button->setBounds(spec.x, spec.y, spec.width, spec.height);
-            const std::string selectorId = spec.id;
-            const int instance = selectorId.back() - '0';
             button->onClick = [this, instance] { selectInstance(instance, true); };
             if (instance == _activeInstance)
             {
                 button->setToggleState(true, juce::dontSendNotification);
             }
             _parent.addAndMakeVisible(*button);
-            _selectors.push_back(std::move(button));
+            _selectors.push_back({std::move(button), instance, selectorId});
         }
     }
 
@@ -115,10 +117,25 @@ namespace xplorer::app
         _activeInstance = instance;
         for (auto& selector : _selectors)
         {
-            const int selectorInstance = selector->getButtonText().getIntValue();
-            selector->setToggleState(selectorInstance == instance, juce::dontSendNotification);
+            selector.button->setToggleState(selector.instance == instance, juce::dontSendNotification);
         }
         rebindControlsToActiveInstance();
+    }
+
+    void PageFamilyBlock::attachHoverListener(juce::MouseListener* listener)
+    {
+        for (auto& entry : _controls)
+        {
+            // Only rotary knobs are modulation destinations.
+            if (dynamic_cast<juce::Slider*>(&entry.control->asComponent()) != nullptr)
+            {
+                entry.control->asComponent().addMouseListener(listener, false);
+            }
+        }
+        for (auto& selector : _selectors)
+        {
+            selector.button->addMouseListener(listener, false);
+        }
     }
 
     void PageFamilyBlock::rebindControlsToActiveInstance()

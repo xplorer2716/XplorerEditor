@@ -33,6 +33,7 @@ namespace xplorer::app
 
     private:
         [[nodiscard]] juce::String toneLine() const;
+        [[nodiscard]] bool isActiveModulationDestination(const std::string& parameterName) const;
 
         DisplayPanel& _display;
         controller::XpanderController& _controller;

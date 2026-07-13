@@ -32,6 +32,16 @@ namespace xplorer::app
         /// The app wires this to the VFD, like the reference. [RQ-GUI-020]
         void setEditHandler(std::function<void(int)> handler) { _editHandler = std::move(handler); }
 
+        // Hover highlight (reference ModulationMatrixHighlight). [RQ-GUI-018]
+        void setHighlightColour(juce::Colour colour) { _highlightColour = colour; }
+        /// Highlight source combos currently set to sourceValue.
+        void highlightSources(int sourceValue);
+        /// Highlight destination combos set to destValue whose row has an
+        /// active source (≠ NONE).
+        void highlightDestinations(int destValue);
+        /// Restore every combo's default background.
+        void clearHighlight();
+
     private:
         struct Row
         {
@@ -52,6 +62,8 @@ namespace xplorer::app
         std::array<Row, 20> _rows;
         std::array<int, 20> _currentDestination{}; // tracks old destination for change ops
         std::function<void(int)> _editHandler;
+        juce::Colour _highlightColour;
+        juce::Colour _defaultComboBackground;
         bool _refreshing = false;
     };
 }

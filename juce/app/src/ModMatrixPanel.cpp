@@ -14,6 +14,12 @@ namespace xplorer::app
         {
             buildRow(parent, entryNumber);
         }
+        // Default combo background from the LookAndFeel, captured before any
+        // highlight so clearHighlight can restore it.
+        _defaultComboBackground = _rows[0].source != nullptr
+                                      ? _rows[0].source->findColour(juce::ComboBox::backgroundColourId)
+                                      : juce::Colour::fromRGB(30, 36, 44);
+        _highlightColour = _defaultComboBackground.brighter(0.5F); // until the app sets the LED colour
         refreshAll();
     }
 
@@ -125,6 +131,48 @@ namespace xplorer::app
     namespace
     {
         int comboValue(const juce::ComboBox& combo) { return combo.getSelectedId() - 1; }
+    }
+
+    void ModMatrixPanel::highlightSources(int sourceValue)
+    {
+        for (int entryNumber = 1; entryNumber <= 20; ++entryNumber)
+        {
+            const auto& entry = _controller.getModulationEntryByNumber(entryNumber);
+            auto& combo = _rows[static_cast<std::size_t>(entryNumber - 1)].source;
+            if (combo != nullptr && static_cast<int>(entry.source) == sourceValue)
+            {
+                combo->setColour(juce::ComboBox::backgroundColourId, _highlightColour);
+            }
+        }
+    }
+
+    void ModMatrixPanel::highlightDestinations(int destValue)
+    {
+        for (int entryNumber = 1; entryNumber <= 20; ++entryNumber)
+        {
+            const auto& entry = _controller.getModulationEntryByNumber(entryNumber);
+            auto& combo = _rows[static_cast<std::size_t>(entryNumber - 1)].destination;
+            if (combo != nullptr && static_cast<int>(entry.destination) == destValue
+                && entry.source != model::EnumModulationSourcesModMatrix::NONE)
+            {
+                combo->setColour(juce::ComboBox::backgroundColourId, _highlightColour);
+            }
+        }
+    }
+
+    void ModMatrixPanel::clearHighlight()
+    {
+        for (auto& row : _rows)
+        {
+            if (row.source != nullptr)
+            {
+                row.source->setColour(juce::ComboBox::backgroundColourId, _defaultComboBackground);
+            }
+            if (row.destination != nullptr)
+            {
+                row.destination->setColour(juce::ComboBox::backgroundColourId, _defaultComboBackground);
+            }
+        }
     }
 
     void ModMatrixPanel::onSourceChanged(int entryNumber)

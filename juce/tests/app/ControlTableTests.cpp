@@ -2,6 +2,7 @@
 
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
+#include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
 #include <map>
@@ -183,6 +184,51 @@ SCENARIO("Parameter tags resolve to their reference display names", "[RQ-GUI-020
             CHECK(sources.back() == "NONE");
             CHECK(destinations.at(static_cast<std::size_t>(
                       xplorer::model::EnumModulationDestinations::VCF_FRQ)) == "VCF FREQ");
+        }
+    }
+}
+
+SCENARIO("Knobs and selectors resolve to their modulation destination/source", "[RQ-GUI-018]")
+{
+    using xplorer::model::EnumModulationDestinations;
+    using xplorer::model::EnumModulationSourcesModMatrix;
+
+    GIVEN("fixed and paged knobs")
+    {
+        THEN("a fixed knob maps to its destination")
+        {
+            CHECK(modulationDestinationForParameter("VCO1_FREQ") == EnumModulationDestinations::VCO1_FRQ);
+            CHECK(modulationDestinationForParameter("VCF_VCA1_VOLUME") == EnumModulationDestinations::VCA1_VOL);
+            CHECK(modulationDestinationForParameter("FMLAG_RATE") == EnumModulationDestinations::LAG_RATE);
+        }
+
+        THEN("a paged ENV/LFO knob resolves against its instance (base + stride)")
+        {
+            CHECK(modulationDestinationForParameter("ENV_1_ATTACK") == EnumModulationDestinations::ENV1_ATK);
+            CHECK(modulationDestinationForParameter("ENV_3_ATTACK") == EnumModulationDestinations::ENV3_ATK);
+            CHECK(modulationDestinationForParameter("LFO_2_AMP") == EnumModulationDestinations::LFO2_AMP);
+        }
+
+        THEN("a non-destination parameter yields nothing")
+        {
+            CHECK_FALSE(modulationDestinationForParameter("VCO1_DETUNE").has_value());
+            CHECK_FALSE(modulationDestinationForParameter("NOT_A_PARAM").has_value());
+        }
+    }
+
+    GIVEN("page-family selectors")
+    {
+        THEN("a source selector maps to its modulation source")
+        {
+            CHECK(modulationSourceForSelector("ENV_1") == EnumModulationSourcesModMatrix::ENV1);
+            CHECK(modulationSourceForSelector("LFO_5") == EnumModulationSourcesModMatrix::LFO5);
+            CHECK(modulationSourceForSelector("TRACK_2") == EnumModulationSourcesModMatrix::TRK2);
+            CHECK(modulationSourceForSelector("RAMP_4") == EnumModulationSourcesModMatrix::RMP4);
+        }
+
+        THEN("an unknown selector yields nothing")
+        {
+            CHECK_FALSE(modulationSourceForSelector("ENV_9").has_value());
         }
     }
 }

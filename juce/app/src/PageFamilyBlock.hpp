@@ -36,6 +36,20 @@ namespace xplorer::app
         [[nodiscard]] int activeInstance() const { return _activeInstance; }
         [[nodiscard]] const std::string& familyPrefix() const { return _descriptor.controlTagPrefix; }
 
+        /// Selector button components + their id (e.g. "ENV_1"), for the
+        /// application to attach modulation-highlight hover hooks. [RQ-GUI-018]
+        struct Selector
+        {
+            std::unique_ptr<juce::TextButton> button;
+            int instance;       ///< 1-based
+            std::string id;     ///< reference id, e.g. "ENV_1"
+        };
+        [[nodiscard]] const std::vector<Selector>& selectors() const { return _selectors; }
+
+        /// Attaches a hover listener to this block's rotary knobs and selector
+        /// buttons (modulation highlight). [RQ-GUI-018]
+        void attachHoverListener(juce::MouseListener* listener);
+
     private:
         struct FamilyControl
         {
@@ -53,6 +67,6 @@ namespace xplorer::app
         int _activeInstance = 1;
 
         std::vector<FamilyControl> _controls;
-        std::vector<std::unique_ptr<juce::TextButton>> _selectors;
+        std::vector<Selector> _selectors;
     };
 }

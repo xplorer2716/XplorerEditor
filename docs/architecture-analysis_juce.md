@@ -561,7 +561,7 @@ port.
 | 9 | `BugReportFactory` payload | ❌ Not ported — the top-level exception dialog exists (RQ-GUI-035) but without the full diagnostic payload (RQ-FMW-071); app-phase follow-up |
 | 10 | Blocking sleeps inside some controller ops (store, program-change+dump, typewriter) | ⚠️ Verbatim from reference; called from the message thread via menus. Async refactor candidate (needs an ADR) |
 | 11 | Tone morphing UX | Deferred — reference form is unfinished (empty OK/Cancel, unwired); controller primitive ported & tested; awaits owner UX spec |
-| 12 | VFD `.` active-modulation-destination marker | 📋 Scheduled — TASK-JUCE-076 / ADR-010 introduces the shared knob→destination resolver that this marker needs (delivered together with the modulation-matrix hover highlight) |
+| 12 | VFD `.` active-modulation-destination marker | ✅ Done — TASK-JUCE-076 / ADR-010: the shared `ModulationHighlight` resolver drives both the matrix hover highlight and this marker |
 | 13 | Character scaling of the VFD | Owner announced a later spec pass (nearest vs smooth under canvas scale) |
 | 14 | Hardware validation | TASK-JUCE-071 checklist (real Xpander/Matrix-12) still to run |
 | 15 | Cross-compat campaign | TASK-JUCE-072 (patch libraries + settings exchanged .NET ⇄ JUCE) still to run |

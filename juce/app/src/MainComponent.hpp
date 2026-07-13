@@ -61,8 +61,34 @@ namespace xplorer::app
         void backupAllData();
         void restoreAllData();
         void getAllSinglePatchesFromSynth();
+        void onControlHovered(juce::Component* component); // matrix highlight [RQ-GUI-018]
 
         juce::Image _background;
+
+        // Forwards knob/selector hover to the matrix highlight. A dedicated
+        // MouseListener (not MainComponent itself) avoids clashing with the
+        // component's own mouseEnter/Exit. [RQ-GUI-018, ADR-010]
+        struct HoverHighlighter final : juce::MouseListener
+        {
+            std::function<void(juce::Component*)> onEnter;
+            std::function<void()> onExit;
+            void mouseEnter(const juce::MouseEvent& e) override
+            {
+                if (onEnter)
+                {
+                    onEnter(e.eventComponent);
+                }
+            }
+            void mouseExit(const juce::MouseEvent&) override
+            {
+                if (onExit)
+                {
+                    onExit();
+                }
+            }
+        };
+        HoverHighlighter _hover;
+        std::map<juce::Component*, std::string> _selectorSourceId;
 
         xpl::midi::JuceMidiBackend _backend;
         std::shared_ptr<JuceEventDispatcher> _dispatcher;

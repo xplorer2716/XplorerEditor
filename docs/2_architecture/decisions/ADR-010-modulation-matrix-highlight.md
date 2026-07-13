@@ -1,7 +1,9 @@
 # ADR-010: Modulation-Matrix Hover Highlight & Active-Destination Marker — Shared Knob→Destination Map
 
 ## Status
-Proposed (awaiting owner validation before implementation)
+Accepted (owner, 2026-07-13). Implemented: `ModulationHighlight` resolver
+(headless-tested), `ModMatrixPanel` highlight API, `MainComponent` hover
+wiring, and the VFD "." marker in `VfdDisplayHelper`.
 
 ## Requirements
 RQ-GUI-018, RQ-GUI-020

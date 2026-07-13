@@ -1,6 +1,7 @@
 #include "VfdDisplayHelper.hpp"
 
 #include "xplorer/app/ControlMetadata.hpp"
+#include "xplorer/app/ModulationHighlight.hpp"
 
 namespace xplorer::app
 {
@@ -45,9 +46,32 @@ namespace xplorer::app
         _display.setLines({toneLine()});
     }
 
+    bool VfdDisplayHelper::isActiveModulationDestination(const std::string& parameterName) const
+    {
+        const auto destination = modulationDestinationForParameter(parameterName);
+        if (!destination)
+        {
+            return false;
+        }
+        // A matrix entry targets this destination with an active source.
+        for (int entryNumber = 1; entryNumber <= model::constants::MODENTRIES_COUNT; ++entryNumber)
+        {
+            const auto& entry = _controller.getModulationEntryByNumber(entryNumber);
+            if (entry.destination == *destination
+                && entry.source != model::EnumModulationSourcesModMatrix::NONE)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void VfdDisplayHelper::showControlEdit(const std::string& parameterName, const std::string& valueText)
     {
-        const juce::String displayName(parameterDisplayName(parameterName));
+        // Reference: append "." to the name when the parameter is an active
+        // modulation destination. [RQ-GUI-020]
+        const juce::String displayName = juce::String(parameterDisplayName(parameterName))
+                                         + (isActiveModulationDestination(parameterName) ? "." : "");
         const juce::String value(valueText);
 
         // Single line when it fits, otherwise name on line 2 and value on line 3.

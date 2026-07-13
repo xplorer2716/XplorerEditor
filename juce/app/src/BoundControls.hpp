@@ -46,6 +46,17 @@ namespace xplorer::app
         void setDisplayedValue(int value) override;
         [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
+
+        // Double-click opens a transient inline numeric entry (no permanent
+        // text box; value otherwise shown on the VFD and the drag bubble).
+        // [RQ-GUI-034]
+        void mouseDoubleClick(const juce::MouseEvent& event) override;
+
+    private:
+        void applyTextEntry();
+        void dismissTextEntry();
+
+        std::unique_ptr<juce::TextEditor> _entryEditor;
     };
 
     class BoundComboBox final : public juce::ComboBox, public BoundControl

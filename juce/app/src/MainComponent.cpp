@@ -6,6 +6,7 @@
 #include "midiapp/service/FileUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
+#include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/XpanderConstants.hpp"
 
 #include <juce_core/juce_core.h>
@@ -112,6 +113,27 @@ namespace xplorer::app
                                           false); // [RQ-GUI-020]
             });
 
+        // Modulation-matrix hover highlight: colour = knob LED-border colour;
+        // knobs and page-family selectors forward their hover. [RQ-GUI-018]
+        _matrixPanel->setHighlightColour(juce::Colour(static_cast<juce::uint32>(
+            _settingsService->allUsersSettings().uiConfig.knobLedBorderColor)));
+        _hover.onEnter = [this](juce::Component* component) { onControlHovered(component); };
+        _hover.onExit = [this]
+        {
+            if (_matrixPanel != nullptr)
+            {
+                _matrixPanel->clearHighlight();
+            }
+        };
+        for (auto& block : _familyBlocks)
+        {
+            block->attachHoverListener(&_hover);
+            for (const auto& selector : block->selectors())
+            {
+                _selectorSourceId[selector.button.get()] = selector.id;
+            }
+        }
+
         // Apply persisted MIDI device/channel/delay settings at startup. [RQ-GUI-025]
         applyMidiSettings(*_controller, *_settingsService, _backend);
     }
@@ -199,6 +221,11 @@ namespace xplorer::app
             if (bound != nullptr)
             {
                 _registry->bind(tag, *bound);
+            }
+            // Fixed knobs forward their hover to the matrix highlight. [RQ-GUI-018]
+            if (spec.kind == ControlKind::KnobControl)
+            {
+                component->addMouseListener(&_hover, false);
             }
             _controls.push_back(std::move(component));
         }
@@ -656,6 +683,32 @@ namespace xplorer::app
                     runRestoreAllDataWithProgress(*_controller, file.getFullPathName().toStdString());
                 }
             });
+    }
+
+    void MainComponent::onControlHovered(juce::Component* component)
+    {
+        if (_matrixPanel == nullptr)
+        {
+            return;
+        }
+        // A knob that is a modulation destination highlights matching dest rows.
+        if (const auto* bound = dynamic_cast<BoundControl*>(component))
+        {
+            if (const auto destination = modulationDestinationForParameter(bound->parameterName()))
+            {
+                _matrixPanel->highlightDestinations(static_cast<int>(*destination));
+            }
+            return;
+        }
+        // A page-family selector that is a modulation source highlights matching
+        // source rows.
+        if (const auto found = _selectorSourceId.find(component); found != _selectorSourceId.end())
+        {
+            if (const auto source = modulationSourceForSelector(found->second))
+            {
+                _matrixPanel->highlightSources(static_cast<int>(*source));
+            }
+        }
     }
 
     void MainComponent::loadSysexFileByType(const juce::String& filePath)
