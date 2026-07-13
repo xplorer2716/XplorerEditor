@@ -298,7 +298,12 @@ namespace xplorer::app
                 return nullptr;
             }())
         {
-            _display.setBounds(spec->x, spec->y, spec->width, spec->height);
+            // Owner-arbitrated deviation (ADR-007): the reference bounds
+            // (267x75) only fit 4 glyph rows; grow to 5 rows (82 px) upward —
+            // the area above is free artwork, the shortcut buttons below
+            // (y=155) stay clear — so the MIDI CC line is always visible.
+            const int height = 5 * DisplayPanel::GLYPH_HEIGHT + 2;
+            _display.setBounds(spec->x, spec->y - (height - spec->height), spec->width, height);
             addAndMakeVisible(_display);
         }
 

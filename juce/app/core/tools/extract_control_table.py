@@ -158,6 +158,53 @@ def extract_enum_labels():
     print(f'enum labels: {list(COMBO_ENUMS)}')
 
 
+# --- VFD glyph sheet -------------------------------------------------------
+# Emits juce/app/assets/vfd-matrix.png: the MATRIXTINY sprite sheet (96
+# glyphs of 12x16, ASCII 32-126) out of the MidiApp.UIControls resources.
+# The source is a 24-bpp bottom-up BMP; stock JUCE does not read BMP, so it
+# is converted to PNG here (no external imaging dependency). [RQ-GUI-033,
+# ADR-007]
+import base64 as _b64
+import struct as _struct
+import zlib as _zlib
+UICONTROLS_RESOURCES = 'MidiApp/MidiApp.UIControls/Properties/Resources.resx'
+VFD_SHEET_OUT = 'juce/app/assets/vfd-matrix.png'
+
+
+def extract_vfd_sheet():
+    root = _ET.parse(UICONTROLS_RESOURCES).getroot()
+    raw = None
+    for d in root.findall('data'):
+        if d.get('name') == 'MATRIXTINY':
+            raw = _b64.b64decode(d.find('value').text)
+    assert raw is not None and raw[:2] == b'BM', 'MATRIXTINY BMP not found'
+
+    offset = _struct.unpack_from('<I', raw, 10)[0]
+    width, height = _struct.unpack_from('<ii', raw, 18)
+    bpp = _struct.unpack_from('<H', raw, 28)[0]
+    assert bpp == 24, f'expected 24-bpp BMP, got {bpp}'
+    row_size = (width * 3 + 3) & ~3  # 4-byte aligned BGR rows, bottom-up
+
+    scanlines = bytearray()
+    for y in range(height):
+        src = offset + (height - 1 - y) * row_size
+        scanlines.append(0)  # PNG filter: none
+        for x in range(width):
+            b, g, r = raw[src + x * 3:src + x * 3 + 3]
+            scanlines += bytes((r, g, b))
+
+    def png_chunk(tag, payload):
+        return (_struct.pack('>I', len(payload)) + tag + payload
+                + _struct.pack('>I', _zlib.crc32(tag + payload)))
+
+    ihdr = _struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)  # 8-bit RGB
+    with open(VFD_SHEET_OUT, 'wb') as f:
+        f.write(b'\x89PNG\r\n\x1a\n' + png_chunk(b'IHDR', ihdr)
+                + png_chunk(b'IDAT', _zlib.compress(bytes(scanlines), 9))
+                + png_chunk(b'IEND', b''))
+    print(f'vfd sheet: {width}x{height} ({width // 12}x{height // 16} glyphs of 12x16)')
+
+
 # --- friendly parameter display names ------------------------------------
 # Emits GeneratedParameterNames.inc: parameter tag -> end-user display name,
 # as the reference VfdDisplayHelper resolves via Resources.ResourceManager
@@ -190,3 +237,4 @@ def extract_parameter_names():
 if __name__ == '__main__':
     extract_enum_labels()
     extract_parameter_names()
+    extract_vfd_sheet()

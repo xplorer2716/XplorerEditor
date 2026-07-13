@@ -1,7 +1,7 @@
 # ADR-007: VFD Bitmap Glyph Rendering — Direct Sprite-Sheet Paint, JUCE-Cached
 
 ## Status
-Proposed (awaiting owner validation before implementation)
+Accepted (owner, 2026-07-13 — option (b) of the open point)
 
 ## Requirements
 RQ-GUI-020, RQ-GUI-031, RQ-GUI-033
@@ -70,15 +70,14 @@ the content pipeline is untouched.
 - The sheet lives in BinaryData like every other reference asset and is
   regenerable from the .NET resources with one script run.
 
-## Open point (owner arbitration requested)
+## Open point — resolved
 At the reference designer bounds (267×75, 100 % DPI) the grid is **4 lines**,
 so `VfdDisplayHelper`'s 5th line — the `MIDI CC:` info the owner added — does
 not fit (5×16 = 80 px > 75 px); on the reference it only appears at higher
 Windows DPI scale factors, where WinForms autoscaling enlarges the control.
-Options:
-- **(a) strict parity**: keep 267×75 → 22×4, CC line hidden (as the reference
-  at 100 %);
-- **(b) recommended**: grow the display's logical height to 82 px (5×16 + 2)
-  so all five reference content lines are always visible — a small, documented
-  layout deviation matching what the owner actually sees on a high-DPI
-  machine.
+**Owner picked option (b)** (2026-07-13): the display's logical height grows
+to **82 px** (5×16 + 2) so all five reference content lines are always
+visible. The growth is **upward** (y 74 → 67, bottom edge unchanged at 149):
+the area above is free background artwork, while the LED panel (y = 150) and
+the shortcut-button row (y = 155) sit directly below the original bottom
+edge. Option (a) — strict 22×4 parity — was rejected.

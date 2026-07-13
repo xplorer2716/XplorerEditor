@@ -20,9 +20,10 @@ target_sources(XplorerApp PRIVATE
     src/XplorerLookAndFeel.cpp
     src/JuceEventDispatcher.cpp)
 
-# UI assets (background, button images) embedded as binary data
+# UI assets (background, button images, VFD glyph sheet) embedded as binary data
 juce_add_binary_data(XplorerAssets SOURCES
     assets/main-background.jpg
+    assets/vfd-matrix.png
     assets/gotodown.gif
     assets/gotohover.gif
     assets/gotopatch.gif

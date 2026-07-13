@@ -53,7 +53,7 @@ namespace xplorer::app
         // Single line when it fits, otherwise name on line 2 and value on line 3.
         juce::String line2 = displayName + ":" + value;
         juce::String line3;
-        if (line2.length() > DisplayPanel::MAX_CHARS_PER_LINE)
+        if (line2.length() > _display.maxCharsPerLine())
         {
             line2 = displayName + ":";
             line3 = value;
