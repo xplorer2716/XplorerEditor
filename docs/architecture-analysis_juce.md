@@ -565,6 +565,8 @@ port.
 | 13 | Character scaling of the VFD | Owner announced a later spec pass (nearest vs smooth under canvas scale) |
 | 14 | Hardware validation | TASK-JUCE-071 checklist (real Xpander/Matrix-12) still to run |
 | 15 | Cross-compat campaign | TASK-JUCE-072 (patch libraries + settings exchanged .NET ⇄ JUCE) still to run |
+| 16 | CC automation table not loaded into the controller | 📋 Scheduled — TASK-JUCE-078 / ADR-012: `applyMidiSettings` persists but never parses `automationTable` into the controller dictionary, so incoming CCs drive nothing and the VFD CC line is blank; fixed together with the mapping editor (RQ-GUI-036) |
+| 17 | Duplicated runtime LED-colour state | 📋 Scheduled — TASK-JUCE-077 / ADR-011: the matrix highlight cached its own colour copy; moving to a single LookAndFeel-owned source fixes the stale-colour-on-change bug |
 
 ---
 
