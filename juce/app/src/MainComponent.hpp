@@ -23,6 +23,7 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -55,7 +56,6 @@ namespace xplorer::app
         void createShortcutButtonsAndDisplay();
         void onSynthPageChanged(const controller::PageChangeEvent& event);
         void onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event);
-        void flashMidiActivity();
         void openSettingsDialog();
         void updateLedColour(int argb);
         void backupAllData();
@@ -85,18 +85,29 @@ namespace xplorer::app
         // progress window shows the right range/labels (event has no mode).
         bool _allDataDumpModeIsAll = false;
 
-        // MIDI activity indicator (LedPanelControl replacement).
-        class MidiActivityLed final : public juce::Component, private juce::Timer
+        // MIDI traffic LED panel (LedPanelControl port): three 5 px square
+        // LEDs — automation-in green, synth-in blue, synth-out red — each
+        // holding ~100 ms past the last event of its source, retriggered by
+        // traffic. The 30 ms decay timer only runs while a LED is lit.
+        // [RQ-GUI-022, ADR-008]
+        class LedPanelComponent final : public juce::Component, private juce::Timer
         {
         public:
-            void flash();
+            LedPanelComponent();
+            void flash(controller::EnumMidiDevice device);
             void paint(juce::Graphics& g) override;
 
         private:
+            static constexpr int LED_COUNT = 3;
+            static constexpr int LED_SIZE = 5;         // reference LedSize
+            static constexpr int HOLD_MILLISECONDS = 100;
+            static constexpr int TICK_MILLISECONDS = 30;
+
             void timerCallback() override;
-            bool _lit = false;
+
+            std::array<juce::int64, LED_COUNT> _litUntil{}; // 0 = dark
         };
-        MidiActivityLed _midiLed;
+        LedPanelComponent _midiLed;
     };
 
     /// Resizable host: a menu bar strip on top, the uniformly-scaled canvas

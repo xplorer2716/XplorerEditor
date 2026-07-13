@@ -72,7 +72,7 @@ namespace xplorer::app
             [this](const std::string& name)
             { _vfd->showControlEdit(name, _registry->displayTextFor(name)); });
         _controller->setMidiActivityHandler(
-            [this](controller::EnumMidiDevice) { flashMidiActivity(); }); // [RQ-GUI-022]
+            [this](controller::EnumMidiDevice device) { _midiLed.flash(device); }); // [RQ-GUI-022]
         _controller->setFullToneChangeHandler(
             [this](const controller::FullToneChangeEvent&)
             {
@@ -402,29 +402,65 @@ namespace xplorer::app
         }
     }
 
-    void MainComponent::flashMidiActivity()
+    MainComponent::LedPanelComponent::LedPanelComponent()
     {
-        _midiLed.flash();
+        setInterceptsMouseClicks(false, false);
+        // Non-opaque: the background artwork shows through between the LEDs,
+        // like the reference's transparent panel.
     }
 
-    void MainComponent::MidiActivityLed::flash()
+    void MainComponent::LedPanelComponent::flash(controller::EnumMidiDevice device)
     {
-        _lit = true;
+        // Port of OnMidiDataSendReceive's device -> LED index mapping.
+        const std::size_t index = device == controller::EnumMidiDevice::AutomationInputDevice ? 0
+                                  : device == controller::EnumMidiDevice::SynthInputDevice    ? 1
+                                                                                              : 2;
+        _litUntil[index] = juce::Time::currentTimeMillis() + HOLD_MILLISECONDS;
+        if (!isTimerRunning())
+        {
+            startTimer(TICK_MILLISECONDS); // decay tick, only while lit [ADR-008]
+        }
         repaint();
-        startTimer(120);
     }
 
-    void MainComponent::MidiActivityLed::timerCallback()
+    void MainComponent::LedPanelComponent::timerCallback()
     {
-        _lit = false;
-        stopTimer();
+        const auto now = juce::Time::currentTimeMillis();
+        bool anyLit = false;
+        for (const auto expiry : _litUntil)
+        {
+            anyLit = anyLit || expiry > now;
+        }
+        if (!anyLit)
+        {
+            stopTimer();
+        }
         repaint();
     }
 
-    void MainComponent::MidiActivityLed::paint(juce::Graphics& g)
+    void MainComponent::LedPanelComponent::paint(juce::Graphics& g)
     {
-        g.setColour(_lit ? juce::Colour::fromRGB(255, 120, 40) : juce::Colour::fromRGB(60, 30, 10));
-        g.fillRoundedRectangle(getLocalBounds().toFloat(), 2.0F);
+        // Reference LedPanelControl: automation-in / synth-in / synth-out.
+        static const std::array<juce::Colour, LED_COUNT> onColours = {
+            juce::Colour::fromRGB(144, 255, 144), juce::Colour::fromRGB(92, 171, 255),
+            juce::Colour::fromRGB(255, 64, 32)};
+        const auto offColour = juce::Colour::fromRGB(54, 54, 62);
+        const auto borderColour = juce::Colour::fromRGB(44, 44, 52);
+
+        const auto now = juce::Time::currentTimeMillis();
+        const int horizontalSpace = (getWidth() - LED_COUNT * LED_SIZE) / (LED_COUNT + 1);
+        const int y = (getHeight() - LED_SIZE) / 2;
+        for (int i = 0; i < LED_COUNT; ++i)
+        {
+            const juce::Rectangle<int> led(horizontalSpace * (i + 1) + i * LED_SIZE, y,
+                                           LED_SIZE, LED_SIZE);
+            g.setColour(_litUntil[static_cast<std::size_t>(i)] > now
+                            ? onColours[static_cast<std::size_t>(i)]
+                            : offColour);
+            g.fillRect(led);
+            g.setColour(borderColour);
+            g.drawRect(led, 1);
+        }
     }
 
     void MainComponent::paint(juce::Graphics& g)

@@ -77,7 +77,7 @@
 | TASK-JUCE-068 | Piano-keyboard window | M | RQ-GUI-028 |
 | TASK-JUCE-069 | Skin pass: `XplorerLookAndFeel` (knobs + LED ring per UiConfiguration, image buttons, custom checks/radios). **Milestone M3**. *The VFD rendering piece is split out into TASK-JUCE-073.* | L | RQ-GUI-031 |
 | TASK-JUCE-073 | VFD bitmap glyph rendering (added 2026-07 after M2 review): extract `MATRIXTINY` sheet to assets, `DisplayPanel` paints 12×16 glyph cells per ADR-007 (direct sprite-sheet paint + `setBufferedToImage`, reference grid formula, nearest-neighbour scaling); `VfdDisplayHelper` wrap width unified with the computed grid; display grown to 5 rows (82 px, upward) per the owner-arbitrated option (b). | L | RQ-GUI-033 |
-| TASK-JUCE-074 | MIDI LED panel (added 2026-07 after M2 review): replace the single activity LED by the reference 3-LED `LedPanelControl` port — green automation-in / blue synth-in / red synth-out, reference geometry and colours, ≈100 ms retriggerable hold, event-driven timer per ADR-008. *Awaiting owner go-ahead before implementation.* | M | RQ-GUI-022 |
+| TASK-JUCE-074 | MIDI LED panel (added 2026-07 after M2 review): replace the single activity LED by the reference 3-LED `LedPanelControl` port — green automation-in / blue synth-in / red synth-out, reference geometry and colours, ≈100 ms retriggerable hold, event-driven timer per ADR-008. | M | RQ-GUI-022 |
 
 ## Phase 6 — Integration & cut-over
 

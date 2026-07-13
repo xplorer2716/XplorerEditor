@@ -1,7 +1,7 @@
 # ADR-008: MIDI LED Panel — Per-Device LEDs, Event-Driven Hold Instead of a UI Poll Timer
 
 ## Status
-Proposed (awaiting owner validation before implementation)
+Accepted (owner, 2026-07-13)
 
 ## Requirements
 RQ-GUI-022, RQ-CTL-027
