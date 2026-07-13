@@ -3,6 +3,7 @@
 #include "BinaryData.h"
 #include "Dialogs.hpp"
 #include "SettingsDialog.hpp"
+#include "midiapp/service/FileUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/model/XpanderConstants.hpp"
@@ -62,6 +63,10 @@ namespace xplorer::app
                 _registry->onParameterChanged(name, value);
                 _display.showParameter(name, value); // [RQ-GUI-020]
             });
+        // Local panel edits refresh the VFD too, like the reference
+        // MainForm.AnyValuedControl_ValueChanged. [RQ-GUI-020]
+        _registry->setLocalEditHandler(
+            [this](const std::string& name, int value) { _display.showParameter(name, value); });
         _controller->setMidiActivityHandler(
             [this](controller::EnumMidiDevice) { flashMidiActivity(); }); // [RQ-GUI-022]
         _controller->setFullToneChangeHandler(
@@ -320,7 +325,7 @@ namespace xplorer::app
                     const auto file = chooser.getResult();
                     if (file.existsAsFile())
                     {
-                        _controller->loadTone(file.getFullPathName().toStdString());
+                        loadSysexFileByType(file.getFullPathName()); // classify like the reference
                     }
                 });
         };
@@ -603,6 +608,49 @@ namespace xplorer::app
             });
     }
 
+    void MainComponent::loadSysexFileByType(const juce::String& filePath)
+    {
+        const auto path = filePath.toStdString();
+        switch (_controller->determineSysexFileType(path))
+        {
+            case model::SysexFileType::SingleTone:
+                try
+                {
+                    _controller->loadTone(path); // [RQ-CTL-001]
+                }
+                catch (const std::exception& e)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "Load patch", e.what());
+                }
+                break;
+
+            case model::SysexFileType::AllDataDump:
+                // A bank file overwrites every patch in the synth: confirm first,
+                // as the reference does. [RQ-CTL-001, RQ-GUI-026]
+                juce::AlertWindow::showOkCancelBox(
+                    juce::MessageBoxIconType::WarningIcon, "Confirm All Data Dump Restore",
+                    "The selected file is a bank file that may overwrite ALL patches "
+                    "in the synth's memory. Proceed?",
+                    "Restore", "Cancel", nullptr,
+                    juce::ModalCallbackFunction::create(
+                        [this, path](int result)
+                        {
+                            if (result == 1)
+                            {
+                                runRestoreAllDataWithProgress(*_controller, path);
+                            }
+                        }));
+                break;
+
+            case model::SysexFileType::Unknown:
+            default:
+                juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                      "Warning", "Unable to determine sysex file type.");
+                break;
+        }
+    }
+
     void MainComponent::getAllSinglePatchesFromSynth()
     {
         _fileChooser = std::make_unique<juce::FileChooser>(
@@ -697,5 +745,34 @@ namespace xplorer::app
     void ScaledCanvasComponent::paint(juce::Graphics& g)
     {
         g.fillAll(juce::Colours::black); // letterbox bars when aspect differs
+    }
+
+    bool ScaledCanvasComponent::isInterestedInFileDrag(const juce::StringArray& files)
+    {
+        // Reference OnDragEnter: accept a file drop; the drop handler keeps
+        // only the first .syx. [reference MainForm AllowDrop]
+        for (const auto& file : files)
+        {
+            if (file.endsWithIgnoreCase(midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void ScaledCanvasComponent::filesDropped(const juce::StringArray& files, int, int)
+    {
+        // Reference OnDragDrop: act on files[0] only, when it is an existing .syx.
+        if (files.isEmpty())
+        {
+            return;
+        }
+        const auto& first = files[0];
+        if (juce::File(first).existsAsFile()
+            && first.endsWithIgnoreCase(midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT))
+        {
+            _canvas.loadSysexFileByType(first);
+        }
     }
 }

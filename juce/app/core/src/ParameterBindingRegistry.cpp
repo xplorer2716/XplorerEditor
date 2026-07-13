@@ -36,6 +36,12 @@ namespace xplorer::app
         _controller.setDisabledControlChangeNumber(controller::XpanderController::NO_CONTROL_CHANGE);
     }
 
+    void ParameterBindingRegistry::setLocalEditHandler(
+        std::function<void(const std::string&, int)> handler)
+    {
+        _localEditHandler = std::move(handler);
+    }
+
     void ParameterBindingRegistry::onControlEdited(const std::string& parameterName, int value)
     {
         if (_refreshing)
@@ -43,6 +49,10 @@ namespace xplorer::app
             return; // change fired by a model refresh: never echo back [RQ-GUI-003]
         }
         _controller.setParameter(parameterName, value);
+        if (_localEditHandler)
+        {
+            _localEditHandler(parameterName, value); // e.g. VFD refresh [RQ-GUI-020]
+        }
     }
 
     void ParameterBindingRegistry::onParameterChanged(const std::string& parameterName, int value)

@@ -11,6 +11,7 @@
 
 #include "xplorer/controller/XpanderController.hpp"
 
+#include <functional>
 #include <map>
 #include <string>
 
@@ -39,6 +40,12 @@ namespace xplorer::app
         void unbind(const std::string& parameterName);
         [[nodiscard]] std::size_t bindingCount() const { return _bindings.size(); }
 
+        /// Fan-out for local (user) edits, invoked after the model is updated
+        /// and skipped during model refreshes. The application wires this to
+        /// the VFD display so a panel tweak shows the parameter/value, like
+        /// the reference MainForm.AnyValuedControl_ValueChanged. [RQ-GUI-020]
+        void setLocalEditHandler(std::function<void(const std::string&, int)> handler);
+
         // --- from controls (user interaction) ---
         /// Interactive edit started: disable the mapped CC automation. [RQ-GUI-004]
         void onControlEditBegan(const std::string& parameterName);
@@ -59,6 +66,7 @@ namespace xplorer::app
 
         controller::XpanderController& _controller;
         std::map<std::string, IBoundControl*> _bindings;
+        std::function<void(const std::string&, int)> _localEditHandler;
         bool _refreshing = false;
     };
 }

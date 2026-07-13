@@ -99,6 +99,42 @@ SCENARIO("A user edit updates the model and is not echoed back", "[RQ-GUI-003]")
     }
 }
 
+SCENARIO("Local edits are fanned out to the display, model refreshes are not", "[RQ-GUI-020]")
+{
+    GIVEN("a bound knob and a wired local-edit handler")
+    {
+        Fixture f;
+        FakeControl knob(f.registry, "VCF_FREQ");
+        REQUIRE(f.registry.bind("VCF_FREQ", knob));
+
+        std::vector<std::pair<std::string, int>> shown;
+        f.registry.setLocalEditHandler(
+            [&shown](const std::string& name, int value) { shown.emplace_back(name, value); });
+
+        WHEN("the user edits the control")
+        {
+            knob.simulateUserEdit(42);
+
+            THEN("the handler receives the parameter and value (for the VFD)")
+            {
+                REQUIRE(shown.size() == 1);
+                CHECK(shown.front() == std::pair<std::string, int>{"VCF_FREQ", 42});
+            }
+        }
+
+        WHEN("the value arrives from a model refresh instead")
+        {
+            f.controller.setParameter("VCF_FREQ", 7);
+            f.registry.refreshAllFromModel(); // re-enters onControlEdited via the fake
+
+            THEN("the handler is not called (anti-echo)")
+            {
+                CHECK(shown.empty());
+            }
+        }
+    }
+}
+
 SCENARIO("A model change refreshes the control without re-sending to the synth", "[RQ-GUI-003]")
 {
     GIVEN("a bound control and a started controller")

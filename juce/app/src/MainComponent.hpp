@@ -40,6 +40,13 @@ namespace xplorer::app
         juce::PopupMenu getMenuForIndex(int index, const juce::String& name) override;
         void menuItemSelected(int menuItemId, int topLevelMenuIndex) override;
 
+        /// Loads a .syx file, dispatching by detected type (single tone ->
+        /// load & transmit; all-data dump -> confirm then restore with
+        /// progress; unknown -> warning). Shared by the File menu and the
+        /// drag & drop target. Port of FileOperationsManager.LoadSysexFileByType.
+        /// [RQ-MOD-043, RQ-CTL-001]
+        void loadSysexFileByType(const juce::String& filePath);
+
     private:
         void placeFixedBlockControls();
         void placeStaticLabels();
@@ -91,8 +98,10 @@ namespace xplorer::app
     };
 
     /// Resizable host: a menu bar strip on top, the uniformly-scaled canvas
-    /// below. [RQ-GUI-008, RQ-GUI-005]
-    class ScaledCanvasComponent final : public juce::Component
+    /// below. Also the window-wide drop target for .syx files (reference
+    /// MainForm AllowDrop). [RQ-GUI-008, RQ-GUI-005]
+    class ScaledCanvasComponent final : public juce::Component,
+                                        public juce::FileDragAndDropTarget
     {
     public:
         ScaledCanvasComponent();
@@ -100,6 +109,9 @@ namespace xplorer::app
 
         void resized() override;
         void paint(juce::Graphics& g) override;
+
+        bool isInterestedInFileDrag(const juce::StringArray& files) override;
+        void filesDropped(const juce::StringArray& files, int x, int y) override;
 
     private:
         MainComponent _canvas;
