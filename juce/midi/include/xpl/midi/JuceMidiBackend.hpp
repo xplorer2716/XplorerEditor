@@ -25,7 +25,7 @@ namespace xpl::midi
 {
     /// MidiBackend implementation over juce::MidiInput / juce::MidiOutput.
     /// This header stays JUCE-free ([RQ-MID-040]); all JUCE types live in the
-    /// implementation, compiled into the xpl_midi_juce library. [ADR-004]
+    /// implementation, compiled into the xpl_midi_juce library. [ADR-JUC-004]
     ///
     /// Devices are addressed by display name; when several devices share a
     /// name the first enumerated one is used, mirroring the reference

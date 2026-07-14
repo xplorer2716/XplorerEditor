@@ -1,4 +1,4 @@
-# Test suites: one executable per layer, Catch2 + CTest. [RQ-TST-001, ADR-003]
+# Test suites: one executable per layer, Catch2 + CTest. [RQ-TST-001, ADR-JUC-003]
 set(XPL_FIXTURES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/fixtures")
 
 add_executable(xpl_tests_smoke

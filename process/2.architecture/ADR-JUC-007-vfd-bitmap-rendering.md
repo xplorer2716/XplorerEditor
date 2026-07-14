@@ -1,4 +1,4 @@
-# ADR-007: VFD Bitmap Glyph Rendering — Direct Sprite-Sheet Paint, JUCE-Cached
+# ADR-JUC-007: VFD Bitmap Glyph Rendering — Direct Sprite-Sheet Paint, JUCE-Cached
 
 ## Status
 Accepted (owner, 2026-07-13 — option (b) of the open point)
@@ -27,7 +27,7 @@ implementation for performance; its mechanics are:
   that is **22 columns × 4 lines**; the buffer is rebuilt on resize.
 
 The JUCE display today is `DisplayPanel`, a dumb multiline text renderer fed
-by `VfdDisplayHelper` (ADR-006 §4); this ADR replaces its *rendering* only —
+by `VfdDisplayHelper` (ADR-JUC-006 §4); this ADR replaces its *rendering* only —
 the content pipeline is untouched.
 
 ## Decision
@@ -37,7 +37,7 @@ the content pipeline is untouched.
    `juce/app/assets/vfd-matrix.png` (pure-python BMP→PNG conversion — stock
    JUCE does not read BMP), added to the existing `juce_add_binary_data`
    target. Same mechanically-regenerable pipeline as the background bitmap
-   and button GIFs (ADR-006).
+   and button GIFs (ADR-JUC-006).
 2. **Direct sprite-sheet paint, no manual buffer, no dirty-char diff.**
    `DisplayPanel::paint` walks the padded text grid and issues one
    `Graphics::drawImage` per cell with the integer source rectangle computed

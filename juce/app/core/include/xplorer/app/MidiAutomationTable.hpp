@@ -3,7 +3,7 @@
 // MIDI CC automation table helpers (UI-framework-free, headless-tested): the
 // reference Continuous-Controller name list and the "NAME;CC" persisted-entry
 // parser shared by the settings editor and the startup load path. [RQ-GUI-036,
-// RQ-SET-002, ADR-012]
+// RQ-SET-002, ADR-JUC-012]
 
 #include <optional>
 #include <string>

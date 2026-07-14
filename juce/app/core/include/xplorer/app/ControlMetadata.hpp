@@ -3,7 +3,7 @@
 // UI-framework-free control metadata derived from the reference: ComboBox
 // enum labels, control-id → enum-type mapping, and RadioButtonPanel options.
 // Consumed by the JUCE control wrappers; kept here so it is headless-testable.
-// [RQ-GUI-032, ADR-006]
+// [RQ-GUI-032, ADR-JUC-006]
 
 #include <string>
 #include <utility>

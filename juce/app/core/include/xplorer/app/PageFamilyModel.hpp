@@ -3,7 +3,7 @@
 // Page-family tag resolution (ENV/LFO/RAMP/TRACK). UI-framework-free port of
 // Xplorer.View.PageRefreshManager + XpanderConstants.PageFamilies: maps the
 // shared "_X_" control tags to concrete parameter names for the active
-// instance, and back. Headless-testable. [RQ-GUI-010..012, ADR-006]
+// instance, and back. Headless-testable. [RQ-GUI-010..012, ADR-JUC-006]
 
 #include <optional>
 #include <string>

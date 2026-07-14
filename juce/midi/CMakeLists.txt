@@ -1,6 +1,6 @@
-# xpl_midi: backend-agnostic MIDI abstraction [RQ-MID-040, ADR-004]
+# xpl_midi: backend-agnostic MIDI abstraction [RQ-MID-040, ADR-JUC-004]
 # xpl_midi_juce: JUCE adapter, kept separate so strict warnings never apply
-# to JUCE module sources compiled into the target. [RQ-BLD-003, ADR-004]
+# to JUCE module sources compiled into the target. [RQ-BLD-003, ADR-JUC-004]
 
 add_library(xpl_midi STATIC
     src/LibraryInfo.cpp

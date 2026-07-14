@@ -3,7 +3,7 @@
 // Declarative description of the main-window controls, mechanically
 // extracted from the reference MainForm (geometry from MainForm.resx,
 // types and tags from MainForm.Designer.cs). Coordinates are in the
-// logical canvas space (the reference client area). [RQ-GUI-001, ADR-006]
+// logical canvas space (the reference client area). [RQ-GUI-001, ADR-JUC-006]
 
 #include <span>
 

@@ -1,4 +1,4 @@
-# xpl_framework layer library: port of MidiApp.MidiController core [RQ-FMW, ADR-002]
+# xpl_framework layer library: port of MidiApp.MidiController core [RQ-FMW, ADR-JUC-002]
 add_library(xpl_framework STATIC
     src/LibraryInfo.cpp
     src/AbstractParameter.cpp

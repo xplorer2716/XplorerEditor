@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regenerates juce/app/core/src/GeneratedControlTable.inc and the main
 background image from the reference WinForms sources. Run from the repo root.
-[TASK-JUCE-060, RQ-GUI-001, RQ-GUI-007]
+[TASK-JUC-060, RQ-GUI-001, RQ-GUI-007]
 
 Inputs : Xplorer/View/MainForm.resx      (geometry, types, background bitmap)
          Xplorer/View/MainForm.Designer.cs (control types fallback, tags)
@@ -163,7 +163,7 @@ def extract_enum_labels():
 # glyphs of 12x16, ASCII 32-126) out of the MidiApp.UIControls resources.
 # The source is a 24-bpp bottom-up BMP; stock JUCE does not read BMP, so it
 # is converted to PNG here (no external imaging dependency). [RQ-GUI-033,
-# ADR-007]
+# ADR-JUC-007]
 import base64 as _b64
 import struct as _struct
 import zlib as _zlib
@@ -237,7 +237,7 @@ def extract_parameter_names():
 # --- MIDI Continuous-Controller names --------------------------------------
 # Emits GeneratedControlChangeNames.inc: the reference ControlChangesNames.Names
 # array (index = CC number, last entry = "None" / unassigned), used by the MIDI
-# automation-table editor. [RQ-GUI-036, ADR-012]
+# automation-table editor. [RQ-GUI-036, ADR-JUC-012]
 CC_NAMES_SRC = ('Sanford.Multimedia.Midi/Source/Sanford.Multimedia.Midi/'
                 'Messages/ControlChangesNames.cs')
 CC_NAMES_OUT = 'juce/app/core/src/GeneratedControlChangeNames.inc'

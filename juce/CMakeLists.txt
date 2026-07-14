@@ -54,7 +54,7 @@ else()
 endif()
 add_library(xpl::warnings ALIAS xpl_warnings)
 
-# --- Layer libraries, bottom-up [RQ-BLD-005, ADR-002] ---
+# --- Layer libraries, bottom-up [RQ-BLD-005, ADR-JUC-002] ---
 add_subdirectory(midi)
 add_subdirectory(framework)
 add_subdirectory(model)

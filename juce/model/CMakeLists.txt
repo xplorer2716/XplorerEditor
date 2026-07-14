@@ -1,4 +1,4 @@
-# xpl_model layer library: Xpander tone, parameters, SysEx I/O [RQ-MOD, ADR-002]
+# xpl_model layer library: Xpander tone, parameters, SysEx I/O [RQ-MOD, ADR-JUC-002]
 add_library(xpl_model STATIC
     src/LibraryInfo.cpp
     src/XpanderParameter.cpp

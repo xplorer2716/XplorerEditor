@@ -1,6 +1,6 @@
 // AbstractController: paced transmit worker.
 // Port of AbstractController.WorkerThread.cs semantics with modern
-// primitives (interruptible wait, no busy-sleep). [RQ-FMW-040..042, ADR-005]
+// primitives (interruptible wait, no busy-sleep). [RQ-FMW-040..042, ADR-JUC-005]
 #include "midiapp/controller/AbstractController.hpp"
 
 #include <chrono>

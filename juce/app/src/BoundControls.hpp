@@ -4,7 +4,7 @@
 // (standard JUCE widgets); a later LookAndFeel pass restyles them without
 // touching this behavior. A shared BoundControl base holds the (re-bindable)
 // parameter name so page-family blocks can retarget a control to another
-// instance. [RQ-GUI-030, RQ-GUI-032, RQ-GUI-010, ADR-006]
+// instance. [RQ-GUI-030, RQ-GUI-032, RQ-GUI-010, ADR-JUC-006]
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 

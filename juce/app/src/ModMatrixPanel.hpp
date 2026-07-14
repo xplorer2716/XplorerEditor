@@ -4,7 +4,7 @@
 // combo, quantize checkbox}, wired to the controller matrix API. Not part of
 // the parameter-binding registry (matrix edits are dedicated controller
 // operations, not plain parameters). Port of ModulationMatrixManager.
-// [RQ-GUI-015..017, ADR-006]
+// [RQ-GUI-015..017, ADR-JUC-006]
 
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/controller/XpanderController.hpp"
@@ -34,7 +34,7 @@ namespace xplorer::app
 
         // Hover highlight (reference ModulationMatrixHighlight). The colour is
         // derived from the live LookAndFeel, not cached, so it tracks the LED
-        // setting (ADR-011). [RQ-GUI-018]
+        // setting (ADR-JUC-011). [RQ-GUI-018]
         /// Highlight source combos currently set to sourceValue.
         void highlightSources(int sourceValue);
         /// Highlight destination combos set to destValue whose row has an

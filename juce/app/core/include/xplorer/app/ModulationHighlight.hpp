@@ -5,7 +5,7 @@
 // page-family selector to the modulation source it represents — the reference
 // _knobTagToModDestMap / _knobTagToPagedModDestMap / _radioButtonToModSourceMap.
 // Used by the matrix hover highlight (RQ-GUI-018) and the VFD active-
-// destination "." marker (RQ-GUI-020). [ADR-010]
+// destination "." marker (RQ-GUI-020). [ADR-JUC-010]
 
 #include "xplorer/model/XpanderConstants.hpp"
 

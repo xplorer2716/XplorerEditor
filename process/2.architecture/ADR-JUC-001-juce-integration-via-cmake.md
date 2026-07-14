@@ -1,4 +1,4 @@
-# ADR-001: JUCE 8 Integration via CMake FetchContent
+# ADR-JUC-001: JUCE 8 Integration via CMake FetchContent
 
 ## Status
 Accepted

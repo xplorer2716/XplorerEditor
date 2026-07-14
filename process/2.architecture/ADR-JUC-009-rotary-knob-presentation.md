@@ -1,4 +1,4 @@
-# ADR-009: Rotary Knob Presentation & Interaction — LED-Ring-Only, VFD-Backed Value Entry
+# ADR-JUC-009: Rotary Knob Presentation & Interaction — LED-Ring-Only, VFD-Backed Value Entry
 
 ## Status
 Accepted (owner, 2026-07-13)

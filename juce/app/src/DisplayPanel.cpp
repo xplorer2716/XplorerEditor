@@ -18,7 +18,7 @@ namespace xplorer::app
         // The whole surface is painted (black + glyph cells), and the text
         // only changes via setLines: let JUCE cache the rendered image so
         // unchanged text costs no paint at all (the reference achieved this
-        // with a hand-managed buffer bitmap + changed-cell diffing). [ADR-007]
+        // with a hand-managed buffer bitmap + changed-cell diffing). [ADR-JUC-007]
         setOpaque(true);
         setBufferedToImage(true);
         setInterceptsMouseClicks(false, false);

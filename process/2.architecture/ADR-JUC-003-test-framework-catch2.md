@@ -1,4 +1,4 @@
-# ADR-003: Catch2 v3 as Test Framework
+# ADR-JUC-003: Catch2 v3 as Test Framework
 
 ## Status
 Accepted

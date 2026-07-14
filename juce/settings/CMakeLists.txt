@@ -1,4 +1,4 @@
-# xpl_settings: injectable settings service [RQ-SET, ADR-002]
+# xpl_settings: injectable settings service [RQ-SET, ADR-JUC-002]
 # Links juce_core (XmlDocument) privately for .NET-schema XML persistence;
 # the public headers stay JUCE-free. Strict warnings are not applied because
 # JUCE module sources compile into this target (same pattern as xpl_midi_juce).

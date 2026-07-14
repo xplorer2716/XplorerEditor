@@ -1,4 +1,4 @@
-# xpl_controller layer library: XpanderController port [RQ-CTL, ADR-002]
+# xpl_controller layer library: XpanderController port [RQ-CTL, ADR-JUC-002]
 add_library(xpl_controller STATIC
     src/LibraryInfo.cpp
     src/PageSubPageHelper.cpp

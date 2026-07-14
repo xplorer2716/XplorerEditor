@@ -1,4 +1,4 @@
-# ADR-008: MIDI LED Panel — Per-Device LEDs, Event-Driven Hold Instead of a UI Poll Timer
+# ADR-JUC-008: MIDI LED Panel — Per-Device LEDs, Event-Driven Hold Instead of a UI Poll Timer
 
 ## Status
 Accepted (owner, 2026-07-13)
@@ -44,7 +44,7 @@ view-only.
    is the reference's (lit 100–130 ms past the last event, held under
    sustained traffic), but the timer no longer ticks for the application's
    whole lifetime — the reference's always-on 30 ms tick also drove the VFD,
-   whose JUCE port is already event-driven (ADR-006/007), so nothing else
+   whose JUCE port is already event-driven (ADR-JUC-006/007), so nothing else
    needs the poll.
 4. Events arrive marshalled to the message thread by `JuceEventDispatcher`
    (RQ-GUI-006), so no cross-thread stamp race as in the reference (noted

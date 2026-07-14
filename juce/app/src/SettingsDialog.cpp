@@ -25,7 +25,7 @@ namespace xplorer::app
 
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
-        // [RQ-GUI-036, ADR-012]
+        // [RQ-GUI-036, ADR-JUC-012]
         class AutomationTableModel final : public juce::TableListBoxModel
         {
         public:

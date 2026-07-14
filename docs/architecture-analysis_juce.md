@@ -108,8 +108,8 @@ graph TD
 ## 3. Layered architecture
 
 Same 3-layer MVC-inspired separation as the reference, plus two seams the reference did
-not have: the **MIDI backend interface** (ADR-004) and the split of the View into
-**headless app logic** (`xpl_app_core`) vs **JUCE components** (`app/src`, ADR-006).
+not have: the **MIDI backend interface** (ADR-JUC-004) and the split of the View into
+**headless app logic** (`xpl_app_core`) vs **JUCE components** (`app/src`, ADR-JUC-006).
 
 ```mermaid
 flowchart TB
@@ -171,7 +171,7 @@ main subject of this revision.
 
 Every control is laid out **once**, in the fixed logical pixel space of the reference
 background bitmap. `ScaledCanvasComponent` hosts the menu bar strip and applies one
-`AffineTransform` on resize; nothing else knows about scaling (ADR-006 §1).
+`AffineTransform` on resize; nothing else knows about scaling (ADR-JUC-006 §1).
 
 ```mermaid
 flowchart LR
@@ -297,7 +297,7 @@ edit callback the app routes to the VFD (`SRC TO DEST: / AMNT / QTZ`).
 
 ### 4.7 VFD display
 
-Two cleanly separated halves (ADR-006 §4, ADR-007):
+Two cleanly separated halves (ADR-JUC-006 §4, ADR-JUC-007):
 
 - **Content** — `VfdDisplayHelper` (port of the reference class): builds the 5 text lines
   — `* Snn NAME *`, parameter line (friendly name from the generated table + value by
@@ -309,7 +309,7 @@ Two cleanly separated halves (ADR-006 §4, ADR-007):
   reference formula. The reference's hand-managed buffer bitmap and changed-cell diffing
   are replaced by `setBufferedToImage(true)` + an identical-text early-out: JUCE's image
   cache gives the same "no work when nothing changed" property with no manual state
-  (ADR-007). Nearest-neighbour resampling keeps the dot matrix crisp under the canvas
+  (ADR-JUC-007). Nearest-neighbour resampling keeps the dot matrix crisp under the canvas
   transform. Display grown to 5 rows (267×82, upward) per owner arbitration so the
   `MIDI CC:` line is always visible.
 
@@ -324,7 +324,7 @@ flowchart LR
 
 ### 4.8 MIDI LED panel
 
-`LedPanelComponent` (port of `LedPanelControl`, ADR-008): three 5 px square LEDs at the
+`LedPanelComponent` (port of `LedPanelControl`, ADR-JUC-008): three 5 px square LEDs at the
 extracted bounds — automation-in **green**, synth-in **blue**, synth-out **red**, exact
 reference geometry and colours. Each MIDI-activity event stamps its LED's expiry
 (now + 100 ms); a 30 ms decay timer runs **only while a LED is lit** and stops itself —
@@ -396,7 +396,7 @@ flowchart TB
 
 Same observable pacing as the reference (scan → enqueue clones → send at most one per
 tick, page-select first when the page changes), implemented with interruptible primitives
-instead of `Thread.Sleep` polling (ADR-005).
+instead of `Thread.Sleep` polling (ADR-JUC-005).
 
 ```mermaid
 sequenceDiagram
@@ -484,7 +484,7 @@ round-trips against a real hardware dump are CI-verified.
 | **Dependency Injection** | backend, tone, dispatcher, settings — constructor-injected; no singletons |
 | **Clone (Prototype)** | `AbstractParameter::clone()` before enqueuing |
 | **Pimpl** | `XmlSettingsService`, `JuceMidiBackend` (JUCE types out of public headers) |
-| **Flyweight** | VFD sprite sheet: one image, per-character source rectangles (ADR-007) |
+| **Flyweight** | VFD sprite sheet: one image, per-character source rectangles (ADR-JUC-007) |
 | **Table-driven construction** | the whole main window is built from `GeneratedControlTable.inc` — no per-control code |
 
 ---
@@ -518,7 +518,7 @@ flowchart TB
 
 The reference's two threading defects remain absent (no `DoEvents` pumping, no busy-sleep)
 and its permanent 30 ms UI timer has no equivalent — the UI is fully event-driven; the
-only periodic work (LED decay) is self-stopping (ADR-008).
+only periodic work (LED decay) is self-stopping (ADR-JUC-008).
 
 Known reference-faithful blocking spots: `storeSinglePatchToSynth`,
 `sendProgramChangeAndGetSinglePatchFromSynth` and the VFD typewriter sleep on their
@@ -529,7 +529,7 @@ tracked as a post-migration async candidate (§10).
 
 ## 9. Testing architecture
 
-Two-tier strategy (ADR-003, ADR-006 §6): everything with logic is headless-testable by
+Two-tier strategy (ADR-JUC-003, ADR-JUC-006 §6): everything with logic is headless-testable by
 construction; only thin JUCE wrappers need eyes.
 
 | Tier | What | How verified |
@@ -551,7 +551,7 @@ port.
 | # | Item | Status |
 |---|---|---|
 | 1 | `Application.DoEvents()` / UI pumping | ✅ Gone — progression callbacks + worker threads everywhere |
-| 2 | Worker `Thread.Sleep` polling | ✅ Interruptible cv-wait (ADR-005) |
+| 2 | Worker `Thread.Sleep` polling | ✅ Interruptible cv-wait (ADR-JUC-005) |
 | 3 | Static settings service | ✅ Injected interface |
 | 4 | `AbstractTone` → `XpanderTone` downcast | ⚠️ Kept (single accessor, port fidelity); post-migration redesign candidate |
 | 5 | `FileOperationsManager` → god-form coupling | ✅ Dissolved into focused components (load-by-type on `MainComponent`, dialogs in `Dialogs.cpp`) |
@@ -561,12 +561,12 @@ port.
 | 9 | `BugReportFactory` payload | ❌ Not ported — the top-level exception dialog exists (RQ-GUI-035) but without the full diagnostic payload (RQ-FMW-071); app-phase follow-up |
 | 10 | Blocking sleeps inside some controller ops (store, program-change+dump, typewriter) | ⚠️ Verbatim from reference; called from the message thread via menus. Async refactor candidate (needs an ADR) |
 | 11 | Tone morphing UX | Deferred — reference form is unfinished (empty OK/Cancel, unwired); controller primitive ported & tested; awaits owner UX spec |
-| 12 | VFD `.` active-modulation-destination marker | ✅ Done — TASK-JUCE-076 / ADR-010: the shared `ModulationHighlight` resolver drives both the matrix hover highlight and this marker |
+| 12 | VFD `.` active-modulation-destination marker | ✅ Done — TASK-JUC-076 / ADR-JUC-010: the shared `ModulationHighlight` resolver drives both the matrix hover highlight and this marker |
 | 13 | Character scaling of the VFD | Owner announced a later spec pass (nearest vs smooth under canvas scale) |
-| 14 | Hardware validation | TASK-JUCE-071 checklist (real Xpander/Matrix-12) still to run |
-| 15 | Cross-compat campaign | TASK-JUCE-072 (patch libraries + settings exchanged .NET ⇄ JUCE) still to run |
-| 16 | CC automation table not loaded into the controller | ✅ Done — TASK-JUCE-078 / ADR-012: `applyMidiSettings` persists but never parses `automationTable` into the controller dictionary, so incoming CCs drive nothing and the VFD CC line is blank; fixed together with the mapping editor (RQ-GUI-036) |
-| 17 | Duplicated runtime LED-colour state | ✅ Done — TASK-JUCE-077 / ADR-011: the matrix highlight cached its own colour copy; moving to a single LookAndFeel-owned source fixes the stale-colour-on-change bug |
+| 14 | Hardware validation | TASK-JUC-071 checklist (real Xpander/Matrix-12) still to run |
+| 15 | Cross-compat campaign | TASK-JUC-072 (patch libraries + settings exchanged .NET ⇄ JUCE) still to run |
+| 16 | CC automation table not loaded into the controller | ✅ Done — TASK-JUC-078 / ADR-JUC-012: `applyMidiSettings` persists but never parses `automationTable` into the controller dictionary, so incoming CCs drive nothing and the VFD CC line is blank; fixed together with the mapping editor (RQ-GUI-036) |
+| 17 | Duplicated runtime LED-colour state | ✅ Done — TASK-JUC-077 / ADR-JUC-011: the matrix highlight cached its own colour copy; moving to a single LookAndFeel-owned source fixes the stale-colour-on-change bug |
 
 ---
 
@@ -598,7 +598,7 @@ C4Context
   facts to drift
 - Fully event-driven UI (no polling timers), modern cooperative threading, reference
   timing preserved
-- Every structural decision recorded (ADR-001…008); deviations enumerated per RQ-NFR-009
+- Every structural decision recorded (ADR-JUC-001…008); deviations enumerated per RQ-NFR-009
 
 ### Weaknesses
 - Hardware-only behaviors (dump timing against a real synth, VFD look at real scale
@@ -616,8 +616,8 @@ behavior preserved; ADR references given).
 
 | # | Area | C# reference | JUCE port | Impact |
 |---|---|---|---|---|
-| 1 | MIDI coupling | Controller holds Sanford `InputDevice`/`OutputDevice` directly | `MidiBackend` interface + JUCE/mock adapters (ADR-004) | None on the wire; enables hardware-free tests |
-| 2 | Worker loop | `Thread.Sleep` polling; `Join(2000)` then abandon | `std::jthread` + interruptible cv-wait; cooperative join (ADR-005) | Same pacing; clean shutdown |
+| 1 | MIDI coupling | Controller holds Sanford `InputDevice`/`OutputDevice` directly | `MidiBackend` interface + JUCE/mock adapters (ADR-JUC-004) | None on the wire; enables hardware-free tests |
+| 2 | Worker loop | `Thread.Sleep` polling; `Join(2000)` then abandon | `std::jthread` + interruptible cv-wait; cooperative join (ADR-JUC-005) | Same pacing; clean shutdown |
 | 3 | Settings access | Static class, read at call sites | Injected `ISettingsService` | None functionally; testable |
 | 4 | Display-control command (0x05/0x06) | Frozen in `static readonly` at first use — synth-type change needs restart | Read from settings per call | Port applies a synth-type change immediately |
 | 5 | Events | .NET events + `SynchronizationContext.Post` | `std::function` handlers + injected `EventDispatcher` | Same delivery guarantees, explicit dispatcher |
@@ -632,11 +632,11 @@ behavior preserved; ADR references given).
 | 14 | Logger | `TraceSwitch`-driven, object caller | Level-filtered file sink + explicit `shutdown()` (Windows file-lock test fix) | Same intent |
 | 15 | `SendPageUpdate(pageName)` | `Enum.Parse` with CASSETTE fallback | String check, same side effect | Equivalent for all real page names |
 | 16 | BugReportFactory | Full exception+MIDI context report | Top-level exception dialog only (§10-9) | Gap tracked (RQ-FMW-071) |
-| 17 | Window sizing | Fixed size, WinForms DPI autoscale at launch | Freely resizable; logical canvas + one `AffineTransform` (ADR-006) | Owner decision; layout identical at any size |
+| 17 | Window sizing | Fixed size, WinForms DPI autoscale at launch | Freely resizable; logical canvas + one `AffineTransform` (ADR-JUC-006) | Owner decision; layout identical at any size |
 | 18 | UI layout source | Hand-maintained `MainForm.Designer.cs` | Generated declarative tables from the same sources (§4.3) | Regenerable, drift-proof |
-| 19 | VFD rendering mechanics | Offscreen buffer + changed-cell diffing + `DrawImageUnscaled` | Direct sprite-sheet paint + `setBufferedToImage` (ADR-007) | Same glyph artwork & behaviour; less state |
-| 20 | VFD size | 267×75 (4 lines at 100 % DPI; 5th line needs DPI autoscale) | 267×82, grown upward — 5 lines always visible | Owner-arbitrated (ADR-007 option b) |
-| 21 | LED decay | Permanent 30 ms UI timer decrementing stamps | Event-driven retriggerable hold; timer only while lit (ADR-008) | Same visible behaviour; zero idle work |
+| 19 | VFD rendering mechanics | Offscreen buffer + changed-cell diffing + `DrawImageUnscaled` | Direct sprite-sheet paint + `setBufferedToImage` (ADR-JUC-007) | Same glyph artwork & behaviour; less state |
+| 20 | VFD size | 267×75 (4 lines at 100 % DPI; 5th line needs DPI autoscale) | 267×82, grown upward — 5 lines always visible | Owner-arbitrated (ADR-JUC-007 option b) |
+| 21 | LED decay | Permanent 30 ms UI timer decrementing stamps | Event-driven retriggerable hold; timer only while lit (ADR-JUC-008) | Same visible behaviour; zero idle work |
 | 22 | UI update timer | One 30 ms timer drives VFD + LEDs | Fully event-driven UI | No polling |
 | 23 | Radio button panels | Custom `RadioButtonPanel` widgets | Rendered as combos in the functional phase | Skin-phase revisit if owner wants radios back |
 | 24 | Settings UI | Separate modal Forms | One `TabbedComponent` dialog, 3 pages; LED colour applies live | Same fields; restart not required |
@@ -669,4 +669,4 @@ owner review.
 | 16 | `ToneMorphingForm` | Flagged work-in-progress: empty OK/Cancel, unwired, cancel-restore `#warning` | **Deferred, not ported**; controller primitive fully ported & tested (§10-11). |
 | 17 | All-data-dump restore | Blocking send loop on the UI thread pumped by `DoEvents` | `ThreadWithProgressWindow` worker; **improves on reference** (RQ-GUI-026). |
 | 18 | TRACK page-family tags | Designer tags `TRACK_X_PT_n` while the parameter map registers `TRACK_n_POINT_m` — the reference resolves through its own map at runtime | Extraction normalized to the parameter names, **with explicit owner approval** (page-family review). |
-| 19 | VFD line count | `VfdDisplayHelper` writes 5 lines but the 267×75 control fits 4 at 100 % DPI — the CC line only appears under Windows DPI autoscale | Surfaced to owner; display grown to 82 px (ADR-007 option b). |
+| 19 | VFD line count | `VfdDisplayHelper` writes 5 lines but the 267×75 control fits 4 at 100 % DPI — the CC line only appears under Windows DPI autoscale | Surfaced to owner; display grown to 82 px (ADR-JUC-007 option b). |

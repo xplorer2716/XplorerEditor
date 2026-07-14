@@ -723,7 +723,7 @@ namespace xplorer::controller
         }
     }
 
-    // --- transmit worker [RQ-CTL-020, ADR-005] ---------------------------------------------
+    // --- transmit worker [RQ-CTL-020, ADR-JUC-005] ---------------------------------------------
 
     void XpanderController::workerThreadProc(std::stop_token stopToken)
     {

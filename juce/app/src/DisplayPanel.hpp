@@ -4,7 +4,7 @@
 // sprite sheet (96 glyphs of 12x16, ASCII 32-126), black background, glyph
 // block centered, grid derived from the bounds like the reference
 // VacuumFluoDisplayControl (cols = width/12, lines = height/16). Direct
-// sprite-sheet paint + setBufferedToImage per ADR-007; the line content is
+// sprite-sheet paint + setBufferedToImage per ADR-JUC-007; the line content is
 // built by VfdDisplayHelper. [RQ-GUI-020, RQ-GUI-033]
 
 #include <juce_gui_extra/juce_gui_extra.h>

@@ -7,7 +7,7 @@
 // The application wires the controller's event handlers to the entry
 // points below (the controller exposes one handler per event; fan-out to
 // other consumers such as the display panel is the application's glue).
-// [RQ-GUI-002..004, ADR-006]
+// [RQ-GUI-002..004, ADR-JUC-006]
 
 #include "xplorer/controller/XpanderController.hpp"
 

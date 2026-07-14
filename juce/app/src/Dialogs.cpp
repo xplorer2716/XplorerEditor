@@ -25,7 +25,7 @@ namespace xplorer::app
 
         // Load the persisted "NAME;CC" table into the controller dictionary so
         // incoming CCs drive the mapped parameters and the VFD shows the CC.
-        // Reference SettingsManager.LoadSettings. [RQ-GUI-036, ADR-012]
+        // Reference SettingsManager.LoadSettings. [RQ-GUI-036, ADR-JUC-012]
         controller.controlChangeAutomationTable().clear();
         for (const auto& entry : midi.automationTable)
         {

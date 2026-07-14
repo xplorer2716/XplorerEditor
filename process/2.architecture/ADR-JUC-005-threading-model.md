@@ -1,4 +1,4 @@
-# ADR-005: Threading Model — Faithful Port First, Modern Primitives
+# ADR-JUC-005: Threading Model — Faithful Port First, Modern Primitives
 
 ## Status
 Accepted

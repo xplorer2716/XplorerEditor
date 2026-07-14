@@ -1,4 +1,4 @@
-# ADR-002: C++ Project Layout Inside This Repository
+# ADR-JUC-002: C++ Project Layout Inside This Repository
 
 ## Status
 Accepted

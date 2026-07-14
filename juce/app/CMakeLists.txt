@@ -1,4 +1,4 @@
-# Xplorer JUCE application (GUI). Built only with -DXPL_BUILD_APP=ON. [RQ-GUI, ADR-006]
+# Xplorer JUCE application (GUI). Built only with -DXPL_BUILD_APP=ON. [RQ-GUI, ADR-JUC-006]
 
 juce_add_gui_app(XplorerApp
     PRODUCT_NAME "Xplorer"

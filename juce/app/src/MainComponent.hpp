@@ -2,7 +2,7 @@
 
 // Main window content: logical canvas scaled uniformly into the window, the
 // reference background bitmap, and the bound controls placed from the
-// extracted table. [RQ-GUI-001, RQ-GUI-005, RQ-GUI-007, ADR-006]
+// extracted table. [RQ-GUI-001, RQ-GUI-005, RQ-GUI-007, ADR-JUC-006]
 
 #include "BoundControls.hpp"
 #include "DisplayPanel.hpp"
@@ -67,7 +67,7 @@ namespace xplorer::app
 
         // Forwards knob/selector hover to the matrix highlight. A dedicated
         // MouseListener (not MainComponent itself) avoids clashing with the
-        // component's own mouseEnter/Exit. [RQ-GUI-018, ADR-010]
+        // component's own mouseEnter/Exit. [RQ-GUI-018, ADR-JUC-010]
         struct HoverHighlighter final : juce::MouseListener
         {
             std::function<void(juce::Component*)> onEnter;
@@ -115,7 +115,7 @@ namespace xplorer::app
         // LEDs — automation-in green, synth-in blue, synth-out red — each
         // holding ~100 ms past the last event of its source, retriggered by
         // traffic. The 30 ms decay timer only runs while a LED is lit.
-        // [RQ-GUI-022, ADR-008]
+        // [RQ-GUI-022, ADR-JUC-008]
         class LedPanelComponent final : public juce::Component, private juce::Timer
         {
         public:

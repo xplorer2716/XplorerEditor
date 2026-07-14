@@ -1,4 +1,4 @@
-# ADR-012: MIDI CC Automation Table — Load Path, Editor UI & CC-Name Port
+# ADR-JUC-012: MIDI CC Automation Table — Load Path, Editor UI & CC-Name Port
 
 ## Status
 Accepted (owner, 2026-07-13 — reference behaviour is authoritative; editable

@@ -31,8 +31,8 @@ namespace midiapp::controller
 
     /// Port of MidiApp.MidiController.Controller.AbstractController:
     /// owns the edited tone, three MIDI devices resolved by display name
-    /// through an injected backend (ADR-004), the CC automation table, and
-    /// the paced transmit worker (ADR-005). [RQ-FMW-030..034]
+    /// through an injected backend (ADR-JUC-004), the CC automation table, and
+    /// the paced transmit worker (ADR-JUC-005). [RQ-FMW-030..034]
     class AbstractController
     {
     public:
@@ -134,7 +134,7 @@ namespace midiapp::controller
         virtual void synthInputDeviceSysRealtimeMessageReceived(const xpl::midi::MidiMessage& message);
         virtual void synthInputDeviceError(const std::string& description);
 
-        // --- transmit worker [RQ-FMW-040..042, ADR-005] ---
+        // --- transmit worker [RQ-FMW-040..042, ADR-JUC-005] ---
         /// One iteration = wait one transmit-delay tick, scan changed
         /// parameters into the queue (cloned), send at most one. Subclasses
         /// override to add page-select sequencing (RQ-CTL-020).

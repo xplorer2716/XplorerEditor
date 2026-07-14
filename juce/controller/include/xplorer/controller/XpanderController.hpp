@@ -105,7 +105,7 @@ namespace xplorer::controller
         void setMidiActivityHandler(std::function<void(EnumMidiDevice)> handler);
 
     protected:
-        /// Page-select-before-edit transmit loop. [RQ-CTL-020, ADR-005]
+        /// Page-select-before-edit transmit loop. [RQ-CTL-020, ADR-JUC-005]
         void workerThreadProc(std::stop_token stopToken) override;
 
         /// Automation overrides (reference XpanderController.MIDIEvents).

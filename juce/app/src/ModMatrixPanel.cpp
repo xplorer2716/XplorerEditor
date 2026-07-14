@@ -26,7 +26,7 @@ namespace xplorer::app
     juce::Colour ModMatrixPanel::highlightColour() const
     {
         // Single source of truth: the knob LED colour owned by the LookAndFeel
-        // (ADR-011). Re-read on every highlight, so a settings change applies
+        // (ADR-JUC-011). Re-read on every highlight, so a settings change applies
         // immediately with no cached copy.
         if (_rows[0].source != nullptr)
         {

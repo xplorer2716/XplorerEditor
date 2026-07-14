@@ -1,4 +1,4 @@
-# ADR-004: MIDI Backend Abstraction (Ports & Adapters)
+# ADR-JUC-004: MIDI Backend Abstraction (Ports & Adapters)
 
 ## Status
 Accepted

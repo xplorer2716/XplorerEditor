@@ -4,7 +4,7 @@
 // controls plus instance-selector buttons. Selecting an instance retargets
 // every control to that instance's parameters, refreshes their values, and
 // asks the controller to select the matching synth page. Reverse: a synth
-// page-change activates the selector. [RQ-GUI-010..012, ADR-006]
+// page-change activates the selector. [RQ-GUI-010..012, ADR-JUC-006]
 
 #include "BoundControls.hpp"
 

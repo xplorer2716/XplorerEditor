@@ -15,7 +15,7 @@ namespace xplorer::app
 
         /// The single runtime source of truth for the knob LED colour; every
         /// consumer (knobs, tick boxes, matrix highlight) derives from it, so a
-        /// colour change only rebuilds this object. [ADR-011]
+        /// colour change only rebuilds this object. [ADR-JUC-011]
         [[nodiscard]] juce::Colour ledColour() const { return _ledColour; }
 
         void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,

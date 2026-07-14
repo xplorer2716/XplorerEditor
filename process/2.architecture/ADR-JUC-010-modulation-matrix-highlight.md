@@ -1,4 +1,4 @@
-# ADR-010: Modulation-Matrix Hover Highlight & Active-Destination Marker — Shared Knob→Destination Map
+# ADR-JUC-010: Modulation-Matrix Hover Highlight & Active-Destination Marker — Shared Knob→Destination Map
 
 ## Status
 Accepted (owner, 2026-07-13). Implemented: `ModulationHighlight` resolver

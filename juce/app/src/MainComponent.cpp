@@ -15,7 +15,7 @@ namespace xplorer::app
 {
     namespace
     {
-        // Fixed (non page-family) blocks handled in TASK-JUCE-063.
+        // Fixed (non page-family) blocks handled in TASK-JUC-063.
         bool isFixedBlockTag(const std::string& tag)
         {
             if (tag.empty() || tag.find("_X") != std::string::npos)
@@ -114,7 +114,7 @@ namespace xplorer::app
             });
 
         // Modulation-matrix hover highlight: the colour is derived from the
-        // LookAndFeel (single source of truth, ADR-011); knobs and page-family
+        // LookAndFeel (single source of truth, ADR-JUC-011); knobs and page-family
         // selectors forward their hover. [RQ-GUI-018]
         _hover.onEnter = [this](juce::Component* component) { onControlHovered(component); };
         _hover.onExit = [this]
@@ -324,7 +324,7 @@ namespace xplorer::app
                 return nullptr;
             }())
         {
-            // Owner-arbitrated deviation (ADR-007): the reference bounds
+            // Owner-arbitrated deviation (ADR-JUC-007): the reference bounds
             // (267x75) only fit 4 glyph rows; grow to 5 rows (82 px) upward —
             // the area above is free artwork, the shortcut buttons below
             // (y=155) stay clear — so the MIDI CC line is always visible.
@@ -444,7 +444,7 @@ namespace xplorer::app
         _litUntil[index] = juce::Time::currentTimeMillis() + HOLD_MILLISECONDS;
         if (!isTimerRunning())
         {
-            startTimer(TICK_MILLISECONDS); // decay tick, only while lit [ADR-008]
+            startTimer(TICK_MILLISECONDS); // decay tick, only while lit [ADR-JUC-008]
         }
         repaint();
     }

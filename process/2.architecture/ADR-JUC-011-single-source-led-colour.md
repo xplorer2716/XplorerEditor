@@ -1,4 +1,4 @@
-# ADR-011: Single Runtime Source of Truth for the Knob LED Colour
+# ADR-JUC-011: Single Runtime Source of Truth for the Knob LED Colour
 
 ## Status
 Accepted (owner, 2026-07-13). Implemented: `XplorerLookAndFeel::ledColour()`

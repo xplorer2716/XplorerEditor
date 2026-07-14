@@ -1,5 +1,5 @@
 # xpl_app_core: UI-framework-free application logic (control table, binding
-# registry, page-family logic) — headless-testable. [ADR-006]
+# registry, page-family logic) — headless-testable. [ADR-JUC-006]
 add_library(xpl_app_core STATIC
     src/ControlTable.cpp
     src/ParameterBindingRegistry.cpp
