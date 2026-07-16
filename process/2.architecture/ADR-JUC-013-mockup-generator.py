@@ -102,17 +102,18 @@ svg.append(stub(82, 84) + stub(170, 84))
 svg.append(caption(82, 137, "FREQUENCY") + caption(170, 137, "DETUNE") + caption(259, 137, "PULSE WIDTH") + caption(431, 137, "VOLUME"))
 # VCO1 VCA out -> straight into the VCF left edge
 svg.append(line(458, 58, 525, 58))
-# left FREQ routing bus (y=180), terminated into the DESTINATION riser
+# FM modulation buses (both at y=180, same height): left branch ends on the
+# VCO1 FREQUENCY stub, right branch ends on the VCF FREQ stub — the FM
+# modulates the frequencies, it does not enter the VCF block itself.
 svg.append(line(40, 88, 82, 88) + line(40, 88, 40, 180) + line(40, 180, 284, 180))
-# DESTINATION -> up to the VCO1 bus (y=180)  [owner point 1a]
+# DESTINATION -> up to the VCO1 bus  [owner v2 point 1a]
 svg.append(line(276, 220, 284, 220) + line(284, 220, 284, 180))
-# DESTINATION -> up to the VCF bus (y=182) running right, hopping over x=499,
-# then rising at x=513 into the VCF second entry  [owner point 1b]
-svg.append(line(276, 230, 289, 230) + line(289, 230, 289, 182))
-svg.append(line(289, 182, 492, 182))
-svg.append(f'<path d="M492 182 A 7 7 0 0 1 506 182" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
-svg.append(line(506, 182, 513, 182) + line(513, 182, 513, 70))
-svg.append(f'<path d="M513 70 Q513 58 523 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
+# DESTINATION -> up to the VCF bus running right at the same y, hopping over
+# the x=499 vertical, rising at x=513, then onto the VCF FREQ stub (y=82).
+svg.append(line(276, 230, 289, 230) + line(289, 230, 289, 180))
+svg.append(line(289, 180, 492, 180))
+svg.append(f'<path d="M492 180 A 7 7 0 0 1 506 180" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
+svg.append(line(506, 180, 513, 180) + line(513, 180, 513, 82) + line(513, 82, 541, 82))
 
 # --- FM / VCO2 group
 svg.append(box(51, 210, 102, 36) + T(102, 233, "FM VCA", 13.5, "bold", TITLE, "middle"))
@@ -178,7 +179,10 @@ svg.append(box(525, 242, 267, 26) + T(658, 260, "ENVELOPE GENERATOR", 13.5, "bol
 svg.append(box(804, 242, 63, 26) + T(835, 260, "VCA", 13, "bold", TITLE, "middle"))
 svg.append(line(792, 255, 804, 255))
 svg.append(outlab(867, 255, "ENV", "OUT"))
-svg.append(line(514, 255, 525, 255) + line(514, 255, 514, 351) + smalllab(508, 363, "TRIGGER", "end") + smalllab(508, 373, "IN", "end"))
+# TRIGGER IN: enters the ENVELOPE block and connects down into the trigger
+# frame below, as the reference  [owner v3 point 3]
+svg.append(line(514, 255, 525, 255) + line(514, 255, 514, 351) + line(514, 351, 524, 351)
+           + smalllab(508, 363, "TRIGGER", "end") + smalllab(508, 373, "IN", "end"))
 for cx in [541, 591, 640, 690, 749, 834]:
     svg.append(stub(cx, 268))
 svg.append(caption(541, 320, "DELAY") + caption(591, 320, "ATTACK") + caption(640, 320, "DECAY") + caption(690, 320, "SUSTAIN") + caption(749, 320, "RELEASE") + caption(834, 320, "VOLUME"))
@@ -198,7 +202,8 @@ svg.append(section(527, 597, "LFO X", 370))
 # --- RAMP
 svg.append(box(524, 646, 266, 26) + T(656, 664, "RAMP", 14, "bold", TITLE, "middle"))
 svg.append(outlab(790, 659, "RAMP", "OUT"))
-svg.append(line(514, 659, 524, 659) + line(514, 659, 514, 758) + smalllab(508, 767, "TRIGGER", "end") + smalllab(508, 777, "IN", "end"))
+svg.append(line(514, 659, 524, 659) + line(514, 659, 514, 758) + line(514, 758, 524, 758)
+           + smalllab(508, 767, "TRIGGER", "end") + smalllab(508, 777, "IN", "end"))
 svg.append(stub(657, 672))
 svg.append(caption(657, 726, "RATE"))
 svg.append(box(524, 734, 374, 41))
