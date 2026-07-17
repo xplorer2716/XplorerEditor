@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Regenerates juce/app/core/src/GeneratedControlTable.inc and the main
-background image from the reference WinForms sources. Run from the repo root.
-[TASK-JUC-060, RQ-GUI-001, RQ-GUI-007]
+"""Regenerates juce/app/core/src/GeneratedControlTable.inc from the reference
+WinForms sources. Run from the repo root.
+[TASK-JUC-060, RQ-GUI-001]
 
-Inputs : Xplorer/View/MainForm.resx      (geometry, types, background bitmap)
+Inputs : Xplorer/View/MainForm.resx      (geometry, types)
          Xplorer/View/MainForm.Designer.cs (control types fallback, tags)
 Outputs: juce/app/core/src/GeneratedControlTable.inc
-         juce/app/assets/main-background.<ext>
+
+The reference background bitmap is no longer extracted: the JUCE port draws
+the background vectorially (BackgroundRenderer, ADR-JUC-013).
 """
-import base64
 import re
 import xml.etree.ElementTree as ET
 from collections import Counter
@@ -16,8 +17,16 @@ from collections import Counter
 RESX = 'Xplorer/View/MainForm.resx'
 DESIGNER = 'Xplorer/View/MainForm.Designer.cs'
 TABLE_OUT = 'juce/app/core/src/GeneratedControlTable.inc'
-ASSET_DIR = 'juce/app/assets'
 SKIPPED_KINDS = ('MenuStrip', 'ToolStripMenuItem', 'ToolStripSeparator')
+
+# The reference form reserved a 32 px band at the top of the client area for
+# the WinForms menustrip (14 px dark strip + 18 px empty plate; first content
+# row, the VCO1 frame, sits at y=32). The JUCE port hosts its menu bar outside
+# the canvas, so the band is cropped: every control shifts up by this amount
+# and the logical canvas height becomes 813 - 32 = 781. Keep in sync with
+# LOGICAL_CANVAS_HEIGHT (ControlTable.hpp) and the background geometry
+# (BackgroundRenderer.cpp / ADR-JUC-013-mockup-generator.py). [ADR-JUC-013]
+CANVAS_TOP_CROP = 32
 
 
 def main() -> None:
@@ -27,15 +36,7 @@ def main() -> None:
         v = d.find('value')
         data[d.get('name')] = (v.text if v is not None else None, d.get('type') or '')
 
-    # background bitmap (bytearray.base64 = raw image bytes)
-    raw = base64.b64decode(data['$this.BackgroundImage'][0])
-    ext = ('png' if raw.startswith(b'\x89PNG') else
-           'jpg' if raw[:2] == b'\xff\xd8' else
-           'bmp' if raw[:2] == b'BM' else
-           'gif' if raw[:3] == b'GIF' else 'bin')
-    with open(f'{ASSET_DIR}/main-background.{ext}', 'wb') as f:
-        f.write(raw)
-    print(f'background: {ext}, {len(raw)} bytes, client size = {data["$this.ClientSize"][0]}')
+    print(f'client size = {data["$this.ClientSize"][0]}, top crop = {CANVAS_TOP_CROP}')
 
     # geometry from resx (the form is localizable)
     geo = {}
@@ -86,7 +87,8 @@ def main() -> None:
         if any(s in kind for s in SKIPPED_KINDS):
             continue
         (x, y), (w, h) = absolute_loc(ctrl), g.get('size', (0, 0))
-        rows.append((ctrl, kind, x, y, w, h, tags.get(ctrl, ''), labels.get(ctrl, '')))
+        rows.append((ctrl, kind, x, y - CANVAS_TOP_CROP, w, h,
+                     tags.get(ctrl, ''), labels.get(ctrl, '')))
 
     def cpp_escape(text):
         return text.replace('\\', '\\\\').replace('"', '\\"')
@@ -95,7 +97,8 @@ def main() -> None:
         f.write('// Mechanically extracted from Xplorer/View/MainForm.resx (geometry,\n'
                 '// captions) and MainForm.Designer.cs (types, tags). Do not edit by\n'
                 '// hand; regenerate with juce/app/core/tools/extract_control_table.py.\n'
-                '// Logical canvas coordinates. [RQ-GUI-001]\n')
+                '// Logical canvas coordinates (reference y minus the cropped 32 px\n'
+                '// menustrip band, see CANVAS_TOP_CROP). [RQ-GUI-001, ADR-JUC-013]\n')
         for ctrl, kind, x, y, w, h, tag, label in rows:
             f.write(f'    {{"{ctrl}", ControlKind::{kind}, {x}, {y}, {w}, {h}, '
                     f'"{tag}", "{cpp_escape(label)}"}},\n')

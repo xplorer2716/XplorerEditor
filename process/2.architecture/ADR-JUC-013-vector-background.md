@@ -93,6 +93,18 @@ The splash screen (`Main.cpp`), which previously reused `main-background.jpg`,
 now renders `paintVectorBackground` once into an offscreen `juce::Image`, so
 the bitmap could be dropped from `BinaryData` entirely.
 
+Owner-review refinements (TASK-JUC-081..083): signal lines are stroked with
+rounded joints/caps so 90° junctions match the rounded block frames; the
+brushed-metal streaks were dropped in favour of the plain gradient (they read
+as unwanted horizontal lines); and the 32 px top band the reference bitmap
+reserved for the WinForms menustrip was cropped outright — the JUCE menu bar
+lives outside the canvas, so `LOGICAL_CANVAS_HEIGHT` is now 781 and
+`extract_control_table.py` (`CANVAS_TOP_CROP`) shifts every control up by 32,
+while the painter and the SVG generator keep the diagram geometry in reference
+coordinates and translate it up by the same amount. The SVG prototype
+generator is kept in lock-step with the painter so it remains a faithful
+prototyping tool.
+
 ## Consequences
 - Crisp diagram at any window size; no interpolation artefacts.
 - −427 KB of embedded asset; colours/geometry become reviewable, testable

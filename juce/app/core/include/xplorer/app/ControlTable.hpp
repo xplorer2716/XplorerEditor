@@ -10,7 +10,11 @@
 namespace xplorer::app
 {
     inline constexpr int LOGICAL_CANVAS_WIDTH = 1260;
-    inline constexpr int LOGICAL_CANVAS_HEIGHT = 813;
+    /// Reference client height (813) minus the 32 px top band the WinForms
+    /// form reserved for its menustrip — the JUCE menu bar lives outside the
+    /// canvas, so the band is cropped (extract_control_table.py
+    /// CANVAS_TOP_CROP shifts every control up accordingly). [ADR-JUC-013]
+    inline constexpr int LOGICAL_CANVAS_HEIGHT = 781;
 
     /// Reference control types (WinForms / MidiApp.UIControls vocabulary,
     /// kept verbatim so the table stays diffable against the reference).

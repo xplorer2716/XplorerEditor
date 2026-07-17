@@ -5,7 +5,15 @@ main-background.jpg). Geometry measured from the reference bitmap
 primitives map 1:1 to juce::Graphics calls."""
 import random
 
-W, H = 1260, 813
+# Reference client area was 1260x813 with a 32 px band at the top reserved
+# for the WinForms menustrip (14 px dark strip + 18 px empty plate; the first
+# content row, the VCO1 frame, sits at reference y=32). The JUCE port hosts
+# its menu bar outside the canvas, so the band is cropped: canvas height is
+# 813 - 32 = 781 and all diagram geometry (kept in reference coordinates
+# below) is translated up by CROP. Keep in sync with extract_control_table.py
+# CANVAS_TOP_CROP and BackgroundRenderer.cpp. [ADR-JUC-013]
+CROP = 32
+W, H = 1260, 813 - CROP
 random.seed(42)
 
 FRAME = "#B7BDD0"      # block frame / line colour
@@ -42,9 +50,6 @@ svg.append('''<defs>
 # Plain plate with a gentle vertical luminance gradient only (very light
 # shading) -- no brushed streaks, which read as unwanted horizontal lines.
 svg.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#metal)"/>')
-# top dark strip (menu shadow)
-svg.append(f'<rect x="0" y="0" width="{W}" height="14" fill="#17181C"/>')
-svg.append(f'<rect x="0" y="14" width="{W}" height="2" fill="#000000" fill-opacity="0.25"/>')
 
 # ---------------------------------------------------------------- wood rails
 def wood(x):
@@ -59,6 +64,10 @@ def wood(x):
     return "".join(parts)
 svg.append(wood(0))
 svg.append(wood(W - 28))
+
+# Diagram geometry below stays in reference coordinates; translate the whole
+# group up over the cropped menustrip band (matches the JUCE painter).
+svg.append(f'<g transform="translate(0,-{CROP})">')
 
 # ---------------------------------------------------------------- helpers
 def box(x, y, w, h):
@@ -207,6 +216,7 @@ svg.append(section(527, 799, "RAMP X", 370))
 # ================================================================ RIGHT
 svg.append(section(958, 799, "MODULATION MATRIX", 268))
 
+svg.append('</g>')
 svg.append('</svg>')
 open('/tmp/claude-0/-home-user-XplorerEditor/4ca34552-3b89-5447-9e4f-4b96a4375123/scratchpad/vector-bg.svg', 'w').write("\n".join(svg))
 print("SVG written")

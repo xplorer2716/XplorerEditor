@@ -21,7 +21,6 @@ namespace xplorer::app
         const juce::Colour PLATE_HI{0xFF3B3C44};
         const juce::Colour PLATE_MID{0xFF36363E};
         const juce::Colour PLATE_BOT{0xFF303138};
-        const juce::Colour TOP_STRIP{0xFF17181C};  // menu-shadow strip
         const juce::Colour WOOD_0{0xFF4A1D08};     // side-rail wood gradient stops
         const juce::Colour WOOD_1{0xFF7C3615};
         const juce::Colour WOOD_2{0xFF8A431C};
@@ -37,7 +36,13 @@ namespace xplorer::app
         constexpr float CORNER = 2.0F;           // block corner radius
         constexpr int STUB_LENGTH = 12;          // default control-tick length
         constexpr int RAIL_WIDTH = 28;           // wood side rail
-        constexpr int TOP_STRIP_HEIGHT = 14;
+        // The reference bitmap reserved a 32 px band at the top for the
+        // WinForms menustrip; the JUCE menu bar lives outside the canvas, so
+        // the band is cropped. Diagram geometry below keeps the reference /
+        // mockup coordinates and is translated up by this amount, matching
+        // the control table shift (extract_control_table.py CANVAS_TOP_CROP).
+        // [ADR-JUC-013]
+        constexpr float CANVAS_TOP_CROP = 32.0F;
 
         // ---- shared font sizes ----------------------------------------------
         constexpr float FS_SECTION = 15.0F;      // section titles
@@ -83,12 +88,6 @@ namespace xplorer::app
         g.setGradientFill(metal);
         g.fillRect(0, 0, W, H);
 
-        // top dark strip (menu shadow) + a thin black seam under it
-        g.setColour(TOP_STRIP);
-        g.fillRect(0, 0, W, TOP_STRIP_HEIGHT);
-        g.setColour(juce::Colours::black.withAlpha(0.25F));
-        g.fillRect(0, TOP_STRIP_HEIGHT, W, 2);
-
         // ---- wood side rails ------------------------------------------------
         const auto paintWood = [&](int x)
         {
@@ -118,6 +117,12 @@ namespace xplorer::app
         };
         paintWood(0);
         paintWood(W - RAIL_WIDTH);
+
+        // Everything below is diagram geometry in reference/mockup coordinates
+        // (ADR-JUC-013-mockup.svg); translate it up over the cropped band.
+        // Scoped so the caller's Graphics state is left untouched.
+        const juce::Graphics::ScopedSaveState diagramState{g};
+        g.addTransform(juce::AffineTransform::translation(0.0F, -CANVAS_TOP_CROP));
 
         // ---- diagram helpers ------------------------------------------------
         // Rounded joints + end caps so perpendicular segments meet with the
