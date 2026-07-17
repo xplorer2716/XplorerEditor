@@ -24,10 +24,14 @@ Owner review of the M2/M3 build flagged the rotary knobs (`BoundKnob` +
 
 ## Decision
 1. **LED-ring-only rendering.** `drawRotarySlider` drops the centre pointer
-   path; it paints the knob body, the background ring track, and the coloured
-   value arc from start to the current position. Deviation from the reference
-   Standard style (which keeps a tick) — a deliberate owner simplification
-   (RQ-NFR-009 allows look changes; recorded here per sequencing rule 3).
+   path; it paints **no filled knob body** — the interior is left transparent
+   so the (non-opaque) `Slider`'s parent, i.e. the vector panel background with
+   its shading, shows through the ring — plus the background ring track and the
+   coloured value arc from start to the current position. Deviation from the
+   reference Standard style (which keeps a tick and a body) — a deliberate
+   owner simplification (RQ-NFR-009 allows look changes; recorded here per
+   sequencing rule 3). *(Owner review 2026-07: the earlier dark-filled body
+   read as an ugly black disc; removed so only the crown remains.)*
 2. **Hover-brightened ring.** `drawRotarySlider` receives the `juce::Slider&`;
    when `slider.isMouseOverOrDragging(true)` it strokes the arc with
    `_ledColour.brighter(f)` instead of `_ledColour` — the JUCE equivalent of the

@@ -21,9 +21,9 @@ namespace xplorer::app
         const auto centre = bounds.getCentre();
         const auto angle = startAngle + sliderPos * (endAngle - startAngle);
 
-        // Knob body.
-        g.setColour(juce::Colour::fromRGB(24, 28, 34));
-        g.fillEllipse(centre.x - radius, centre.y - radius, radius * 2.0F, radius * 2.0F);
+        // No filled knob body: the interior is left transparent so the panel
+        // background (with its shading) shows through — only the ring/crown is
+        // drawn. [RQ-GUI-031, ADR-JUC-009]
 
         // Unlit ring track (full sweep), so the coloured arc reads against it.
         const auto ringRadius = radius - 1.0F;
