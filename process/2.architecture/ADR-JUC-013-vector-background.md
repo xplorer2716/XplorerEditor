@@ -93,17 +93,22 @@ The splash screen (`Main.cpp`), which previously reused `main-background.jpg`,
 now renders `paintVectorBackground` once into an offscreen `juce::Image`, so
 the bitmap could be dropped from `BinaryData` entirely.
 
-Owner-review refinements (TASK-JUC-081..083): signal lines are stroked with
+Owner-review refinements (TASK-JUC-081..085): signal lines are stroked with
 rounded joints/caps so 90° junctions match the rounded block frames; the
 brushed-metal streaks were dropped in favour of the plain gradient (they read
-as unwanted horizontal lines); and the 32 px top band the reference bitmap
-reserved for the WinForms menustrip was cropped outright — the JUCE menu bar
-lives outside the canvas, so `LOGICAL_CANVAS_HEIGHT` is now 781 and
-`extract_control_table.py` (`CANVAS_TOP_CROP`) shifts every control up by 32,
+as unwanted horizontal lines); the 32 px top band the reference bitmap
+reserved for the WinForms menustrip was cropped — the JUCE menu bar lives
+outside the canvas — but a 5 px black margin is kept at the top **and** a
+matching one added at the bottom (so a full-screen window clears the menu bar
+and the OS taskbar), giving `CANVAS_TOP_CROP = 32 − 5 = 27`,
+`LOGICAL_CANVAS_HEIGHT = 786`, and a `CANVAS_PADDING = 5` inset panel;
+`extract_control_table.py` (`CANVAS_TOP_CROP`) shifts every control up by 27
 while the painter and the SVG generator keep the diagram geometry in reference
-coordinates and translate it up by the same amount. The SVG prototype
-generator is kept in lock-step with the painter so it remains a faithful
-prototyping tool.
+coordinates and translate it up by the same amount; and the section-title bars
+are painted as flat rects with a **left-to-right** blue luminance gradient
+(bright at the label end) instead of the earlier vertical gradient, which read
+as an over-rounded tube. The SVG prototype generator is kept in lock-step with
+the painter so it remains a faithful prototyping tool.
 
 ## Consequences
 - Crisp diagram at any window size; no interpolation artefacts.

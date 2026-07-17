@@ -36,13 +36,18 @@ namespace xplorer::app
         constexpr float CORNER = 2.0F;           // block corner radius
         constexpr int STUB_LENGTH = 12;          // default control-tick length
         constexpr int RAIL_WIDTH = 28;           // wood side rail
+        // Black cosmetic margin above and below the panel (≈ the section-bar
+        // height), so the panel does not touch the menu bar and, in a
+        // full-screen window, sits off the OS taskbar. [RQ-GUI-037]
+        constexpr float CANVAS_PADDING = 5.0F;
         // The reference bitmap reserved a 32 px band at the top for the
         // WinForms menustrip; the JUCE menu bar lives outside the canvas, so
-        // the band is cropped. Diagram geometry below keeps the reference /
-        // mockup coordinates and is translated up by this amount, matching
-        // the control table shift (extract_control_table.py CANVAS_TOP_CROP).
-        // [ADR-JUC-013]
-        constexpr float CANVAS_TOP_CROP = 32.0F;
+        // the band is cropped — minus the top padding kept as a black margin.
+        // Diagram geometry below keeps the reference / mockup coordinates and
+        // is translated up by this amount, matching the control-table shift
+        // (extract_control_table.py CANVAS_TOP_CROP). [ADR-JUC-013]
+        constexpr float MENUSTRIP_BAND = 32.0F;
+        constexpr float CANVAS_TOP_CROP = MENUSTRIP_BAND - CANVAS_PADDING; // 27
 
         // ---- shared font sizes ----------------------------------------------
         constexpr float FS_SECTION = 15.0F;      // section titles
@@ -78,31 +83,45 @@ namespace xplorer::app
         juce::Random rng{42};
         const auto uni = [&rng](float a, float b) { return a + (b - a) * rng.nextFloat(); };
 
+        // Black top+bottom padding: the panel occupies the canvas inset by
+        // CANVAS_PADDING; the margins stay black. Self-contained (splash uses
+        // this too), so fill black first. [RQ-GUI-037]
+        g.fillAll(juce::Colours::black);
+        const float panelTop = CANVAS_PADDING;
+        const float panelH = static_cast<float>(H) - 2.0F * CANVAS_PADDING;
+        const float panelBottom = panelTop + panelH;
+
         // ---- metal plate ---------------------------------------------------
         // Plain plate with only a gentle vertical luminance gradient (very
         // light top-to-bottom shading). The former brushed streaks read as
         // unwanted horizontal lines, so they are dropped. [RQ-GUI-037]
-        juce::ColourGradient metal{PLATE_TOP, 0.0F, 0.0F, PLATE_BOT, 0.0F, static_cast<float>(H), false};
+        juce::ColourGradient metal{PLATE_TOP, 0.0F, panelTop, PLATE_BOT, 0.0F, panelBottom, false};
         metal.addColour(0.25, PLATE_HI);
         metal.addColour(0.60, PLATE_MID);
         g.setGradientFill(metal);
-        g.fillRect(0, 0, W, H);
+        g.fillRect(0.0F, panelTop, static_cast<float>(W), panelH);
 
         // ---- wood side rails ------------------------------------------------
         const auto paintWood = [&](int x)
         {
+            // Clip to the panel so grain hairlines never bleed into the black margins.
+            const juce::Graphics::ScopedSaveState woodClip{g};
+            g.reduceClipRegion(
+                juce::Rectangle<float>(static_cast<float>(x), panelTop,
+                                       static_cast<float>(RAIL_WIDTH), panelH)
+                    .getSmallestIntegerContainer());
             juce::ColourGradient wood{WOOD_0, static_cast<float>(x), 0.0F,
                                       WOOD_4, static_cast<float>(x + RAIL_WIDTH), 0.0F, false};
             wood.addColour(0.25, WOOD_1);
             wood.addColour(0.55, WOOD_2);
             wood.addColour(0.85, WOOD_3);
             g.setGradientFill(wood);
-            g.fillRect(x, 0, RAIL_WIDTH, H);
+            g.fillRect(static_cast<float>(x), panelTop, static_cast<float>(RAIL_WIDTH), panelH);
 
             for (int i = 0; i < 90; ++i) // grain
             {
                 const float gx = static_cast<float>(x) + uni(2.0F, 26.0F);
-                const float gy = uni(0.0F, static_cast<float>(H));
+                const float gy = uni(panelTop, panelBottom);
                 const float len = uni(30.0F, 160.0F);
                 const float dx = uni(-2.0F, 2.0F);
                 juce::Path grain;
@@ -112,8 +131,8 @@ namespace xplorer::app
                 g.strokePath(grain, juce::PathStrokeType{uni(0.5F, 1.6F)});
             }
             g.setColour(juce::Colours::black.withAlpha(0.45F));
-            g.fillRect(x, 0, 2, H);
-            g.fillRect(x + 26, 0, 2, H);
+            g.fillRect(static_cast<float>(x), panelTop, 2.0F, panelH);
+            g.fillRect(static_cast<float>(x + 26), panelTop, 2.0F, panelH);
         };
         paintWood(0);
         paintWood(W - RAIL_WIDTH);
@@ -162,8 +181,11 @@ namespace xplorer::app
         const auto section = [&](int x, int y, const juce::String& s, int barWidth = SECTION_BAR_WIDTH)
         {
             text(x, y - SECTION_TITLE_RISE, s, FS_SECTION, true, TITLE, juce::Justification::left);
+            // Flat solid bar with a left-to-right luminance gradient (bright at
+            // the label end, fading right) — no vertical shading, which read as
+            // an over-rounded tube. Same blue palette. [RQ-GUI-037]
             juce::ColourGradient bar{BAR_TOP, static_cast<float>(x), static_cast<float>(y),
-                                     BAR_BOT, static_cast<float>(x), y + SECTION_BAR_HEIGHT, false};
+                                     BAR_BOT, static_cast<float>(x + barWidth), static_cast<float>(y), false};
             bar.addColour(0.5, BAR_MID);
             g.setGradientFill(bar);
             g.fillRect(static_cast<float>(x), static_cast<float>(y),

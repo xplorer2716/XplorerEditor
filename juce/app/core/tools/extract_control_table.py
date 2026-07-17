@@ -22,11 +22,16 @@ SKIPPED_KINDS = ('MenuStrip', 'ToolStripMenuItem', 'ToolStripSeparator')
 # The reference form reserved a 32 px band at the top of the client area for
 # the WinForms menustrip (14 px dark strip + 18 px empty plate; first content
 # row, the VCO1 frame, sits at y=32). The JUCE port hosts its menu bar outside
-# the canvas, so the band is cropped: every control shifts up by this amount
-# and the logical canvas height becomes 813 - 32 = 781. Keep in sync with
+# the canvas, so the band is cropped — except a small black top margin kept
+# for cosmetics (TOP_PADDING, ≈ the section-bar height). Every control shifts
+# up by CANVAS_TOP_CROP and the logical canvas height becomes 813 - 27 = 786
+# (a matching TOP_PADDING black margin sits at the bottom). Keep in sync with
 # LOGICAL_CANVAS_HEIGHT (ControlTable.hpp) and the background geometry
-# (BackgroundRenderer.cpp / ADR-JUC-013-mockup-generator.py). [ADR-JUC-013]
-CANVAS_TOP_CROP = 32
+# (BackgroundRenderer.cpp CANVAS_PADDING / ADR-JUC-013-mockup-generator.py).
+# [ADR-JUC-013]
+MENUSTRIP_BAND = 32
+TOP_PADDING = 5
+CANVAS_TOP_CROP = MENUSTRIP_BAND - TOP_PADDING  # 27
 
 
 def main() -> None:

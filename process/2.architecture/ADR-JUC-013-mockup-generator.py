@@ -8,11 +8,15 @@ import random
 # Reference client area was 1260x813 with a 32 px band at the top reserved
 # for the WinForms menustrip (14 px dark strip + 18 px empty plate; the first
 # content row, the VCO1 frame, sits at reference y=32). The JUCE port hosts
-# its menu bar outside the canvas, so the band is cropped: canvas height is
-# 813 - 32 = 781 and all diagram geometry (kept in reference coordinates
+# its menu bar outside the canvas, so the band is cropped — except a small
+# black top margin kept for cosmetics (PADDING, ~ the section-bar height); a
+# matching PADDING black margin sits at the bottom. Canvas height is
+# 813 - 27 = 786 and all diagram geometry (kept in reference coordinates
 # below) is translated up by CROP. Keep in sync with extract_control_table.py
-# CANVAS_TOP_CROP and BackgroundRenderer.cpp. [ADR-JUC-013]
-CROP = 32
+# CANVAS_TOP_CROP and BackgroundRenderer.cpp CANVAS_PADDING. [ADR-JUC-013]
+MENUSTRIP_BAND = 32
+PADDING = 5                    # black top+bottom margin
+CROP = MENUSTRIP_BAND - PADDING  # 27
 W, H = 1260, 813 - CROP
 random.seed(42)
 
@@ -39,29 +43,33 @@ svg.append('''<defs>
     <stop offset="0.85" stop-color="#6B2C0F"/>
     <stop offset="1" stop-color="#38160A"/>
   </linearGradient>
-  <linearGradient id="bluebar" x1="0" y1="0" x2="0" y2="1">
+  <linearGradient id="bluebar" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0" stop-color="#3050B8"/>
     <stop offset="0.5" stop-color="#24388A"/>
     <stop offset="1" stop-color="#1A2A66"/>
   </linearGradient>
 </defs>''')
 
-# ---------------------------------------------------------------- metal plate
+# ---------------------------------------------------------------- padding + plate
+# Black top+bottom margins (PADDING): the panel is inset vertically; the
+# margins stay black so the panel clears the menu bar / OS taskbar.
+PH = H - 2 * PADDING  # panel height
+svg.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="#000000"/>')
 # Plain plate with a gentle vertical luminance gradient only (very light
 # shading) -- no brushed streaks, which read as unwanted horizontal lines.
-svg.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#metal)"/>')
+svg.append(f'<rect x="0" y="{PADDING}" width="{W}" height="{PH}" fill="url(#metal)"/>')
 
 # ---------------------------------------------------------------- wood rails
 def wood(x):
-    parts = [f'<rect x="{x}" y="0" width="28" height="{H}" fill="url(#wood)"/>']
-    for _ in range(90):  # grain
+    parts = [f'<rect x="{x}" y="{PADDING}" width="28" height="{PH}" fill="url(#wood)"/>']
+    for _ in range(90):  # grain (clipped to the panel band)
         gx = x + random.uniform(2, 26)
-        gy = random.uniform(0, H)
+        gy = random.uniform(PADDING, PADDING + PH)
         ln = random.uniform(30, 160)
         parts.append(f'<path d="M{gx:.1f} {gy:.0f} q {random.uniform(-2,2):.1f} {ln/2:.0f} 0 {ln:.0f}" stroke="#2E1206" stroke-opacity="{random.uniform(0.15,0.4):.2f}" stroke-width="{random.uniform(0.5,1.6):.1f}" fill="none"/>')
-    parts.append(f'<rect x="{x}" y="0" width="2" height="{H}" fill="#000000" fill-opacity="0.45"/>')
-    parts.append(f'<rect x="{x+26}" y="0" width="2" height="{H}" fill="#000000" fill-opacity="0.45"/>')
-    return "".join(parts)
+    parts.append(f'<rect x="{x}" y="{PADDING}" width="2" height="{PH}" fill="#000000" fill-opacity="0.45"/>')
+    parts.append(f'<rect x="{x+26}" y="{PADDING}" width="2" height="{PH}" fill="#000000" fill-opacity="0.45"/>')
+    return f'<g clip-path="inset({PADDING}px 0 {PADDING}px 0)">' + "".join(parts) + '</g>'
 svg.append(wood(0))
 svg.append(wood(W - 28))
 
