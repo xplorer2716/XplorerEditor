@@ -38,17 +38,10 @@ svg.append('''<defs>
   </linearGradient>
 </defs>''')
 
-# ---------------------------------------------------------------- metal + brushed streaks
+# ---------------------------------------------------------------- metal plate
+# Plain plate with a gentle vertical luminance gradient only (very light
+# shading) -- no brushed streaks, which read as unwanted horizontal lines.
 svg.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#metal)"/>')
-streaks = []
-for _ in range(220):
-    y = random.uniform(0, H)
-    x0 = random.uniform(-100, W)
-    ln = random.uniform(120, 700)
-    op = random.uniform(0.015, 0.05)
-    col = "#FFFFFF" if random.random() < 0.5 else "#000000"
-    streaks.append(f'<line x1="{x0:.0f}" y1="{y:.1f}" x2="{x0+ln:.0f}" y2="{y:.1f}" stroke="{col}" stroke-opacity="{op:.3f}" stroke-width="1"/>')
-svg.append("".join(streaks))
 # top dark strip (menu shadow)
 svg.append(f'<rect x="0" y="0" width="{W}" height="14" fill="#17181C"/>')
 svg.append(f'<rect x="0" y="14" width="{W}" height="2" fill="#000000" fill-opacity="0.25"/>')
@@ -71,7 +64,9 @@ svg.append(wood(W - 28))
 def box(x, y, w, h):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>'
 def line(x1, y1, x2, y2):
-    return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{FRAME}" stroke-width="{LW}" stroke-linecap="square"/>'
+    # round caps so perpendicular segments join with a soft rounded corner
+    # matching the block frames (JUCE PathStrokeType curved/rounded)
+    return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{FRAME}" stroke-width="{LW}" stroke-linecap="round"/>'
 def stub(cx, y, ln=12):
     return line(cx, y, cx, y + ln)
 def T(x, y, s, size=15, w="bold", fill=TITLE, anchor="start", ls="0.5"):

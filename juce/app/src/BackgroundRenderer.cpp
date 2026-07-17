@@ -73,23 +73,15 @@ namespace xplorer::app
         juce::Random rng{42};
         const auto uni = [&rng](float a, float b) { return a + (b - a) * rng.nextFloat(); };
 
-        // ---- brushed-metal plate -------------------------------------------
+        // ---- metal plate ---------------------------------------------------
+        // Plain plate with only a gentle vertical luminance gradient (very
+        // light top-to-bottom shading). The former brushed streaks read as
+        // unwanted horizontal lines, so they are dropped. [RQ-GUI-037]
         juce::ColourGradient metal{PLATE_TOP, 0.0F, 0.0F, PLATE_BOT, 0.0F, static_cast<float>(H), false};
         metal.addColour(0.25, PLATE_HI);
         metal.addColour(0.60, PLATE_MID);
         g.setGradientFill(metal);
         g.fillRect(0, 0, W, H);
-
-        for (int i = 0; i < 220; ++i)
-        {
-            const float y = uni(0.0F, static_cast<float>(H));
-            const float x0 = uni(-100.0F, static_cast<float>(W));
-            const float len = uni(120.0F, 700.0F);
-            const float op = uni(0.015F, 0.05F);
-            const juce::Colour streak = rng.nextFloat() < 0.5F ? juce::Colours::white : juce::Colours::black;
-            g.setColour(streak.withAlpha(op));
-            g.drawLine(x0, y, x0 + len, y, 1.0F);
-        }
 
         // top dark strip (menu shadow) + a thin black seam under it
         g.setColour(TOP_STRIP);
