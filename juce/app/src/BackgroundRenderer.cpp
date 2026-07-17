@@ -128,6 +128,11 @@ namespace xplorer::app
         paintWood(W - RAIL_WIDTH);
 
         // ---- diagram helpers ------------------------------------------------
+        // Rounded joints + end caps so perpendicular segments meet with the
+        // same softly-rounded corner as the block frames (drawRoundedRectangle),
+        // instead of the notched butt-cap junction drawLine leaves. [RQ-GUI-037]
+        const juce::PathStrokeType frameStroke{
+            LINE_WIDTH, juce::PathStrokeType::curved, juce::PathStrokeType::rounded};
         const auto box = [&](float x, float y, float w, float h)
         {
             g.setColour(FRAME);
@@ -136,7 +141,10 @@ namespace xplorer::app
         const auto line = [&](float x1, float y1, float x2, float y2)
         {
             g.setColour(FRAME);
-            g.drawLine(x1, y1, x2, y2, LINE_WIDTH);
+            juce::Path segment;
+            segment.startNewSubPath(x1, y1);
+            segment.lineTo(x2, y2);
+            g.strokePath(segment, frameStroke);
         };
         const auto stub = [&](int cx, int y, int len = STUB_LENGTH)
         {
@@ -225,7 +233,7 @@ namespace xplorer::app
             hop.startNewSubPath(492.0F, 180.0F);
             hop.quadraticTo(499.0F, 166.0F, 506.0F, 180.0F);
             g.setColour(FRAME);
-            g.strokePath(hop, juce::PathStrokeType{LINE_WIDTH});
+            g.strokePath(hop, frameStroke);
         }
         line(506, 180, 513, 180);
         line(513, 180, 513, 82);
@@ -253,7 +261,7 @@ namespace xplorer::app
             curve.startNewSubPath(499.0F, 70.0F);
             curve.quadraticTo(499.0F, 58.0F, 509.0F, 58.0F);
             g.setColour(FRAME);
-            g.strokePath(curve, juce::PathStrokeType{LINE_WIDTH});
+            g.strokePath(curve, frameStroke);
         }
         caption(431, 314, "VOLUME");
         box(51, 310, 147, 52);
