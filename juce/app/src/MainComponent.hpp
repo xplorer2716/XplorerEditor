@@ -1,8 +1,8 @@
 #pragma once
 
 // Main window content: logical canvas scaled uniformly into the window, the
-// reference background bitmap, and the bound controls placed from the
-// extracted table. [RQ-GUI-001, RQ-GUI-005, RQ-GUI-007, ADR-JUC-006]
+// vector-drawn background (BackgroundRenderer), and the bound controls placed
+// from the extracted table. [RQ-GUI-001, RQ-GUI-005, RQ-GUI-037, ADR-JUC-006, ADR-JUC-013]
 
 #include "BoundControls.hpp"
 #include "DisplayPanel.hpp"
@@ -62,8 +62,6 @@ namespace xplorer::app
         void restoreAllData();
         void getAllSinglePatchesFromSynth();
         void onControlHovered(juce::Component* component); // matrix highlight [RQ-GUI-018]
-
-        juce::Image _background;
 
         // Forwards knob/selector hover to the matrix highlight. A dedicated
         // MouseListener (not MainComponent itself) avoids clashing with the

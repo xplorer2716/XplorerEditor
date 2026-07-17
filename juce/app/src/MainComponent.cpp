@@ -1,5 +1,6 @@
 #include "MainComponent.hpp"
 
+#include "BackgroundRenderer.hpp"
 #include "BinaryData.h"
 #include "Dialogs.hpp"
 #include "SettingsDialog.hpp"
@@ -43,8 +44,6 @@ namespace xplorer::app
 
     MainComponent::MainComponent()
     {
-        _background = juce::ImageCache::getFromMemory(BinaryData::mainbackground_jpg,
-                                                      BinaryData::mainbackground_jpgSize);
         _dispatcher = std::make_shared<JuceEventDispatcher>();
         _settingsService = std::make_unique<settings::XmlSettingsService>(
             settingsDirectory().toStdString());
@@ -492,10 +491,7 @@ namespace xplorer::app
     void MainComponent::paint(juce::Graphics& g)
     {
         g.fillAll(juce::Colours::black);
-        if (_background.isValid())
-        {
-            g.drawImage(_background, getLocalBounds().toFloat()); // [RQ-GUI-007]
-        }
+        paintVectorBackground(g); // [RQ-GUI-037, ADR-JUC-013]
     }
 
     // --- menu bar [RQ-GUI-008] ---------------------------------------------

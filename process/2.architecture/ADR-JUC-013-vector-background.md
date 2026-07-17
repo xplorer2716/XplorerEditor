@@ -1,7 +1,7 @@
 # ADR-JUC-013: Vector Background — Replace the Stretched Bitmap by JUCE-Drawn Vector Graphics
 
 ## Status
-Proposed (mockup delivered for owner validation — no code change yet)
+Accepted (mockup owner-validated; implemented in TASK-JUC-080)
 
 ## Context
 The main window background is a 1260×813 JPEG (`main-background.jpg`, 427 KB in
@@ -67,6 +67,31 @@ specification; drop the JPEG once validated.
 4. **Cut-over**: after owner validation on Windows, the vector background
    replaces the bitmap outright; `main-background.jpg` leaves BinaryData
    (−427 KB). The VFD stays bitmap (ADR-JUC-007) pending a separate decision.
+
+## Implementation Notes (as built — TASK-JUC-080)
+Two deviations from the decision as originally worded, taken deliberately and
+recorded here for traceability:
+
+1. **Geometry lives in the app painter, not a `BackgroundSpec` in `xpl_app_core`.**
+   The owner-validated mockup (`ADR-JUC-013-mockup.svg` /
+   `ADR-JUC-013-mockup-generator.py`) is the single validated source of truth
+   for the geometry, and it is transcribed 1:1 into
+   `juce/app/src/BackgroundRenderer.cpp` (`paintVectorBackground`). Splitting
+   the same numbers into declarative core tables would duplicate the validated
+   coordinates without adding value while `session.unit_tests = false` (no
+   headless geometry test is run this session). If headless geometry tests are
+   later wanted, extracting the tables into `xpl_app_core` is a mechanical
+   follow-up. Palette, line widths, corner radius, stub length, font sizes and
+   section-bar dimensions are named constants (no duplicated literals).
+2. **Stub anchors are the validated mockup coordinates, not derived live from
+   the `ControlTable`.** The mockup coordinates were measured to sit on the
+   knob centres and the running app confirms the controls overlay their stubs
+   exactly; deriving them at paint time from the control table was not needed
+   to hold that alignment.
+
+The splash screen (`Main.cpp`), which previously reused `main-background.jpg`,
+now renders `paintVectorBackground` once into an offscreen `juce::Image`, so
+the bitmap could be dropped from `BinaryData` entirely.
 
 ## Consequences
 - Crisp diagram at any window size; no interpolation artefacts.

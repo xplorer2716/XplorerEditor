@@ -1,7 +1,9 @@
 // Xplorer JUCE application entry point. [RQ-GUI-005..007, RQ-NFR-008]
+#include "BackgroundRenderer.hpp"
 #include "JuceEventDispatcher.hpp"
 #include "MainComponent.hpp"
-#include "BinaryData.h"
+
+#include "xplorer/app/ControlTable.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -38,10 +40,14 @@ namespace xplorer::app
         void initialise(const juce::String&) override
         {
             // Reference splash behavior: shown while the app builds, auto-dismissed.
-            (new juce::SplashScreen("Xplorer",
-                                    juce::ImageCache::getFromMemory(BinaryData::mainbackground_jpg,
-                                                                    BinaryData::mainbackground_jpgSize),
-                                    true))
+            // The splash reuses the vector background (rendered once to an image)
+            // so no bitmap asset is needed. [RQ-GUI-037, ADR-JUC-013]
+            juce::Image splash{juce::Image::RGB, LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT, false};
+            {
+                juce::Graphics splashGraphics{splash};
+                paintVectorBackground(splashGraphics);
+            }
+            (new juce::SplashScreen("Xplorer", splash, true))
                 ->deleteAfterDelay(juce::RelativeTime::seconds(2), false);
             _window = std::make_unique<MainWindow>();
         }

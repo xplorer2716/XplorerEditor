@@ -8,6 +8,7 @@ juce_add_gui_app(XplorerApp
 target_sources(XplorerApp PRIVATE
     src/Main.cpp
     src/MainComponent.cpp
+    src/BackgroundRenderer.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
     src/ModMatrixPanel.cpp
@@ -20,9 +21,9 @@ target_sources(XplorerApp PRIVATE
     src/XplorerLookAndFeel.cpp
     src/JuceEventDispatcher.cpp)
 
-# UI assets (background, button images, VFD glyph sheet) embedded as binary data
+# UI assets (button images, VFD glyph sheet) embedded as binary data. The main
+# background is now drawn vectorially, so no bitmap is embedded. [ADR-JUC-013]
 juce_add_binary_data(XplorerAssets SOURCES
-    assets/main-background.jpg
     assets/vfd-matrix.png
     assets/gotodown.gif
     assets/gotohover.gif
