@@ -98,17 +98,26 @@ rounded joints/caps so 90° junctions match the rounded block frames; the
 brushed-metal streaks were dropped in favour of the plain gradient (they read
 as unwanted horizontal lines); the 32 px top band the reference bitmap
 reserved for the WinForms menustrip was cropped — the JUCE menu bar lives
-outside the canvas — but a 5 px black margin is kept at the top **and** a
-matching one added at the bottom (so a full-screen window clears the menu bar
-and the OS taskbar), giving `CANVAS_TOP_CROP = 32 − 5 = 27`,
-`LOGICAL_CANVAS_HEIGHT = 786`, and a `CANVAS_PADDING = 5` inset panel;
-`extract_control_table.py` (`CANVAS_TOP_CROP`) shifts every control up by 27
-while the painter and the SVG generator keep the diagram geometry in reference
-coordinates and translate it up by the same amount; and the section-title bars
-are painted as flat rects with a **left-to-right** blue luminance gradient
-(bright at the label end) instead of the earlier vertical gradient, which read
-as an over-rounded tube. The SVG prototype generator is kept in lock-step with
-the painter so it remains a faithful prototyping tool.
+outside the canvas — but a 5 px cosmetic gap (`CANVAS_PADDING`) is kept at the top so the diagram
+does not butt against the menu bar, giving `CANVAS_TOP_CROP = 32 − 5 = 27` and
+`LOGICAL_CANVAS_HEIGHT = 786`; `extract_control_table.py` (`CANVAS_TOP_CROP`)
+shifts every control up by 27 while the painter and the SVG generator keep the
+diagram geometry in reference coordinates and translate it up by the same
+amount; and the section-title bars are painted as flat rects with a
+**left-to-right** blue luminance gradient (bright at the label end) instead of
+the earlier vertical gradient, which read as an over-rounded tube.
+
+A second owner-review pass (TASK-JUC-086) refined three details: (a) the
+top/bottom margins are filled with **panel material** (metal + full-height wood
+rails), not black — the earlier black bands made the menu-bar edge stand out,
+whereas continuous panel material reads as one surface; (b) every diagram stub
+tick **and** its caption is snapped to the exact control-table knob centre
+(the hand-measured mockup values had drifted up to ~7 px on the TRACK X row),
+so each rotary is centred under its tick; (c) the LAG IN / TRACK IN source
+labels are left-aligned with their selector combos (x = combo left) at a common
+9 px offset below the combo, instead of the earlier mismatched right-anchored
+positions. The SVG prototype generator is kept in lock-step with the painter so
+it remains a faithful prototyping tool.
 
 ## Consequences
 - Crisp diagram at any window size; no interpolation artefacts.

@@ -36,9 +36,9 @@ namespace xplorer::app
         constexpr float CORNER = 2.0F;           // block corner radius
         constexpr int STUB_LENGTH = 12;          // default control-tick length
         constexpr int RAIL_WIDTH = 28;           // wood side rail
-        // Black cosmetic margin above and below the panel (≈ the section-bar
-        // height), so the panel does not touch the menu bar and, in a
-        // full-screen window, sits off the OS taskbar. [RQ-GUI-037]
+        // Cosmetic top gap (≈ the section-bar height) kept as panel material
+        // (metal + wood), so the diagram does not butt against the menu bar
+        // while staying visually continuous — no black band. [RQ-GUI-037]
         constexpr float CANVAS_PADDING = 5.0F;
         // The reference bitmap reserved a 32 px band at the top for the
         // WinForms menustrip; the JUCE menu bar lives outside the canvas, so
@@ -83,45 +83,32 @@ namespace xplorer::app
         juce::Random rng{42};
         const auto uni = [&rng](float a, float b) { return a + (b - a) * rng.nextFloat(); };
 
-        // Black top+bottom padding: the panel occupies the canvas inset by
-        // CANVAS_PADDING; the margins stay black. Self-contained (splash uses
-        // this too), so fill black first. [RQ-GUI-037]
-        g.fillAll(juce::Colours::black);
-        const float panelTop = CANVAS_PADDING;
-        const float panelH = static_cast<float>(H) - 2.0F * CANVAS_PADDING;
-        const float panelBottom = panelTop + panelH;
-
         // ---- metal plate ---------------------------------------------------
-        // Plain plate with only a gentle vertical luminance gradient (very
-        // light top-to-bottom shading). The former brushed streaks read as
-        // unwanted horizontal lines, so they are dropped. [RQ-GUI-037]
-        juce::ColourGradient metal{PLATE_TOP, 0.0F, panelTop, PLATE_BOT, 0.0F, panelBottom, false};
+        // Plate + wood rails fill the whole canvas (top and bottom margins
+        // included) so the diagram's top/bottom gaps read as continuous panel
+        // material rather than a black band cutting against the menu bar; only
+        // a gentle vertical luminance gradient, no brushed streaks. [RQ-GUI-037]
+        juce::ColourGradient metal{PLATE_TOP, 0.0F, 0.0F, PLATE_BOT, 0.0F, static_cast<float>(H), false};
         metal.addColour(0.25, PLATE_HI);
         metal.addColour(0.60, PLATE_MID);
         g.setGradientFill(metal);
-        g.fillRect(0.0F, panelTop, static_cast<float>(W), panelH);
+        g.fillRect(0, 0, W, H);
 
         // ---- wood side rails ------------------------------------------------
         const auto paintWood = [&](int x)
         {
-            // Clip to the panel so grain hairlines never bleed into the black margins.
-            const juce::Graphics::ScopedSaveState woodClip{g};
-            g.reduceClipRegion(
-                juce::Rectangle<float>(static_cast<float>(x), panelTop,
-                                       static_cast<float>(RAIL_WIDTH), panelH)
-                    .getSmallestIntegerContainer());
             juce::ColourGradient wood{WOOD_0, static_cast<float>(x), 0.0F,
                                       WOOD_4, static_cast<float>(x + RAIL_WIDTH), 0.0F, false};
             wood.addColour(0.25, WOOD_1);
             wood.addColour(0.55, WOOD_2);
             wood.addColour(0.85, WOOD_3);
             g.setGradientFill(wood);
-            g.fillRect(static_cast<float>(x), panelTop, static_cast<float>(RAIL_WIDTH), panelH);
+            g.fillRect(x, 0, RAIL_WIDTH, H);
 
             for (int i = 0; i < 90; ++i) // grain
             {
                 const float gx = static_cast<float>(x) + uni(2.0F, 26.0F);
-                const float gy = uni(panelTop, panelBottom);
+                const float gy = uni(0.0F, static_cast<float>(H));
                 const float len = uni(30.0F, 160.0F);
                 const float dx = uni(-2.0F, 2.0F);
                 juce::Path grain;
@@ -131,8 +118,8 @@ namespace xplorer::app
                 g.strokePath(grain, juce::PathStrokeType{uni(0.5F, 1.6F)});
             }
             g.setColour(juce::Colours::black.withAlpha(0.45F));
-            g.fillRect(static_cast<float>(x), panelTop, 2.0F, panelH);
-            g.fillRect(static_cast<float>(x + 26), panelTop, 2.0F, panelH);
+            g.fillRect(x, 0, 2, H);
+            g.fillRect(x + 26, 0, 2, H);
         };
         paintWood(0);
         paintWood(W - RAIL_WIDTH);
@@ -197,9 +184,10 @@ namespace xplorer::app
             text(x + 19, y - 2, l1, FS_OUT, true, TITLE, juce::Justification::left);
             text(x + 19, y + 10, l2, FS_OUT, true, TITLE, juce::Justification::left);
         };
-        const auto smallLabel = [&](int x, int y, const juce::String& s)
+        const auto smallLabel = [&](int x, int y, const juce::String& s,
+                                    juce::Justification just = juce::Justification::right)
         {
-            text(x, y, s, FS_SMALL, true, CAPTION, juce::Justification::right);
+            text(x, y, s, FS_SMALL, true, CAPTION, just);
         };
         const auto blockTitle = [&](int x, int y, const juce::String& s, float size,
                                     juce::Justification just = juce::Justification::horizontallyCentred)
@@ -226,13 +214,13 @@ namespace xplorer::app
         line(383, 58, 405, 58);
         box(405, 45, 53, 26);
         blockTitle(431, 63, "VCA", FS_VCA);
-        stub(431, 71, 23);
+        stub(432, 71, 23); // VCO1_VOLUME centre
         stub(82, 84);
         stub(170, 84);
         caption(82, 137, "FREQUENCY");
         caption(170, 137, "DETUNE");
         caption(259, 137, "PULSE WIDTH");
-        caption(431, 137, "VOLUME");
+        caption(432, 137, "VOLUME");
         // VCO1 VCA out -> straight into the VCF left edge
         line(458, 58, 525, 58);
         // FM modulation buses (both at y=180): left branch ends on the VCO1
@@ -271,7 +259,7 @@ namespace xplorer::app
         line(381, 232, 405, 232);
         box(405, 220, 53, 26);
         blockTitle(431, 238, "VCA", FS_VCA);
-        stub(431, 246, 24);
+        stub(430, 246, 24); // VCO2_VOLUME centre
         // VCO2-row VCA out -> right, then up at x=499 into the VCF
         line(458, 232, 499, 232);
         line(499, 232, 499, 70);
@@ -282,7 +270,7 @@ namespace xplorer::app
             g.setColour(FRAME);
             g.strokePath(curve, frameStroke);
         }
-        caption(431, 314, "VOLUME");
+        caption(430, 314, "VOLUME");
         box(51, 310, 147, 52);
         blockTitle(64, 341, "VCO2", FS_VCO, juce::Justification::left);
         blockTitle(193, 324, "TRIANGLE", FS_WAVE, juce::Justification::right);
@@ -298,7 +286,7 @@ namespace xplorer::app
         line(198, 348, 233, 348);
         box(233, 340, 52, 23);
         blockTitle(259, 356, "PWM", FS_PWM);
-        stub(259, 363);
+        stub(260, 363); // VCO2_PW centre
         line(285, 348, 309, 348);
         line(309, 348, 309, 246);
         line(309, 246, 329, 246);
@@ -311,10 +299,10 @@ namespace xplorer::app
         line(317, 255, 329, 255);
         line(317, 255, 317, 270);
         stub(82, 362);
-        stub(170, 362);
+        stub(169, 362); // VCO2_DETUNE centre
         caption(82, 418, "FREQUENCY");
-        caption(170, 418, "DETUNE");
-        caption(259, 418, "PULSE WIDTH");
+        caption(169, 418, "DETUNE");
+        caption(260, 418, "PULSE WIDTH");
         // FM carrier: VCO2 TRIANGLE tap up at x=204 to the y=305 run into FM VCA
         line(40, 229, 40, 305);
         line(40, 229, 51, 229);
@@ -328,7 +316,8 @@ namespace xplorer::app
         outLabel(349, 518, "LAG", "OUT");
         line(52, 518, 81, 518);
         line(52, 518, 52, 563);
-        smallLabel(62, 576, "LAG IN");
+        // Left-aligned with the LAG_IN combo (x=35), 9 px below it. [RQ-GUI-037]
+        smallLabel(35, 576, "LAG IN", juce::Justification::left);
         stub(215, 537);
         caption(215, 590, "RATE");
         section(53, 629, "LAG");
@@ -339,9 +328,10 @@ namespace xplorer::app
         outLabel(349, 696, "TRACK", "OUT");
         line(52, 696, 81, 696);
         line(52, 696, 52, 741);
-        smallLabel(66, 766, "TRACK IN");
+        // Left-aligned with the TRACK_X_IN combo (x=35), same 9 px offset as LAG IN.
+        smallLabel(35, 754, "TRACK IN", juce::Justification::left);
         {
-            const int centres[] = {123, 166, 209, 252, 295}; // PT knob centres
+            const int centres[] = {126, 170, 214, 258, 302}; // PT knob centres (table)
             for (int i = 0; i < 5; ++i)
             {
                 stub(centres[i], 715);
@@ -387,7 +377,7 @@ namespace xplorer::app
         smallLabel(508, 363, "TRIGGER");
         smallLabel(508, 373, "IN");
         {
-            const int centres[] = {541, 591, 640, 690, 749, 834};
+            const int centres[] = {541, 591, 641, 691, 750, 835}; // knob centres (table)
             for (int cx : centres)
             {
                 stub(cx, 268);
@@ -395,10 +385,10 @@ namespace xplorer::app
         }
         caption(541, 320, "DELAY");
         caption(591, 320, "ATTACK");
-        caption(640, 320, "DECAY");
-        caption(690, 320, "SUSTAIN");
-        caption(749, 320, "RELEASE");
-        caption(834, 320, "VOLUME");
+        caption(641, 320, "DECAY");
+        caption(691, 320, "SUSTAIN");
+        caption(750, 320, "RELEASE");
+        caption(835, 320, "VOLUME");
         box(524, 329, 373, 42);
         section(526, 416, "ENV X");
 
@@ -410,15 +400,16 @@ namespace xplorer::app
         line(793, 480, 804, 480);
         outLabel(867, 480, "LFO", "OUT");
         {
-            const int centres[] = {545, 657, 758, 834};
+            // SPEED/RETRIG/AMP knob centres (table); 657 = WAVESHAPE combo centre.
+            const int centres[] = {546, 657, 759, 834};
             for (int cx : centres)
             {
                 stub(cx, 493);
             }
         }
-        caption(545, 546, "SPEED");
+        caption(546, 546, "SPEED");
         caption(657, 546, "WAVESHAPE");
-        caption(758, 546, "RETRIG");
+        caption(759, 546, "RETRIG");
         caption(834, 546, "AMPLITUDE");
         section(527, 597, "LFO X");
 

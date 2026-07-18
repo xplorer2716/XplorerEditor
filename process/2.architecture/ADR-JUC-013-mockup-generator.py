@@ -9,13 +9,14 @@ import random
 # for the WinForms menustrip (14 px dark strip + 18 px empty plate; the first
 # content row, the VCO1 frame, sits at reference y=32). The JUCE port hosts
 # its menu bar outside the canvas, so the band is cropped — except a small
-# black top margin kept for cosmetics (PADDING, ~ the section-bar height); a
-# matching PADDING black margin sits at the bottom. Canvas height is
-# 813 - 27 = 786 and all diagram geometry (kept in reference coordinates
-# below) is translated up by CROP. Keep in sync with extract_control_table.py
-# CANVAS_TOP_CROP and BackgroundRenderer.cpp CANVAS_PADDING. [ADR-JUC-013]
+# top gap kept for cosmetics (PADDING, ~ the section-bar height), filled with
+# panel material (metal + wood) for visual continuity, not black. Canvas
+# height is 813 - 27 = 786 and all diagram geometry (kept in reference
+# coordinates below) is translated up by CROP. Keep in sync with
+# extract_control_table.py CANVAS_TOP_CROP and BackgroundRenderer.cpp
+# CANVAS_PADDING. [ADR-JUC-013]
 MENUSTRIP_BAND = 32
-PADDING = 5                    # black top+bottom margin
+PADDING = 5                    # cosmetic top gap (panel material, not black)
 CROP = MENUSTRIP_BAND - PADDING  # 27
 W, H = 1260, 813 - CROP
 random.seed(42)
@@ -50,26 +51,23 @@ svg.append('''<defs>
   </linearGradient>
 </defs>''')
 
-# ---------------------------------------------------------------- padding + plate
-# Black top+bottom margins (PADDING): the panel is inset vertically; the
-# margins stay black so the panel clears the menu bar / OS taskbar.
-PH = H - 2 * PADDING  # panel height
-svg.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="#000000"/>')
-# Plain plate with a gentle vertical luminance gradient only (very light
-# shading) -- no brushed streaks, which read as unwanted horizontal lines.
-svg.append(f'<rect x="0" y="{PADDING}" width="{W}" height="{PH}" fill="url(#metal)"/>')
+# ---------------------------------------------------------------- plate
+# Plate + wood rails fill the whole canvas (top/bottom margins included) so the
+# diagram's PADDING gaps read as continuous panel material, not a black band
+# against the menu bar. Gentle vertical luminance gradient only, no streaks.
+svg.append(f'<rect x="0" y="0" width="{W}" height="{H}" fill="url(#metal)"/>')
 
 # ---------------------------------------------------------------- wood rails
 def wood(x):
-    parts = [f'<rect x="{x}" y="{PADDING}" width="28" height="{PH}" fill="url(#wood)"/>']
-    for _ in range(90):  # grain (clipped to the panel band)
+    parts = [f'<rect x="{x}" y="0" width="28" height="{H}" fill="url(#wood)"/>']
+    for _ in range(90):  # grain
         gx = x + random.uniform(2, 26)
-        gy = random.uniform(PADDING, PADDING + PH)
+        gy = random.uniform(0, H)
         ln = random.uniform(30, 160)
         parts.append(f'<path d="M{gx:.1f} {gy:.0f} q {random.uniform(-2,2):.1f} {ln/2:.0f} 0 {ln:.0f}" stroke="#2E1206" stroke-opacity="{random.uniform(0.15,0.4):.2f}" stroke-width="{random.uniform(0.5,1.6):.1f}" fill="none"/>')
-    parts.append(f'<rect x="{x}" y="{PADDING}" width="2" height="{PH}" fill="#000000" fill-opacity="0.45"/>')
-    parts.append(f'<rect x="{x+26}" y="{PADDING}" width="2" height="{PH}" fill="#000000" fill-opacity="0.45"/>')
-    return f'<g clip-path="inset({PADDING}px 0 {PADDING}px 0)">' + "".join(parts) + '</g>'
+    parts.append(f'<rect x="{x}" y="0" width="2" height="{H}" fill="#000000" fill-opacity="0.45"/>')
+    parts.append(f'<rect x="{x+26}" y="0" width="2" height="{H}" fill="#000000" fill-opacity="0.45"/>')
+    return "".join(parts)
 svg.append(wood(0))
 svg.append(wood(W - 28))
 
@@ -109,9 +107,9 @@ svg.append(line(198, 70, 234, 70) + line(286, 70, 330, 70))          # pulse via
 svg.append(box(234, 60, 52, 23) + T(260, 76, "PWM", 12.5, "bold", TITLE, "middle") + stub(259, 83))
 svg.append(box(330, 32, 53, 52) + T(356, 63, "MIX", 14, "bold", TITLE, "middle"))
 svg.append(line(383, 58, 405, 58))
-svg.append(box(405, 45, 53, 26) + T(431, 63, "VCA", 13, "bold", TITLE, "middle") + stub(431, 71, 23))
+svg.append(box(405, 45, 53, 26) + T(431, 63, "VCA", 13, "bold", TITLE, "middle") + stub(432, 71, 23))
 svg.append(stub(82, 84) + stub(170, 84))
-svg.append(caption(82, 137, "FREQUENCY") + caption(170, 137, "DETUNE") + caption(259, 137, "PULSE WIDTH") + caption(431, 137, "VOLUME"))
+svg.append(caption(82, 137, "FREQUENCY") + caption(170, 137, "DETUNE") + caption(259, 137, "PULSE WIDTH") + caption(432, 137, "VOLUME"))
 # VCO1 VCA out -> straight into the VCF left edge
 svg.append(line(458, 58, 525, 58))
 # FM modulation buses (both at y=180, same height): left branch ends on the
@@ -135,23 +133,23 @@ svg.append(line(153, 228, 184, 228))
 svg.append(stub(106, 246) + caption(106, 300, "FM AMPLITUDE"))
 svg.append(box(329, 210, 52, 52) + T(355, 241, "MIX", 14, "bold", TITLE, "middle"))
 svg.append(line(381, 232, 405, 232))
-svg.append(box(405, 220, 53, 26) + T(431, 238, "VCA", 13, "bold", TITLE, "middle") + stub(431, 246, 24))
+svg.append(box(405, 220, 53, 26) + T(431, 238, "VCA", 13, "bold", TITLE, "middle") + stub(430, 246, 24))
 # VCO2-row VCA out -> right, then up at x=499 into the VCF  [owner point 2]
 svg.append(line(458, 232, 499, 232) + line(499, 232, 499, 70))
 svg.append(f'<path d="M499 70 Q499 58 509 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
-svg.append(caption(431, 314, "VOLUME"))
+svg.append(caption(430, 314, "VOLUME"))
 svg.append(box(51, 310, 147, 52) + T(64, 341, "VCO2", 16))
 for wave, y in [("TRIANGLE", 320), ("SAWTOOTH", 334), ("PULSE", 348)]:
     svg.append(T(193, y + 4, wave, 11.5, "bold", TITLE, "end"))
 # vco2 waves route up into MIX
 svg.append(line(198, 320, 297, 320) + line(297, 320, 297, 228) + line(297, 228, 329, 228))
 svg.append(line(198, 334, 303, 334) + line(303, 334, 303, 237) + line(303, 237, 329, 237))
-svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23) + T(259, 356, "PWM", 12.5, "bold", TITLE, "middle") + stub(259, 363))
+svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23) + T(259, 356, "PWM", 12.5, "bold", TITLE, "middle") + stub(260, 363))
 svg.append(line(285, 348, 309, 348) + line(309, 348, 309, 246) + line(309, 246, 329, 246))
 svg.append(f'<text x="318" y="300" font-family="Arial" font-size="9" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>')
 svg.append(line(317, 255, 329, 255) + line(317, 255, 317, 270))
-svg.append(stub(82, 362) + stub(170, 362))
-svg.append(caption(82, 418, "FREQUENCY") + caption(170, 418, "DETUNE") + caption(259, 418, "PULSE WIDTH"))
+svg.append(stub(82, 362) + stub(169, 362))
+svg.append(caption(82, 418, "FREQUENCY") + caption(169, 418, "DETUNE") + caption(260, 418, "PULSE WIDTH"))
 # FM carrier path: VCO2 TRIANGLE line taps up at x=204 to the y=305 run,
 # which feeds the left bus into the FM VCA input  [owner point 3]
 svg.append(line(40, 229, 40, 305) + line(40, 229, 51, 229) + line(40, 305, 204, 305))
@@ -161,15 +159,15 @@ svg.append(section(53, 487, "VCO1/VCO2/FM", 370))
 # --- LAG
 svg.append(box(81, 501, 268, 36) + T(215, 524, "LAG", 14, "bold", TITLE, "middle"))
 svg.append(outlab(349, 518, "LAG", "OUT"))
-svg.append(line(52, 518, 81, 518) + line(52, 518, 52, 563) + smalllab(62, 576, "LAG IN"))
+svg.append(line(52, 518, 81, 518) + line(52, 518, 52, 563) + smalllab(35, 576, "LAG IN", "start"))
 svg.append(stub(215, 537) + caption(215, 590, "RATE"))
 svg.append(section(53, 629, "LAG", 370))
 
 # --- TRACKING GENERATOR
 svg.append(box(81, 679, 268, 36) + T(215, 702, "TRACKING GENERATOR", 13.5, "bold", TITLE, "middle"))
 svg.append(outlab(349, 696, "TRACK", "OUT"))
-svg.append(line(52, 696, 81, 696) + line(52, 696, 52, 741) + smalllab(66, 766, "TRACK IN"))
-for i, cx in enumerate([123, 166, 209, 252, 295]):   # PT knob centres
+svg.append(line(52, 696, 81, 696) + line(52, 696, 52, 741) + smalllab(35, 754, "TRACK IN", "start"))
+for i, cx in enumerate([126, 170, 214, 258, 302]):   # PT knob centres (table)
     svg.append(stub(cx, 715))
     svg.append(caption(cx, 766, f"PT {i+1}"))
 svg.append(section(53, 799, "TRACK X", 370))
@@ -195,9 +193,9 @@ svg.append(outlab(867, 255, "ENV", "OUT"))
 # frame below, as the reference  [owner v3 point 3]
 svg.append(line(514, 255, 525, 255) + line(514, 255, 514, 351) + line(514, 351, 524, 351)
            + smalllab(508, 363, "TRIGGER", "end") + smalllab(508, 373, "IN", "end"))
-for cx in [541, 591, 640, 690, 749, 834]:
+for cx in [541, 591, 641, 691, 750, 835]:   # knob centres (table)
     svg.append(stub(cx, 268))
-svg.append(caption(541, 320, "DELAY") + caption(591, 320, "ATTACK") + caption(640, 320, "DECAY") + caption(690, 320, "SUSTAIN") + caption(749, 320, "RELEASE") + caption(834, 320, "VOLUME"))
+svg.append(caption(541, 320, "DELAY") + caption(591, 320, "ATTACK") + caption(641, 320, "DECAY") + caption(691, 320, "SUSTAIN") + caption(750, 320, "RELEASE") + caption(835, 320, "VOLUME"))
 svg.append(box(524, 329, 373, 42))
 svg.append(section(526, 416, "ENV X", 370))
 
@@ -206,9 +204,9 @@ svg.append(box(524, 467, 269, 26) + T(658, 485, "LFO", 14, "bold", TITLE, "middl
 svg.append(box(804, 467, 63, 26) + T(835, 485, "VCA", 13, "bold", TITLE, "middle"))
 svg.append(line(793, 480, 804, 480))
 svg.append(outlab(867, 480, "LFO", "OUT"))
-for cx in [545, 657, 758, 834]:
+for cx in [546, 657, 759, 834]:   # SPEED/RETRIG/AMP centres (table); 657 = WAVESHAPE combo
     svg.append(stub(cx, 493))
-svg.append(caption(545, 546, "SPEED") + caption(657, 546, "WAVESHAPE") + caption(758, 546, "RETRIG") + caption(834, 546, "AMPLITUDE"))
+svg.append(caption(546, 546, "SPEED") + caption(657, 546, "WAVESHAPE") + caption(759, 546, "RETRIG") + caption(834, 546, "AMPLITUDE"))
 svg.append(section(527, 597, "LFO X", 370))
 
 # --- RAMP
