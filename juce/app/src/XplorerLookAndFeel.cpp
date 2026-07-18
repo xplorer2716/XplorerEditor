@@ -77,4 +77,38 @@ namespace xplorer::app
             g.drawText(button.getButtonText(), textArea, juce::Justification::centredLeft, false);
         }
     }
+
+    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox& box)
+    {
+        // Base size mirrors the stock LookAndFeel_V4::getComboBoxFont; shrunk
+        // (down to a legibility floor) so the widest item in THIS box's list
+        // fits the text area LookAndFeel_V4::positionComboBoxText lays out
+        // (box width minus its 30px arrow zone, minus the Label's default
+        // 5px left/right border). A per-box, not per-selection, size keeps it
+        // stable as the user changes the selection.
+        constexpr float BASE_SIZE = 16.0F;
+        constexpr float MIN_SIZE = 9.0F;
+        constexpr int ARROW_ZONE = 30;
+        constexpr int LABEL_MARGIN = 10;
+
+        float size = juce::jmin(BASE_SIZE, static_cast<float>(box.getHeight()) * 0.85F);
+        const float availableWidth =
+            static_cast<float>(box.getWidth() - ARROW_ZONE - LABEL_MARGIN);
+        if (availableWidth <= 0.0F)
+        {
+            return juce::Font{juce::FontOptions{size}};
+        }
+
+        const juce::Font probe{juce::FontOptions{size}};
+        float widest = 0.0F;
+        for (int i = 0; i < box.getNumItems(); ++i)
+        {
+            widest = juce::jmax(widest, probe.getStringWidthFloat(box.getItemText(i)));
+        }
+        if (widest > availableWidth)
+        {
+            size = juce::jmax(MIN_SIZE, size * (availableWidth / widest));
+        }
+        return juce::Font{juce::FontOptions{size}};
+    }
 }

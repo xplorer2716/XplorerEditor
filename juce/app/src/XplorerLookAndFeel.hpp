@@ -31,6 +31,11 @@ namespace xplorer::app
         void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 
+        // Shrinks the font per combo box so its widest item label always fits
+        // without ellipsis, instead of JUCE's default 70%-squish-then-truncate
+        // (reference combos never show "TRA..."). [RQ-GUI-032, issue #12]
+        juce::Font getComboBoxFont(juce::ComboBox& box) override;
+
     private:
         juce::Colour _ledColour;
     };

@@ -1,6 +1,7 @@
 #include "VfdDisplayHelper.hpp"
 
 #include "xplorer/app/ControlMetadata.hpp"
+#include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
 
 namespace xplorer::app
@@ -83,8 +84,13 @@ namespace xplorer::app
             line3 = value;
         }
 
+        // unassignedControlChange() (128, the last "None" entry) is the
+        // sentinel the reference stores for parameters with no mapped CC
+        // (reference: ccNumber != ControlChangesNames.Names.Length-1); it must
+        // not be shown as a real CC number. [RQ-GUI-020, issue #11]
         juce::String ccLine;
-        if (const auto cc = _controller.controlChangeAutomationTable().ccNumberFor(parameterName))
+        if (const auto cc = _controller.controlChangeAutomationTable().ccNumberFor(parameterName);
+            cc && *cc != unassignedControlChange())
         {
             ccLine = juce::String::formatted("MIDI CC: %03d", *cc);
         }

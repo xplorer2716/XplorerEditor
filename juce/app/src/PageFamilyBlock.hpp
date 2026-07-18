@@ -20,6 +20,31 @@
 
 namespace xplorer::app
 {
+    /// A page-family instance selector button (e.g. "ENV 2") that also carries
+    /// the reference's page copy/paste gesture: right-click for a "Copy
+    /// Page"/"Paste Page" context menu, Ctrl+C/Ctrl+V while focused, both
+    /// operating on this button's page id via the already-ported controller
+    /// clipboard (XpanderController::canClipboardPasteTo/pasteClipboardTo).
+    /// Left-click keeps the normal TextButton (radio) selection behavior.
+    /// [RQ-GUI-027, RQ-CTL-040, issue #13]
+    class PageSelectorButton final : public juce::TextButton
+    {
+    public:
+        PageSelectorButton(const juce::String& text, controller::XpanderController& controller,
+                           std::string id);
+
+        void mouseDown(const juce::MouseEvent& event) override;
+        bool keyPressed(const juce::KeyPress& key) override;
+
+    private:
+        void showPageContextMenu();
+        void copyPage();
+        void pastePage();
+
+        controller::XpanderController& _controller;
+        std::string _id;
+    };
+
     class PageFamilyBlock
     {
     public:
