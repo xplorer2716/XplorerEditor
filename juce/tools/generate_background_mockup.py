@@ -1,9 +1,66 @@
 #!/usr/bin/env python3
-"""Vector background mockup for Xplorer (proposal for replacing
-main-background.jpg). Geometry measured from the reference bitmap
-(line detection) + control-table knob anchors. Produces an SVG whose
-primitives map 1:1 to juce::Graphics calls."""
+"""Vector background mockup for Xplorer (prototype for BackgroundRenderer.cpp).
+
+Geometry measured from the reference bitmap (line detection) + control-table
+knob anchors; every SVG primitive maps 1:1 to a juce::Graphics call. This is the
+owner-validated prototyping tool kept in lock-step with the C++ painter.
+
+Colours, font sizes and line width are NOT hard-coded here: they are read from
+the SAME single source of truth as the C++ tokens (design-tokens.yaml, via
+generate_design_tokens.resolve()), so the mockup and the shipped app can never
+diverge on a token value. Only the diagram GEOMETRY (coordinates) lives in this
+script. [RQ-DSN-060..063, ADR-JUC-013, ADR-JUC-015]
+
+Prerequisite: PyYAML (`pip install pyyaml`).
+
+Usage:
+    python3 generate_background_mockup.py        # writes background-mockup.svg next to this script
+"""
+import pathlib
 import random
+
+from generate_design_tokens import resolve
+
+HERE = pathlib.Path(__file__).resolve().parent
+OUT_PATH = HERE / "background-mockup.svg"
+
+# ---- tokens (single source of truth) --------------------------------------
+_T = resolve()
+
+
+def _col(name: str) -> str:
+    """'#RRGGBB' for a semantic colour token."""
+    return "#" + _T["semantic"][name]["value"].upper()
+
+
+def _num(name: str):
+    """Numeric value of a semantic size/geometry token; integral -> int (so the
+    SVG reads '2'/'15' rather than '2.0'/'15.0', matching the reference)."""
+    v = _T["semantic"][name]["value"]
+    return int(v) if float(v).is_integer() else v
+
+
+# colours
+FRAME = _col("diagramFrame")     # block frame / line colour
+TITLE = _col("diagramTitle")     # bold titles
+CAPTION = _col("diagramCaption")  # parameter captions
+GRAIN = _col("panelWoodGrain")
+PLATE = [_col("panelPlateTop"), _col("panelPlateHi"), _col("panelPlateMid"), _col("panelPlateBot")]
+WOOD = [_col("panelWood0"), _col("panelWood1"), _col("panelWood2"), _col("panelWood3"), _col("panelWood4")]
+BAR = [_col("sectionBarTop"), _col("sectionBarMid"), _col("sectionBarBot")]
+
+# line width + font scale (names mirror BackgroundRenderer.cpp FS_*)
+LW = _num("strokeLine")
+FS_SECTION = _num("textTitle")     # 15 — section titles
+FS_VCO = _num("textDisplay")       # 16 — VCO1 / VCO2
+FS_MIX = _num("textSubtitle")      # 14 — MIX / LAG / LFO / RAMP
+FS_BLOCK = _num("textLabel")       # 13.5 — wide block labels
+FS_VCA = _num("textLabelAlt")      # 13 — VCA / VCA1
+FS_PWM = _num("textBody")          # 12.5 — PWM
+FS_CAPTION = _num("textCaption")   # 12 — parameter captions
+FS_WAVE = _num("textWave")         # 11.5 — TRIANGLE / SAWTOOTH / PULSE
+FS_OUT = _num("textSmall")         # 11 — IN/OUT labels
+FS_SMALL = _num("textDense")       # 9 — DESTINATION / TRIGGER IN / NOISE
 
 # Reference client area was 1260x813 with a 32 px band at the top reserved
 # for the WinForms menustrip (14 px dark strip + 18 px empty plate; the first
@@ -21,33 +78,28 @@ CROP = MENUSTRIP_BAND - PADDING  # 27
 W, H = 1260, 813 - CROP
 random.seed(42)
 
-FRAME = "#B7BDD0"      # block frame / line colour
-TITLE = "#F2F2F6"      # bold titles
-CAPTION = "#C9CACE"    # parameter captions
-LW = 2                 # line width
-
 svg = []
 svg.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">')
 
 # ---------------------------------------------------------------- defs
-svg.append('''<defs>
+svg.append(f'''<defs>
   <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0" stop-color="#45464F"/>
-    <stop offset="0.25" stop-color="#3B3C44"/>
-    <stop offset="0.6" stop-color="#36363E"/>
-    <stop offset="1" stop-color="#303138"/>
+    <stop offset="0" stop-color="{PLATE[0]}"/>
+    <stop offset="0.25" stop-color="{PLATE[1]}"/>
+    <stop offset="0.6" stop-color="{PLATE[2]}"/>
+    <stop offset="1" stop-color="{PLATE[3]}"/>
   </linearGradient>
   <linearGradient id="wood" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#4A1D08"/>
-    <stop offset="0.25" stop-color="#7C3615"/>
-    <stop offset="0.55" stop-color="#8A431C"/>
-    <stop offset="0.85" stop-color="#6B2C0F"/>
-    <stop offset="1" stop-color="#38160A"/>
+    <stop offset="0" stop-color="{WOOD[0]}"/>
+    <stop offset="0.25" stop-color="{WOOD[1]}"/>
+    <stop offset="0.55" stop-color="{WOOD[2]}"/>
+    <stop offset="0.85" stop-color="{WOOD[3]}"/>
+    <stop offset="1" stop-color="{WOOD[4]}"/>
   </linearGradient>
   <linearGradient id="bluebar" x1="0" y1="0" x2="1" y2="0">
-    <stop offset="0" stop-color="#3050B8"/>
-    <stop offset="0.5" stop-color="#24388A"/>
-    <stop offset="1" stop-color="#1A2A66"/>
+    <stop offset="0" stop-color="{BAR[0]}"/>
+    <stop offset="0.5" stop-color="{BAR[1]}"/>
+    <stop offset="1" stop-color="{BAR[2]}"/>
   </linearGradient>
 </defs>''')
 
@@ -64,7 +116,7 @@ def wood(x):
         gx = x + random.uniform(2, 26)
         gy = random.uniform(0, H)
         ln = random.uniform(30, 160)
-        parts.append(f'<path d="M{gx:.1f} {gy:.0f} q {random.uniform(-2,2):.1f} {ln/2:.0f} 0 {ln:.0f}" stroke="#2E1206" stroke-opacity="{random.uniform(0.15,0.4):.2f}" stroke-width="{random.uniform(0.5,1.6):.1f}" fill="none"/>')
+        parts.append(f'<path d="M{gx:.1f} {gy:.0f} q {random.uniform(-2,2):.1f} {ln/2:.0f} 0 {ln:.0f}" stroke="{GRAIN}" stroke-opacity="{random.uniform(0.15,0.4):.2f}" stroke-width="{random.uniform(0.5,1.6):.1f}" fill="none"/>')
     parts.append(f'<rect x="{x}" y="0" width="2" height="{H}" fill="#000000" fill-opacity="0.45"/>')
     parts.append(f'<rect x="{x+26}" y="0" width="2" height="{H}" fill="#000000" fill-opacity="0.45"/>')
     return "".join(parts)
@@ -84,30 +136,30 @@ def line(x1, y1, x2, y2):
     return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{FRAME}" stroke-width="{LW}" stroke-linecap="round"/>'
 def stub(cx, y, ln=12):
     return line(cx, y, cx, y + ln)
-def T(x, y, s, size=15, w="bold", fill=TITLE, anchor="start", ls="0.5"):
+def T(x, y, s, size=FS_SECTION, w="bold", fill=TITLE, anchor="start", ls="0.5"):
     return (f'<text x="{x}" y="{y}" font-family="Arial, Helvetica, sans-serif" font-size="{size}" '
             f'font-weight="{w}" fill="{fill}" text-anchor="{anchor}" letter-spacing="{ls}">{s}</text>')
 def caption(x, y, s):
-    return T(x, y, s, 12, "normal", CAPTION, "middle", "0.5")
+    return T(x, y, s, FS_CAPTION, "normal", CAPTION, "middle", "0.5")
 def section(x, y, s, barw):
-    return T(x, y - 7, s, 15, "bold") + f'<rect x="{x}" y="{y}" width="{barw}" height="4.5" fill="url(#bluebar)"/>'
+    return T(x, y - 7, s, FS_SECTION, "bold") + f'<rect x="{x}" y="{y}" width="{barw}" height="4.5" fill="url(#bluebar)"/>'
 def outlab(x, y, s1, s2):
     return (line(x, y, x + 14, y) +
-            T(x + 19, y - 2, s1, 11, "bold") + T(x + 19, y + 10, s2, 11, "bold"))
+            T(x + 19, y - 2, s1, FS_OUT, "bold") + T(x + 19, y + 10, s2, FS_OUT, "bold"))
 def smalllab(x, y, s, anchor="end"):
-    return T(x, y, s, 9, "bold", CAPTION, anchor, "0.3")
+    return T(x, y, s, FS_SMALL, "bold", CAPTION, anchor, "0.3")
 
 # ================================================================ LEFT COLUMN
 # --- VCO1 group
-svg.append(box(51, 32, 147, 52) + T(64, 63, "VCO1", 16))
+svg.append(box(51, 32, 147, 52) + T(64, 63, "VCO1", FS_VCO))
 for i, (wave, y) in enumerate([("TRIANGLE", 45), ("SAWTOOTH", 57), ("PULSE", 70)]):
-    svg.append(T(193, y + 4, wave, 11.5, "bold", TITLE, "end"))
+    svg.append(T(193, y + 4, wave, FS_WAVE, "bold", TITLE, "end"))
 svg.append(line(198, 45, 330, 45) + line(198, 57, 330, 57))          # tri, saw
 svg.append(line(198, 70, 234, 70) + line(286, 70, 330, 70))          # pulse via PWM
-svg.append(box(234, 60, 52, 23) + T(260, 76, "PWM", 12.5, "bold", TITLE, "middle") + stub(259, 83))
-svg.append(box(330, 32, 53, 52) + T(356, 63, "MIX", 14, "bold", TITLE, "middle"))
+svg.append(box(234, 60, 52, 23) + T(260, 76, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(259, 83))
+svg.append(box(330, 32, 53, 52) + T(356, 63, "MIX", FS_MIX, "bold", TITLE, "middle"))
 svg.append(line(383, 58, 405, 58))
-svg.append(box(405, 45, 53, 26) + T(431, 63, "VCA", 13, "bold", TITLE, "middle") + stub(432, 71, 23))
+svg.append(box(405, 45, 53, 26) + T(431, 63, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(432, 71, 23))
 svg.append(stub(82, 84) + stub(170, 84))
 svg.append(caption(82, 137, "FREQUENCY") + caption(170, 137, "DETUNE") + caption(259, 137, "PULSE WIDTH") + caption(432, 137, "VOLUME"))
 # VCO1 VCA out -> straight into the VCF left edge
@@ -126,27 +178,27 @@ svg.append(f'<path d="M492 180 A 7 7 0 0 1 506 180" fill="none" stroke="{FRAME}"
 svg.append(line(506, 180, 513, 180) + line(513, 180, 513, 82) + line(513, 82, 541, 82))
 
 # --- FM / VCO2 group
-svg.append(box(51, 210, 102, 36) + T(102, 233, "FM VCA", 13.5, "bold", TITLE, "middle"))
+svg.append(box(51, 210, 102, 36) + T(102, 233, "FM VCA", FS_BLOCK, "bold", TITLE, "middle"))
 svg.append(box(184, 210, 90, 52))
-svg.append(T(229, 274, "DESTINATION", 9, "bold", CAPTION, "middle", "0.3"))
+svg.append(T(229, 274, "DESTINATION", FS_SMALL, "bold", CAPTION, "middle", "0.3"))
 svg.append(line(153, 228, 184, 228))
 svg.append(stub(106, 246) + caption(106, 300, "FM AMPLITUDE"))
-svg.append(box(329, 210, 52, 52) + T(355, 241, "MIX", 14, "bold", TITLE, "middle"))
+svg.append(box(329, 210, 52, 52) + T(355, 241, "MIX", FS_MIX, "bold", TITLE, "middle"))
 svg.append(line(381, 232, 405, 232))
-svg.append(box(405, 220, 53, 26) + T(431, 238, "VCA", 13, "bold", TITLE, "middle") + stub(430, 246, 24))
+svg.append(box(405, 220, 53, 26) + T(431, 238, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(430, 246, 24))
 # VCO2-row VCA out -> right, then up at x=499 into the VCF  [owner point 2]
 svg.append(line(458, 232, 499, 232) + line(499, 232, 499, 70))
 svg.append(f'<path d="M499 70 Q499 58 509 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
 svg.append(caption(430, 314, "VOLUME"))
-svg.append(box(51, 310, 147, 52) + T(64, 341, "VCO2", 16))
+svg.append(box(51, 310, 147, 52) + T(64, 341, "VCO2", FS_VCO))
 for wave, y in [("TRIANGLE", 320), ("SAWTOOTH", 334), ("PULSE", 348)]:
-    svg.append(T(193, y + 4, wave, 11.5, "bold", TITLE, "end"))
+    svg.append(T(193, y + 4, wave, FS_WAVE, "bold", TITLE, "end"))
 # vco2 waves route up into MIX
 svg.append(line(198, 320, 297, 320) + line(297, 320, 297, 228) + line(297, 228, 329, 228))
 svg.append(line(198, 334, 303, 334) + line(303, 334, 303, 237) + line(303, 237, 329, 237))
-svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23) + T(259, 356, "PWM", 12.5, "bold", TITLE, "middle") + stub(260, 363))
+svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23) + T(259, 356, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(260, 363))
 svg.append(line(285, 348, 309, 348) + line(309, 348, 309, 246) + line(309, 246, 329, 246))
-svg.append(f'<text x="318" y="300" font-family="Arial" font-size="9" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>')
+svg.append(f'<text x="318" y="300" font-family="Arial" font-size="{FS_SMALL}" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>')
 svg.append(line(317, 255, 329, 255) + line(317, 255, 317, 270))
 svg.append(stub(82, 362) + stub(169, 362))
 svg.append(caption(82, 418, "FREQUENCY") + caption(169, 418, "DETUNE") + caption(260, 418, "PULSE WIDTH"))
@@ -157,14 +209,14 @@ svg.append(line(204, 305, 204, 320))
 svg.append(section(53, 487, "VCO1/VCO2/FM", 370))
 
 # --- LAG
-svg.append(box(81, 501, 268, 36) + T(215, 524, "LAG", 14, "bold", TITLE, "middle"))
+svg.append(box(81, 501, 268, 36) + T(215, 524, "LAG", FS_MIX, "bold", TITLE, "middle"))
 svg.append(outlab(349, 518, "LAG", "OUT"))
 svg.append(line(52, 518, 81, 518) + line(52, 518, 52, 563) + smalllab(35, 576, "LAG IN", "start"))
 svg.append(stub(215, 537) + caption(215, 590, "RATE"))
 svg.append(section(53, 629, "LAG", 370))
 
 # --- TRACKING GENERATOR
-svg.append(box(81, 679, 268, 36) + T(215, 702, "TRACKING GENERATOR", 13.5, "bold", TITLE, "middle"))
+svg.append(box(81, 679, 268, 36) + T(215, 702, "TRACKING GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
 svg.append(outlab(349, 696, "TRACK", "OUT"))
 svg.append(line(52, 696, 81, 696) + line(52, 696, 52, 741) + smalllab(35, 754, "TRACK IN", "start"))
 for i, cx in enumerate([126, 170, 214, 258, 302]):   # PT knob centres (table)
@@ -174,9 +226,9 @@ svg.append(section(53, 799, "TRACK X", 370))
 
 # ================================================================ CENTER COLUMN
 # --- VCF/VCA chain
-svg.append(box(525, 45, 186, 26) + T(618, 63, "MULTIMODE VCF", 13.5, "bold", TITLE, "middle"))
-svg.append(box(729, 45, 62, 26) + T(760, 63, "VCA1", 13, "bold", TITLE, "middle"))
-svg.append(box(804, 45, 62, 26) + T(835, 63, "VCA", 13, "bold", TITLE, "middle"))
+svg.append(box(525, 45, 186, 26) + T(618, 63, "MULTIMODE VCF", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(box(729, 45, 62, 26) + T(760, 63, "VCA1", FS_VCA, "bold", TITLE, "middle"))
+svg.append(box(804, 45, 62, 26) + T(835, 63, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(711, 58, 729, 58) + line(791, 58, 804, 58))
 svg.append(outlab(866, 58, "VOICE", "OUT"))
 for cx, ln in [(541, 24), (591, 24), (669, 24), (759, 24), (834, 24)]:
@@ -185,8 +237,8 @@ svg.append(caption(541, 137, "FREQ") + caption(591, 137, "RES") + caption(669, 1
 svg.append(section(526, 194, "VCF/VCA", 370))
 
 # --- ENV
-svg.append(box(525, 242, 267, 26) + T(658, 260, "ENVELOPE GENERATOR", 13.5, "bold", TITLE, "middle"))
-svg.append(box(804, 242, 63, 26) + T(835, 260, "VCA", 13, "bold", TITLE, "middle"))
+svg.append(box(525, 242, 267, 26) + T(658, 260, "ENVELOPE GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(box(804, 242, 63, 26) + T(835, 260, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(792, 255, 804, 255))
 svg.append(outlab(867, 255, "ENV", "OUT"))
 # TRIGGER IN: enters the ENVELOPE block and connects down into the trigger
@@ -200,8 +252,8 @@ svg.append(box(524, 329, 373, 42))
 svg.append(section(526, 416, "ENV X", 370))
 
 # --- LFO
-svg.append(box(524, 467, 269, 26) + T(658, 485, "LFO", 14, "bold", TITLE, "middle"))
-svg.append(box(804, 467, 63, 26) + T(835, 485, "VCA", 13, "bold", TITLE, "middle"))
+svg.append(box(524, 467, 269, 26) + T(658, 485, "LFO", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(804, 467, 63, 26) + T(835, 485, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(793, 480, 804, 480))
 svg.append(outlab(867, 480, "LFO", "OUT"))
 for cx in [546, 657, 759, 834]:   # SPEED/RETRIG/AMP centres (table); 657 = WAVESHAPE combo
@@ -210,7 +262,7 @@ svg.append(caption(546, 546, "SPEED") + caption(657, 546, "WAVESHAPE") + caption
 svg.append(section(527, 597, "LFO X", 370))
 
 # --- RAMP
-svg.append(box(524, 646, 266, 26) + T(656, 664, "RAMP", 14, "bold", TITLE, "middle"))
+svg.append(box(524, 646, 266, 26) + T(656, 664, "RAMP", FS_MIX, "bold", TITLE, "middle"))
 svg.append(outlab(790, 659, "RAMP", "OUT"))
 svg.append(line(514, 659, 524, 659) + line(514, 659, 514, 758) + line(514, 758, 524, 758)
            + smalllab(508, 767, "TRIGGER", "end") + smalllab(508, 777, "IN", "end"))
@@ -224,5 +276,5 @@ svg.append(section(958, 799, "MODULATION MATRIX", 268))
 
 svg.append('</g>')
 svg.append('</svg>')
-open('/tmp/claude-0/-home-user-XplorerEditor/4ca34552-3b89-5447-9e4f-4b96a4375123/scratchpad/vector-bg.svg', 'w').write("\n".join(svg))
-print("SVG written")
+OUT_PATH.write_text("\n".join(svg), encoding="utf-8")
+print(f"SVG written to {OUT_PATH}")

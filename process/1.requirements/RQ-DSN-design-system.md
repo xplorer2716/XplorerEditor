@@ -364,6 +364,10 @@ silently merged — owner confirms before migration):
   matching this codebase's existing constant style, e.g. `CANVAS_PADDING`
   uses `SCREAMING_SNAKE_CASE` today — **owner to confirm** which convention
   the new module follows; not silently decided here).
+  *(As built: `DesignTokens.hpp` is **generated** from `design-tokens.yaml`
+  (ADR-JUC-015), not hand-declared; token names are camelCase grouped in
+  `tokens::{global,semantic,component}` namespaces, so the dotted spec name
+  `colour.surface.recessed` maps to `tokens::semantic::surfaceRecessed`.)*
 - **RQ-DSN-061** — `XplorerLookAndFeel`, `BackgroundRenderer`,
   `ModMatrixPanel`, `SettingsDialog`, `ProgressWindow` and `MainComponent`
   shall all read from `DesignTokens.hpp` instead of their current
@@ -376,11 +380,14 @@ silently merged — owner confirms before migration):
   live JUCE state and resolves the matching §3 rule, no cached per-instance
   state duplicating what JUCE already tracks (same principle as
   ADR-JUC-011's single-source-of-truth LED colour).
-- **RQ-DSN-063** — `ADR-JUC-013-mockup-generator.py` shall import or mirror
-  the same palette/type-scale values as `DesignTokens.hpp` (a small
-  generated or hand-synced Python constants block, reviewed together on any
-  token change) — concrete mechanism to close the sync gap ADR-JUC-013
-  already flags as a risk for its geometry.
+- **RQ-DSN-063** — The C++ token module and the SVG mockup prototype shall
+  derive from ONE language-neutral source of truth (`juce/tools/design-tokens.yaml`),
+  so they cannot diverge on a token value: `DesignTokens.hpp` is *generated*
+  from it (`tools/generate_design_tokens.py`) and the mockup *consumes* it
+  (`tools/generate_background_mockup.py`, via the generator's shared
+  `resolve()`), closing the sync gap ADR-JUC-013 flagged. Mechanism decided in
+  ADR-JUC-015. *(Supersedes the earlier "import or mirror … hand-synced"
+  wording — the sync is now structural, not a review obligation.)*
 
 ## 8. Testability
 

@@ -102,6 +102,32 @@
 | TASK-JUC-079 | AGNOS process conformance (added 2026-07): write `process/_sessionstate/session.yaml` (platform=linux, unit_tests=false); rename artifact identifiers to the AGNOS `<TYPE>-<TRI>-NNN` format under the single migration trigram `JUC` — `ADR-NNN` → `ADR-JUC-NNN` and `TASK-JUCE-NNN` → `TASK-JUC-NNN` (numbers preserved) — across ADR files, plan, requirements, analysis and all source-code/CMake traceability comments. RQ IDs keep their per-area trigrams (already conformant). Comments/docs only; no behaviour change. | S | RQ-TST (process) |
 | TASK-JUC-072 | Cross-compat campaign: patch libraries and settings exchanged between .NET and JUCE builds | M | RQ-MOD-050, RQ-SET-006, RQ-NFR-003 |
 
+## Design System (RQ-DSN, ADR-JUC-014 / ADR-JUC-015)
+
+Unified graphical design system: a single source of truth for colour,
+typography, geometry and motion, so the app's visual maintenance goes through
+tokens instead of scattered literals in the JUCE code.
+
+| Task | Description | Tier | RQ / ADR |
+|------|-------------|:-:|---|
+| TASK-JUC-090 | `DesignTokens.hpp` three-tier token module (global→semantic→component). **Status: Done — superseded as *generated* by TASK-JUC-095.** | M | RQ-DSN-001..024, ADR-JUC-014 |
+| TASK-JUC-091 | Migrate `XplorerLookAndFeel` to tokens (value-preserving). **Status: Done — build 0 err, 81/81 tests.** | M | RQ-DSN-061 |
+| TASK-JUC-092 | Migrate `BackgroundRenderer` palette + font scale to tokens. **Status: Done.** | M | RQ-DSN-061, ADR-JUC-013 |
+| TASK-JUC-093 | Migrate `ModMatrixPanel`, `SettingsDialog`, `ProgressWindow`, `MainComponent` LED panel to tokens. **Status: Done.** | M | RQ-DSN-061 |
+| TASK-JUC-094 | Verify: build + 81/81 functional tests + Xvfb smoke + grep (no raw colour literal outside the module) + value-identity by construction. **Status: Done.** | S | RQ-DSN-071, RQ-DSN-090 |
+| TASK-JUC-095 | `juce/tools/design-tokens.yaml` single source + `generate_design_tokens.py` emitting `DesignTokens.hpp` (generated, `--check` idempotent). Value-identical to the hand-written header (27 colours, 0 ARGB diff). **Status: Done — regenerated, build 0 err, 81/81 tests.** | L | RQ-DSN-060, RQ-DSN-063, ADR-JUC-015 |
+| TASK-JUC-096 | Move + refactor the mockup generator to `juce/tools/generate_background_mockup.py`, reading palette/fonts/line-width from the YAML via the shared `resolve()`; geometry unchanged. Regenerated SVG byte-identical. **Status: Done.** | M | RQ-DSN-063, ADR-JUC-013, ADR-JUC-015 |
+| TASK-JUC-097 | Move `background-mockup.svg` out of `process/` to `juce/tools/`; update path/mechanism references in ADR-JUC-013, ADR-JUC-014, RQ-DSN-060/063; folder-layering rule (process=spec, tools=scripts, src=impl). **Status: Done.** | S | ADR-JUC-015 |
+
+### Design-system backlog (phase 2 — owner-reasoned, NOT value-preserving)
+
+| Task | Description | Tier | RQ / ADR |
+|------|-------------|:-:|---|
+| TASK-JUC-098 | Spacing / layout token scale (needs an owner-approved base unit; `RQ-DSN-020` deferred it). | L | RQ-DSN-020 |
+| TASK-JUC-099 | Font-size consolidation (e.g. 13.5 vs 13) — changes pixels, owner sign-off. | M | RQ-DSN-010 |
+| TASK-JUC-100 | Missing interaction states: shared hover/disabled/focus for toggle/combo/list rows. | M | RQ-DSN-030..033 |
+| TASK-JUC-101 | Accessibility gaps: colour-alone LED/highlight meaning, contrast audit, focus ring. | M | RQ-DSN-050..052 |
+
 ## Traceability matrix
 
 Generated mechanically: Catch2 tags `[RQ-…]` ↔ requirement files; per-task RQ column above; commit messages carry task + RQ IDs. A snapshot table will be added to this file at each phase end (phase, tasks done, RQ covered by passing tests, RQ remaining).

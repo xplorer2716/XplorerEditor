@@ -114,8 +114,14 @@ construction argument is.
 - **Harder / deferred**: spacing and texture params remain untokenised, so the
   system is not yet *complete* — a follow-up pass (and an owner-approved
   spacing scale) is needed before "all graphics via tokens" is literally true.
-- The `ADR-JUC-013-mockup-generator.py` prototype must mirror the token values
-  (RQ-DSN-063) — a small sync obligation on any token change.
+- The SVG mockup prototype must stay in sync with the token values
+  (RQ-DSN-063). **Superseded by ADR-JUC-015**: the sync is now structural —
+  both `DesignTokens.hpp` and the mockup are generated from / consume the one
+  `juce/tools/design-tokens.yaml` source, so they cannot diverge, and the
+  hand-authoring of `DesignTokens.hpp` described in DEC-JUC-014-A/B is replaced
+  by code generation (DEC-JUC-015-A). The three-tier structure and value
+  boundaries decided here are unchanged; only the *authoring mechanism* moves
+  from hand-written to generated.
 
 ## Alternatives Considered
 - **Tokens in `xpl_app_core`** (headless): rejected — forces `juce_graphics`
