@@ -1,0 +1,157 @@
+# =====================================================================
+# Design tokens — THE single, language-neutral source of truth for the
+# Xplorer JUCE UI presentation (colour, typography, geometry, motion).
+#
+# Consumed by (do NOT hand-edit the generated outputs):
+#   - tools/generate_design_tokens.py    -> juce/app/src/DesignTokens.hpp   (C++)
+#   - tools/generate_background_mockup.py -> background-mockup.svg           (prototype)
+#
+# Three tiers, each referencing only the tier below it:
+#   global   — raw curated values; the ONLY tier that holds literals.
+#   semantic — roles (surface, text, accent, indicator, …) aliasing globals.
+#   component — per-control usages/transforms aliasing semantics.
+#
+# Colours are stored as RRGGBB (opaque; the generators add the FF alpha and the
+# per-language syntax). Every value below equals, exactly, the literal it
+# replaced — the UI stays pixel-identical (RQ-DSN-090). Consolidation of near
+# values (e.g. fs135 vs fs13) is deliberately NOT done here; it is deferred,
+# owner-reasoned work.
+# [RQ-DSN-001..024, RQ-DSN-060..063; ADR-JUC-014, ADR-JUC-015]
+# =====================================================================
+
+tiers:
+
+  # -------------------------------------------------------------------
+  # TIER 1 — GLOBAL : raw curated values (the only tier with literals).
+  # -------------------------------------------------------------------
+  global:
+
+    # ---- neutral slate palette (LookAndFeel / dialogs / indicators) ----
+    slate900: { kind: colour, hex: "181C22", note: "fromRGB(24,28,34)" }
+    slate800: { kind: colour, hex: "1E242C", note: "fromRGB(30,36,44)" }
+    slate700: { kind: colour, hex: "282E36", note: "fromRGB(40,46,54)" }
+    slate600: { kind: colour, hex: "323A44", note: "fromRGB(50,58,68)" }
+    slate500: { kind: colour, hex: "3C424A", note: "fromRGB(60,66,74)" }
+    slate400: { kind: colour, hex: "36363E", note: "fromRGB(54,54,62)" }
+    slate350: { kind: colour, hex: "2C2C34", note: "fromRGB(44,44,52)" }
+    white:    { kind: colour, hex: "FFFFFF", note: "juce::Colours::white" }
+
+    # ---- MIDI-activity LED hues (MainComponent LedPanelComponent) ----
+    ledGreen: { kind: colour, hex: "90FF90", note: "fromRGB(144,255,144) — automation in" }
+    ledBlue:  { kind: colour, hex: "5CABFF", note: "fromRGB(92,171,255) — synth in" }
+    ledRed:   { kind: colour, hex: "FF4020", note: "fromRGB(255,64,32) — synth out" }
+
+    # ---- vector-background palette (BackgroundRenderer, ADR-JUC-013) ----
+    frame:     { kind: colour, hex: "B7BDD0", note: "block frames / signal lines" }
+    title:     { kind: colour, hex: "F2F2F6", note: "bold block/section titles" }
+    caption:   { kind: colour, hex: "C9CACE", note: "parameter captions" }
+    plateTop:  { kind: colour, hex: "45464F", note: "brushed-metal gradient stops" }
+    plateHi:   { kind: colour, hex: "3B3C44" }
+    plateMid:  { kind: colour, hex: "36363E", note: "== slate400 today; kept independent" }
+    plateBot:  { kind: colour, hex: "303138" }
+    wood0:     { kind: colour, hex: "4A1D08", note: "side-rail wood gradient stops" }
+    wood1:     { kind: colour, hex: "7C3615" }
+    wood2:     { kind: colour, hex: "8A431C" }
+    wood3:     { kind: colour, hex: "6B2C0F" }
+    wood4:     { kind: colour, hex: "38160A" }
+    woodGrain: { kind: colour, hex: "2E1206", note: "wood grain hairlines" }
+    barTop:    { kind: colour, hex: "3050B8", note: "section underline gradient" }
+    barMid:    { kind: colour, hex: "24388A" }
+    barBot:    { kind: colour, hex: "1A2A66" }
+
+    # ---- type scale (point sizes; one entry per distinct value in use) ----
+    fs16:  { kind: float, value: 16.0 }
+    fs15:  { kind: float, value: 15.0 }
+    fs14:  { kind: float, value: 14.0 }
+    fs135: { kind: float, value: 13.5 }
+    fs13:  { kind: float, value: 13.0 }
+    fs125: { kind: float, value: 12.5 }
+    fs12:  { kind: float, value: 12.0 }
+    fs115: { kind: float, value: 11.5 }
+    fs11:  { kind: float, value: 11.0 }
+    fs9:   { kind: float, value: 9.0 }
+
+    # ---- geometry (appearance: corner radius / stroke width, in px) ----
+    radius20: { kind: float, value: 2.0 }
+    radius15: { kind: float, value: 1.5 }
+    stroke10: { kind: float, value: 1.0 }
+    stroke20: { kind: float, value: 2.0 }
+    stroke24: { kind: float, value: 2.4 }
+
+    # ---- motion / timing ----
+    hoverBrightenFactor: { kind: float, value: 0.4, note: "knob ring hover brighten" }
+    tickBoxBorderAlpha:  { kind: float, value: 0.6, note: "tick-box border vs accent" }
+    indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
+
+  # -------------------------------------------------------------------
+  # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
+  # -------------------------------------------------------------------
+  semantic:
+
+    # ---- colour roles: surfaces / borders ----
+    surfaceBase:     { alias: global.slate900, note: "dialogs, progress, tick-box fill" }
+    surfaceRecessed: { alias: global.slate800, note: "combo/popup/tab/list-row/mod-matrix" }
+    surfaceSelected: { alias: global.slate600, note: "selected list row" }
+    controlTrack:    { alias: global.slate700, note: "knob unlit ring track" }
+    borderDefault:   { alias: global.slate500, note: "dialog list cell separator" }
+
+    # ---- colour roles: indicators (RQ-GUI-022) ----
+    indicatorOffFill:    { alias: global.slate400 }
+    indicatorOffBorder:  { alias: global.slate350 }
+    indicatorAutomation: { alias: global.ledGreen }
+    indicatorSynthIn:    { alias: global.ledBlue }
+    indicatorSynthOut:   { alias: global.ledRed }
+
+    # ---- colour roles: text ----
+    textPrimary: { alias: global.white }
+
+    # ---- colour roles: vector panel / diagram (ADR-JUC-013) ----
+    diagramFrame:   { alias: global.frame }
+    diagramTitle:   { alias: global.title }
+    diagramCaption: { alias: global.caption }
+    panelPlateTop:  { alias: global.plateTop }
+    panelPlateHi:   { alias: global.plateHi }
+    panelPlateMid:  { alias: global.plateMid }
+    panelPlateBot:  { alias: global.plateBot }
+    panelWood0:     { alias: global.wood0 }
+    panelWood1:     { alias: global.wood1 }
+    panelWood2:     { alias: global.wood2 }
+    panelWood3:     { alias: global.wood3 }
+    panelWood4:     { alias: global.wood4 }
+    panelWoodGrain: { alias: global.woodGrain }
+    sectionBarTop:  { alias: global.barTop }
+    sectionBarMid:  { alias: global.barMid }
+    sectionBarBot:  { alias: global.barBot }
+
+    # ---- type roles: every distinct size kept (consolidation deferred, RQ-DSN-010) ----
+    textDisplay:  { alias: global.fs16,  note: "VCO1/VCO2, combo base size" }
+    textTitle:    { alias: global.fs15,  note: "section titles" }
+    textSubtitle: { alias: global.fs14,  note: "MIX/LAG/LFO/RAMP, settings table" }
+    textLabel:    { alias: global.fs135, note: "wide block labels" }
+    textLabelAlt: { alias: global.fs13,  note: "VCA / VCA1" }
+    textBody:     { alias: global.fs125, note: "PWM" }
+    textCaption:  { alias: global.fs12,  note: "parameter captions, toggle caption" }
+    textWave:     { alias: global.fs115, note: "TRIANGLE/SAWTOOTH/PULSE" }
+    textSmall:    { alias: global.fs11,  note: "IN/OUT labels" }
+    textDense:    { alias: global.fs9,   note: "DESTINATION/TRIGGER/NOISE, combo floor" }
+
+    # ---- geometry roles ----
+    radiusControl:      { alias: global.radius20, note: "tick box outer, block corner" }
+    radiusControlInner: { alias: global.radius15, note: "tick box checked fill" }
+    strokeBorder:       { alias: global.stroke10, note: "tick box border" }
+    strokeLine:         { alias: global.stroke20, note: "frames + signal lines" }
+    strokeKnobRing:     { alias: global.stroke24, note: "knob track + value arc" }
+
+    # ---- motion roles ----
+    hoverBrighten:   { alias: global.hoverBrightenFactor }
+    indicatorHoldMs: { alias: global.indicatorHoldMs }
+
+  # -------------------------------------------------------------------
+  # TIER 3 — COMPONENT : usages/transforms aliasing semantics. Only where a
+  # transform or independent-movement potential exists; the effective accent
+  # colour itself stays runtime-owned by XplorerLookAndFeel::ledColour()
+  # (DEC-JUC-011) — these are the transform *parameters* applied to it.
+  # -------------------------------------------------------------------
+  component:
+    knobRingHoverBrighten: { alias: semantic.hoverBrighten,   note: "accent.brighter(f) on hover" }
+    tickBoxBorderAlpha:    { alias: global.tickBoxBorderAlpha, note: "accent.withAlpha(a) border" }

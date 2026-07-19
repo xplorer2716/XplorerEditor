@@ -2,6 +2,7 @@
 
 #include "BackgroundRenderer.hpp"
 #include "BinaryData.h"
+#include "DesignTokens.hpp"
 #include "Dialogs.hpp"
 #include "SettingsDialog.hpp"
 #include "midiapp/service/FileUtils.hpp"
@@ -467,10 +468,10 @@ namespace xplorer::app
     {
         // Reference LedPanelControl: automation-in / synth-in / synth-out.
         static const std::array<juce::Colour, LED_COUNT> onColours = {
-            juce::Colour::fromRGB(144, 255, 144), juce::Colour::fromRGB(92, 171, 255),
-            juce::Colour::fromRGB(255, 64, 32)};
-        const auto offColour = juce::Colour::fromRGB(54, 54, 62);
-        const auto borderColour = juce::Colour::fromRGB(44, 44, 52);
+            tokens::semantic::indicatorAutomation, tokens::semantic::indicatorSynthIn,
+            tokens::semantic::indicatorSynthOut};
+        const auto offColour = tokens::semantic::indicatorOffFill;
+        const auto borderColour = tokens::semantic::indicatorOffBorder;
 
         const auto now = juce::Time::currentTimeMillis();
         const int horizontalSpace = (getWidth() - LED_COUNT * LED_SIZE) / (LED_COUNT + 1);

@@ -1,5 +1,6 @@
 #include "SettingsDialog.hpp"
 
+#include "DesignTokens.hpp"
 #include "Dialogs.hpp"
 
 #include "xplorer/app/ControlMetadata.hpp"
@@ -41,19 +42,19 @@ namespace xplorer::app
 
             void paintRowBackground(juce::Graphics& g, int, int, int, bool selected) override
             {
-                g.fillAll(selected ? juce::Colour::fromRGB(50, 58, 68) : juce::Colour::fromRGB(30, 36, 44));
+                g.fillAll(selected ? tokens::semantic::surfaceSelected : tokens::semantic::surfaceRecessed);
             }
 
             void paintCell(juce::Graphics& g, int row, int column, int width, int height, bool) override
             {
                 if (column == 1 && row < static_cast<int>(rows.size()))
                 {
-                    g.setColour(juce::Colours::white);
-                    g.setFont(14.0F);
+                    g.setColour(tokens::semantic::textPrimary);
+                    g.setFont(tokens::semantic::textSubtitle);
                     g.drawText(rows[static_cast<std::size_t>(row)].friendly, 4, 0, width - 6, height,
                                juce::Justification::centredLeft, true);
                 }
-                g.setColour(juce::Colour::fromRGB(60, 66, 74));
+                g.setColour(tokens::semantic::borderDefault);
                 g.fillRect(width - 1, 0, 1, height);
             }
 
@@ -596,7 +597,7 @@ namespace xplorer::app
                 _uiPage = uiPage;
                 _randomPage = randomPage;
 
-                const auto bg = juce::Colour::fromRGB(30, 36, 44);
+                const auto bg = tokens::semantic::surfaceRecessed;
                 _tabs.addTab("MIDI", bg, midiPage, true);
                 _tabs.addTab("User interface", bg, uiPage, true);
                 _tabs.addTab("Randomizer", bg, randomPage, true);
@@ -671,7 +672,7 @@ namespace xplorer::app
         options.content.setOwned(
             new SettingsContent(controller, settingsService, backend, std::move(onLedColourChanged)));
         options.dialogTitle = "Settings";
-        options.dialogBackgroundColour = juce::Colour::fromRGB(24, 28, 34);
+        options.dialogBackgroundColour = tokens::semantic::surfaceBase;
         options.escapeKeyTriggersCloseButton = true;
         options.useNativeTitleBar = true;
         options.resizable = true; // the automation table benefits from more height

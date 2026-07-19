@@ -7,6 +7,7 @@ juce_add_gui_app(XplorerApp
 
 target_sources(XplorerApp PRIVATE
     src/Main.cpp
+    src/DesignTokens.hpp
     src/MainComponent.cpp
     src/BackgroundRenderer.cpp
     src/BoundControls.cpp
