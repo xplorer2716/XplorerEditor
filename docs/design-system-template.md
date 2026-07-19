@@ -1,49 +1,95 @@
 # Desktop Application Design System — Reusable Template
 
-## Purpose
+*Framework-agnostic. Applies to JUCE, .NET (WinForms/WPF), Qt, or any native*
+*desktop UI stack. Copy this file into a new project and fill in every*
+*`[...]`. This template is written to be followed literally by an agentic*
+*coding AI, not just read by a human — see §0 before anything else.*
 
-A generic, framework-agnostic structure for defining a **design system** for a
-desktop application. It applies equally to a JUCE app, a .NET/WinForms or WPF
-app, a Qt app, or any other native desktop UI stack. It is meant to be copied
-into a new project and filled in — it defines *sections and questions to
-answer*, not answers themselves.
+---
 
-A design system produced from this template has three properties, regardless
-of the target framework:
+## 0. Agent Operating Rules (read this first)
 
-1. **Single source of truth** — every visual value (colour, size, spacing,
-   timing) is declared exactly once, referenced everywhere it is used.
-2. **Framework-bound, framework-independent** — the tokens and rules are
-   described in terms that make sense before any framework code exists; §7
-   is the *only* section that says how they map onto a specific toolkit.
-3. **Governed** — the document states how new tokens are added, how drift
-   (implementation vs. spec) is prevented, and how compliance is checked.
+*This section exists because scattered, inconsistent visual literals are*
+*usually not introduced by one bad decision — they accumulate one small,*
+*locally-reasonable AI or human edit at a time, each too small to trigger a*
+*review. §0 is the standing contract that prevents that. An agentic AI*
+*making ANY change that touches colour, size, spacing, radius, duration, or*
+*component state SHALL follow this procedure before writing code.*
 
-## How to use this template
+**Before writing a visual literal, resolve it through the token chain — never
+skip a tier:**
 
-1. Copy this file into the target project (e.g. `docs/design-system.md` or,
-   in a process that authors formal requirements, as the body of a
-   requirements artifact).
-2. Fill every `[...]` placeholder. Delete guidance text (in *italics*) once
-   the section is filled in — the shipped document should read as a spec,
-   not as an annotated template.
-3. Do not skip §7 (Framework Binding) or §9 (Governance) — a design system
-   without a stated binding strategy and a stated drift-prevention rule
-   degenerates back into scattered literals, which is the problem this
-   template exists to prevent.
-4. Keep the document versioned with the codebase (same repo, same review
-   process as code) — a design system that lives outside version control
-   drifts from the implementation immediately.
+```
+Need a colour/size/duration/radius for new or changed UI code
+  │
+  ├─ 1. Does an existing COMPONENT token already name this exact thing?
+  │     → yes: use it. Done.
+  │
+  ├─ 2. Does an existing SEMANTIC token fit the role (surface, text, border,
+  │     accent, status)?
+  │     → yes: reference it directly, or add a component token that aliases
+  │       it if this component will need to override it independently later.
+  │
+  ├─ 3. No existing token fits.
+  │     → Is this value genuinely reusable (will another component need the
+  │       same role)?
+  │         → yes: propose a new SEMANTIC token in §2 of the instantiated
+  │           design-system document (add the row to the token table), THEN
+  │           use it. Do this in the same change — never add the raw literal
+  │           "temporarily" with a TODO to tokenise later.
+  │         → no, truly one-off: still declare it as a named local constant
+  │           at the top of the file/class (never inline) AND record it as a
+  │           COMPONENT-scoped token in §4. A one-off is rare — if you find
+  │           yourself adding a second one-off with the same value anywhere
+  │           in the codebase, that is proof it was not one-off; promote it
+  │           to a semantic token instead.
+  │
+  └─ 4. NEVER invent a new GLOBAL/raw palette or scale entry ad hoc while
+        implementing a component. Global tokens (§2.0) are a closed set
+        curated by design intent, not grown organically by feature work. If
+        a component seems to need a wholly new base colour or size step,
+        stop and ask (this is exactly the "two valid designs, irreconcilable
+        trade-off" case that warrants a human decision, not a default).
+```
+
+**Hard rules (grep-checkable — treat a violation as a defect, not a style nit):**
+
+1. No raw colour literal (`#RRGGBB`, `rgb(...)`, framework-native colour
+   constructors with numeric arguments) outside the token module.
+2. No raw numeric size/duration literal for a tokenised category (font size,
+   corner radius, stroke width, spacing, animation duration) outside the
+   token module — including inside a `LookAndFeel`/`Theme`/`Painter` class.
+   The one exception: the token module's own definitions.
+3. Every component token resolves to a semantic token; every semantic token
+   resolves to a global token. No component token may hold a raw value
+   directly (see §2's three-tier model) — this is what makes re-theming a
+   one-place edit instead of a search-and-replace.
+4. When two components independently need "the same-looking thing", that is
+   a signal they should share one token, not each define their own with the
+   same value — duplicate *values* under different *names* are exactly as
+   bad as duplicate raw literals, because the next person who changes one
+   won't know to change the other.
+5. If you are about to write a state (hover/pressed/disabled/focused/
+   selected) visual rule that isn't already in §3's state table, you are
+   either implementing an already-decided state (look it up, don't
+   reinvent it) or introducing a new one (add it to §3, don't bury a
+   one-off rule inside a single component).
+
+**When genuinely blocked** (missing token AND not clearly one-off AND not
+obviously a new semantic role either): stop and ask, per the same
+"ask when blocking" discipline as functional work — do not guess a colour or
+size and move on. A wrong guess here is cheap to make and expensive to find
+later, because it looks intentional.
 
 ---
 
 ## 1. Purpose & Principles
 
-*State the product's visual/interaction philosophy in 2–5 bullet points —*
-*the "why" that later token choices should trace back to (e.g. "reproduces*
-*a specific piece of hardware", "flat/modern SaaS look", "high information*
-*density for expert users"). Every subsequent section should be traceable to*
-*a principle stated here.*
+*State the product's visual/interaction philosophy in 2–5 falsifiable*
+*bullets — each should be specific enough that a design choice can be*
+*checked against it ("does this respect principle N?"), not vague taste*
+*statements. Every token/component decision in this document should trace*
+*back to one of these.*
 
 - [Principle 1]
 - [Principle 2]
@@ -51,200 +97,236 @@ of the target framework:
 
 ## 2. Foundations — Design Tokens
 
-A **token** is a named constant standing in for a raw value (colour, size,
-duration). Tokens are declared once, in one module (§7.1), and referenced by
-name everywhere else. No raw literal of a tokenised kind should appear outside
-that module.
+A token is a named constant standing in for a raw value. Tokens are declared
+in **exactly one module** (§7.1) and organized in **three tiers**, each
+referencing only the tier below it:
+
+```
+Component tokens   (e.g. knob.track.colour)        — what a specific control uses
+      │  aliases
+Semantic tokens     (e.g. colour.surface.recessed)  — what role a value plays
+      │  aliases
+Global tokens        (e.g. colour.slate.800)        — the raw curated value
+```
+
+- **Global tier**: the raw palette/scale, curated deliberately (§0 rule 4)
+  — this is the *only* tier allowed to hold a literal.
+- **Semantic tier**: names a *role* (surface, text, border, accent, status,
+  indicator), independent of any one component — reusable by construction.
+- **Component tier**: names a *usage* inside one control's anatomy, aliasing
+  a semantic token. Only add a component-tier token when that usage might
+  need to move independently of its semantic role later (e.g. theming one
+  control differently); otherwise reference the semantic token directly.
+
+### Naming grammar
+
+Use a consistent, dot-delimited spec name for every tier; transliterate to
+the target language's constant convention in the token module (state the
+transliteration rule once in §7.1 — e.g. `colour.surface.recessed` →
+`kColourSurfaceRecessed` in C++, `Colour_Surface_Recessed` in C#).
+
+| Tier | Pattern | Example |
+|---|---|---|
+| Global | `<category>.<family>.<step>` | `colour.slate.800`, `size.space.4` |
+| Semantic | `<category>.<role>.<variant?>` | `colour.surface.recessed`, `colour.text.disabled` |
+| Component | `<component>.<part>.<state?>` | `knob.ring.track`, `button.toggle.checked` |
 
 ### 2.1 Colour
 
-- **Semantic roles, not raw names.** Define colours by the *role* they play
-  (e.g. `surface`, `surfaceElevated`, `border`, `textPrimary`,
-  `textSecondary`, `textDisabled`, `accent`, plus one entry per
-  status/semantic meaning the app needs — e.g. per-source activity
-  indicators). Never name a token after its RGB value.
-- **Palette table**: [role → value table, filled in per project]
-- **Theming**: [does the app support light/dark or multiple themes? If yes,
-  each role maps to one value per theme; if no, state that explicitly so it
-  isn't silently assumed later]
-- **User-overridable colours**: [if any token's *effective* value can be
-  changed by the end user via settings, state which ones and how the
-  override composes with the token default — the token remains the default,
-  a single runtime accessor resolves the effective value]
+- **Global palette**: [family/step → hex value table — the only place hex
+  values appear]
+- **Semantic roles** (fill in the roles the product actually needs; typical
+  minimum set): `surface.base`, `surface.recessed` (inputs/lists),
+  `surface.elevated` (popovers/dialogs-over-content), `border.default`,
+  `text.primary`, `text.secondary`, `text.disabled`, `accent.default`
+  (brand/primary interactive colour), one entry per **status/indicator**
+  meaning the app has (success/error/warning, or domain-specific indicators).
+- **Theming**: [light/dark/multiple themes? If yes: each semantic token maps
+  to one global value *per theme*, component tokens are theme-independent
+  (they always alias the semantic tier). If no: state that explicitly.]
+- **User-overridable colours**: [if an end user can change a colour via
+  settings, it is still a semantic or component token — the setting supplies
+  the *effective* value at runtime; a single accessor resolves "default
+  token vs. user override", never two independent code paths.]
 
 ### 2.2 Typography
 
-- **Font family/fallback**: [name, plus fallback if the primary font may be
-  unavailable]
-- **Type scale**: a named set of sizes, one per text *role* (e.g. section
-  title, block/group label, body/caption, small/dense label), not one raw
-  size per screen. [role → size table]
-- **Dynamic sizing bounds**: [for any text that is programmatically shrunk
-  to fit its container, state the shared minimum legibility floor and
-  maximum size as scale entries, not ad hoc per call site]
+- **Font family/fallback**: [primary + fallback]
+- **Type scale** (semantic, by *role* not by pixel count): [e.g.
+  `text.title`, `text.label`, `text.caption`, `text.dense` → size table]
+- **Dynamic-fit bounds**: any text programmatically shrunk to fit shares one
+  minimum-legibility floor and one maximum, both scale entries — never a
+  bespoke floor per call site.
 
 ### 2.3 Spacing & Layout Grid
 
-- **Base unit**: [e.g. 4px/8px grid — pick one, state it]
-- **Spacing scale**: named multiples of the base unit (e.g. tight/default/
-  loose) used for padding and gaps, instead of arbitrary per-component
-  numbers.
-- **Canvas/DPI scaling strategy**: [if the app renders onto a logical canvas
-  that scales with the window/display DPI, state the scaling model here —
-  uniform scale preserving aspect ratio, independent X/Y scale, fixed size,
-  etc. — and where the scale factor is computed]
+- **Base unit**: [e.g. 4px/8px — pick one]
+- **Spacing scale**: named multiples (`space.tight`, `space.default`,
+  `space.loose`, ...) — components reference the name, not the multiple.
+- **Canvas/DPI scaling model**: [if content renders on a logical canvas that
+  scales with window/display, state the model precisely: uniform vs.
+  independent-axis scale, where the factor is computed, what stays
+  pixel-fixed if anything (e.g. hairline borders).]
 
 ### 2.4 Geometry
 
-- **Corner radius scale**: [named sizes, e.g. sharp/soft/round]
-- **Stroke/border width scale**: [named weights]
-- **Elevation/shadow model** (if the visual language uses depth):
-  [named levels, or state "flat, no elevation" explicitly]
+- **Corner radius scale**: [`radius.sharp` / `radius.soft` / `radius.round`
+  → value table]
+- **Stroke/border width scale**: [named weights → value table]
+- **Elevation/shadow model**: [named levels, or state "flat — no elevation"
+  explicitly so it isn't silently assumed later]
 
 ### 2.5 Iconography & Imagery
 
-- **Icon style**: [outline/filled, stroke width, corner treatment]
-- **Asset format & sizing**: [vector preferred; if raster, state the source
-  resolution and scaling policy]
-- **Sourcing**: [hand-drawn/vector-authored vs. photographic/bitmap assets —
-  state the policy and the reason, since it drives crispness at scale]
+- **Style**: [outline/filled, stroke width, corner treatment]
+- **Format & sizing**: [vector preferred; if raster, source resolution +
+  scaling policy — raster assets are the first thing to blur under
+  non-integer window scale, state the mitigation]
+- **Sourcing policy**: [hand-authored/vector vs. photographic — state which,
+  and why, since it drives crispness at scale]
 
 ### 2.6 Motion & Timing
 
-- **Duration scale**: named durations for the interaction feedback the app
-  actually uses (e.g. hover transition, transient indicator hold, popup
-  fade) — not one bespoke millisecond value per component.
-- **Easing**: [linear / ease-in-out / etc., per duration category if they
-  differ]
-- **When *not* to animate**: [state any deliberate exceptions — e.g.
-  real-time/low-latency controls that must never add animated delay between
-  input and visible feedback]
+- **Duration scale**: name every duration category the app actually uses
+  (`motion.hover`, `motion.transientHold`, `motion.fade`, ...) — never a
+  bespoke millisecond literal per component.
+- **Easing**: [per duration category if they differ]
+- **When not to animate**: [explicit exceptions — e.g. real-time/low-latency
+  controls where any added delay between input and visible feedback is a
+  regression, not a polish opportunity]
 
 ## 3. Component Interaction States
 
-Define the **canonical state machine** every interactive control implements,
-and the **shared visual rule** for each state transition — stated once here,
-not re-decided per component.
+The canonical state machine every interactive control implements, and the
+**shared visual rule** for each — decided once here, referenced everywhere.
+A component's own spec (§4) states *which* states it implements, never
+*how a state looks* — that would be a re-decision, which is the drift this
+document exists to prevent.
 
-| State | When it applies | Visual rule (token-referenced) |
-|---|---|---|
-| Idle/default | no interaction | [base tokens] |
-| Hover | pointer over, not pressed | [e.g. "brighten accent by scale factor X"] |
-| Active/pressed | pointer down / being dragged | [rule] |
-| Focused | keyboard focus | [rule — must remain visible without a pointer] |
-| Disabled | control inactive | [rule — e.g. shared desaturation/opacity] |
-| Selected | control represents a chosen/active option | [rule] |
-| Error/invalid | input failed validation | [rule, if the app has validated input] |
+| State | Trigger | Visual rule (token reference, not a literal) | Notes |
+|---|---|---|---|
+| Idle/default | no interaction | [base tokens] | |
+| Hover | pointer over, not pressed | [rule, e.g. "brighten `accent.default` by `motion` -scale factor F"] | must not fire on touch-only input if the platform has none |
+| Active/pressed | pointer down / dragging | [rule] | |
+| Focused | keyboard focus | [rule] | must remain visible without a pointer; never rely on colour alone (§6) |
+| Disabled | control inactive | [rule, e.g. shared opacity/desaturation] | |
+| Selected | represents a chosen option | [rule] | |
+| Error/invalid | failed validation | [rule] | only if the app validates input |
 
-*Every component's own spec (§4) states which of these states it implements —*
-*it does not redefine what "hover" looks like, it only says whether it has one.*
+## 4. Component Catalogue
 
-## 4. Component Catalogue — Per-Component Spec Structure
+For each distinct control type, use this compact structure so the entry is
+scannable and diffable — prefer tables over prose:
 
-For **each** distinct control type in the app (buttons, knobs/sliders, list/
-table rows, dialogs, indicators, etc.), document:
+```markdown
+### <Component name>
+| Field | Value |
+|---|---|
+| Anatomy | [named parts, e.g. "ring track, value arc, crown"] |
+| States implemented | [subset of §3] |
+| Tokens used | [component-tier token names, one per anatomy part] |
+| Variants | [only if >1 actually exists] |
+| Behaviour owner | [link to the functional requirement — this catalogue
+                     owns appearance only, never behaviour] |
+```
 
-- **Anatomy**: the named parts of the control (e.g. "ring track", "value
-  arc", "LED core") and which tokens each part uses.
-- **States implemented**: subset of §3's state table that applies, with any
-  component-specific nuance called out (rare — most nuance belongs in §3).
-- **Variants**: [e.g. size variants, style variants — only if the project
-  actually has more than one]
-- **Behavioural notes**: interaction quirks that affect appearance (e.g.
-  "value shown as a transient popup while dragging, not a persistent
-  label") — link to the functional requirement that owns the *behaviour*;
-  this catalogue owns only the *appearance* of that behaviour.
-- **Do / Don't**: [optional — call out common mistakes if the project has
-  a history of them]
-
-*This section is a structure to repeat per component, not content to fill*
-*in generically — the actual per-component entries belong in the project's*
-*instantiated design system, not in this template.*
+*This is a structure to repeat per real component in the instantiated*
+*document — this template does not enumerate components itself.*
 
 ## 5. Layout Patterns
 
-*If the app has recurring macro-layout patterns (e.g. a fixed diagram with*
-*controls anchored to measured points, a form with label/field rows, a*
-*toolbar), name and describe each pattern once here so screens reuse the*
-*pattern instead of re-deriving layout rules per screen.*
+*Name and describe each recurring macro-layout pattern once, so screens*
+*reuse it instead of re-deriving layout rules ad hoc.*
 
-- [Pattern 1]: [description]
+- [Pattern 1]: [description, e.g. "fixed diagram with controls anchored to
+  measured points — single source of truth for anchor coordinates"]
 - ...
 
 ## 6. Accessibility & Ergonomics
 
-- **Contrast**: [minimum contrast ratio for text-on-surface token pairs]
-- **Minimum hit target size**: [for pointer and, if relevant, touch]
-- **Resizability**: [does the window/content scale? What's the minimum
-  usable size?]
-- **Colour-independence**: [is any state/meaning conveyed by colour alone?
-  If so, state the redundant cue — shape, label, position]
+- **Contrast**: [minimum ratio for each text-on-surface token pairing —
+  check semantic pairs, not just the default theme]
+- **Minimum hit target size**: [pointer, and touch if relevant]
+- **Resizability**: [does content scale with the window? Minimum usable size?]
+- **Never colour-alone**: [any state/meaning conveyed by colour must have a
+  redundant cue — shape, label, position, icon. Audit §3's state table and
+  §2.1's status colours against this.]
 
 ## 7. Framework Binding
 
-*This is the only section whose content is inherently framework-specific.*
-*State how the abstract tokens/rules above become code in the actual stack.*
+*The only section whose content is inherently framework-specific.*
 
-### 7.1 Token module location & shape
+### 7.1 Token module
 
-[Where do the token constants live — a dedicated header/class/module,
-independent of any UI-framework base class, so it can be referenced or
-tested without constructing a live UI. State the module's path/namespace.]
+[Path/namespace of the single module holding all token constants. It SHALL
+have no dependency on a live UI context (window, graphics context,
+component tree) so it can be read/tested headlessly. State the
+spec-name → code-identifier transliteration rule here (see §2 naming
+grammar).]
 
 ### 7.2 Rendering integration
 
-[How does a component consume the tokens to draw itself — e.g. "a custom
-`LookAndFeel` subclass reads token accessors in its `draw*` overrides"
-(JUCE), "a `Theme`/`Painter` class consumed by `OnPaint` overrides"
-(WinForms), "a stylesheet/QSS generated from the token table" (Qt), etc.]
+[How a component consumes tokens to draw itself — e.g. a custom
+`LookAndFeel` subclass reading token accessors in its `draw*` overrides
+(JUCE); a `Theme`/`Painter` consumed by `OnPaint` (WinForms); a stylesheet
+generated from the token table (Qt).]
 
 ### 7.3 State-to-code mapping
 
-[How does §3's abstract state machine map onto the framework's own notion
-of component state — e.g. JUCE's `isMouseOverOrDragging()`/`isEnabled()`,
-WinForms' `MouseEnter`/`Enabled`, etc.]
+[How §3's abstract states map onto the framework's own state queries — e.g.
+`isMouseOverOrDragging()` / `isEnabled()` (JUCE), `MouseEnter` / `Enabled`
+(WinForms).]
 
 ### 7.4 Prototyping / mockup sync
 
-[If design mockups are produced outside the framework (e.g. an SVG/Figma
-prototype), state how their palette/scale stay in sync with the token
-module — manual mirroring with a review checklist is acceptable, but the
-sync mechanism must be named, or mockups and shipped code will silently
-diverge.]
+[If mockups are produced outside the framework (SVG/Figma/etc.), name the
+mechanism keeping their palette/scale in sync with the token module —
+manual mirroring with a stated review checkpoint is acceptable; "no
+mechanism" is not, because it guarantees silent drift.]
 
 ## 8. Testability
 
-- **Headless verification**: [can the token module and any pure-logic state
-  resolution (e.g. "which colour for this state") be exercised without a
-  display/window? State the boundary between what's headlessly testable
-  and what requires visual/manual verification.]
-- **Regression check**: [how is "no raw literal outside the token module"
-  verified — code review checklist, a grep-based lint step, a static
-  analysis rule?]
+- **Headless verification**: [what's testable without a display — token
+  resolution, state→token mapping logic — vs. what needs visual/manual
+  verification.]
+- **Regression check**: [how "no raw literal outside the token module" is
+  verified — e.g. a grep-based check listed as a Definition-of-Done item,
+  run before any visual-code change is considered complete.]
 
 ## 9. Governance
 
-- **Adding a token**: [process — e.g. "propose in the design-system doc,
-  get owner sign-off, then add the constant and migrate call sites in the
-  same change"]
-- **Changing a token's value**: [must never require touching call sites —
-  if it does, the token is not actually a single source of truth; state
-  this as an explicit acceptance rule]
+- **Adding a token**: [process — propose in this document (which tier, which
+  name per the grammar, which value), get sign-off if the project requires
+  it, then add the constant and migrate call sites in the same change.]
+- **Changing a token's value**: must never require a call-site edit — if it
+  does, it was never actually a single source of truth; treat that as a bug
+  in the token structure, not a one-off exception.
 - **Deprecating a token**: [process for removing an unused token without
-  leaving orphaned call sites]
-- **Drift prevention**: [the standing rule that keeps future work compliant
-  — e.g. "any change to visual presentation code must reference an existing
-  token or introduce a new one in this document in the same change, never a
-  bare literal"]
-- **Document ownership**: [who approves changes to this design system
-  itself]
+  orphaning call sites — grep for zero remaining references first.]
+- **Drift prevention**: the standing rule (§0) that keeps future work
+  compliant without re-litigating it per change.
+- **Document ownership**: [who approves changes to this design system itself]
 
 ## 10. Non-Goals
 
-*State explicitly what this design system does **not** cover, so scope*
-*creep and scope confusion are both prevented (e.g. "does not define*
-*application behaviour/functional requirements — those are owned*
-*elsewhere"; "does not cover a specific screen's business logic").*
+*State explicitly what this document does not cover, so scope is bounded.*
 
-- [Non-goal 1]
-- ...
+- Does not define application/business behaviour — that's owned by
+  functional requirements elsewhere; this document owns *appearance and
+  interaction feedback* of that behaviour, never the behaviour itself.
+- [Other non-goals specific to the project]
+
+---
+
+## Appendix: Good / Bad Examples
+
+*Concrete right/wrong pairs an agentic AI can pattern-match against.*
+*Replace with project-specific examples once instantiated — generic ones*
+*shown here to illustrate the pattern itself.*
+
+| ❌ Bad | ✅ Good | Why |
+|---|---|---|
+| `g.setColour(Colour::fromRGB(30,36,44));` | `g.setColour(Tokens::colour(SurfaceRecessed));` | Raw literal vs. token reference (§0 rule 1) |
+| A second component defines its own `kDarkBg = 0x1E242C` matching an existing token's value | Reuse the existing semantic token | Same value, different name = untraceable duplicate (§0 rule 4) |
+| `slider.brighter(0.4f)` hard-coded per component | `slider.brighter(Tokens::motion(HoverBrighten))` | Shared state rule vs. re-decided per component (§3) |
+| A component token holds a raw hex directly | A component token aliases a semantic token, which aliases a global token | Breaks the three-tier chain (§2, §0 rule 3) |
