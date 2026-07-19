@@ -1,5 +1,7 @@
 #include "ProgressWindow.hpp"
 
+#include "DesignTokens.hpp"
+
 namespace xplorer::app
 {
     class ProgressWindow::Content final : public juce::Component
@@ -29,7 +31,7 @@ namespace xplorer::app
     };
 
     ProgressWindow::ProgressWindow()
-        : juce::DocumentWindow("", juce::Colour::fromRGB(24, 28, 34), 0)
+        : juce::DocumentWindow("", tokens::semantic::surfaceBase, 0)
     {
         auto content = std::make_unique<Content>(_progress);
         _content = content.get();

@@ -5,6 +5,7 @@
 // from the extracted table. [RQ-GUI-001, RQ-GUI-005, RQ-GUI-037, ADR-JUC-006, ADR-JUC-013]
 
 #include "BoundControls.hpp"
+#include "DesignTokens.hpp"
 #include "DisplayPanel.hpp"
 #include "VfdDisplayHelper.hpp"
 #include "JuceEventDispatcher.hpp"
@@ -124,7 +125,7 @@ namespace xplorer::app
         private:
             static constexpr int LED_COUNT = 3;
             static constexpr int LED_SIZE = 5;         // reference LedSize
-            static constexpr int HOLD_MILLISECONDS = 100;
+            static constexpr int HOLD_MILLISECONDS = tokens::semantic::indicatorHoldMs;
             static constexpr int TICK_MILLISECONDS = 30;
 
             void timerCallback() override;

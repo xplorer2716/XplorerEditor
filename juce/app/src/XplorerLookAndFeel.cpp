@@ -1,15 +1,17 @@
 #include "XplorerLookAndFeel.hpp"
 
+#include "DesignTokens.hpp"
+
 namespace xplorer::app
 {
     XplorerLookAndFeel::XplorerLookAndFeel(juce::Colour ledColour)
         : _ledColour(ledColour)
     {
-        setColour(juce::ComboBox::backgroundColourId, juce::Colour::fromRGB(30, 36, 44));
-        setColour(juce::ComboBox::textColourId, juce::Colours::white);
-        setColour(juce::PopupMenu::backgroundColourId, juce::Colour::fromRGB(30, 36, 44));
-        setColour(juce::ToggleButton::textColourId, juce::Colours::white);
-        setColour(juce::Label::textColourId, juce::Colours::white);
+        setColour(juce::ComboBox::backgroundColourId, tokens::semantic::surfaceRecessed);
+        setColour(juce::ComboBox::textColourId, tokens::semantic::textPrimary);
+        setColour(juce::PopupMenu::backgroundColourId, tokens::semantic::surfaceRecessed);
+        setColour(juce::ToggleButton::textColourId, tokens::semantic::textPrimary);
+        setColour(juce::Label::textColourId, tokens::semantic::textPrimary);
     }
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -29,30 +31,32 @@ namespace xplorer::app
         const auto ringRadius = radius - 1.0F;
         juce::Path track;
         track.addCentredArc(centre.x, centre.y, ringRadius, ringRadius, 0.0F, startAngle, endAngle, true);
-        g.setColour(juce::Colour::fromRGB(40, 46, 54));
-        g.strokePath(track, juce::PathStrokeType(2.4F));
+        g.setColour(tokens::semantic::controlTrack);
+        g.strokePath(track, juce::PathStrokeType(tokens::semantic::strokeKnobRing));
 
         // Coloured LED value arc from start to the current position. Brighter
         // while the mouse is over or dragging the knob (reference _isMouseEntered
         // light-colour highlight); no centre pointer (owner decision). [RQ-GUI-031]
         juce::Path ring;
         ring.addCentredArc(centre.x, centre.y, ringRadius, ringRadius, 0.0F, startAngle, angle, true);
-        g.setColour(slider.isMouseOverOrDragging(true) ? _ledColour.brighter(0.4F) : _ledColour);
-        g.strokePath(ring, juce::PathStrokeType(2.4F));
+        g.setColour(slider.isMouseOverOrDragging(true)
+                        ? _ledColour.brighter(tokens::component::knobRingHoverBrighten)
+                        : _ledColour);
+        g.strokePath(ring, juce::PathStrokeType(tokens::semantic::strokeKnobRing));
     }
 
     void XplorerLookAndFeel::drawTickBox(juce::Graphics& g, juce::Component&, float x, float y, float w,
                                          float h, bool ticked, bool, bool, bool)
     {
         const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
-        g.setColour(juce::Colour::fromRGB(24, 28, 34));
-        g.fillRoundedRectangle(box, 2.0F);
-        g.setColour(_ledColour.withAlpha(0.6F));
-        g.drawRoundedRectangle(box, 2.0F, 1.0F);
+        g.setColour(tokens::semantic::surfaceBase);
+        g.fillRoundedRectangle(box, tokens::semantic::radiusControl);
+        g.setColour(_ledColour.withAlpha(tokens::component::tickBoxBorderAlpha));
+        g.drawRoundedRectangle(box, tokens::semantic::radiusControl, tokens::semantic::strokeBorder);
         if (ticked)
         {
             g.setColour(_ledColour);
-            g.fillRoundedRectangle(box.reduced(2.0F), 1.5F);
+            g.fillRoundedRectangle(box.reduced(2.0F), tokens::semantic::radiusControlInner);
         }
     }
 
@@ -72,7 +76,8 @@ namespace xplorer::app
         if (button.getButtonText().isNotEmpty())
         {
             g.setColour(button.findColour(juce::ToggleButton::textColourId));
-            g.setFont(juce::Font(juce::jmin(12.0F, static_cast<float>(bounds.getHeight()) - 3.0F)));
+            g.setFont(juce::Font(juce::jmin(tokens::semantic::textCaption,
+                                            static_cast<float>(bounds.getHeight()) - 3.0F)));
             const auto textArea = bounds.withTrimmedLeft(boxSize + 2);
             g.drawText(button.getButtonText(), textArea, juce::Justification::centredLeft, false);
         }
@@ -86,8 +91,11 @@ namespace xplorer::app
         // (box width minus its 30px arrow zone, minus the Label's default
         // 5px left/right border). A per-box, not per-selection, size keeps it
         // stable as the user changes the selection.
-        constexpr float BASE_SIZE = 16.0F;
-        constexpr float MIN_SIZE = 9.0F;
+        // Font-size bounds come from the shared type scale (RQ-DSN-011); the
+        // arrow/label geometry stays a local layout constant (spacing scale
+        // deferred, RQ-DSN-020).
+        constexpr float BASE_SIZE = tokens::semantic::textDisplay;
+        constexpr float MIN_SIZE = tokens::semantic::textDense;
         constexpr int ARROW_ZONE = 30;
         constexpr int LABEL_MARGIN = 10;
 

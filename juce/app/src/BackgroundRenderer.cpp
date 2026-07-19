@@ -1,5 +1,6 @@
 #include "BackgroundRenderer.hpp"
 
+#include "DesignTokens.hpp"
 #include "xplorer/app/ControlTable.hpp"
 
 // Vector background painter. Every primitive below transcribes 1:1 the
@@ -13,27 +14,29 @@ namespace xplorer::app
 {
     namespace
     {
-        // ---- palette (single source of truth for every colour) --------------
-        const juce::Colour FRAME{0xFFB7BDD0};      // block frames / signal lines
-        const juce::Colour TITLE{0xFFF2F2F6};      // bold block/section titles
-        const juce::Colour CAPTION{0xFFC9CACE};    // parameter captions
-        const juce::Colour PLATE_TOP{0xFF45464F};  // brushed-metal gradient stops
-        const juce::Colour PLATE_HI{0xFF3B3C44};
-        const juce::Colour PLATE_MID{0xFF36363E};
-        const juce::Colour PLATE_BOT{0xFF303138};
-        const juce::Colour WOOD_0{0xFF4A1D08};     // side-rail wood gradient stops
-        const juce::Colour WOOD_1{0xFF7C3615};
-        const juce::Colour WOOD_2{0xFF8A431C};
-        const juce::Colour WOOD_3{0xFF6B2C0F};
-        const juce::Colour WOOD_4{0xFF38160A};
-        const juce::Colour WOOD_GRAIN{0xFF2E1206};
-        const juce::Colour BAR_TOP{0xFF3050B8};    // section underline gradient
-        const juce::Colour BAR_MID{0xFF24388A};
-        const juce::Colour BAR_BOT{0xFF1A2A66};
+        // ---- palette: now sourced from the shared design tokens (single source
+        //      of truth across the whole app, not just this file). [ADR-JUC-014] --
+        const juce::Colour& FRAME = tokens::semantic::diagramFrame;   // block frames / signal lines
+        const juce::Colour& TITLE = tokens::semantic::diagramTitle;   // bold block/section titles
+        const juce::Colour& CAPTION = tokens::semantic::diagramCaption; // parameter captions
+        const juce::Colour& PLATE_TOP = tokens::semantic::panelPlateTop; // brushed-metal gradient stops
+        const juce::Colour& PLATE_HI = tokens::semantic::panelPlateHi;
+        const juce::Colour& PLATE_MID = tokens::semantic::panelPlateMid;
+        const juce::Colour& PLATE_BOT = tokens::semantic::panelPlateBot;
+        const juce::Colour& WOOD_0 = tokens::semantic::panelWood0;     // side-rail wood gradient stops
+        const juce::Colour& WOOD_1 = tokens::semantic::panelWood1;
+        const juce::Colour& WOOD_2 = tokens::semantic::panelWood2;
+        const juce::Colour& WOOD_3 = tokens::semantic::panelWood3;
+        const juce::Colour& WOOD_4 = tokens::semantic::panelWood4;
+        const juce::Colour& WOOD_GRAIN = tokens::semantic::panelWoodGrain;
+        const juce::Colour& BAR_TOP = tokens::semantic::sectionBarTop; // section underline gradient
+        const juce::Colour& BAR_MID = tokens::semantic::sectionBarMid;
+        const juce::Colour& BAR_BOT = tokens::semantic::sectionBarBot;
 
-        // ---- geometry constants ---------------------------------------------
-        constexpr float LINE_WIDTH = 2.0F;       // frames + signal lines
-        constexpr float CORNER = 2.0F;           // block corner radius
+        // ---- geometry: appearance (stroke/radius) from tokens; layout (canvas,
+        //      rail, stub) stays local — spacing scale deferred (RQ-DSN-020) ----
+        constexpr float LINE_WIDTH = tokens::semantic::strokeLine;   // frames + signal lines
+        constexpr float CORNER = tokens::semantic::radiusControl;    // block corner radius
         constexpr int STUB_LENGTH = 12;          // default control-tick length
         constexpr int RAIL_WIDTH = 28;           // wood side rail
         // Cosmetic top gap (≈ the section-bar height) kept as panel material
@@ -49,17 +52,18 @@ namespace xplorer::app
         constexpr float MENUSTRIP_BAND = 32.0F;
         constexpr float CANVAS_TOP_CROP = MENUSTRIP_BAND - CANVAS_PADDING; // 27
 
-        // ---- shared font sizes ----------------------------------------------
-        constexpr float FS_SECTION = 15.0F;      // section titles
-        constexpr float FS_VCO = 16.0F;          // VCO1 / VCO2
-        constexpr float FS_MIX = 14.0F;          // MIX / LAG / LFO / RAMP
-        constexpr float FS_BLOCK = 13.5F;        // wide block labels
-        constexpr float FS_VCA = 13.0F;          // VCA / VCA1
-        constexpr float FS_PWM = 12.5F;          // PWM
-        constexpr float FS_CAPTION = 12.0F;      // parameter captions
-        constexpr float FS_WAVE = 11.5F;         // TRIANGLE / SAWTOOTH / PULSE
-        constexpr float FS_OUT = 11.0F;          // IN/OUT labels
-        constexpr float FS_SMALL = 9.0F;         // DESTINATION / TRIGGER IN / NOISE
+        // ---- font sizes: from the shared type scale (RQ-DSN-010). Every value
+        //      is preserved exactly; consolidation (e.g. 13.5 vs 13) deferred. --
+        constexpr float FS_SECTION = tokens::semantic::textTitle;    // section titles
+        constexpr float FS_VCO = tokens::semantic::textDisplay;      // VCO1 / VCO2
+        constexpr float FS_MIX = tokens::semantic::textSubtitle;     // MIX / LAG / LFO / RAMP
+        constexpr float FS_BLOCK = tokens::semantic::textLabel;      // wide block labels
+        constexpr float FS_VCA = tokens::semantic::textLabelAlt;     // VCA / VCA1
+        constexpr float FS_PWM = tokens::semantic::textBody;         // PWM
+        constexpr float FS_CAPTION = tokens::semantic::textCaption;  // parameter captions
+        constexpr float FS_WAVE = tokens::semantic::textWave;        // TRIANGLE / SAWTOOTH / PULSE
+        constexpr float FS_OUT = tokens::semantic::textSmall;        // IN/OUT labels
+        constexpr float FS_SMALL = tokens::semantic::textDense;      // DESTINATION / TRIGGER IN / NOISE
 
         constexpr int SECTION_BAR_WIDTH = 370;
         constexpr float SECTION_BAR_HEIGHT = 4.5F;

@@ -1,5 +1,6 @@
 #include "ModMatrixPanel.hpp"
 
+#include "DesignTokens.hpp"
 #include "XplorerLookAndFeel.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/model/ModulationMatrixEntry.hpp"
@@ -19,7 +20,7 @@ namespace xplorer::app
         // highlight so clearHighlight can restore it.
         _defaultComboBackground = _rows[0].source != nullptr
                                       ? _rows[0].source->findColour(juce::ComboBox::backgroundColourId)
-                                      : juce::Colour::fromRGB(30, 36, 44);
+                                      : tokens::semantic::surfaceRecessed;
         refreshAll();
     }
 
