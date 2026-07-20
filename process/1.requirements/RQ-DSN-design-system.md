@@ -161,12 +161,19 @@ silently merged — owner confirms before migration):
   by RQ-GUI-005 is the project's canvas/DPI scaling model; RQ-DSN does not
   redefine it, only requires every new screen/dialog to use the same model
   rather than an independent scaling scheme.
-- Base spacing unit and scale: **not yet derived from evidence** — dialogs
-  (`SettingsDialog.cpp`) use ad hoc per-control positioning, not a grid.
-  Deferred: proposing a spacing scale requires a pass over dialog layout code
-  not yet done in this session; tracked as an open item for the follow-up
-  ADR rather than guessed here (template §0's "stop and ask" / "don't invent"
-  rule applies to spacing exactly as it does to colour).
+- **Base spacing unit and scale** *(resolved TASK-JUC-098, 2026-07)*: audited
+  every hand-authored layout call in `SettingsDialog.cpp` and
+  `ProgressWindow.cpp` (the only two files with ad hoc per-control
+  positioning; `PageFamilyBlock`/`MainComponent` use control-table coordinates
+  mechanically extracted from the .NET reference, out of scope). Every
+  recurring gap/margin literal already divided evenly into a **4px base
+  unit** — no pixel changed, purely a naming/tokenization pass
+  (value-preserving, same as the colour/typography migration). Scale:
+  `space2` (hairline), `space4`, `space6`, `space8`, `space12`, `space24`,
+  named via `semantic.layout*` roles (`layoutHairline/FieldGap/SectionGap/
+  ButtonGap/Margin`). Two content-driven sizes (`dialogRowHeight`=28,
+  `dialogLabelWidth`=150) stay outside the spacing scale — they size to
+  content/comfort, not a grid step. Owner-approved base unit and scale.
 
 ### 2.4 Geometry
 

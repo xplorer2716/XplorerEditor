@@ -26,6 +26,7 @@ target_sources(XplorerApp PRIVATE
 # background is now drawn vectorially, so no bitmap is embedded. [ADR-JUC-013]
 juce_add_binary_data(XplorerAssets SOURCES
     assets/vfd-matrix.png
+    assets/about.jpg
     assets/gotodown.gif
     assets/gotohover.gif
     assets/gotopatch.gif
