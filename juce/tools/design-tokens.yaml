@@ -81,7 +81,7 @@ tiers:
     hoverBrightenFactor: { kind: float, value: 0.4, note: "knob ring hover brighten" }
     tickBoxBorderAlpha:  { kind: float, value: 0.6, note: "tick-box border vs accent" }
     indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
-    knobTrackAlpha:      { kind: float, value: 0.0196, note: "reference KnobControl.cs DEFAULT_KNOB_LED_BACKGROUND_COLOR ARGB(5,255,255,255), Standard style = 5/255; a near-invisible white wash over the panel, not a solid ring" }
+    knobTrackAlpha:      { kind: float, value: 0.2, note: "owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash." }
 
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.

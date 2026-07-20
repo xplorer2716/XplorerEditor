@@ -65,7 +65,7 @@ namespace xplorer::app::tokens
         inline constexpr float hoverBrightenFactor = 0.4F;  // knob ring hover brighten
         inline constexpr float tickBoxBorderAlpha = 0.6F;  // tick-box border vs accent
         inline constexpr int indicatorHoldMs = 100;  // MIDI LED retriggerable hold
-        inline constexpr float knobTrackAlpha = 0.0196F;  // reference KnobControl.cs DEFAULT_KNOB_LED_BACKGROUND_COLOR ARGB(5,255,255,255), Standard style = 5/255; a near-invisible white wash over the panel, not a solid ring
+        inline constexpr float knobTrackAlpha = 0.2F;  // owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash.
     }
 
     // -----------------------------------------------------------------
