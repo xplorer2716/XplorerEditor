@@ -29,7 +29,6 @@ tiers:
     # ---- neutral slate palette (LookAndFeel / dialogs / indicators) ----
     slate900: { kind: colour, hex: "181C22", note: "fromRGB(24,28,34)" }
     slate800: { kind: colour, hex: "1E242C", note: "fromRGB(30,36,44)" }
-    slate700: { kind: colour, hex: "282E36", note: "fromRGB(40,46,54)" }
     slate600: { kind: colour, hex: "323A44", note: "fromRGB(50,58,68)" }
     slate500: { kind: colour, hex: "3C424A", note: "fromRGB(60,66,74)" }
     slate400: { kind: colour, hex: "36363E", note: "fromRGB(54,54,62)" }
@@ -82,6 +81,7 @@ tiers:
     hoverBrightenFactor: { kind: float, value: 0.4, note: "knob ring hover brighten" }
     tickBoxBorderAlpha:  { kind: float, value: 0.6, note: "tick-box border vs accent" }
     indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
+    knobTrackAlpha:      { kind: float, value: 0.0196, note: "reference KnobControl.cs DEFAULT_KNOB_LED_BACKGROUND_COLOR ARGB(5,255,255,255), Standard style = 5/255; a near-invisible white wash over the panel, not a solid ring" }
 
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
@@ -92,7 +92,7 @@ tiers:
     surfaceBase:     { alias: global.slate900, note: "dialogs, progress, tick-box fill" }
     surfaceRecessed: { alias: global.slate800, note: "combo/popup/tab/list-row/mod-matrix" }
     surfaceSelected: { alias: global.slate600, note: "selected list row" }
-    controlTrack:    { alias: global.slate700, note: "knob unlit ring track" }
+    controlTrack:    { alias: global.white, note: "knob unlit ring track base (with component.knobTrackAlpha)" }
     borderDefault:   { alias: global.slate500, note: "dialog list cell separator" }
 
     # ---- colour roles: indicators (RQ-GUI-022) ----
@@ -155,3 +155,4 @@ tiers:
   component:
     knobRingHoverBrighten: { alias: semantic.hoverBrighten,   note: "accent.brighter(f) on hover" }
     tickBoxBorderAlpha:    { alias: global.tickBoxBorderAlpha, note: "accent.withAlpha(a) border" }
+    knobTrackAlpha:        { alias: global.knobTrackAlpha,     note: "controlTrack.withAlpha(a)" }

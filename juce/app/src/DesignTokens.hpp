@@ -23,7 +23,6 @@ namespace xplorer::app::tokens
     {
         inline const juce::Colour slate900 = juce::Colour(0xFF181C22);  // fromRGB(24,28,34)
         inline const juce::Colour slate800 = juce::Colour(0xFF1E242C);  // fromRGB(30,36,44)
-        inline const juce::Colour slate700 = juce::Colour(0xFF282E36);  // fromRGB(40,46,54)
         inline const juce::Colour slate600 = juce::Colour(0xFF323A44);  // fromRGB(50,58,68)
         inline const juce::Colour slate500 = juce::Colour(0xFF3C424A);  // fromRGB(60,66,74)
         inline const juce::Colour slate400 = juce::Colour(0xFF36363E);  // fromRGB(54,54,62)
@@ -66,6 +65,7 @@ namespace xplorer::app::tokens
         inline constexpr float hoverBrightenFactor = 0.4F;  // knob ring hover brighten
         inline constexpr float tickBoxBorderAlpha = 0.6F;  // tick-box border vs accent
         inline constexpr int indicatorHoldMs = 100;  // MIDI LED retriggerable hold
+        inline constexpr float knobTrackAlpha = 0.0196F;  // reference KnobControl.cs DEFAULT_KNOB_LED_BACKGROUND_COLOR ARGB(5,255,255,255), Standard style = 5/255; a near-invisible white wash over the panel, not a solid ring
     }
 
     // -----------------------------------------------------------------
@@ -76,7 +76,7 @@ namespace xplorer::app::tokens
         inline const juce::Colour surfaceBase = global::slate900;  // dialogs, progress, tick-box fill
         inline const juce::Colour surfaceRecessed = global::slate800;  // combo/popup/tab/list-row/mod-matrix
         inline const juce::Colour surfaceSelected = global::slate600;  // selected list row
-        inline const juce::Colour controlTrack = global::slate700;  // knob unlit ring track
+        inline const juce::Colour controlTrack = global::white;  // knob unlit ring track base (with component.knobTrackAlpha)
         inline const juce::Colour borderDefault = global::slate500;  // dialog list cell separator
         inline const juce::Colour indicatorOffFill = global::slate400;
         inline const juce::Colour indicatorOffBorder = global::slate350;
@@ -126,6 +126,7 @@ namespace xplorer::app::tokens
     {
         inline constexpr float knobRingHoverBrighten = semantic::hoverBrighten;  // accent.brighter(f) on hover
         inline constexpr float tickBoxBorderAlpha = global::tickBoxBorderAlpha;  // accent.withAlpha(a) border
+        inline constexpr float knobTrackAlpha = global::knobTrackAlpha;  // controlTrack.withAlpha(a)
     }
 
 }

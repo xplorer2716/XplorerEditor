@@ -31,7 +31,10 @@ namespace xplorer::app
         const auto ringRadius = radius - 1.0F;
         juce::Path track;
         track.addCentredArc(centre.x, centre.y, ringRadius, ringRadius, 0.0F, startAngle, endAngle, true);
-        g.setColour(tokens::semantic::controlTrack);
+        // Near-invisible white wash (reference DEFAULT_KNOB_LED_BACKGROUND_COLOR,
+        // Standard style), not a solid ring — the panel shows through almost
+        // entirely. [RQ-DSN-061]
+        g.setColour(tokens::semantic::controlTrack.withAlpha(tokens::component::knobTrackAlpha));
         g.strokePath(track, juce::PathStrokeType(tokens::semantic::strokeKnobRing));
 
         // Coloured LED value arc from start to the current position. Brighter
