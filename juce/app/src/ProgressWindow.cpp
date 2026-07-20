@@ -19,10 +19,11 @@ namespace xplorer::app
 
         void resized() override
         {
-            auto area = getLocalBounds().reduced(12);
-            _label.setBounds(area.removeFromTop(28));
-            area.removeFromTop(6);
-            _bar.setBounds(area.removeFromTop(24));
+            // Layout grid: TASK-JUC-098, RQ-DSN-020 (value-preserving).
+            auto area = getLocalBounds().reduced(tokens::semantic::layoutMargin);
+            _label.setBounds(area.removeFromTop(tokens::semantic::dialogRowHeight));
+            area.removeFromTop(tokens::semantic::layoutSectionGap);
+            _bar.setBounds(area.removeFromTop(tokens::semantic::progressBarHeight));
         }
 
     private:

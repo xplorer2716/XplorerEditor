@@ -83,6 +83,22 @@ tiers:
     indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
     knobTrackAlpha:      { kind: float, value: 0.2, note: "owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash." }
 
+    # ---- spacing (layout grid, in px; base unit 4 -- audited from every
+    #      hand-authored dialog layout call in SettingsDialog.cpp and
+    #      ProgressWindow.cpp: every recurring gap/margin literal already
+    #      divides evenly into this grid. Value-preserving, owner-approved
+    #      2026-07. TASK-JUC-098, RQ-DSN-020. ----
+    space2:  { kind: int, value: 2,  note: "hairline inset — row.reduced(0,2), swatch.reduced(2)" }
+    space4:  { kind: int, value: 4,  note: "xs gap — pre-automation-table gap" }
+    space6:  { kind: int, value: 6,  note: "sm gap — inter-section gaps, label/bar gap" }
+    space8:  { kind: int, value: 8,  note: "md gap — inter-button gaps" }
+    space12: { kind: int, value: 12, note: "lg gap — dialog outer margin" }
+    space24: { kind: int, value: 24, note: "xl gap — progress bar height" }
+
+    # ---- dialog component sizes (content-driven, not on the spacing scale) ----
+    dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
+    dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
+
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
   # -------------------------------------------------------------------
@@ -145,6 +161,16 @@ tiers:
     # ---- motion roles ----
     hoverBrighten:   { alias: global.hoverBrightenFactor }
     indicatorHoldMs: { alias: global.indicatorHoldMs }
+
+    # ---- layout roles (dialogs; TASK-JUC-098, RQ-DSN-020) ----
+    layoutHairline:   { alias: global.space2,  note: "SettingsDialog row/swatch fine inset" }
+    layoutFieldGap:   { alias: global.space4,  note: "SettingsDialog pre-table gap" }
+    layoutSectionGap: { alias: global.space6,  note: "SettingsDialog section gaps, ProgressWindow label/bar gap" }
+    layoutButtonGap:  { alias: global.space8,  note: "SettingsDialog/ProgressWindow inter-button gap" }
+    layoutMargin:     { alias: global.space12, note: "dialog outer margin" }
+    dialogRowHeight:  { alias: global.dialogRowHeight }
+    dialogLabelWidth: { alias: global.dialogLabelWidth }
+    progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
 
   # -------------------------------------------------------------------
   # TIER 3 — COMPONENT : usages/transforms aliasing semantics. Only where a

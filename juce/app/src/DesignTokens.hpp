@@ -66,6 +66,14 @@ namespace xplorer::app::tokens
         inline constexpr float tickBoxBorderAlpha = 0.6F;  // tick-box border vs accent
         inline constexpr int indicatorHoldMs = 100;  // MIDI LED retriggerable hold
         inline constexpr float knobTrackAlpha = 0.2F;  // owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash.
+        inline constexpr int space2 = 2;  // hairline inset — row.reduced(0,2), swatch.reduced(2)
+        inline constexpr int space4 = 4;  // xs gap — pre-automation-table gap
+        inline constexpr int space6 = 6;  // sm gap — inter-section gaps, label/bar gap
+        inline constexpr int space8 = 8;  // md gap — inter-button gaps
+        inline constexpr int space12 = 12;  // lg gap — dialog outer margin
+        inline constexpr int space24 = 24;  // xl gap — progress bar height
+        inline constexpr int dialogRowHeight = 28;  // SettingsDialog/ProgressWindow row height
+        inline constexpr int dialogLabelWidth = 150;  // SettingsDialog label column width, sized to the longest existing label
     }
 
     // -----------------------------------------------------------------
@@ -117,6 +125,14 @@ namespace xplorer::app::tokens
         inline constexpr float strokeKnobRing = global::stroke24;  // knob track + value arc
         inline constexpr float hoverBrighten = global::hoverBrightenFactor;
         inline constexpr int indicatorHoldMs = global::indicatorHoldMs;
+        inline constexpr int layoutHairline = global::space2;  // SettingsDialog row/swatch fine inset
+        inline constexpr int layoutFieldGap = global::space4;  // SettingsDialog pre-table gap
+        inline constexpr int layoutSectionGap = global::space6;  // SettingsDialog section gaps, ProgressWindow label/bar gap
+        inline constexpr int layoutButtonGap = global::space8;  // SettingsDialog/ProgressWindow inter-button gap
+        inline constexpr int layoutMargin = global::space12;  // dialog outer margin
+        inline constexpr int dialogRowHeight = global::dialogRowHeight;
+        inline constexpr int dialogLabelWidth = global::dialogLabelWidth;
+        inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
     }
 
     // -----------------------------------------------------------------

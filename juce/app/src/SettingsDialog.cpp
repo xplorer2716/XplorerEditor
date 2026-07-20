@@ -20,9 +20,12 @@ namespace xplorer::app
 {
     namespace
     {
-        constexpr int LABEL_WIDTH = 150;
-        constexpr int ROW_HEIGHT = 28;
-        constexpr int MARGIN = 12;
+        // Layout grid: TASK-JUC-098, RQ-DSN-020 (audited from this file's own
+        // pre-existing layout, value-preserving — every gap already divided
+        // evenly into a 4px base unit).
+        constexpr int LABEL_WIDTH = tokens::semantic::dialogLabelWidth;
+        constexpr int ROW_HEIGHT = tokens::semantic::dialogRowHeight;
+        constexpr int MARGIN = tokens::semantic::layoutMargin;
 
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
@@ -112,7 +115,7 @@ namespace xplorer::app
         /// Lays a "caption: control" row and returns the control's bounds.
         juce::Rectangle<int> rowBounds(juce::Rectangle<int>& area)
         {
-            return area.removeFromTop(ROW_HEIGHT).reduced(0, 2);
+            return area.removeFromTop(ROW_HEIGHT).reduced(0, tokens::semantic::layoutHairline);
         }
 
         // ---- MIDI page -----------------------------------------------------
@@ -214,11 +217,11 @@ namespace xplorer::app
 
                 area.removeFromTop(MARGIN);
                 _automationLabel.setBounds(area.removeFromTop(ROW_HEIGHT));
-                auto buttonRow = area.removeFromBottom(ROW_HEIGHT).reduced(0, 2);
+                auto buttonRow = area.removeFromBottom(ROW_HEIGHT).reduced(0, tokens::semantic::layoutHairline);
                 _resetAutomation.setBounds(buttonRow.removeFromLeft(200));
-                buttonRow.removeFromLeft(8);
+                buttonRow.removeFromLeft(tokens::semantic::layoutButtonGap);
                 _exportHtml.setBounds(buttonRow.removeFromLeft(140));
-                area.removeFromBottom(4);
+                area.removeFromBottom(tokens::semantic::layoutFieldGap);
                 _automationTable.setBounds(area);
             }
 
@@ -364,10 +367,10 @@ namespace xplorer::app
                 auto area = getLocalBounds().reduced(MARGIN);
                 auto ledRow = rowBounds(area);
                 _ledLabel.setBounds(ledRow.removeFromLeft(LABEL_WIDTH));
-                _swatch.setBounds(ledRow.removeFromLeft(40).reduced(2));
+                _swatch.setBounds(ledRow.removeFromLeft(40).reduced(tokens::semantic::layoutHairline));
                 _chooseColour.setBounds(ledRow.removeFromLeft(140));
 
-                area.removeFromTop(6);
+                area.removeFromTop(tokens::semantic::layoutSectionGap);
                 layoutRadioRow(area, _movementLabel, _linear, _circular);
                 layoutRadioRow(area, _styleLabel, _standard, _flat);
             }
@@ -494,7 +497,7 @@ namespace xplorer::app
                     _labelFor(*combo).setBounds(row.removeFromLeft(LABEL_WIDTH));
                     combo->setBounds(row.removeFromLeft(200));
                 }
-                area.removeFromTop(6);
+                area.removeFromTop(tokens::semantic::layoutSectionGap);
                 auto vco2Row = rowBounds(area);
                 _vco2Label.setBounds(vco2Row.removeFromLeft(LABEL_WIDTH));
                 _fm.setBounds(vco2Row.removeFromLeft(70));
@@ -507,7 +510,7 @@ namespace xplorer::app
                 _quantize.setBounds(matrixRow.removeFromLeft(100));
                 _srcDest.setBounds(matrixRow.removeFromLeft(180));
 
-                area.removeFromTop(6);
+                area.removeFromTop(tokens::semantic::layoutSectionGap);
                 _randomizeAll.setBounds(rowBounds(area).removeFromLeft(140).withTrimmedLeft(0));
             }
 
@@ -617,9 +620,9 @@ namespace xplorer::app
             void resized() override
             {
                 auto area = getLocalBounds();
-                auto buttons = area.removeFromBottom(40).reduced(MARGIN, 6);
+                auto buttons = area.removeFromBottom(40).reduced(MARGIN, tokens::semantic::layoutSectionGap);
                 _ok.setBounds(buttons.removeFromRight(90));
-                buttons.removeFromRight(8);
+                buttons.removeFromRight(tokens::semantic::layoutButtonGap);
                 _cancel.setBounds(buttons.removeFromRight(90));
                 _tabs.setBounds(area);
             }
