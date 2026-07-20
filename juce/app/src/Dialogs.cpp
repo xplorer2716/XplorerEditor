@@ -54,8 +54,13 @@ namespace xplorer::app
                 }
                 _link.setColour(juce::HyperlinkButton::textColourId, juce::Colours::blue);
                 _licenseLink.setColour(juce::HyperlinkButton::textColourId, juce::Colours::blue);
-                addAndMakeVisible(_link);
-                addAndMakeVisible(_licenseLink);
+                // HyperlinkButton centres its text by default, unlike Label
+                // (left-aligned) -- align it with the rest of the column.
+                for (auto* link : {&_link, &_licenseLink})
+                {
+                    link->setJustificationType(juce::Justification::centredLeft);
+                    addAndMakeVisible(link);
+                }
 
                 setSize(WIDTH, HEIGHT);
             }
