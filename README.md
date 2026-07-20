@@ -12,7 +12,7 @@ This JUCE port is still a work in progress.
 ## Project structure
 
 - [juce](juce): active JUCE-based source tree
-- [Xplorer](Xplorer): legacy .NET-based codebase
+
 
 ## Main features
 
