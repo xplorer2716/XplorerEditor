@@ -1,5 +1,7 @@
 #include "Dialogs.hpp"
 
+#include "BinaryData.h"
+
 #include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
@@ -9,6 +11,103 @@
 
 namespace xplorer::app
 {
+    namespace
+    {
+        // Port of the reference AboutForm (Xplorer/View/AboutForm.Designer.cs):
+        // a fixed 474x261 white dialog, the `About.jpg` VFD close-up docked on
+        // the left (stretched to fill, matching the reference PictureBox), and
+        // title/version/copyright/link/licence text at x=146. Clicking anywhere
+        // outside the two links closes the window, like the reference form's
+        // whole-form Click handler. [RQ-GUI-025]
+        class AboutContent final : public juce::Component
+        {
+        public:
+            explicit AboutContent(const juce::String& productNameAndVersion)
+                : _link("https://github.com/xplorer2716/XplorerEditor",
+                        juce::URL("https://github.com/xplorer2716/XplorerEditor")),
+                  _licenseLink("https://www.gnu.org/licenses/gpl-3.0.html",
+                              juce::URL("https://www.gnu.org/licenses/gpl-3.0.html"))
+            {
+                _image = juce::ImageCache::getFromMemory(BinaryData::about_jpg, BinaryData::about_jpgSize);
+
+                juce::Font titleFont{juce::FontOptions{TITLE_SIZE}};
+                titleFont.setBold(true);
+                _title.setFont(titleFont);
+                _title.setText("Xplorer", juce::dontSendNotification);
+
+                _version.setText(productNameAndVersion, juce::dontSendNotification);
+                _copyright.setText("Copyright (c) 2012-2026 by Pascal Schmitt", juce::dontSendNotification);
+
+                _notice.setText("This software is released under GNU General Public License v3.0",
+                                juce::dontSendNotification);
+
+                for (auto* label : {&_title, &_version, &_copyright, &_notice})
+                {
+                    label->setColour(juce::Label::textColourId, label == &_notice
+                                                                     ? juce::Colours::grey
+                                                                     : juce::Colours::black);
+                    // Non-interactive: lets background clicks fall through to
+                    // this component's own mouseUp (close-on-click), matching
+                    // the reference's whole-form Click handler.
+                    label->setInterceptsMouseClicks(false, false);
+                    addAndMakeVisible(label);
+                }
+                _link.setColour(juce::HyperlinkButton::textColourId, juce::Colours::blue);
+                _licenseLink.setColour(juce::HyperlinkButton::textColourId, juce::Colours::blue);
+                addAndMakeVisible(_link);
+                addAndMakeVisible(_licenseLink);
+
+                setSize(WIDTH, HEIGHT);
+            }
+
+            void paint(juce::Graphics& g) override
+            {
+                g.fillAll(juce::Colours::white);
+                if (_image.isValid())
+                {
+                    g.drawImage(_image, 0.0f, 0.0f, static_cast<float>(IMAGE_WIDTH),
+                               static_cast<float>(getHeight()), 0, 0, _image.getWidth(), _image.getHeight());
+                }
+                g.setColour(juce::Colours::lightgrey);
+                g.drawLine(static_cast<float>(TEXT_X), SEPARATOR_Y,
+                          static_cast<float>(WIDTH - MARGIN_RIGHT), SEPARATOR_Y, 1.0f);
+            }
+
+            void resized() override
+            {
+                _title.setBounds(TEXT_X, 9, TEXT_WIDTH, ROW_HEIGHT);
+                _version.setBounds(TEXT_X, 34, TEXT_WIDTH, ROW_HEIGHT);
+                _copyright.setBounds(TEXT_X, 59, TEXT_WIDTH, ROW_HEIGHT);
+                _link.setBounds(TEXT_X, 79, TEXT_WIDTH, ROW_HEIGHT);
+                _notice.setBounds(TEXT_X, 212, TEXT_WIDTH, ROW_HEIGHT * 2);
+                _licenseLink.setBounds(TEXT_X, 231, TEXT_WIDTH, ROW_HEIGHT);
+            }
+
+            void mouseUp(const juce::MouseEvent&) override
+            {
+                if (auto* dw = findParentComponentOfClass<juce::DialogWindow>())
+                {
+                    dw->exitModalState(0);
+                }
+            }
+
+        private:
+            static constexpr int WIDTH = 474;
+            static constexpr int HEIGHT = 261;
+            static constexpr int IMAGE_WIDTH = 140;
+            static constexpr int TEXT_X = 146;
+            static constexpr int TEXT_WIDTH = 320;
+            static constexpr int ROW_HEIGHT = 18;
+            static constexpr int MARGIN_RIGHT = 9;
+            static constexpr float SEPARATOR_Y = 204.0f;
+            static constexpr float TITLE_SIZE = 16.0F;
+
+            juce::Image _image;
+            juce::Label _title, _version, _copyright, _notice;
+            juce::HyperlinkButton _link, _licenseLink;
+        };
+    }
+
     void applyMidiSettings(controller::XpanderController& controller,
                            settings::ISettingsService& settingsService, xpl::midi::MidiBackend&)
     {
@@ -255,10 +354,13 @@ namespace xplorer::app
 
     void showAboutDialog(const std::string& productNameAndVersion)
     {
-        juce::AlertWindow::showMessageBoxAsync(
-            juce::MessageBoxIconType::InfoIcon, "About Xplorer",
-            juce::String(productNameAndVersion)
-                + "\n\nReal-time editor for the Oberheim Xpander / Matrix-12."
-                  "\ngithub.com/xplorer2716/XplorerEditor");
+        juce::DialogWindow::LaunchOptions options;
+        options.content.setOwned(new AboutContent(juce::String(productNameAndVersion)));
+        options.dialogTitle = "About";
+        options.dialogBackgroundColour = juce::Colours::white; // reference AboutForm.BackColor
+        options.escapeKeyTriggersCloseButton = true;
+        options.useNativeTitleBar = true;
+        options.resizable = false;
+        options.launchAsync();
     }
 }
