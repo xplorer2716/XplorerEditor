@@ -1,6 +1,7 @@
 #include "Dialogs.hpp"
 
 #include "BinaryData.h"
+#include "DesignTokens.hpp"
 
 #include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
@@ -83,9 +84,11 @@ namespace xplorer::app
                 _title.setBounds(TEXT_X, 9, TEXT_WIDTH, ROW_HEIGHT);
                 _version.setBounds(TEXT_X, 34, TEXT_WIDTH, ROW_HEIGHT);
                 _copyright.setBounds(TEXT_X, 59, TEXT_WIDTH, ROW_HEIGHT);
-                _link.setBounds(TEXT_X, 79, TEXT_WIDTH, ROW_HEIGHT);
+                _link.setBounds(TEXT_X + LINK_LABEL_INSET_COMPENSATION, 79,
+                               TEXT_WIDTH - LINK_LABEL_INSET_COMPENSATION, ROW_HEIGHT);
                 _notice.setBounds(TEXT_X, 212, TEXT_WIDTH, ROW_HEIGHT * 2);
-                _licenseLink.setBounds(TEXT_X, 231, TEXT_WIDTH, ROW_HEIGHT);
+                _licenseLink.setBounds(TEXT_X + LINK_LABEL_INSET_COMPENSATION, 231,
+                                      TEXT_WIDTH - LINK_LABEL_INSET_COMPENSATION, ROW_HEIGHT);
             }
 
             void mouseUp(const juce::MouseEvent&) override
@@ -106,6 +109,11 @@ namespace xplorer::app
             static constexpr int MARGIN_RIGHT = 9;
             static constexpr float SEPARATOR_Y = 204.0f;
             static constexpr float TITLE_SIZE = 16.0F;
+            // juce::Label has a default 5px left border (text starts at
+            // local x=5); HyperlinkButton only insets 1px (text starts at
+            // local x=1) -- shift the links right by the 4px difference so
+            // their text lines up with the labels above/below them.
+            static constexpr int LINK_LABEL_INSET_COMPENSATION = tokens::global::space4;
 
             juce::Image _image;
             juce::Label _title, _version, _copyright, _notice;
