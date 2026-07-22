@@ -1,7 +1,7 @@
 # ADR-JUC-016: FM Destination Two-Way Radio Selector and Active Signal-Path Overlay
 
 ## Status
-Proposed
+Accepted (owner-validated 2026-07-22)
 
 <!-- Motivated by RQ-GUI-038 (FM destination two-way radio) and RQ-GUI-039
 (active FM signal-path highlight). UI-affecting ADR: references the design
