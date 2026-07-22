@@ -10,6 +10,7 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -82,5 +83,32 @@ namespace xplorer::app
         void setDisplayedValue(int value) override;
         [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
+    };
+
+    // An exclusive radio-button group bound to one parameter: N labelled
+    // ToggleButtons (mutually exclusive via a shared radio group id) stacked in
+    // the control's bounds, each mapping to a parameter value. Replaces the
+    // combo-box rendering of the FM destination panel. [RQ-GUI-038, ADR-JUC-016]
+    class BoundRadioGroup final : public juce::Component, public BoundControl
+    {
+    public:
+        BoundRadioGroup(ParameterBindingRegistry& registry, std::string parameterName,
+                        const std::vector<std::pair<std::string, int>>& options);
+
+        void setDisplayedValue(int value) override;
+        [[nodiscard]] std::string displayText() const override;
+        juce::Component& asComponent() override { return *this; }
+
+        void resized() override;
+
+    private:
+        void onOptionClicked(int value);
+
+        struct Option
+        {
+            std::unique_ptr<juce::ToggleButton> button;
+            int value;
+        };
+        std::vector<Option> _options;
     };
 }

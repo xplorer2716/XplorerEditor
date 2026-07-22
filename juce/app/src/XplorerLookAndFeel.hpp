@@ -37,6 +37,11 @@ namespace xplorer::app
         juce::Font getComboBoxFont(juce::ComboBox& box) override;
 
     private:
+        // Circular counterpart of drawTickBox for radio-group toggles (a
+        // ToggleButton with a non-zero radio group id), so two-way choices
+        // read as classic radios instead of check boxes. [RQ-GUI-038, ADR-JUC-016]
+        void drawRadioBox(juce::Graphics& g, float x, float y, float w, float h, bool ticked);
+
         juce::Colour _ledColour;
     };
 }

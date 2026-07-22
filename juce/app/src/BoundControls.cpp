@@ -136,4 +136,76 @@ namespace xplorer::app
         // Reference: CheckBoxValuedControl -> "Y" / "N".
         return getToggleState() ? "Y" : "N";
     }
+
+    BoundRadioGroup::BoundRadioGroup(ParameterBindingRegistry& registry, std::string parameterName,
+                                     const std::vector<std::pair<std::string, int>>& options)
+        : BoundControl(registry, std::move(parameterName))
+    {
+        // A non-zero id local to this container makes the child toggles mutually
+        // exclusive and tells the LookAndFeel to draw them as circular radios
+        // rather than tick boxes. [RQ-GUI-038, ADR-JUC-016]
+        constexpr int RADIO_GROUP_ID = 1;
+        for (const auto& [label, value] : options)
+        {
+            auto button = std::make_unique<juce::ToggleButton>(label);
+            button->setRadioGroupId(RADIO_GROUP_ID);
+            button->onClick = [this, value] { onOptionClicked(value); };
+            addAndMakeVisible(*button);
+            _options.push_back({std::move(button), value});
+        }
+    }
+
+    void BoundRadioGroup::onOptionClicked(int value)
+    {
+        // setRadioGroupId already cleared the sibling; only the selected button
+        // fires with getToggleState()==true. Ignore the incidental deselect click.
+        for (const auto& option : _options)
+        {
+            if (option.value == value && !option.button->getToggleState())
+            {
+                return;
+            }
+        }
+        _registry.onControlEditBegan(_parameterName);
+        _registry.onControlEdited(_parameterName, value);
+        _registry.onControlEditEnded();
+    }
+
+    void BoundRadioGroup::resized()
+    {
+        // Stack the options as equal-height rows spanning the control bounds, so
+        // each circular radio sits centred in its row with the label to its
+        // right (drawn by XplorerLookAndFeel::drawToggleButton). [RQ-GUI-038]
+        auto area = getLocalBounds();
+        if (_options.empty())
+        {
+            return;
+        }
+        const int rowHeight = area.getHeight() / static_cast<int>(_options.size());
+        for (const auto& option : _options)
+        {
+            option.button->setBounds(area.removeFromTop(rowHeight));
+        }
+    }
+
+    void BoundRadioGroup::setDisplayedValue(int value)
+    {
+        for (const auto& option : _options)
+        {
+            option.button->setToggleState(option.value == value, juce::dontSendNotification);
+        }
+    }
+
+    std::string BoundRadioGroup::displayText() const
+    {
+        // Reference: the selected option's label (mirrors the combo/radio VFD text).
+        for (const auto& option : _options)
+        {
+            if (option.button->getToggleState())
+            {
+                return option.button->getButtonText().toStdString();
+            }
+        }
+        return {};
+    }
 }

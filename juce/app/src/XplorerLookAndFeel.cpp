@@ -63,18 +63,43 @@ namespace xplorer::app
         }
     }
 
+    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, float x, float y, float w, float h, bool ticked)
+    {
+        // Circular sibling of drawTickBox; same token palette and AA insets so
+        // radios and check boxes stay visually consistent. [RQ-GUI-038, ADR-JUC-016]
+        const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
+        g.setColour(tokens::semantic::surfaceBase);
+        g.fillEllipse(box);
+        g.setColour(_ledColour.withAlpha(tokens::component::tickBoxBorderAlpha));
+        g.drawEllipse(box, tokens::semantic::strokeBorder);
+        if (ticked)
+        {
+            g.setColour(_ledColour);
+            g.fillEllipse(box.reduced(2.0F));
+        }
+    }
+
     void XplorerLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                                               bool, bool)
     {
-        // A small square tick box on the left, then the caption in a compact
-        // font sized to the control height so short captions (e.g. "TRI") do
-        // not get ellipsized in the tight reference bounds. [RQ-GUI-032]
+        // A small tick box on the left, then the caption in a compact font
+        // sized to the control height so short captions (e.g. "TRI") do not get
+        // ellipsized in the tight reference bounds. A radio-group toggle (non-zero
+        // radio group id) gets a circular indicator instead. [RQ-GUI-032, RQ-GUI-038]
         const auto bounds = button.getLocalBounds();
         const auto boxSize = juce::jmin(14, bounds.getHeight());
         const auto box = juce::Rectangle<float>(0.0F, (bounds.getHeight() - boxSize) * 0.5F,
                                                 static_cast<float>(boxSize), static_cast<float>(boxSize));
-        drawTickBox(g, button, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
-                    button.getToggleState(), button.isEnabled(), false, false);
+        if (button.getRadioGroupId() != 0)
+        {
+            drawRadioBox(g, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
+                         button.getToggleState());
+        }
+        else
+        {
+            drawTickBox(g, button, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
+                        button.getToggleState(), button.isEnabled(), false, false);
+        }
 
         if (button.getButtonText().isNotEmpty())
         {

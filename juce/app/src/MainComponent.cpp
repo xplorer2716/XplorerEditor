@@ -17,6 +17,10 @@ namespace xplorer::app
 {
     namespace
     {
+        // The one RadioButtonPanel rendered as a real radio group (not a combo
+        // box); other panels (e.g. LAG timing) keep the combo. [RQ-GUI-038]
+        constexpr const char* FM_DESTINATION_TAG = "FM_DESTINATION";
+
         // Fixed (non page-family) blocks handled in TASK-JUC-063.
         bool isFixedBlockTag(const std::string& tag)
         {
@@ -205,9 +209,21 @@ namespace xplorer::app
                     {
                         continue;
                     }
-                    auto combo = std::make_unique<BoundComboBox>(*_registry, tag, options);
-                    bound = combo.get();
-                    component = std::move(combo);
+                    // The FM destination panel renders as a real two-way radio
+                    // group (owner request); other radio panels keep the combo
+                    // box rendering. [RQ-GUI-038, ADR-JUC-016]
+                    if (tag == FM_DESTINATION_TAG)
+                    {
+                        auto radios = std::make_unique<BoundRadioGroup>(*_registry, tag, options);
+                        bound = radios.get();
+                        component = std::move(radios);
+                    }
+                    else
+                    {
+                        auto combo = std::make_unique<BoundComboBox>(*_registry, tag, options);
+                        bound = combo.get();
+                        component = std::move(combo);
+                    }
                     break;
                 }
                 default:
