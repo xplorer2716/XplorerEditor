@@ -81,13 +81,13 @@ namespace xplorer::app
 
             void resized() override
             {
-                _title.setBounds(TEXT_X, 9, TEXT_WIDTH, ROW_HEIGHT);
-                _version.setBounds(TEXT_X, 34, TEXT_WIDTH, ROW_HEIGHT);
-                _copyright.setBounds(TEXT_X, 59, TEXT_WIDTH, ROW_HEIGHT);
-                _link.setBounds(TEXT_X + LINK_LABEL_INSET_COMPENSATION, 79,
+                _title.setBounds(TEXT_X, TITLE_Y, TEXT_WIDTH, ROW_HEIGHT);
+                _version.setBounds(TEXT_X, VERSION_Y, TEXT_WIDTH, ROW_HEIGHT);
+                _copyright.setBounds(TEXT_X, COPYRIGHT_Y, TEXT_WIDTH, ROW_HEIGHT);
+                _link.setBounds(TEXT_X + LINK_LABEL_INSET_COMPENSATION, COPYRIGHT_Y + ROW_HEIGHT + LABEL_TO_LINK_GAP,
                                TEXT_WIDTH - LINK_LABEL_INSET_COMPENSATION, ROW_HEIGHT);
-                _notice.setBounds(TEXT_X, 212, TEXT_WIDTH, ROW_HEIGHT * 2);
-                _licenseLink.setBounds(TEXT_X + LINK_LABEL_INSET_COMPENSATION, 231,
+                _notice.setBounds(TEXT_X, NOTICE_Y, TEXT_WIDTH, ROW_HEIGHT);
+                _licenseLink.setBounds(TEXT_X + LINK_LABEL_INSET_COMPENSATION, NOTICE_Y + ROW_HEIGHT + LABEL_TO_LINK_GAP,
                                       TEXT_WIDTH - LINK_LABEL_INSET_COMPENSATION, ROW_HEIGHT);
             }
 
@@ -109,11 +109,19 @@ namespace xplorer::app
             static constexpr int MARGIN_RIGHT = 9;
             static constexpr float SEPARATOR_Y = 204.0f;
             static constexpr float TITLE_SIZE = 16.0F;
+            static constexpr int TITLE_Y = 9;
+            static constexpr int VERSION_Y = 34;
+            static constexpr int COPYRIGHT_Y = 59;
+            static constexpr int NOTICE_Y = 212;
             // juce::Label has a default 5px left border (text starts at
             // local x=5); HyperlinkButton only insets 1px (text starts at
             // local x=1) -- shift the links right by the 4px difference so
             // their text lines up with the labels above/below them.
             static constexpr int LINK_LABEL_INSET_COMPENSATION = tokens::global::space4;
+            // Same token-derived gap used below every "label + URL" pair
+            // (copyright/link, notice/licenseLink) so the two blocks read as
+            // one consistent rhythm instead of two hand-picked offsets.
+            static constexpr int LABEL_TO_LINK_GAP = tokens::semantic::layoutHairline;
 
             juce::Image _image;
             juce::Label _title, _version, _copyright, _notice;
