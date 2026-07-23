@@ -70,12 +70,22 @@ namespace xplorer::app
             {
                 _registry->onParameterChanged(name, value);
                 _vfd->showControlEdit(name, _registry->displayTextFor(name)); // [RQ-GUI-020]
+                if (name == FM_DESTINATION_TAG)
+                {
+                    refreshFmPathOverlay(); // [RQ-GUI-039]
+                }
             });
         // Local panel edits refresh the VFD too, like the reference
         // MainForm.AnyValuedControl_ValueChanged. [RQ-GUI-020]
         _registry->setLocalEditHandler(
             [this](const std::string& name)
-            { _vfd->showControlEdit(name, _registry->displayTextFor(name)); });
+            {
+                _vfd->showControlEdit(name, _registry->displayTextFor(name));
+                if (name == FM_DESTINATION_TAG)
+                {
+                    refreshFmPathOverlay(); // [RQ-GUI-039]
+                }
+            });
         _controller->setMidiActivityHandler(
             [this](controller::EnumMidiDevice device) { _midiLed.flash(device); }); // [RQ-GUI-022]
         _controller->setFullToneChangeHandler(
@@ -86,6 +96,7 @@ namespace xplorer::app
                 {
                     _matrixPanel->refreshAll(); // [RQ-GUI-017]
                 }
+                refreshFmPathOverlay(); // [RQ-GUI-039]
                 _vfd->showToneInfo(); // [RQ-GUI-020]
             });
         _controller->setPageChangeHandler(
@@ -103,12 +114,18 @@ namespace xplorer::app
             { onAllDataDumpProgression(event); }); // [RQ-GUI-026]
 
         setSize(LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
+        // Added first so it sits just above the background and below every
+        // control in the z-order; it is mouse-transparent so clicks pass through
+        // to the controls. [RQ-GUI-039, ADR-JUC-016]
+        _fmPathOverlay.setBounds(0, 0, LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT);
+        addAndMakeVisible(_fmPathOverlay);
         placeFixedBlockControls();
         placeStaticLabels();
         createPageFamilyBlocks();
         _matrixPanel = std::make_unique<ModMatrixPanel>(*this, *_controller);
         createShortcutButtonsAndDisplay();
         _registry->refreshAllFromModel(); // seed all controls with the current tone
+        refreshFmPathOverlay();           // seed the active-path overlay [RQ-GUI-039]
         _vfd->showToneInfo();
         _matrixPanel->setEditHandler(
             [this](int entryNumber)
@@ -695,6 +712,17 @@ namespace xplorer::app
                     runRestoreAllDataWithProgress(*_controller, file.getFullPathName().toStdString());
                 }
             });
+    }
+
+    void MainComponent::refreshFmPathOverlay()
+    {
+        // Single-parameter read from the model (updated before every handler
+        // that calls this), so the overlay always reflects the live selection.
+        // [RQ-GUI-039, ADR-JUC-016]
+        if (const auto* parameter = _controller->getParameter(FM_DESTINATION_TAG))
+        {
+            _fmPathOverlay.setDestination(parameter->value());
+        }
     }
 
     void MainComponent::onControlHovered(juce::Component* component)

@@ -10,6 +10,7 @@ target_sources(XplorerApp PRIVATE
     src/DesignTokens.hpp
     src/MainComponent.cpp
     src/BackgroundRenderer.cpp
+    src/FmSignalPathOverlay.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
     src/ModMatrixPanel.cpp

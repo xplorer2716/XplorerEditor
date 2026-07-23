@@ -7,6 +7,7 @@
 #include "BoundControls.hpp"
 #include "DesignTokens.hpp"
 #include "DisplayPanel.hpp"
+#include "FmSignalPathOverlay.hpp"
 #include "VfdDisplayHelper.hpp"
 #include "JuceEventDispatcher.hpp"
 #include "ModMatrixPanel.hpp"
@@ -63,6 +64,9 @@ namespace xplorer::app
         void restoreAllData();
         void getAllSinglePatchesFromSynth();
         void onControlHovered(juce::Component* component); // matrix highlight [RQ-GUI-018]
+        // Pushes the current FM_DESTINATION value into the active-path overlay
+        // (repaints only on change). [RQ-GUI-039, ADR-JUC-016]
+        void refreshFmPathOverlay();
 
         // Forwards knob/selector hover to the matrix highlight. A dedicated
         // MouseListener (not MainComponent itself) avoids clashing with the
@@ -97,6 +101,9 @@ namespace xplorer::app
         std::vector<std::unique_ptr<juce::Component>> _controls;
         std::vector<std::unique_ptr<PageFamilyBlock>> _familyBlocks;
         std::unique_ptr<ModMatrixPanel> _matrixPanel;
+        // Lit FM-bus branch for the current destination; painted above the
+        // background, below the controls, mouse-transparent. [RQ-GUI-039, ADR-JUC-016]
+        FmSignalPathOverlay _fmPathOverlay;
 
         std::unique_ptr<XplorerLookAndFeel> _lookAndFeel;
         DisplayPanel _display;
