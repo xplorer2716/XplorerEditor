@@ -82,6 +82,7 @@ tiers:
     tickBoxBorderAlpha:  { kind: float, value: 0.6, note: "tick-box border vs accent" }
     indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
     knobTrackAlpha:      { kind: float, value: 0.2, note: "owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash." }
+    disabledAlpha:       { kind: float, value: 0.5, note: "owner-confirmed 2026-07: shared Disabled treatment for check boxes/radios/combos (RQ-DSN-032, TASK-JUC-109/110, ADR-JUC-017)" }
 
     # ---- spacing (layout grid, in px; base unit 4 -- audited from every
     #      hand-authored dialog layout call in SettingsDialog.cpp and
@@ -187,3 +188,4 @@ tiers:
     knobRingHoverBrighten: { alias: semantic.hoverBrighten,   note: "accent.brighter(f) on hover" }
     tickBoxBorderAlpha:    { alias: global.tickBoxBorderAlpha, note: "accent.withAlpha(a) border" }
     knobTrackAlpha:        { alias: global.knobTrackAlpha,     note: "controlTrack.withAlpha(a)" }
+    disabledAlpha:         { alias: global.disabledAlpha,      note: "shared control disabled treatment, ADR-JUC-017" }

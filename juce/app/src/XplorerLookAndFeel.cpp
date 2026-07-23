@@ -48,39 +48,80 @@ namespace xplorer::app
         g.strokePath(ring, juce::PathStrokeType(tokens::semantic::strokeKnobRing));
     }
 
-    void XplorerLookAndFeel::drawTickBox(juce::Graphics& g, juce::Component&, float x, float y, float w,
-                                         float h, bool ticked, bool, bool, bool)
+    void XplorerLookAndFeel::drawTickBox(juce::Graphics& g, juce::Component& component, float x, float y, float w,
+                                         float h, bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted,
+                                         bool)
     {
+        // Hover brightens the existing border/fill; Disabled mutes the whole
+        // box; Focus adds an accent-ring outline on top of either -- the three
+        // states compose rather than replace each other. [RQ-GUI-041..043, ADR-JUC-017]
         const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
-        g.setColour(tokens::semantic::surfaceBase);
+        const float disabledMul = isEnabled ? 1.0F : tokens::component::disabledAlpha;
+        const bool hovered = isEnabled && shouldDrawButtonAsHighlighted;
+
+        g.setColour(tokens::semantic::surfaceBase.withMultipliedAlpha(disabledMul));
         g.fillRoundedRectangle(box, tokens::semantic::radiusControl);
-        g.setColour(_ledColour.withAlpha(tokens::component::tickBoxBorderAlpha));
+
+        auto borderColour = _ledColour.withAlpha(tokens::component::tickBoxBorderAlpha);
+        if (hovered)
+        {
+            borderColour = borderColour.brighter(tokens::semantic::hoverBrighten);
+        }
+        g.setColour(borderColour.withMultipliedAlpha(disabledMul));
         g.drawRoundedRectangle(box, tokens::semantic::radiusControl, tokens::semantic::strokeBorder);
+
         if (ticked)
         {
-            g.setColour(_ledColour);
+            auto fillColour = hovered ? _ledColour.brighter(tokens::semantic::hoverBrighten) : _ledColour;
+            g.setColour(fillColour.withMultipliedAlpha(disabledMul));
             g.fillRoundedRectangle(box.reduced(2.0F), tokens::semantic::radiusControlInner);
+        }
+
+        if (isEnabled && component.hasKeyboardFocus(true))
+        {
+            g.setColour(_ledColour);
+            g.drawRoundedRectangle(box.expanded(1.0F), tokens::semantic::radiusControl,
+                                   tokens::semantic::strokeLine);
         }
     }
 
-    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, float x, float y, float w, float h, bool ticked)
+    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, juce::Component& component, float x, float y, float w,
+                                          float h, bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted)
     {
-        // Circular sibling of drawTickBox; same token palette and AA insets so
-        // radios and check boxes stay visually consistent. [RQ-GUI-038, ADR-JUC-016]
+        // Circular sibling of drawTickBox; same token palette, AA insets and
+        // hover/disabled/focus behaviour so radios and check boxes stay
+        // visually consistent. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041..043, ADR-JUC-017]
         const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
-        g.setColour(tokens::semantic::surfaceBase);
+        const float disabledMul = isEnabled ? 1.0F : tokens::component::disabledAlpha;
+        const bool hovered = isEnabled && shouldDrawButtonAsHighlighted;
+
+        g.setColour(tokens::semantic::surfaceBase.withMultipliedAlpha(disabledMul));
         g.fillEllipse(box);
-        g.setColour(_ledColour.withAlpha(tokens::component::tickBoxBorderAlpha));
+
+        auto borderColour = _ledColour.withAlpha(tokens::component::tickBoxBorderAlpha);
+        if (hovered)
+        {
+            borderColour = borderColour.brighter(tokens::semantic::hoverBrighten);
+        }
+        g.setColour(borderColour.withMultipliedAlpha(disabledMul));
         g.drawEllipse(box, tokens::semantic::strokeBorder);
+
         if (ticked)
         {
-            g.setColour(_ledColour);
+            auto fillColour = hovered ? _ledColour.brighter(tokens::semantic::hoverBrighten) : _ledColour;
+            g.setColour(fillColour.withMultipliedAlpha(disabledMul));
             g.fillEllipse(box.reduced(2.0F));
+        }
+
+        if (isEnabled && component.hasKeyboardFocus(true))
+        {
+            g.setColour(_ledColour);
+            g.drawEllipse(box.expanded(1.0F), tokens::semantic::strokeLine);
         }
     }
 
     void XplorerLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
-                                              bool, bool)
+                                              bool shouldDrawButtonAsHighlighted, bool)
     {
         // A small tick box on the left, then the caption in a compact font
         // sized to the control height so short captions (e.g. "TRI") do not get
@@ -92,18 +133,19 @@ namespace xplorer::app
                                                 static_cast<float>(boxSize), static_cast<float>(boxSize));
         if (button.getRadioGroupId() != 0)
         {
-            drawRadioBox(g, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
-                         button.getToggleState());
+            drawRadioBox(g, button, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
+                        button.getToggleState(), button.isEnabled(), shouldDrawButtonAsHighlighted);
         }
         else
         {
             drawTickBox(g, button, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
-                        button.getToggleState(), button.isEnabled(), false, false);
+                        button.getToggleState(), button.isEnabled(), shouldDrawButtonAsHighlighted, false);
         }
 
         if (button.getButtonText().isNotEmpty())
         {
-            g.setColour(button.findColour(juce::ToggleButton::textColourId));
+            const float textAlpha = button.isEnabled() ? 1.0F : tokens::component::disabledAlpha;
+            g.setColour(button.findColour(juce::ToggleButton::textColourId).withMultipliedAlpha(textAlpha));
             g.setFont(juce::Font(juce::jmin(tokens::semantic::textCaption,
                                             static_cast<float>(bounds.getHeight()) - 3.0F)));
             const auto textArea = bounds.withTrimmedLeft(boxSize + 2);

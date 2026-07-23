@@ -39,8 +39,11 @@ namespace xplorer::app
     private:
         // Circular counterpart of drawTickBox for radio-group toggles (a
         // ToggleButton with a non-zero radio group id), so two-way choices
-        // read as classic radios instead of check boxes. [RQ-GUI-038, ADR-JUC-016]
-        void drawRadioBox(juce::Graphics& g, float x, float y, float w, float h, bool ticked);
+        // read as classic radios instead of check boxes. Hover/disabled/focus
+        // states mirror drawTickBox. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041..043,
+        // ADR-JUC-017]
+        void drawRadioBox(juce::Graphics& g, juce::Component& component, float x, float y, float w, float h,
+                          bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted);
 
         juce::Colour _ledColour;
     };

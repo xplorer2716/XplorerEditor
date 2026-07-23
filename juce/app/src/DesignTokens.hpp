@@ -66,6 +66,7 @@ namespace xplorer::app::tokens
         inline constexpr float tickBoxBorderAlpha = 0.6F;  // tick-box border vs accent
         inline constexpr int indicatorHoldMs = 100;  // MIDI LED retriggerable hold
         inline constexpr float knobTrackAlpha = 0.2F;  // owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash.
+        inline constexpr float disabledAlpha = 0.5F;  // owner-confirmed 2026-07: shared Disabled treatment for check boxes/radios/combos (RQ-DSN-032, TASK-JUC-109/110, ADR-JUC-017)
         inline constexpr int space2 = 2;  // hairline inset — row.reduced(0,2), swatch.reduced(2)
         inline constexpr int space4 = 4;  // xs gap — pre-automation-table gap
         inline constexpr int space6 = 6;  // sm gap — inter-section gaps, label/bar gap
@@ -145,6 +146,7 @@ namespace xplorer::app::tokens
         inline constexpr float knobRingHoverBrighten = semantic::hoverBrighten;  // accent.brighter(f) on hover
         inline constexpr float tickBoxBorderAlpha = global::tickBoxBorderAlpha;  // accent.withAlpha(a) border
         inline constexpr float knobTrackAlpha = global::knobTrackAlpha;  // controlTrack.withAlpha(a)
+        inline constexpr float disabledAlpha = global::disabledAlpha;  // shared control disabled treatment, ADR-JUC-017
     }
 
 }
