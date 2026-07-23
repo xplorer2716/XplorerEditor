@@ -1,5 +1,7 @@
 #include "BoundControls.hpp"
 
+#include "DesignTokens.hpp"
+
 namespace xplorer::app
 {
     BoundKnob::BoundKnob(ParameterBindingRegistry& registry, std::string parameterName,
@@ -173,18 +175,22 @@ namespace xplorer::app
 
     void BoundRadioGroup::resized()
     {
-        // Stack the options as equal-height rows spanning the control bounds, so
-        // each circular radio sits centred in its row with the label to its
-        // right (drawn by XplorerLookAndFeel::drawToggleButton). [RQ-GUI-038]
+        // One even slot per option, but each button is only a control-row high
+        // (design-system token) and sits at the slot top -- so the radios land
+        // on the same rows as the sibling check boxes (placed at the extracted
+        // 17 px control height) instead of being stretched over the full
+        // half-panel, which pushed the lower radio a few px below its check box.
+        // [RQ-GUI-040, TASK-JUC-108, ADR-JUC-014]
         auto area = getLocalBounds();
         if (_options.empty())
         {
             return;
         }
-        const int rowHeight = area.getHeight() / static_cast<int>(_options.size());
+        const int slotHeight = area.getHeight() / static_cast<int>(_options.size());
         for (const auto& option : _options)
         {
-            option.button->setBounds(area.removeFromTop(rowHeight));
+            option.button->setBounds(
+                area.removeFromTop(slotHeight).withHeight(tokens::semantic::controlRowHeight));
         }
     }
 

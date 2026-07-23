@@ -74,6 +74,7 @@ namespace xplorer::app::tokens
         inline constexpr int space24 = 24;  // xl gap — progress bar height
         inline constexpr int dialogRowHeight = 28;  // SettingsDialog/ProgressWindow row height
         inline constexpr int dialogLabelWidth = 150;  // SettingsDialog label column width, sized to the longest existing label
+        inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
     }
 
     // -----------------------------------------------------------------
@@ -133,6 +134,7 @@ namespace xplorer::app::tokens
         inline constexpr int dialogRowHeight = global::dialogRowHeight;
         inline constexpr int dialogLabelWidth = global::dialogLabelWidth;
         inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
+        inline constexpr int controlRowHeight = global::controlRowHeight;  // shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)
     }
 
     // -----------------------------------------------------------------

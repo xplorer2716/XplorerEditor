@@ -99,6 +99,10 @@ tiers:
     dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
     dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
 
+    # ---- main-panel control-row height (MainForm-extracted; shared by check
+    #      boxes / radios / in-panel stacked rows so paired rows align) ----
+    controlRowHeight: { kind: int, value: 17, note: "reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040" }
+
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
   # -------------------------------------------------------------------
@@ -171,6 +175,7 @@ tiers:
     dialogRowHeight:  { alias: global.dialogRowHeight }
     dialogLabelWidth: { alias: global.dialogLabelWidth }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
+    controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 
   # -------------------------------------------------------------------
   # TIER 3 — COMPONENT : usages/transforms aliasing semantics. Only where a
