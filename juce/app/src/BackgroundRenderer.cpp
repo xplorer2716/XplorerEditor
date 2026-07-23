@@ -1,7 +1,6 @@
 #include "BackgroundRenderer.hpp"
 
 #include "DesignTokens.hpp"
-#include "FmSignalPath.hpp"
 #include "xplorer/app/ControlTable.hpp"
 
 // Vector background painter. Every primitive below transcribes 1:1 the
@@ -228,26 +227,28 @@ namespace xplorer::app
         caption(432, 137, "VOLUME");
         // VCO1 VCA out -> straight into the VCF left edge
         line(458, 58, 525, 58);
-        // FM modulation buses: left branch ends on the VCO1 FREQUENCY stub,
-        // right branch ends on the VCF FREQ stub. The branch geometry is
-        // single-sourced in FmSignalPath.hpp and shared with the active-path
-        // overlay (FmSignalPathOverlay), so the lit route always matches the
-        // drawn route. [RQ-GUI-037, RQ-GUI-039, ADR-JUC-016]
-        for (const auto& s : FM_BRANCH_VCO1)
-        {
-            line(s.x1, s.y1, s.x2, s.y2);
-        }
-        for (const auto& s : FM_BRANCH_VCF)
-        {
-            line(s.x1, s.y1, s.x2, s.y2);
-        }
+        // FM modulation buses (both at y=180): left branch ends on the VCO1
+        // FREQUENCY stub, right branch ends on the VCF FREQ stub.
+        line(40, 88, 82, 88);
+        line(40, 88, 40, 180);
+        line(40, 180, 284, 180);
+        // DESTINATION -> up to the VCO1 bus
+        line(276, 220, 284, 220);
+        line(284, 220, 284, 180);
+        // DESTINATION -> right bus, hopping over the x=499 vertical, up into VCF FREQ
+        line(276, 230, 289, 230);
+        line(289, 230, 289, 180);
+        line(289, 180, 492, 180);
         {
             juce::Path hop; // semicircular bump over x=499 (SVG arc M492 180 A7 7 0 0 1 506 180)
-            hop.startNewSubPath(FM_VCF_HOP_ENDS.x1, FM_VCF_HOP_ENDS.y1);
-            hop.quadraticTo(FM_VCF_HOP_CTRL_X, FM_VCF_HOP_CTRL_Y, FM_VCF_HOP_ENDS.x2, FM_VCF_HOP_ENDS.y2);
+            hop.startNewSubPath(492.0F, 180.0F);
+            hop.quadraticTo(499.0F, 166.0F, 506.0F, 180.0F);
             g.setColour(FRAME);
             g.strokePath(hop, frameStroke);
         }
+        line(506, 180, 513, 180);
+        line(513, 180, 513, 82);
+        line(513, 82, 541, 82);
 
         // --- FM / VCO2 group
         box(51, 210, 102, 36);
