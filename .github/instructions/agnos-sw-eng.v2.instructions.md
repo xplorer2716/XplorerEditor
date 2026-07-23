@@ -47,7 +47,7 @@ At the start of every session, run these steps in order before any task:
 5. Scan `process/2.architecture/` for existing ADRs to avoid creating duplicates.
 6. Scan `process/3.plan/` for existing plans and tasks to avoid creating duplicates.
 7. MANDATORY: Report ANY semantic CONFLICTS coming from your instructions files. If you find any, STOP and ask the user to clarify which rule to follow. Do NOT proceed until the conflict is resolved.
-8. Create with GIT a new branch for the session by invoking the `agnos-git-workflow` skill's `start-session <TRI>` sub-command, where `<TRI>` is the trigram the user HAS to provide. This branch shall be used for ALL changes in the session, including edits to existing files and creation of new files. If the branch already exists, the skill will ask the user how to proceed.
+8. Create with GIT a new branch for the session by invoking the `agnos-git-workflow` skill's `start-session <TRI>` sub-command, where `<TRI>` is the trigram the user HAS to provide. This branch shall be used for ALL changes in the session, including edits to existing files and creation of new files. If the branch already exists, the skill will ask the user how to proceed. **NEVER work on or commit to the default/protected branch (`main` / `master` / the repository default): every change SHALL be made on the `feature/<TRI>` session branch.**
 
 ## END SESSION ACTION
 
