@@ -40,12 +40,26 @@ namespace xplorer::app
                 int cc;
             };
             std::vector<Row> rows;
+            int hoveredRow = -1; // updated by TableHoverListener; -1 = none [RQ-GUI-041]
 
             int getNumRows() override { return static_cast<int>(rows.size()); }
 
-            void paintRowBackground(juce::Graphics& g, int, int, int, bool selected) override
+            void paintRowBackground(juce::Graphics& g, int rowNumber, int, int, bool selected) override
             {
-                g.fillAll(selected ? tokens::semantic::surfaceSelected : tokens::semantic::surfaceRecessed);
+                // Selection takes visual precedence over hover (RQ-DSN-062 ordering);
+                // an unselected hovered row brightens by the shared factor. [RQ-GUI-041, ADR-JUC-017]
+                if (selected)
+                {
+                    g.fillAll(tokens::semantic::surfaceSelected);
+                }
+                else if (rowNumber == hoveredRow)
+                {
+                    g.fillAll(tokens::semantic::surfaceRecessed.brighter(tokens::semantic::hoverBrighten));
+                }
+                else
+                {
+                    g.fillAll(tokens::semantic::surfaceRecessed);
+                }
             }
 
             void paintCell(juce::Graphics& g, int row, int column, int width, int height, bool) override
@@ -112,6 +126,45 @@ namespace xplorer::app
             }
         };
 
+        // TableListBoxModel has no built-in per-row hover callback, so hover is
+        // tracked manually: this listener (attached to the TableListBox, nested
+        // children included so events over the CC combos still count) resolves
+        // the row under the pointer and repaints only the rows whose hover state
+        // changed. [RQ-GUI-041, ADR-JUC-017 (DEC-JUC-023)]
+        struct TableHoverListener final : juce::MouseListener
+        {
+            juce::TableListBox& table;
+            AutomationTableModel& model;
+            TableHoverListener(juce::TableListBox& t, AutomationTableModel& m) : table(t), model(m) {}
+
+            void mouseMove(const juce::MouseEvent& e) override { setRow(rowAt(e)); }
+            void mouseEnter(const juce::MouseEvent& e) override { setRow(rowAt(e)); }
+            void mouseExit(const juce::MouseEvent&) override { setRow(-1); }
+
+            [[nodiscard]] int rowAt(const juce::MouseEvent& e) const
+            {
+                const auto p = e.getEventRelativeTo(&table).getPosition();
+                return table.getRowContainingPosition(p.x, p.y);
+            }
+            void setRow(int row)
+            {
+                if (row == model.hoveredRow)
+                {
+                    return;
+                }
+                const int previous = model.hoveredRow;
+                model.hoveredRow = row;
+                if (previous >= 0)
+                {
+                    table.repaintRow(previous);
+                }
+                if (row >= 0)
+                {
+                    table.repaintRow(row);
+                }
+            }
+        };
+
         /// Lays a "caption: control" row and returns the control's bounds.
         juce::Rectangle<int> rowBounds(juce::Rectangle<int>& area)
         {
@@ -168,6 +221,7 @@ namespace xplorer::app
                 _automationTable.getHeader().addColumn("Parameter", 1, LABEL_WIDTH);
                 _automationTable.getHeader().addColumn("MIDI CC", 2, 240);
                 _automationTable.setRowHeight(ROW_HEIGHT);
+                _automationTable.addMouseListener(&_tableHover, true); // nested = CC combos too [RQ-GUI-041]
                 addAndMakeVisible(_automationTable);
                 _resetAutomation.setButtonText("Reset all to unassigned");
                 _resetAutomation.onClick = [this]
@@ -318,6 +372,7 @@ namespace xplorer::app
             juce::Label _automationLabel;
             AutomationTableModel _automationModel; // declared before the table it backs
             juce::TableListBox _automationTable;
+            TableHoverListener _tableHover{_automationTable, _automationModel};
             juce::TextButton _resetAutomation;
             juce::TextButton _exportHtml;
             std::unique_ptr<juce::FileChooser> _htmlChooser;
