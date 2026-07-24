@@ -70,6 +70,12 @@ namespace xplorer::app
         [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
 
+        // juce::ComboBox does not repaint on plain hover (unlike Slider), so the
+        // LookAndFeel's hover state would never be redrawn; trigger it here.
+        // [RQ-GUI-041, ADR-JUC-017]
+        void mouseEnter(const juce::MouseEvent&) override { repaint(); }
+        void mouseExit(const juce::MouseEvent&) override { repaint(); }
+
     private:
         std::vector<int> _valueByRow;
     };

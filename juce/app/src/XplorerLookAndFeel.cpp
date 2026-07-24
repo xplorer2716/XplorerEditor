@@ -153,6 +153,57 @@ namespace xplorer::app
         }
     }
 
+    void XplorerLookAndFeel::drawComboBox(juce::Graphics& g, int width, int height, bool, int, int, int, int,
+                                          juce::ComboBox& box)
+    {
+        // Verbatim reproduction of LookAndFeel_V4::drawComboBox with tokens for
+        // every colour/stroke (outline 1px == strokeBorder, arrow 2px ==
+        // strokeLine, corner unified to the shared control radius) plus the
+        // three interaction states: hover brightens the recessed fill, disabled
+        // mutes the whole control at disabledAlpha, keyboard focus adds an accent
+        // ring. Arrow zone geometry stays a local layout constant (spacing scale
+        // deferred, RQ-DSN-020). [RQ-GUI-041..043, ADR-JUC-017]
+        constexpr int ARROW_ZONE_X = 30;   // right inset of the arrow zone
+        constexpr int ARROW_ZONE_W = 20;   // arrow zone width
+        constexpr float ARROW_INSET = 3.0F;
+        constexpr float ARROW_RISE = 2.0F;
+        constexpr float ARROW_DROP = 3.0F;
+        constexpr float ARROW_ENABLED_ALPHA = 0.9F; // reference LookAndFeel_V4
+
+        const bool enabled = box.isEnabled();
+        const bool hovered = enabled && box.isMouseOverOrDragging(true);
+        const float disabledMul = enabled ? 1.0F : tokens::component::disabledAlpha;
+        const float corner = tokens::semantic::radiusControl;
+        const auto bounds = juce::Rectangle<int>(0, 0, width, height).toFloat();
+
+        auto fill = box.findColour(juce::ComboBox::backgroundColourId);
+        if (hovered)
+        {
+            fill = fill.brighter(tokens::semantic::hoverBrighten);
+        }
+        g.setColour(fill.withMultipliedAlpha(disabledMul));
+        g.fillRoundedRectangle(bounds, corner);
+
+        g.setColour(box.findColour(juce::ComboBox::outlineColourId).withMultipliedAlpha(disabledMul));
+        g.drawRoundedRectangle(bounds.reduced(0.5F), corner, tokens::semantic::strokeBorder);
+
+        const auto arrowZone =
+            juce::Rectangle<int>(width - ARROW_ZONE_X, 0, ARROW_ZONE_W, height).toFloat();
+        juce::Path path;
+        path.startNewSubPath(arrowZone.getX() + ARROW_INSET, arrowZone.getCentreY() - ARROW_RISE);
+        path.lineTo(arrowZone.getCentreX(), arrowZone.getCentreY() + ARROW_DROP);
+        path.lineTo(arrowZone.getRight() - ARROW_INSET, arrowZone.getCentreY() - ARROW_RISE);
+        g.setColour(box.findColour(juce::ComboBox::arrowColourId)
+                        .withMultipliedAlpha(ARROW_ENABLED_ALPHA * disabledMul));
+        g.strokePath(path, juce::PathStrokeType(tokens::semantic::strokeLine));
+
+        if (enabled && box.hasKeyboardFocus(true))
+        {
+            g.setColour(_ledColour);
+            g.drawRoundedRectangle(bounds.reduced(0.5F), corner, tokens::semantic::strokeLine);
+        }
+    }
+
     juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox& box)
     {
         // Base size mirrors the stock LookAndFeel_V4::getComboBoxFont; shrunk

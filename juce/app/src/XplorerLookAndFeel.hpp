@@ -36,6 +36,11 @@ namespace xplorer::app
         // (reference combos never show "TRA..."). [RQ-GUI-032, issue #12]
         juce::Font getComboBoxFont(juce::ComboBox& box) override;
 
+        // Reproduces the stock combo (fill/outline/arrow) from tokens and adds
+        // the shared hover/disabled/focus states. [RQ-GUI-041..043, ADR-JUC-017]
+        void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX,
+                          int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override;
+
     private:
         // Circular counterpart of drawTickBox for radio-group toggles (a
         // ToggleButton with a non-zero radio group id), so two-way choices
