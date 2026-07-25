@@ -8,8 +8,14 @@ Xplorer is a real-time editor for the Oberheim Xpander and Matrix-12 synthesizer
 
 The current development effort is moving to a JUCE-based implementation.
 The source code for this work is located in the [juce](juce) directory.
+### Where to find the legacy .NET source code ?
+The repository containing the legacy .NET source code of Xplorer is in the repo https://github.com/xplorer2716/XplorerEditor-dotnet-archive
+### Where to find the legacy .NET releases: ?
+The latest official release is available in this repo: see https://github.com/xplorer2716/XplorerEditor/releases/tag/v2025.12.7.1
 
-This JUCE port is still a work in progress.
+Next official release (JUCE based implementation) will be available in the same release stream.
+
+This JUCE port is still a * work in progress**. Most of the features are already available. If you want to test it before official release, compile it from main branch source code.
 
 ## Project structure
 
@@ -28,5 +34,4 @@ This port also aims to demonstrate the integration of AI software development ag
 
 This project is licensed under the GPL v3.
 See [LICENSE](LICENSE).
-
 
