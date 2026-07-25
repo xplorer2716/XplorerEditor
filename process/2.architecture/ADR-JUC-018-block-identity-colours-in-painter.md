@@ -1,7 +1,7 @@
 # ADR-JUC-018: Porting the Functional-Block Identity Colours to the Vector Painter
 
 ## Status
-Proposed
+Accepted (owner-approved 2026-07-25; mockup stage owner-validated)
 
 <!-- Motivated by RQ-GUI-044 (per-block colour identity on the main panel) and
 RQ-DSN-092/093/094 (block colour family, colour-only scope guard, fill + frame
