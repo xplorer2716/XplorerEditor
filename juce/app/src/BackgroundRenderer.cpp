@@ -32,6 +32,18 @@ namespace xplorer::app
         const juce::Colour& BAR_TOP = tokens::semantic::sectionBarTop; // section underline gradient
         const juce::Colour& BAR_MID = tokens::semantic::sectionBarMid;
         const juce::Colour& BAR_BOT = tokens::semantic::sectionBarBot;
+        // Functional-block identity hues: frames, fills, section labels and
+        // section bars carry their block's colour so the panel reads as grouped
+        // areas. Anything outside an identified block keeps FRAME.
+        // [RQ-GUI-044, RQ-DSN-092, ADR-JUC-018]
+        const juce::Colour& BLK_VCO = tokens::semantic::blockVco;
+        const juce::Colour& BLK_LAG = tokens::semantic::blockLag;
+        const juce::Colour& BLK_TRACK = tokens::semantic::blockTrack;
+        const juce::Colour& BLK_VCF = tokens::semantic::blockVcf;
+        const juce::Colour& BLK_ENV = tokens::semantic::blockEnv;
+        const juce::Colour& BLK_LFO = tokens::semantic::blockLfo;
+        const juce::Colour& BLK_RAMP = tokens::semantic::blockRamp;
+        const juce::Colour& BLK_MATRIX = tokens::semantic::blockMatrix;
 
         // ---- geometry: appearance (stroke/radius) from tokens; layout (canvas,
         //      rail, stub) stays local — spacing scale deferred (RQ-DSN-020) ----
@@ -140,9 +152,27 @@ namespace xplorer::app
         // instead of the notched butt-cap junction drawLine leaves. [RQ-GUI-037]
         const juce::PathStrokeType frameStroke{
             LINE_WIDTH, juce::PathStrokeType::curved, juce::PathStrokeType::rounded};
-        const auto box = [&](float x, float y, float w, float h)
+        // A labelled block is filled with its identity hue at blockFillAlpha and
+        // framed with a top-bright/bottom-dark gradient, so it reads as a slightly
+        // raised plate; passing no colour keeps the neutral unfilled frame used by
+        // control sub-panels. Ported 1:1 from the owner-validated mockup.
+        // [RQ-GUI-044, RQ-DSN-094, ADR-JUC-018 (DEC-JUC-025/026)]
+        const auto box = [&](float x, float y, float w, float h,
+                             const juce::Colour* block = nullptr)
         {
-            g.setColour(FRAME);
+            if (block != nullptr)
+            {
+                g.setColour(block->withAlpha(tokens::component::blockFillAlpha));
+                g.fillRoundedRectangle(x, y, w, h, CORNER);
+                juce::ColourGradient relief{*block, x, y,
+                                            block->darker(tokens::component::blockFrameRelief),
+                                            x, y + h, false};
+                g.setGradientFill(relief);
+            }
+            else
+            {
+                g.setColour(FRAME);
+            }
             g.drawRoundedRectangle(x, y, w, h, CORNER, LINE_WIDTH);
         };
         const auto line = [&](float x1, float y1, float x2, float y2)
@@ -169,15 +199,17 @@ namespace xplorer::app
         {
             text(x, y, s, FS_CAPTION, false, CAPTION, juce::Justification::horizontallyCentred);
         };
-        const auto section = [&](int x, int y, const juce::String& s, int barWidth = SECTION_BAR_WIDTH)
+        // Section header: label + underline bar, both in the owning block's hue —
+        // replacing the single blue gradient formerly shared by every section.
+        // Flat bar with a left-to-right fade (bright at the label end), no
+        // vertical shading. [RQ-GUI-037, RQ-GUI-044, ADR-JUC-018 (DEC-JUC-027)]
+        const auto section = [&](int x, int y, const juce::String& s, const juce::Colour& block,
+                                 int barWidth = SECTION_BAR_WIDTH)
         {
-            text(x, y - SECTION_TITLE_RISE, s, FS_SECTION, true, TITLE, juce::Justification::left);
-            // Flat solid bar with a left-to-right luminance gradient (bright at
-            // the label end, fading right) — no vertical shading, which read as
-            // an over-rounded tube. Same blue palette. [RQ-GUI-037]
-            juce::ColourGradient bar{BAR_TOP, static_cast<float>(x), static_cast<float>(y),
-                                     BAR_BOT, static_cast<float>(x + barWidth), static_cast<float>(y), false};
-            bar.addColour(0.5, BAR_MID);
+            text(x, y - SECTION_TITLE_RISE, s, FS_SECTION, true, block, juce::Justification::left);
+            juce::ColourGradient bar{block, static_cast<float>(x), static_cast<float>(y),
+                                     block.withAlpha(tokens::component::sectionBarFadeEnd),
+                                     static_cast<float>(x + barWidth), static_cast<float>(y), false};
             g.setGradientFill(bar);
             g.fillRect(static_cast<float>(x), static_cast<float>(y),
                        static_cast<float>(barWidth), SECTION_BAR_HEIGHT);
@@ -201,7 +233,7 @@ namespace xplorer::app
 
         // ================================================= LEFT COLUMN =======
         // --- VCO1 group
-        box(51, 32, 147, 52);
+        box(51, 32, 147, 52, &BLK_VCO);
         blockTitle(64, 63, "VCO1", FS_VCO, juce::Justification::left);
         blockTitle(193, 49, "TRIANGLE", FS_WAVE, juce::Justification::right);
         blockTitle(193, 61, "SAWTOOTH", FS_WAVE, juce::Justification::right);
@@ -210,13 +242,13 @@ namespace xplorer::app
         line(198, 57, 330, 57);
         line(198, 70, 234, 70);
         line(286, 70, 330, 70);
-        box(234, 60, 52, 23);
+        box(234, 60, 52, 23, &BLK_VCO);
         blockTitle(260, 76, "PWM", FS_PWM);
         stub(259, 83);
-        box(330, 32, 53, 52);
+        box(330, 32, 53, 52, &BLK_VCO);
         blockTitle(356, 63, "MIX", FS_MIX);
         line(383, 58, 405, 58);
-        box(405, 45, 53, 26);
+        box(405, 45, 53, 26, &BLK_VCO);
         blockTitle(431, 63, "VCA", FS_VCA);
         stub(432, 71, 23); // VCO1_VOLUME centre
         stub(82, 84);
@@ -251,17 +283,17 @@ namespace xplorer::app
         line(513, 82, 541, 82);
 
         // --- FM / VCO2 group
-        box(51, 210, 102, 36);
+        box(51, 210, 102, 36, &BLK_VCO);
         blockTitle(102, 233, "FM VCA", FS_BLOCK);
         box(184, 210, 90, 52);
         text(229, 274, "DESTINATION", FS_SMALL, true, CAPTION, juce::Justification::horizontallyCentred);
         line(153, 228, 184, 228);
         stub(106, 246);
         caption(106, 300, "FM AMPLITUDE");
-        box(329, 210, 52, 52);
+        box(329, 210, 52, 52, &BLK_VCO);
         blockTitle(355, 241, "MIX", FS_MIX);
         line(381, 232, 405, 232);
-        box(405, 220, 53, 26);
+        box(405, 220, 53, 26, &BLK_VCO);
         blockTitle(431, 238, "VCA", FS_VCA);
         stub(430, 246, 24); // VCO2_VOLUME centre
         // VCO2-row VCA out -> right, then up at x=499 into the VCF
@@ -275,7 +307,7 @@ namespace xplorer::app
             g.strokePath(curve, frameStroke);
         }
         caption(430, 314, "VOLUME");
-        box(51, 310, 147, 52);
+        box(51, 310, 147, 52, &BLK_VCO);
         blockTitle(64, 341, "VCO2", FS_VCO, juce::Justification::left);
         blockTitle(193, 324, "TRIANGLE", FS_WAVE, juce::Justification::right);
         blockTitle(193, 338, "SAWTOOTH", FS_WAVE, juce::Justification::right);
@@ -288,7 +320,7 @@ namespace xplorer::app
         line(303, 334, 303, 237);
         line(303, 237, 329, 237);
         line(198, 348, 233, 348);
-        box(233, 340, 52, 23);
+        box(233, 340, 52, 23, &BLK_VCO);
         blockTitle(259, 356, "PWM", FS_PWM);
         stub(260, 363); // VCO2_PW centre
         line(285, 348, 309, 348);
@@ -312,10 +344,10 @@ namespace xplorer::app
         line(40, 229, 51, 229);
         line(40, 305, 204, 305);
         line(204, 305, 204, 320);
-        section(53, 487, "VCO1/VCO2/FM");
+        section(53, 487, "VCO1/VCO2/FM", BLK_VCO);
 
         // --- LAG
-        box(81, 501, 268, 36);
+        box(81, 501, 268, 36, &BLK_LAG);
         blockTitle(215, 524, "LAG", FS_MIX);
         outLabel(349, 518, "LAG", "OUT");
         line(52, 518, 81, 518);
@@ -324,10 +356,10 @@ namespace xplorer::app
         smallLabel(35, 576, "LAG IN", juce::Justification::left);
         stub(215, 537);
         caption(215, 590, "RATE");
-        section(53, 629, "LAG");
+        section(53, 629, "LAG", BLK_LAG);
 
         // --- TRACKING GENERATOR
-        box(81, 679, 268, 36);
+        box(81, 679, 268, 36, &BLK_TRACK);
         blockTitle(215, 702, "TRACKING GENERATOR", FS_BLOCK);
         outLabel(349, 696, "TRACK", "OUT");
         line(52, 696, 81, 696);
@@ -342,15 +374,15 @@ namespace xplorer::app
                 caption(centres[i], 766, "PT " + juce::String(i + 1));
             }
         }
-        section(53, 799, "TRACK X");
+        section(53, 799, "TRACK X", BLK_TRACK);
 
         // ================================================= CENTER COLUMN =====
         // --- VCF/VCA chain
-        box(525, 45, 186, 26);
+        box(525, 45, 186, 26, &BLK_VCF);
         blockTitle(618, 63, "MULTIMODE VCF", FS_BLOCK);
-        box(729, 45, 62, 26);
+        box(729, 45, 62, 26, &BLK_VCF);
         blockTitle(760, 63, "VCA1", FS_VCA);
-        box(804, 45, 62, 26);
+        box(804, 45, 62, 26, &BLK_VCF);
         blockTitle(835, 63, "VCA", FS_VCA);
         line(711, 58, 729, 58);
         line(791, 58, 804, 58);
@@ -365,12 +397,12 @@ namespace xplorer::app
         caption(669, 137, "MODE (15)");
         caption(759, 137, "VOLUME");
         caption(834, 137, "VOLUME");
-        section(526, 194, "VCF/VCA");
+        section(526, 194, "VCF/VCA", BLK_VCF);
 
         // --- ENV
-        box(525, 242, 267, 26);
+        box(525, 242, 267, 26, &BLK_ENV);
         blockTitle(658, 260, "ENVELOPE GENERATOR", FS_BLOCK);
-        box(804, 242, 63, 26);
+        box(804, 242, 63, 26, &BLK_ENV);
         blockTitle(835, 260, "VCA", FS_VCA);
         line(792, 255, 804, 255);
         outLabel(867, 255, "ENV", "OUT");
@@ -394,12 +426,12 @@ namespace xplorer::app
         caption(750, 320, "RELEASE");
         caption(835, 320, "VOLUME");
         box(524, 329, 373, 42);
-        section(526, 416, "ENV X");
+        section(526, 416, "ENV X", BLK_ENV);
 
         // --- LFO
-        box(524, 467, 269, 26);
+        box(524, 467, 269, 26, &BLK_LFO);
         blockTitle(658, 485, "LFO", FS_MIX);
-        box(804, 467, 63, 26);
+        box(804, 467, 63, 26, &BLK_LFO);
         blockTitle(835, 485, "VCA", FS_VCA);
         line(793, 480, 804, 480);
         outLabel(867, 480, "LFO", "OUT");
@@ -415,10 +447,10 @@ namespace xplorer::app
         caption(657, 546, "WAVESHAPE");
         caption(759, 546, "RETRIG");
         caption(834, 546, "AMPLITUDE");
-        section(527, 597, "LFO X");
+        section(527, 597, "LFO X", BLK_LFO);
 
         // --- RAMP
-        box(524, 646, 266, 26);
+        box(524, 646, 266, 26, &BLK_RAMP);
         blockTitle(656, 664, "RAMP", FS_MIX);
         outLabel(790, 659, "RAMP", "OUT");
         line(514, 659, 524, 659);
@@ -429,9 +461,9 @@ namespace xplorer::app
         stub(657, 672);
         caption(657, 726, "RATE");
         box(524, 734, 374, 41);
-        section(527, 799, "RAMP X");
+        section(527, 799, "RAMP X", BLK_RAMP);
 
         // ================================================= RIGHT =============
-        section(958, 799, "MODULATION MATRIX", 268);
+        section(958, 799, "MODULATION MATRIX", BLK_MATRIX, 268);
     }
 }
