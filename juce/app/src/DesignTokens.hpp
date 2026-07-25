@@ -75,6 +75,14 @@ namespace xplorer::app::tokens
         inline constexpr int space24 = 24;  // xl gap — progress bar height
         inline constexpr int dialogRowHeight = 28;  // SettingsDialog/ProgressWindow row height
         inline constexpr int dialogLabelWidth = 150;  // SettingsDialog label column width, sized to the longest existing label
+        inline const juce::Colour blockVco = juce::Colour(0xFF5C84B8);  // VCO1 / VCO2 / FM group
+        inline const juce::Colour blockLag = juce::Colour(0xFF7A828A);  // LAG
+        inline const juce::Colour blockTrack = juce::Colour(0xFFB79B5B);  // TRACK / tracking generator
+        inline const juce::Colour blockVcf = juce::Colour(0xFF5F9273);  // VCF / VCA
+        inline const juce::Colour blockEnv = juce::Colour(0xFFC27A52);  // envelope generator
+        inline const juce::Colour blockLfo = juce::Colour(0xFF7C73B8);  // LFO
+        inline const juce::Colour blockRamp = juce::Colour(0xFF5E9DA7);  // RAMP
+        inline const juce::Colour blockMatrix = juce::Colour(0xFFA66565);  // modulation matrix
         inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
     }
 
@@ -110,6 +118,14 @@ namespace xplorer::app::tokens
         inline const juce::Colour sectionBarTop = global::barTop;
         inline const juce::Colour sectionBarMid = global::barMid;
         inline const juce::Colour sectionBarBot = global::barBot;
+        inline const juce::Colour blockVco = global::blockVco;
+        inline const juce::Colour blockLag = global::blockLag;
+        inline const juce::Colour blockTrack = global::blockTrack;
+        inline const juce::Colour blockVcf = global::blockVcf;
+        inline const juce::Colour blockEnv = global::blockEnv;
+        inline const juce::Colour blockLfo = global::blockLfo;
+        inline const juce::Colour blockRamp = global::blockRamp;
+        inline const juce::Colour blockMatrix = global::blockMatrix;
         inline constexpr float textDisplay = global::fs16;  // VCO1/VCO2, combo base size
         inline constexpr float textTitle = global::fs15;  // section titles
         inline constexpr float textSubtitle = global::fs14;  // MIX/LAG/LFO/RAMP, settings table

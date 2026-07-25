@@ -100,6 +100,20 @@ tiers:
     dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
     dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
 
+    # ---- functional-block identity palette (owner GUI-modernisation study,
+    #      2026-07): one hue per signal-path block so the panel reads as
+    #      grouped areas. Colour only -- no geometry impact.
+    #      RQ-DSN-092/093, RQ-GUI-044. ----
+    blockVco:    { kind: colour, hex: "5C84B8", note: "VCO1 / VCO2 / FM group" }
+    blockLag:    { kind: colour, hex: "7A828A", note: "LAG" }
+    blockTrack:  { kind: colour, hex: "B79B5B", note: "TRACK / tracking generator" }
+    blockVcf:    { kind: colour, hex: "5F9273", note: "VCF / VCA" }
+    blockEnv:    { kind: colour, hex: "C27A52", note: "envelope generator" }
+    blockLfo:    { kind: colour, hex: "7C73B8", note: "LFO" }
+    blockRamp:   { kind: colour, hex: "5E9DA7", note: "RAMP" }
+    blockMatrix: { kind: colour, hex: "A66565", note: "modulation matrix" }
+    sectionBarFadeEnd: { kind: float, value: 0.35, note: "section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)" }
+
     # ---- main-panel control-row height (MainForm-extracted; shared by check
     #      boxes / radios / in-panel stacked rows so paired rows align) ----
     controlRowHeight: { kind: int, value: 17, note: "reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040" }
@@ -143,6 +157,18 @@ tiers:
     sectionBarTop:  { alias: global.barTop }
     sectionBarMid:  { alias: global.barMid }
     sectionBarBot:  { alias: global.barBot }
+
+    # ---- colour roles: functional-block identity (RQ-DSN-092/093, RQ-GUI-044).
+    #      Consumed by block frames, section labels and section bars; anything
+    #      outside an identified block keeps diagramFrame. ----
+    blockVco:    { alias: global.blockVco }
+    blockLag:    { alias: global.blockLag }
+    blockTrack:  { alias: global.blockTrack }
+    blockVcf:    { alias: global.blockVcf }
+    blockEnv:    { alias: global.blockEnv }
+    blockLfo:    { alias: global.blockLfo }
+    blockRamp:   { alias: global.blockRamp }
+    blockMatrix: { alias: global.blockMatrix }
 
     # ---- type roles: every distinct size kept (consolidation deferred, RQ-DSN-010) ----
     textDisplay:  { alias: global.fs16,  note: "VCO1/VCO2, combo base size" }
@@ -189,3 +215,4 @@ tiers:
     tickBoxBorderAlpha:    { alias: global.tickBoxBorderAlpha, note: "accent.withAlpha(a) border" }
     knobTrackAlpha:        { alias: global.knobTrackAlpha,     note: "controlTrack.withAlpha(a)" }
     disabledAlpha:         { alias: global.disabledAlpha,      note: "shared control disabled treatment, ADR-JUC-017" }
+    sectionBarFadeEnd:     { alias: global.sectionBarFadeEnd,  note: "block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092" }
