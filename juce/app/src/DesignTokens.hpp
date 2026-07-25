@@ -83,6 +83,9 @@ namespace xplorer::app::tokens
         inline const juce::Colour blockLfo = juce::Colour(0xFF7C73B8);  // LFO
         inline const juce::Colour blockRamp = juce::Colour(0xFF5E9DA7);  // RAMP
         inline const juce::Colour blockMatrix = juce::Colour(0xFFA66565);  // modulation matrix
+        inline constexpr float sectionBarFadeEnd = 0.35F;  // section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)
+        inline constexpr float blockFillAlpha = 0.18F;  // tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094
+        inline constexpr float blockFrameRelief = 0.2F;  // block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094
         inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
     }
 
@@ -163,6 +166,9 @@ namespace xplorer::app::tokens
         inline constexpr float tickBoxBorderAlpha = global::tickBoxBorderAlpha;  // accent.withAlpha(a) border
         inline constexpr float knobTrackAlpha = global::knobTrackAlpha;  // controlTrack.withAlpha(a)
         inline constexpr float disabledAlpha = global::disabledAlpha;  // shared control disabled treatment, ADR-JUC-017
+        inline constexpr float sectionBarFadeEnd = global::sectionBarFadeEnd;  // block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092
+        inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
+        inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
     }
 
 }

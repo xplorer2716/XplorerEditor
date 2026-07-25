@@ -113,6 +113,8 @@ tiers:
     blockRamp:   { kind: colour, hex: "5E9DA7", note: "RAMP" }
     blockMatrix: { kind: colour, hex: "A66565", note: "modulation matrix" }
     sectionBarFadeEnd: { kind: float, value: 0.35, note: "section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)" }
+    blockFillAlpha:    { kind: float, value: 0.18, note: "tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094" }
+    blockFrameRelief:  { kind: float, value: 0.2,  note: "block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094" }
 
     # ---- main-panel control-row height (MainForm-extracted; shared by check
     #      boxes / radios / in-panel stacked rows so paired rows align) ----
@@ -216,3 +218,5 @@ tiers:
     knobTrackAlpha:        { alias: global.knobTrackAlpha,     note: "controlTrack.withAlpha(a)" }
     disabledAlpha:         { alias: global.disabledAlpha,      note: "shared control disabled treatment, ADR-JUC-017" }
     sectionBarFadeEnd:     { alias: global.sectionBarFadeEnd,  note: "block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092" }
+    blockFillAlpha:        { alias: global.blockFillAlpha,     note: "blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094" }
+    blockFrameRelief:      { alias: global.blockFrameRelief,   note: "blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094" }

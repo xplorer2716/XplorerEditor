@@ -150,18 +150,37 @@ grouped areas instead of one uniform monochrome diagram.
 - **RQ-DSN-093** — **Scope guard (colour only).** The block-identity family
   SHALL affect **colour only**: no block geometry, no connector-line routing,
   no control shape, size or position changes with it. It SHALL apply to (a)
-  block frame strokes, (b) section-header label text, (c) the section-header
-  underline bar — replacing the single blue gradient bar shared by every
-  section today. It SHALL NOT apply to control widgets (knobs, check boxes,
-  radios, combo boxes: the accent/LED rule RQ-DSN-004 keeps owning those),
-  parameter captions, or panel material. Elements not covered by a block keep
-  their existing neutral token. **Dependencies:** RQ-DSN-092, RQ-DSN-004,
-  ADR-JUC-013, ADR-JUC-014.
+  block frame strokes, (b) block fills, (c) section-header label text, (d) the
+  section-header underline bar — replacing the single blue gradient bar shared
+  by every section today. It SHALL NOT apply to control widgets (knobs, check
+  boxes, radios, combo boxes: the accent/LED rule RQ-DSN-004 keeps owning
+  those), parameter captions, or panel material. Elements not covered by a
+  block keep their existing neutral token. **Dependencies:** RQ-DSN-092,
+  RQ-DSN-004, ADR-JUC-013, ADR-JUC-014.
   - **Acceptance (Gherkin):** *Given* the block-colour change, *When* the mockup
     or panel is regenerated, *Then* every block frame, section label and section
     bar shows its block hue, **and** every knob, check box, radio, combo box,
     caption, signal line and plate/rail pixel is unchanged from before the
     change.
+
+- **RQ-DSN-094** — **Block fill and frame relief.** A labelled block SHALL be
+  **filled** with its identity hue at `component.blockFillAlpha` (0.18) over the
+  panel plate, and its frame SHALL carry a **relief gradient**: the pure block
+  hue on the top edge fading to `blockColour.darker(component.blockFrameRelief)`
+  (0.2) on the bottom edge, so the block reads as a slightly raised plate rather
+  than a flat outline. Both values are measured from the owner-supplied
+  modernisation mockup (fill `#443326` over plate `#242528` for block `#C27A52`;
+  frame top `#8D4E1C` vs bottom `#75421C`, ratio 0.84) and are expressed as
+  named transformations of the block token per RQ-DSN-005 — never as a second
+  raw colour. **Control sub-panels** (the ENV/RAMP trigger frames and the FM
+  DESTINATION frame — containers whose content is widgets, not a block label)
+  SHALL stay **neutral and unfilled** (`colour.diagram.frame`), as in the same
+  mockup, so they do not compete with the blocks they sit under.
+  **Dependencies:** RQ-DSN-092, RQ-DSN-093, RQ-DSN-005, ADR-JUC-014.
+  - **Acceptance (Gherkin):** *Given* a labelled block, *When* rendered, *Then*
+    its interior shows its hue at 18% over the plate and its frame is brighter
+    on the top edge than on the bottom edge. *Given* a control sub-panel,
+    *When* rendered, *Then* it has no fill and a neutral frame.
 
 ### 2.2 Typography
 

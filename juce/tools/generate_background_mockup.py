@@ -55,6 +55,17 @@ BAR = [_col("sectionBarTop"), _col("sectionBarMid"), _col("sectionBarBot")]
 BLOCK = {n: _col("block" + n.capitalize())
          for n in ("vco", "lag", "track", "vcf", "env", "lfo", "ramp", "matrix")}
 BAR_FADE = _T["component"]["sectionBarFadeEnd"]["value"]
+FILL_A = _T["component"]["blockFillAlpha"]["value"]
+RELIEF = _T["component"]["blockFrameRelief"]["value"]
+
+
+def _darker(hex_col: str, amount: float) -> str:
+    """JUCE Colour::darker(amount) equivalent: HSB brightness x 1/(1+amount)."""
+    import colorsys
+    r, g, b = (int(hex_col[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    h, sat, v = colorsys.rgb_to_hsv(r, g, b)
+    r, g, b = colorsys.hsv_to_rgb(h, sat, v / (1.0 + amount))
+    return "#%02X%02X%02X" % (round(r * 255), round(g * 255), round(b * 255))
 
 # line width + font scale (names mirror BackgroundRenderer.cpp FS_*)
 LW = _num("strokeLine")
@@ -115,6 +126,10 @@ svg.append(f'''<defs>
   <linearGradient id="bar-{n}" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0" stop-color="{c}" stop-opacity="1"/>
     <stop offset="1" stop-color="{c}" stop-opacity="{BAR_FADE}"/>
+  </linearGradient>
+  <linearGradient id="frame-{n}" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="{c}"/>
+    <stop offset="1" stop-color="{_darker(c, RELIEF)}"/>
   </linearGradient>''' for n, c in BLOCK.items()) + '''
 </defs>''')
 
@@ -143,10 +158,16 @@ svg.append(wood(W - 28))
 svg.append(f'<g transform="translate(0,-{CROP})">')
 
 # ---------------------------------------------------------------- helpers
-def box(x, y, w, h, c=None):
-    """Block frame. `c` = the owning block's identity colour; None keeps the
-    neutral diagram frame (elements not belonging to a block). [RQ-GUI-044]"""
-    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="none" stroke="{c or FRAME}" stroke-width="{LW}"/>'
+def box(x, y, w, h, blk=None):
+    """Block frame. `blk` = the owning block's key: the box is then filled with
+    the block hue at FILL_A and framed with the relief gradient (pure hue on the
+    top edge, darkened on the bottom edge). `None` = neutral, unfilled frame,
+    used for control sub-panels which must not compete with the blocks.
+    [RQ-GUI-044, RQ-DSN-094]"""
+    if blk is None:
+        return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>'
+    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="{BLOCK[blk]}" '
+            f'fill-opacity="{FILL_A}" stroke="url(#frame-{blk})" stroke-width="{LW}"/>')
 def line(x1, y1, x2, y2):
     # round caps so perpendicular segments join with a soft rounded corner
     # matching the block frames (JUCE PathStrokeType curved/rounded)
@@ -171,15 +192,15 @@ def smalllab(x, y, s, anchor="end"):
 
 # ================================================================ LEFT COLUMN
 # --- VCO1 group
-svg.append(box(51, 32, 147, 52, BLOCK["vco"]) + T(64, 63, "VCO1", FS_VCO))
+svg.append(box(51, 32, 147, 52, "vco") + T(64, 63, "VCO1", FS_VCO))
 for i, (wave, y) in enumerate([("TRIANGLE", 45), ("SAWTOOTH", 57), ("PULSE", 70)]):
     svg.append(T(193, y + 4, wave, FS_WAVE, "bold", TITLE, "end"))
 svg.append(line(198, 45, 330, 45) + line(198, 57, 330, 57))          # tri, saw
 svg.append(line(198, 70, 234, 70) + line(286, 70, 330, 70))          # pulse via PWM
-svg.append(box(234, 60, 52, 23, BLOCK["vco"]) + T(260, 76, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(259, 83))
-svg.append(box(330, 32, 53, 52, BLOCK["vco"]) + T(356, 63, "MIX", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(234, 60, 52, 23, "vco") + T(260, 76, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(259, 83))
+svg.append(box(330, 32, 53, 52, "vco") + T(356, 63, "MIX", FS_MIX, "bold", TITLE, "middle"))
 svg.append(line(383, 58, 405, 58))
-svg.append(box(405, 45, 53, 26, BLOCK["vco"]) + T(431, 63, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(432, 71, 23))
+svg.append(box(405, 45, 53, 26, "vco") + T(431, 63, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(432, 71, 23))
 svg.append(stub(82, 84) + stub(170, 84))
 svg.append(caption(82, 137, "FREQUENCY") + caption(170, 137, "DETUNE") + caption(259, 137, "PULSE WIDTH") + caption(432, 137, "VOLUME"))
 # VCO1 VCA out -> straight into the VCF left edge
@@ -198,25 +219,25 @@ svg.append(f'<path d="M492 180 A 7 7 0 0 1 506 180" fill="none" stroke="{FRAME}"
 svg.append(line(506, 180, 513, 180) + line(513, 180, 513, 82) + line(513, 82, 541, 82))
 
 # --- FM / VCO2 group
-svg.append(box(51, 210, 102, 36, BLOCK["vco"]) + T(102, 233, "FM VCA", FS_BLOCK, "bold", TITLE, "middle"))
-svg.append(box(184, 210, 90, 52, BLOCK["vco"]))
+svg.append(box(51, 210, 102, 36, "vco") + T(102, 233, "FM VCA", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(box(184, 210, 90, 52))
 svg.append(T(229, 274, "DESTINATION", FS_SMALL, "bold", CAPTION, "middle", "0.3"))
 svg.append(line(153, 228, 184, 228))
 svg.append(stub(106, 246) + caption(106, 300, "FM AMPLITUDE"))
-svg.append(box(329, 210, 52, 52, BLOCK["vco"]) + T(355, 241, "MIX", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(329, 210, 52, 52, "vco") + T(355, 241, "MIX", FS_MIX, "bold", TITLE, "middle"))
 svg.append(line(381, 232, 405, 232))
-svg.append(box(405, 220, 53, 26, BLOCK["vco"]) + T(431, 238, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(430, 246, 24))
+svg.append(box(405, 220, 53, 26, "vco") + T(431, 238, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(430, 246, 24))
 # VCO2-row VCA out -> right, then up at x=499 into the VCF  [owner point 2]
 svg.append(line(458, 232, 499, 232) + line(499, 232, 499, 70))
 svg.append(f'<path d="M499 70 Q499 58 509 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
 svg.append(caption(430, 314, "VOLUME"))
-svg.append(box(51, 310, 147, 52, BLOCK["vco"]) + T(64, 341, "VCO2", FS_VCO))
+svg.append(box(51, 310, 147, 52, "vco") + T(64, 341, "VCO2", FS_VCO))
 for wave, y in [("TRIANGLE", 320), ("SAWTOOTH", 334), ("PULSE", 348)]:
     svg.append(T(193, y + 4, wave, FS_WAVE, "bold", TITLE, "end"))
 # vco2 waves route up into MIX
 svg.append(line(198, 320, 297, 320) + line(297, 320, 297, 228) + line(297, 228, 329, 228))
 svg.append(line(198, 334, 303, 334) + line(303, 334, 303, 237) + line(303, 237, 329, 237))
-svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23, BLOCK["vco"]) + T(259, 356, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(260, 363))
+svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23, "vco") + T(259, 356, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(260, 363))
 svg.append(line(285, 348, 309, 348) + line(309, 348, 309, 246) + line(309, 246, 329, 246))
 svg.append(f'<text x="318" y="300" font-family="Arial" font-size="{FS_SMALL}" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>')
 svg.append(line(317, 255, 329, 255) + line(317, 255, 317, 270))
@@ -229,14 +250,14 @@ svg.append(line(204, 305, 204, 320))
 svg.append(section(53, 487, "VCO1/VCO2/FM", 370, "vco"))
 
 # --- LAG
-svg.append(box(81, 501, 268, 36, BLOCK["lag"]) + T(215, 524, "LAG", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(81, 501, 268, 36, "lag") + T(215, 524, "LAG", FS_MIX, "bold", TITLE, "middle"))
 svg.append(outlab(349, 518, "LAG", "OUT"))
 svg.append(line(52, 518, 81, 518) + line(52, 518, 52, 563) + smalllab(35, 576, "LAG IN", "start"))
 svg.append(stub(215, 537) + caption(215, 590, "RATE"))
 svg.append(section(53, 629, "LAG", 370, "lag"))
 
 # --- TRACKING GENERATOR
-svg.append(box(81, 679, 268, 36, BLOCK["track"]) + T(215, 702, "TRACKING GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(box(81, 679, 268, 36, "track") + T(215, 702, "TRACKING GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
 svg.append(outlab(349, 696, "TRACK", "OUT"))
 svg.append(line(52, 696, 81, 696) + line(52, 696, 52, 741) + smalllab(35, 754, "TRACK IN", "start"))
 for i, cx in enumerate([126, 170, 214, 258, 302]):   # PT knob centres (table)
@@ -246,9 +267,9 @@ svg.append(section(53, 799, "TRACK X", 370, "track"))
 
 # ================================================================ CENTER COLUMN
 # --- VCF/VCA chain
-svg.append(box(525, 45, 186, 26, BLOCK["vcf"]) + T(618, 63, "MULTIMODE VCF", FS_BLOCK, "bold", TITLE, "middle"))
-svg.append(box(729, 45, 62, 26, BLOCK["vcf"]) + T(760, 63, "VCA1", FS_VCA, "bold", TITLE, "middle"))
-svg.append(box(804, 45, 62, 26, BLOCK["vcf"]) + T(835, 63, "VCA", FS_VCA, "bold", TITLE, "middle"))
+svg.append(box(525, 45, 186, 26, "vcf") + T(618, 63, "MULTIMODE VCF", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(box(729, 45, 62, 26, "vcf") + T(760, 63, "VCA1", FS_VCA, "bold", TITLE, "middle"))
+svg.append(box(804, 45, 62, 26, "vcf") + T(835, 63, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(711, 58, 729, 58) + line(791, 58, 804, 58))
 svg.append(outlab(866, 58, "VOICE", "OUT"))
 for cx, ln in [(541, 24), (591, 24), (669, 24), (759, 24), (834, 24)]:
@@ -257,8 +278,8 @@ svg.append(caption(541, 137, "FREQ") + caption(591, 137, "RES") + caption(669, 1
 svg.append(section(526, 194, "VCF/VCA", 370, "vcf"))
 
 # --- ENV
-svg.append(box(525, 242, 267, 26, BLOCK["env"]) + T(658, 260, "ENVELOPE GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
-svg.append(box(804, 242, 63, 26, BLOCK["env"]) + T(835, 260, "VCA", FS_VCA, "bold", TITLE, "middle"))
+svg.append(box(525, 242, 267, 26, "env") + T(658, 260, "ENVELOPE GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(box(804, 242, 63, 26, "env") + T(835, 260, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(792, 255, 804, 255))
 svg.append(outlab(867, 255, "ENV", "OUT"))
 # TRIGGER IN: enters the ENVELOPE block and connects down into the trigger
@@ -268,12 +289,12 @@ svg.append(line(514, 255, 525, 255) + line(514, 255, 514, 351) + line(514, 351, 
 for cx in [541, 591, 641, 691, 750, 835]:   # knob centres (table)
     svg.append(stub(cx, 268))
 svg.append(caption(541, 320, "DELAY") + caption(591, 320, "ATTACK") + caption(641, 320, "DECAY") + caption(691, 320, "SUSTAIN") + caption(750, 320, "RELEASE") + caption(835, 320, "VOLUME"))
-svg.append(box(524, 329, 373, 42, BLOCK["env"]))
+svg.append(box(524, 329, 373, 42))
 svg.append(section(526, 416, "ENV X", 370, "env"))
 
 # --- LFO
-svg.append(box(524, 467, 269, 26, BLOCK["lfo"]) + T(658, 485, "LFO", FS_MIX, "bold", TITLE, "middle"))
-svg.append(box(804, 467, 63, 26, BLOCK["lfo"]) + T(835, 485, "VCA", FS_VCA, "bold", TITLE, "middle"))
+svg.append(box(524, 467, 269, 26, "lfo") + T(658, 485, "LFO", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(804, 467, 63, 26, "lfo") + T(835, 485, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(793, 480, 804, 480))
 svg.append(outlab(867, 480, "LFO", "OUT"))
 for cx in [546, 657, 759, 834]:   # SPEED/RETRIG/AMP centres (table); 657 = WAVESHAPE combo
@@ -282,13 +303,13 @@ svg.append(caption(546, 546, "SPEED") + caption(657, 546, "WAVESHAPE") + caption
 svg.append(section(527, 597, "LFO X", 370, "lfo"))
 
 # --- RAMP
-svg.append(box(524, 646, 266, 26, BLOCK["ramp"]) + T(656, 664, "RAMP", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(524, 646, 266, 26, "ramp") + T(656, 664, "RAMP", FS_MIX, "bold", TITLE, "middle"))
 svg.append(outlab(790, 659, "RAMP", "OUT"))
 svg.append(line(514, 659, 524, 659) + line(514, 659, 514, 758) + line(514, 758, 524, 758)
            + smalllab(508, 767, "TRIGGER", "end") + smalllab(508, 777, "IN", "end"))
 svg.append(stub(657, 672))
 svg.append(caption(657, 726, "RATE"))
-svg.append(box(524, 734, 374, 41, BLOCK["ramp"]))
+svg.append(box(524, 734, 374, 41))
 svg.append(section(527, 799, "RAMP X", 370, "ramp"))
 
 # ================================================================ RIGHT
