@@ -37,10 +37,13 @@ At the start of every session, run these steps in order before any task:
    - b. **Ask user for `unit_tests`** (user variable): use the built-in user-question tool
      (`askQuestion` on GitHub Copilot, `AskUserQuestion` on Claude Code) — "Should unit tests be
      generated and run in this session? (yes / no)". Set `unit_tests` to `true` or `false`.
-   - c. **Write** `process/_sessionstate/session.yaml` with the resolved values.
-   - d. **Display a summary table** of all variable names and values. Allow the user to override
+   - c. **Ask user for `chat_mode`** (user variable): use the built-in user-question tool —
+     "Chat reporting mode: normal or chat-eco (ultra-concise)?". Set `chat_mode` to `normal` or
+     `chat-eco`.
+   - d. **Write** `process/_sessionstate/session.yaml` with the resolved values.
+   - e. **Display a summary table** of all variable names and values. Allow the user to override
      any value. If any value is overridden, rewrite `session.yaml` before proceeding.
-   - e. **The values in `session.yaml` are the single source of truth for the entire session.**
+   - f. **The values in `session.yaml` are the single source of truth for the entire session.**
      Before starting any Tier M or L task, if session variable values are not in active context,
      read `process/_sessionstate/session.yaml` and reload them before applying any conditional guard.
 4. Scan `process/1.requirements/` for open or unimplemented requirement IDs.
@@ -106,6 +109,7 @@ session. The file is tracked in git .
 ```yaml
 unit_tests: true        # boolean — user variable: generate and run unit tests 
 platform: windows       # string — system variable: "windows" | "macos" | "linux" 
+chat_mode: normal       # string — user variable: "normal" | "chat-eco"
 ```
 
 ### Variable Kinds
@@ -113,6 +117,7 @@ platform: windows       # string — system variable: "windows" | "macos" | "lin
 |----------|------|-------------|--------|
 | `unit_tests` | User | Agent asks via the user-question tool (`askQuestion` / `AskUserQuestion`) at every session start | `true` / `false` |
 | `platform` | System | Agent auto-detects via terminal probe at session start | `windows` / `macos` / `linux` |
+| `chat_mode` | User | Agent asks via the user-question tool at every session start | `normal` / `chat-eco` |
 
 ### Adding New Variables
 Add a flat key/value entry to the schema above. Never rename or remove existing keys — add only. Document the kind (user/system), who resolves it, and its allowed values.
@@ -299,6 +304,13 @@ This plan implements the tasks in the format specified below.
 - **Assignee**: [Human | AI]
 ````
 
+
+### Chat Verbosity
+
+> **WHILE `session.chat_mode = chat-eco`**: all chat replies SHALL be minimal — no restating
+> context, no verbose explanations, results/status only. Tool-call reasoning stays internal.
+> Does NOT reduce rigor of files/commits (DoD, traceability, Gherkin) — chat verbosity only.
+> If `session.chat_mode` is not in active context, read `process/_sessionstate/session.yaml` first.
 
 ## 4. CODE IMPLEMENTATION AND QUALITY
 
