@@ -100,18 +100,22 @@ tiers:
     dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
     dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
 
-    # ---- functional-block identity palette (owner GUI-modernisation study,
+    # ---- functional-block identity palette v2 (owner-selected "option B",
     #      2026-07): one hue per signal-path block so the panel reads as
-    #      grouped areas. Colour only -- no geometry impact.
-    #      RQ-DSN-092/093, RQ-GUI-044. ----
-    blockVco:    { kind: colour, hex: "5C84B8", note: "VCO1 / VCO2 / FM group" }
-    blockLag:    { kind: colour, hex: "7A828A", note: "LAG" }
-    blockTrack:  { kind: colour, hex: "B79B5B", note: "TRACK / tracking generator" }
-    blockVcf:    { kind: colour, hex: "5F9273", note: "VCF / VCA" }
-    blockEnv:    { kind: colour, hex: "C27A52", note: "envelope generator" }
-    blockLfo:    { kind: colour, hex: "7C73B8", note: "LFO" }
-    blockRamp:   { kind: colour, hex: "5E9DA7", note: "RAMP" }
-    blockMatrix: { kind: colour, hex: "A66565", note: "modulation matrix" }
+    #      grouped areas. Chromatic blocks share OKLCh L=0.67 / C=0.100 for
+    #      coherence; LAG stays achromatic; MATRIX is the Oberheim-signature
+    #      blue exception (L0.62/C0.175/H273). Min pairwise CIEDE2000 15.2,
+    #      all >= 3.0:1 WCAG 1.4.11 contrast on the plate — methodology,
+    #      metrics and superseded v1 values in RQ-DSN §2.1b. Colour only --
+    #      no geometry impact. RQ-DSN-092/093, RQ-GUI-044. ----
+    blockVco:    { kind: colour, hex: "549ECB", note: "VCO1 / VCO2 / FM group (v2, H238)" }
+    blockLag:    { kind: colour, hex: "8F969D", note: "LAG (achromatic)" }
+    blockTrack:  { kind: colour, hex: "B19047", note: "TRACK / tracking generator (v2)" }
+    blockVcf:    { kind: colour, hex: "7AA364", note: "VCF / VCA (v2)" }
+    blockEnv:    { kind: colour, hex: "C88160", note: "envelope generator (v2)" }
+    blockLfo:    { kind: colour, hex: "A087C9", note: "LFO (v2)" }
+    blockRamp:   { kind: colour, hex: "37A9A3", note: "RAMP (v2)" }
+    blockMatrix: { kind: colour, hex: "6579EE", note: "modulation matrix — Oberheim-signature blue (v2, L0.62/C0.175/H273)" }
     sectionBarFadeEnd: { kind: float, value: 0.35, note: "section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)" }
     blockFillAlpha:    { kind: float, value: 0.18, note: "tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094" }
     blockFrameRelief:  { kind: float, value: 0.2,  note: "block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094" }
