@@ -121,20 +121,40 @@ not just the initial migration.
 
 ### 2.1b Colour — functional-block identity family
 
-Owner-provided palette (2026-07, derived from a GUI-modernisation study): each
-functional block of the signal path carries its own hue so the panel reads as
-grouped areas instead of one uniform monochrome diagram.
+Each functional block of the signal path carries its own hue so the panel reads
+as grouped areas instead of one uniform monochrome diagram.
 
-| Global token | Value | Block |
-|---|---|---|
-| `colour.block.vco` | `#5C84B8` | VCO1 / VCO2 / FM group |
-| `colour.block.lag` | `#7A828A` | LAG |
-| `colour.block.track` | `#B79B5B` | TRACK / tracking generator |
-| `colour.block.vcf` | `#5F9273` | VCF / VCA |
-| `colour.block.env` | `#C27A52` | Envelope generator |
-| `colour.block.lfo` | `#7C73B8` | LFO |
-| `colour.block.ramp` | `#5E9DA7` | RAMP |
-| `colour.block.matrix` | `#A66565` | Modulation matrix |
+**Palette v2 (owner-selected 2026-07-26, "option B")** — supersedes the initial
+owner-supplied v1 values. Derived analytically rather than picked by eye: the
+seven chromatic blocks sit at **uniform OKLCh lightness L = 0.67 and chroma
+C = 0.100**, which is what makes them read as one coherent family (no block
+"shouts" louder than another); their hues are spaced to maximise the minimum
+**CIEDE2000 (ΔE₀₀)** separation. LAG stays deliberately achromatic (utility
+block, same L). MODULATION MATRIX is a **deliberate exception** to the uniform
+ramp — it is the modulation layer, not a signal-path stage, and the signature
+function of the Matrix-12, so it takes the historical Oberheim blue family at a
+raised chroma (L 0.62, C 0.175, hue 273°); VCO is nudged to hue 238° to keep the
+two blues apart.
+
+| Global token | v2 value | v1 (superseded) | Block |
+|---|---|---|---|
+| `colour.block.vco` | `#549ECB` | `#5C84B8` | VCO1 / VCO2 / FM group |
+| `colour.block.lag` | `#8F969D` | `#7A828A` | LAG |
+| `colour.block.track` | `#B19047` | `#B79B5B` | TRACK / tracking generator |
+| `colour.block.vcf` | `#7AA364` | `#5F9273` | VCF / VCA |
+| `colour.block.env` | `#C88160` | `#C27A52` | Envelope generator |
+| `colour.block.lfo` | `#A087C9` | `#7C73B8` | LFO |
+| `colour.block.ramp` | `#37A9A3` | `#5E9DA7` | RAMP |
+| `colour.block.matrix` | `#6579EE` | `#A66565` | Modulation matrix |
+
+Measured against the panel plate `#393941`: minimum pairwise ΔE₀₀ **15.2**
+(v1: 12.2), median **33.9** (v1: 28.4); every block reaches at least **3.0:1**
+contrast (v1 left four blocks below 3:1 — MATRIX 2.54, LFO 2.72, LAG 2.94,
+VCO 2.97). *Known limits, accepted:* the palette does not reach WCAG AA **text**
+contrast (4.5:1) for the section labels — doing so would require a markedly
+brighter, more garish panel than the owner wants; and under deuteranopia /
+protanopia some pairs fall below ΔE₀₀ 5, mitigated by the fixed physical
+position of each block (same positional-redundancy argument as RQ-DSN-051).
 
 - **RQ-DSN-092** — The design system SHALL declare a **block-identity colour
   family**: one global raw entry per functional block (table above) and one
@@ -181,6 +201,25 @@ grouped areas instead of one uniform monochrome diagram.
     its interior shows its hue at 18% over the plate and its frame is brighter
     on the top edge than on the bottom edge. *Given* a control sub-panel,
     *When* rendered, *Then* it has no fill and a neutral frame.
+
+- **RQ-DSN-095** — **The block-identity colours SHALL be user-themeable.** The
+  values of §2.1b are the **defaults**, not fixed constants: the application
+  SHALL resolve every block colour through a **single runtime accessor** whose
+  value is the user's override when one is set and the design-system default
+  otherwise. No consumer (vector painter, page-family selector buttons, or any
+  future one) shall cache a copy or read the compile-time token directly —
+  the same single-source-of-truth rule already established for the knob LED
+  colour (RQ-DSN-004, ADR-JUC-011). Changing a block colour SHALL therefore take
+  effect everywhere at once, with no restart and no stale copy.
+  **Dependencies:** RQ-DSN-004, RQ-DSN-092, RQ-DSN-093, RQ-SET-007, RQ-GUI-046;
+  ADR-JUC-011, ADR-JUC-014, ADR-JUC-018, ADR-JUC-019.
+  - **Acceptance (Gherkin):** *Given* no user override, *When* the panel is
+    painted, *Then* every block uses its §2.1b default. *Given* a user override
+    for one block, *When* the panel is painted, *Then* that block's frame, fill,
+    section label, section bar **and** its page-family selector buttons all use
+    the override, and the other blocks are unaffected. *Given* an override is
+    changed, *When* it is applied, *Then* no component still shows the previous
+    colour (no cached copy).
 
 ### 2.2 Typography
 
