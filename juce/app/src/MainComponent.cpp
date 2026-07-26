@@ -54,6 +54,10 @@ namespace xplorer::app
         _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
             juce::Colour(static_cast<juce::uint32>(
                 _settingsService->allUsersSettings().uiConfig.knobLedBorderColor))); // [RQ-GUI-031]
+        // Block palette: defaults with the persisted per-block overrides
+        // applied. [RQ-DSN-095, RQ-SET-007, ADR-JUC-020]
+        _lookAndFeel->setBlockPalette(
+            resolveBlockPalette(_settingsService->allUsersSettings().uiConfig));
         // Global skin: covers fixed-block, page-family and matrix controls alike.
         juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
         _vfd = std::make_unique<VfdDisplayHelper>(_display, *_controller);

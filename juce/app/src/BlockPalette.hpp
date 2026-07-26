@@ -8,6 +8,8 @@
 // through the descriptor table instead. [RQ-DSN-095, ADR-JUC-020
 // (DEC-JUC-034, DEC-JUC-035)]
 
+#include "xplorer/settings/AllUsersSettings.hpp"
+
 #include <juce_graphics/juce_graphics.h>
 
 #include <array>
@@ -37,7 +39,8 @@ namespace xplorer::app
         Matrix
     };
 
-    inline constexpr std::size_t BLOCK_COLOUR_COUNT = 8;
+    inline constexpr std::size_t BLOCK_COLOUR_COUNT =
+        settings::AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT;
 
     /// One row per block for settings/persistence iteration: id, the label the
     /// settings page shows (owner-validated mockup wording), and the palette
@@ -57,4 +60,10 @@ namespace xplorer::app
 
     /// Colour of one block in a palette, resolved through the descriptor table.
     [[nodiscard]] juce::Colour blockColourOf(const BlockPalette& palette, BlockId id);
+
+    /// Defaults with the persisted per-block overrides applied (override ??
+    /// default) — the palette the LookAndFeel is given at startup and on
+    /// settings accept. [RQ-SET-007, ADR-JUC-020 (DEC-JUC-039)]
+    [[nodiscard]] BlockPalette resolveBlockPalette(
+        const settings::AllUsersSettings::UiConfiguration& uiConfig);
 }

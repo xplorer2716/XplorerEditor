@@ -39,4 +39,18 @@ namespace xplorer::app
         jassert(descriptor.id == id); // table order is the BlockId contract
         return palette.*(descriptor.member);
     }
+
+    BlockPalette resolveBlockPalette(const settings::AllUsersSettings::UiConfiguration& uiConfig)
+    {
+        auto palette = defaultBlockPalette();
+        for (std::size_t i = 0; i < BLOCK_COLOUR_COUNT; ++i)
+        {
+            if (uiConfig.blockColours[i].has_value())
+            {
+                palette.*(blockColourDescriptors()[i].member) =
+                    juce::Colour(static_cast<juce::uint32>(*uiConfig.blockColours[i]));
+            }
+        }
+        return palette;
+    }
 }

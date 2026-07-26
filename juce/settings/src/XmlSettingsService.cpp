@@ -110,6 +110,15 @@ namespace xplorer::settings
             return names.joinIntoString(" ");
         }
 
+        // Per-block colour-override element names, indexed like
+        // UiConfiguration::blockColours (BlockId order). Only set entries are
+        // written; a missing element reads back as "unset". [RQ-SET-007,
+        // ADR-JUC-020 (DEC-JUC-039)]
+        constexpr const char* BLOCK_COLOUR_ELEMENTS[AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT]{
+            "BlockColorVco", "BlockColorLag", "BlockColorTrack", "BlockColorVcf",
+            "BlockColorEnv", "BlockColorLfo", "BlockColorRamp", "BlockColorMatrix",
+        };
+
         // --- element helpers ----------------------------------------------
 
         std::optional<juce::String> childText(const juce::XmlElement& parent, const char* name)
@@ -176,6 +185,10 @@ namespace xplorer::settings
             settings.uiConfig.knobLedBorderColor = childInt(*ui, "KnobLedBorderColor").value_or(0);
             settings.uiConfig.knobMovementIsLinear = childBool(*ui, "KnobMovementIsLinear").value_or(false);
             settings.uiConfig.knobStyleIsStandard = childBool(*ui, "KnobStyleIsStandard").value_or(false);
+            for (std::size_t i = 0; i < AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT; ++i)
+            {
+                settings.uiConfig.blockColours[i] = childInt(*ui, BLOCK_COLOUR_ELEMENTS[i]);
+            }
 
             auto& randomConfig = settings.randomizerConfig;
             const auto vco2 = parseFlags(VCO2_NAMES, childText(*random, "VCO2FmNoiseSync").value_or(""));
@@ -224,6 +237,13 @@ namespace xplorer::settings
             addChildText(*ui, "KnobLedBorderColor", juce::String(settings.uiConfig.knobLedBorderColor));
             addChildText(*ui, "KnobMovementIsLinear", settings.uiConfig.knobMovementIsLinear ? "true" : "false");
             addChildText(*ui, "KnobStyleIsStandard", settings.uiConfig.knobStyleIsStandard ? "true" : "false");
+            for (std::size_t i = 0; i < AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT; ++i)
+            {
+                if (settings.uiConfig.blockColours[i].has_value())
+                {
+                    addChildText(*ui, BLOCK_COLOUR_ELEMENTS[i], juce::String(*settings.uiConfig.blockColours[i]));
+                }
+            }
 
             auto* random = root->createNewChildElement("RandomizerConfig");
             const auto& randomConfig = settings.randomizerConfig;
