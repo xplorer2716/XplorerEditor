@@ -6,6 +6,11 @@
 # Tests run by default on push / pull_request. To build only the binary
 # without tests, trigger the workflow manually (Actions -> juce-windows ->
 # "Run workflow") and untick "Build and run the unit tests".
+#
+# On main only, a successful build is additionally published as a GitHub
+# Release marked pre-release (alpha preview, never "Latest"), so testers
+# always have a current build without it being mistaken for a production
+# release. [RQ-BLD-009, ADR-BLD-001]
 name: juce-windows
 
 on:
@@ -25,6 +30,9 @@ env:
   # only an explicit manual "false" turns tests off.
   RUN_TESTS: ${{ github.event.inputs.run_tests != 'false' }}
 
+permissions:
+  contents: write   # required to publish the main-branch alpha release [RQ-BLD-009]
+
 jobs:
   windows-app:
     name: Build Xplorer.exe (x64)
@@ -32,6 +40,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags, needed to find the previous alpha tag
 
       - name: Configure (MSVC, x64, GUI app)
         run: >
@@ -61,3 +71,32 @@ jobs:
           name: Xplorer-win-x64
           path: ${{ env.XPLORER_EXE }}
           if-no-files-found: error
+
+      # ---- main-branch alpha pre-release [RQ-BLD-009, ADR-BLD-001] ----------
+      - name: Build alpha release notes
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          PREV_TAG=$(git describe --tags --match 'alpha-*' --abbrev=0 2>/dev/null || true)
+          {
+            echo "Automated alpha preview build of \`main\` — not a production release."
+            echo
+            echo "**Changes since the previous alpha build:**"
+            if [ -n "$PREV_TAG" ]; then
+              git log "${PREV_TAG}..HEAD" --pretty='- %s (%h)'
+            else
+              git log -20 --pretty='- %s (%h)'
+            fi
+          } > alpha-notes.md
+          echo "ALPHA_TAG=alpha-${{ github.run_number }}-$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
+      - name: Publish alpha pre-release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.ALPHA_TAG }}
+          name: "Alpha preview ${{ env.ALPHA_TAG }}"
+          body_path: alpha-notes.md
+          prerelease: true
+          make_latest: false
+          files: ${{ env.XPLORER_EXE }}
