@@ -1,7 +1,12 @@
 # ADR-JUC-019: Block Colour Identity on the Page-Family Selector Buttons
 
 ## Status
-Proposed
+Proposed. **DEC-JUC-030 partially superseded by ADR-JUC-020 (DEC-JUC-037):** the
+block colour is no longer injected into the button at construction — once the
+palette became user-themeable (RQ-DSN-095) a cached copy would go stale, so the
+button stores its `BlockId` and resolves the live palette at paint time. Every
+other decision here (self-painting, fill/border rules, hover/focus, verification)
+stands unchanged.
 
 <!-- Motivated by RQ-GUI-045 (selector buttons carry their block's colour).
 Builds on RQ-GUI-044 / ADR-JUC-018 (block identity colours in the painter),
