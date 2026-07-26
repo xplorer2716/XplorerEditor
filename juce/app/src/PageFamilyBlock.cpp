@@ -1,5 +1,8 @@
 #include "PageFamilyBlock.hpp"
 
+#include "DesignTokens.hpp"
+#include "XplorerLookAndFeel.hpp"
+
 #include "xplorer/app/ControlMetadata.hpp"
 
 namespace xplorer::app
@@ -10,13 +13,71 @@ namespace xplorer::app
         // "...Paste", .resx text "Copy Page"/"Paste Page"). [RQ-GUI-027, issue #13]
         constexpr int COPY_PAGE_MENU_ITEM_ID = 1;
         constexpr int PASTE_PAGE_MENU_ITEM_ID = 2;
+
+        /// Identity hue of the block a page family drives, keyed by the
+        /// descriptor's control-tag prefix. Same tokens the painter uses for
+        /// the blocks themselves, so a selector reads as part of its block.
+        /// [RQ-GUI-045, RQ-DSN-092, ADR-JUC-019 (DEC-JUC-030)]
+        juce::Colour blockColourForFamily(const std::string& controlTagPrefix)
+        {
+            if (controlTagPrefix == "ENV_X")   { return tokens::semantic::blockEnv; }
+            if (controlTagPrefix == "LFO_X")   { return tokens::semantic::blockLfo; }
+            if (controlTagPrefix == "RAMP_X")  { return tokens::semantic::blockRamp; }
+            if (controlTagPrefix == "TRACK_X") { return tokens::semantic::blockTrack; }
+            return tokens::semantic::diagramFrame; // neutral: family with no block hue
+        }
     }
 
     PageSelectorButton::PageSelectorButton(const juce::String& text,
-                                           controller::XpanderController& controller, std::string id)
-        : juce::TextButton(text), _controller(controller), _id(std::move(id))
+                                           controller::XpanderController& controller, std::string id,
+                                           juce::Colour blockColour)
+        : juce::TextButton(text), _controller(controller), _id(std::move(id)),
+          _blockColour(blockColour)
     {
         setWantsKeyboardFocus(true); // so Ctrl+C/Ctrl+V reach keyPressed while focused
+    }
+
+    void PageSelectorButton::paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted, bool)
+    {
+        // Border: always the pure block hue -- the permanent "I belong to this
+        // block" cue. Background: the block's own fill expression
+        // (hue at blockFillAlpha, identical to BackgroundRenderer's box fill)
+        // only while this instance is active. Hover and keyboard focus are
+        // reproduced here because painting ourselves bypasses LookAndFeel_V4's
+        // stock feedback. [RQ-GUI-045, RQ-GUI-041, RQ-GUI-042, ADR-JUC-019]
+        const auto bounds = getLocalBounds().toFloat().reduced(tokens::semantic::strokeBorder * 0.5F);
+        const float corner = tokens::semantic::radiusControl;
+        const bool hovered = isEnabled() && shouldDrawButtonAsHighlighted;
+
+        if (getToggleState())
+        {
+            auto fill = _blockColour.withAlpha(tokens::component::blockFillAlpha);
+            if (hovered)
+            {
+                fill = fill.brighter(tokens::semantic::hoverBrighten);
+            }
+            g.setColour(fill);
+            g.fillRoundedRectangle(bounds, corner);
+        }
+        else if (hovered)
+        {
+            g.setColour(tokens::semantic::surfaceRecessed.brighter(tokens::semantic::hoverBrighten));
+            g.fillRoundedRectangle(bounds, corner);
+        }
+
+        g.setColour(hovered ? _blockColour.brighter(tokens::semantic::hoverBrighten) : _blockColour);
+        g.drawRoundedRectangle(bounds, corner, tokens::semantic::strokeBorder);
+
+        if (isEnabled() && hasKeyboardFocus(true))
+        {
+            if (const auto* laf = dynamic_cast<const XplorerLookAndFeel*>(&getLookAndFeel()))
+            {
+                g.setColour(laf->ledColour());
+                g.drawRoundedRectangle(bounds, corner, tokens::semantic::strokeLine);
+            }
+        }
+
+        getLookAndFeel().drawButtonText(g, *this, shouldDrawButtonAsHighlighted, false);
     }
 
     void PageSelectorButton::mouseDown(const juce::MouseEvent& event)
@@ -147,7 +208,7 @@ namespace xplorer::app
             auto button = std::make_unique<PageSelectorButton>(
                 juce::String(spec.label).isNotEmpty() ? juce::String(spec.label)
                                                        : juce::String(instance),
-                _controller, selectorId);
+                _controller, selectorId, blockColourForFamily(_descriptor.controlTagPrefix));
             button->setClickingTogglesState(true);
             button->setRadioGroupId(radioGroupId);
             button->setBounds(spec.x, spec.y, spec.width, spec.height);

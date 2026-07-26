@@ -31,10 +31,18 @@ namespace xplorer::app
     {
     public:
         PageSelectorButton(const juce::String& text, controller::XpanderController& controller,
-                           std::string id);
+                           std::string id, juce::Colour blockColour);
 
         void mouseDown(const juce::MouseEvent& event) override;
         bool keyPressed(const juce::KeyPress& key) override;
+
+        /// Draws the button's own background so it carries its functional
+        /// block's colour identity: border always the pure block hue, the
+        /// block's own fill only while this instance is active. Painted here
+        /// rather than in the LookAndFeel so no other TextButton in the app is
+        /// restyled. [RQ-GUI-045, ADR-JUC-019 (DEC-JUC-029)]
+        void paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted,
+                         bool shouldDrawButtonAsDown) override;
 
     private:
         void showPageContextMenu();
@@ -43,6 +51,7 @@ namespace xplorer::app
 
         controller::XpanderController& _controller;
         std::string _id;
+        juce::Colour _blockColour; ///< identity hue of the block this selector drives
     };
 
     class PageFamilyBlock
