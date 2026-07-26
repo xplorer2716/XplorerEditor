@@ -635,7 +635,21 @@ namespace xplorer::app
     void MainComponent::openSettingsDialog()
     {
         showSettingsDialog(*_controller, *_settingsService, _backend,
-                           [this](int argb) { updateLedColour(argb); }); // [RQ-GUI-025]
+                           [this](int argb) { updateLedColour(argb); }, // [RQ-GUI-025]
+                           [this](const BlockPalette& palette)
+                           { updateBlockPalette(palette); }); // [RQ-GUI-046]
+    }
+
+    void MainComponent::updateBlockPalette(const BlockPalette& palette)
+    {
+        // Live preview / accept / cancel-restore all land here: mutate the
+        // palette in place and repaint the tree — no LookAndFeel rebuild.
+        // [RQ-DSN-095, ADR-JUC-020 (DEC-JUC-038)]
+        _lookAndFeel->setBlockPalette(palette);
+        if (auto* top = getTopLevelComponent())
+        {
+            top->sendLookAndFeelChange();
+        }
     }
 
     void MainComponent::updateLedColour(int argb)

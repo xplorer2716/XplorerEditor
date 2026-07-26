@@ -99,6 +99,13 @@ tiers:
     # ---- dialog component sizes (content-driven, not on the spacing scale) ----
     dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
     dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
+    # ---- settings COLOURS/KNOB BEHAVIOUR groups (owner-validated mockup,
+    #      2026-07-26). RQ-GUI-046, ADR-JUC-020. ----
+    dialogSwatchWidth:     { kind: int, value: 40,  note: "colour swatch cell width (value-preserving: the pre-existing knob-LED swatch literal)" }
+    dialogChooseWidth:     { kind: int, value: 100, note: "uniform 'Choose...' button width (mockup: all colour buttons identical)" }
+    dialogBlockLabelWidth: { kind: int, value: 90,  note: "block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')" }
+    dialogResetWidth:      { kind: int, value: 140, note: "'Reset to defaults' button width" }
+    dialogGroupHeaderHeight: { kind: int, value: 16, note: "vertical clearance under a GroupComponent title before the first row" }
 
     # ---- functional-block identity palette v2 (owner-selected "option B",
     #      2026-07): one hue per signal-path block so the panel reads as
@@ -207,6 +214,12 @@ tiers:
     layoutMargin:     { alias: global.space12, note: "dialog outer margin" }
     dialogRowHeight:  { alias: global.dialogRowHeight }
     dialogLabelWidth: { alias: global.dialogLabelWidth }
+    dialogSwatchWidth:     { alias: global.dialogSwatchWidth,     note: "settings colour-swatch width, RQ-GUI-046" }
+    dialogChooseWidth:     { alias: global.dialogChooseWidth,     note: "uniform Choose... button width, RQ-GUI-046" }
+    dialogBlockLabelWidth: { alias: global.dialogBlockLabelWidth, note: "block label width in the colour grid, RQ-GUI-046" }
+    dialogResetWidth:      { alias: global.dialogResetWidth,      note: "Reset to defaults button width, RQ-GUI-046" }
+    dialogGroupHeaderHeight: { alias: global.dialogGroupHeaderHeight, note: "group-title clearance, RQ-GUI-046" }
+    textHint:              { alias: global.caption, note: "muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 

@@ -59,6 +59,7 @@ namespace xplorer::app
         void onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event);
         void openSettingsDialog();
         void updateLedColour(int argb);
+        void updateBlockPalette(const BlockPalette& palette); // [RQ-DSN-095, ADR-JUC-020]
         void backupAllData();
         void restoreAllData();
         void getAllSinglePatchesFromSynth();
