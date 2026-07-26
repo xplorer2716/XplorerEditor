@@ -32,19 +32,6 @@ namespace xplorer::app
         const juce::Colour& BAR_TOP = tokens::semantic::sectionBarTop; // section underline gradient
         const juce::Colour& BAR_MID = tokens::semantic::sectionBarMid;
         const juce::Colour& BAR_BOT = tokens::semantic::sectionBarBot;
-        // Functional-block identity hues: frames, fills, section labels and
-        // section bars carry their block's colour so the panel reads as grouped
-        // areas. Anything outside an identified block keeps FRAME.
-        // [RQ-GUI-044, RQ-DSN-092, ADR-JUC-018]
-        const juce::Colour& BLK_VCO = tokens::semantic::blockVco;
-        const juce::Colour& BLK_LAG = tokens::semantic::blockLag;
-        const juce::Colour& BLK_TRACK = tokens::semantic::blockTrack;
-        const juce::Colour& BLK_VCF = tokens::semantic::blockVcf;
-        const juce::Colour& BLK_ENV = tokens::semantic::blockEnv;
-        const juce::Colour& BLK_LFO = tokens::semantic::blockLfo;
-        const juce::Colour& BLK_RAMP = tokens::semantic::blockRamp;
-        const juce::Colour& BLK_MATRIX = tokens::semantic::blockMatrix;
-
         // ---- geometry: appearance (stroke/radius) from tokens; layout (canvas,
         //      rail, stub) stays local — spacing scale deferred (RQ-DSN-020) ----
         constexpr float LINE_WIDTH = tokens::semantic::strokeLine;   // frames + signal lines
@@ -89,8 +76,23 @@ namespace xplorer::app
         }
     }
 
-    void paintVectorBackground(juce::Graphics& g)
+    void paintVectorBackground(juce::Graphics& g, const BlockPalette& palette)
     {
+        // Functional-block identity hues: frames, fills, section labels and
+        // section bars carry their block's colour so the panel reads as grouped
+        // areas. Anything outside an identified block keeps FRAME. Resolved
+        // from the caller-supplied runtime palette (defaults = design tokens,
+        // user override wins) so the painter stays a pure function.
+        // [RQ-GUI-044, RQ-DSN-092, RQ-DSN-095, ADR-JUC-018, ADR-JUC-020]
+        const juce::Colour& BLK_VCO = palette.vco;
+        const juce::Colour& BLK_LAG = palette.lag;
+        const juce::Colour& BLK_TRACK = palette.track;
+        const juce::Colour& BLK_VCF = palette.vcf;
+        const juce::Colour& BLK_ENV = palette.env;
+        const juce::Colour& BLK_LFO = palette.lfo;
+        const juce::Colour& BLK_RAMP = palette.ramp;
+        const juce::Colour& BLK_MATRIX = palette.matrix;
+
         const int W = LOGICAL_CANVAS_WIDTH;
         const int H = LOGICAL_CANVAS_HEIGHT;
 

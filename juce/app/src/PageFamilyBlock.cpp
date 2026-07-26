@@ -14,25 +14,25 @@ namespace xplorer::app
         constexpr int COPY_PAGE_MENU_ITEM_ID = 1;
         constexpr int PASTE_PAGE_MENU_ITEM_ID = 2;
 
-        /// Identity hue of the block a page family drives, keyed by the
-        /// descriptor's control-tag prefix. Same tokens the painter uses for
-        /// the blocks themselves, so a selector reads as part of its block.
-        /// [RQ-GUI-045, RQ-DSN-092, ADR-JUC-019 (DEC-JUC-030)]
-        juce::Colour blockColourForFamily(const std::string& controlTagPrefix)
+        /// Identity of the block a page family drives, keyed by the
+        /// descriptor's control-tag prefix. The four page families are exactly
+        /// ENV/LFO/RAMP/TRACK (pageFamilies()); the colour itself is resolved
+        /// from the live palette at paint time. [RQ-GUI-045, RQ-DSN-095,
+        /// ADR-JUC-020 (DEC-JUC-037)]
+        BlockId blockIdForFamily(const std::string& controlTagPrefix)
         {
-            if (controlTagPrefix == "ENV_X")   { return tokens::semantic::blockEnv; }
-            if (controlTagPrefix == "LFO_X")   { return tokens::semantic::blockLfo; }
-            if (controlTagPrefix == "RAMP_X")  { return tokens::semantic::blockRamp; }
-            if (controlTagPrefix == "TRACK_X") { return tokens::semantic::blockTrack; }
-            return tokens::semantic::diagramFrame; // neutral: family with no block hue
+            if (controlTagPrefix == "ENV_X")   { return BlockId::Env; }
+            if (controlTagPrefix == "LFO_X")   { return BlockId::Lfo; }
+            if (controlTagPrefix == "RAMP_X")  { return BlockId::Ramp; }
+            jassert(controlTagPrefix == "TRACK_X"); // a fifth family needs a mapping here
+            return BlockId::Track;
         }
     }
 
     PageSelectorButton::PageSelectorButton(const juce::String& text,
                                            controller::XpanderController& controller, std::string id,
-                                           juce::Colour blockColour)
-        : juce::TextButton(text), _controller(controller), _id(std::move(id)),
-          _blockColour(blockColour)
+                                           BlockId blockId)
+        : juce::TextButton(text), _controller(controller), _id(std::move(id)), _blockId(blockId)
     {
         setWantsKeyboardFocus(true); // so Ctrl+C/Ctrl+V reach keyPressed while focused
     }
@@ -44,14 +44,19 @@ namespace xplorer::app
         // (hue at blockFillAlpha, identical to BackgroundRenderer's box fill)
         // only while this instance is active. Hover and keyboard focus are
         // reproduced here because painting ourselves bypasses LookAndFeel_V4's
-        // stock feedback. [RQ-GUI-045, RQ-GUI-041, RQ-GUI-042, ADR-JUC-019]
+        // stock feedback. The hue comes from the live LookAndFeel palette
+        // (no cached copy). [RQ-GUI-045, RQ-GUI-041, RQ-GUI-042, ADR-JUC-019,
+        // ADR-JUC-020 (DEC-JUC-037)]
+        const auto* laf = dynamic_cast<const XplorerLookAndFeel*>(&getLookAndFeel());
+        const juce::Colour blockColour =
+            blockColourOf(laf != nullptr ? laf->blockPalette() : defaultBlockPalette(), _blockId);
         const auto bounds = getLocalBounds().toFloat().reduced(tokens::semantic::strokeBorder * 0.5F);
         const float corner = tokens::semantic::radiusControl;
         const bool hovered = isEnabled() && shouldDrawButtonAsHighlighted;
 
         if (getToggleState())
         {
-            auto fill = _blockColour.withAlpha(tokens::component::blockFillAlpha);
+            auto fill = blockColour.withAlpha(tokens::component::blockFillAlpha);
             if (hovered)
             {
                 fill = fill.brighter(tokens::semantic::hoverBrighten);
@@ -65,16 +70,13 @@ namespace xplorer::app
             g.fillRoundedRectangle(bounds, corner);
         }
 
-        g.setColour(hovered ? _blockColour.brighter(tokens::semantic::hoverBrighten) : _blockColour);
+        g.setColour(hovered ? blockColour.brighter(tokens::semantic::hoverBrighten) : blockColour);
         g.drawRoundedRectangle(bounds, corner, tokens::semantic::strokeBorder);
 
-        if (isEnabled() && hasKeyboardFocus(true))
+        if (isEnabled() && hasKeyboardFocus(true) && laf != nullptr)
         {
-            if (const auto* laf = dynamic_cast<const XplorerLookAndFeel*>(&getLookAndFeel()))
-            {
-                g.setColour(laf->ledColour());
-                g.drawRoundedRectangle(bounds, corner, tokens::semantic::strokeLine);
-            }
+            g.setColour(laf->ledColour());
+            g.drawRoundedRectangle(bounds, corner, tokens::semantic::strokeLine);
         }
 
         getLookAndFeel().drawButtonText(g, *this, shouldDrawButtonAsHighlighted, false);
@@ -208,7 +210,7 @@ namespace xplorer::app
             auto button = std::make_unique<PageSelectorButton>(
                 juce::String(spec.label).isNotEmpty() ? juce::String(spec.label)
                                                        : juce::String(instance),
-                _controller, selectorId, blockColourForFamily(_descriptor.controlTagPrefix));
+                _controller, selectorId, blockIdForFamily(_descriptor.controlTagPrefix));
             button->setClickingTogglesState(true);
             button->setRadioGroupId(radioGroupId);
             button->setBounds(spec.x, spec.y, spec.width, spec.height);

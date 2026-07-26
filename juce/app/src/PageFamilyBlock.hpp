@@ -6,6 +6,7 @@
 // asks the controller to select the matching synth page. Reverse: a synth
 // page-change activates the selector. [RQ-GUI-010..012, ADR-JUC-006]
 
+#include "BlockPalette.hpp"
 #include "BoundControls.hpp"
 
 #include "xplorer/app/ControlTable.hpp"
@@ -31,7 +32,7 @@ namespace xplorer::app
     {
     public:
         PageSelectorButton(const juce::String& text, controller::XpanderController& controller,
-                           std::string id, juce::Colour blockColour);
+                           std::string id, BlockId blockId);
 
         void mouseDown(const juce::MouseEvent& event) override;
         bool keyPressed(const juce::KeyPress& key) override;
@@ -40,7 +41,10 @@ namespace xplorer::app
         /// block's colour identity: border always the pure block hue, the
         /// block's own fill only while this instance is active. Painted here
         /// rather than in the LookAndFeel so no other TextButton in the app is
-        /// restyled. [RQ-GUI-045, ADR-JUC-019 (DEC-JUC-029)]
+        /// restyled. The hue is resolved from the live LookAndFeel palette at
+        /// paint time — never cached — so a user palette change repaints the
+        /// selectors in step with the blocks. [RQ-GUI-045, RQ-DSN-095,
+        /// ADR-JUC-019 (DEC-JUC-029), ADR-JUC-020 (DEC-JUC-037)]
         void paintButton(juce::Graphics& g, bool shouldDrawButtonAsHighlighted,
                          bool shouldDrawButtonAsDown) override;
 
@@ -51,7 +55,7 @@ namespace xplorer::app
 
         controller::XpanderController& _controller;
         std::string _id;
-        juce::Colour _blockColour; ///< identity hue of the block this selector drives
+        BlockId _blockId; ///< identity of the block this selector drives (colour resolved at paint time)
     };
 
     class PageFamilyBlock

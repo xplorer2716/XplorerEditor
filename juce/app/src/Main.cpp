@@ -45,7 +45,9 @@ namespace xplorer::app
             juce::Image splash{juce::Image::RGB, LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT, false};
             {
                 juce::Graphics splashGraphics{splash};
-                paintVectorBackground(splashGraphics);
+                // Defaults: the splash renders before the settings service (and
+                // thus any user palette override) exists. [ADR-JUC-020]
+                paintVectorBackground(splashGraphics, defaultBlockPalette());
             }
             (new juce::SplashScreen("Xplorer", splash, true))
                 ->deleteAfterDelay(juce::RelativeTime::seconds(2), false);

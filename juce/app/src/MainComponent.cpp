@@ -495,7 +495,9 @@ namespace xplorer::app
     void MainComponent::paint(juce::Graphics& g)
     {
         g.fillAll(juce::Colours::black);
-        paintVectorBackground(g); // [RQ-GUI-037, ADR-JUC-013]
+        // Live palette from the single runtime authority. [RQ-GUI-037, RQ-DSN-095,
+        // ADR-JUC-013, ADR-JUC-020 (DEC-JUC-036)]
+        paintVectorBackground(g, _lookAndFeel->blockPalette());
     }
 
     // --- menu bar [RQ-GUI-008] ---------------------------------------------
@@ -634,9 +636,13 @@ namespace xplorer::app
 
     void MainComponent::updateLedColour(int argb)
     {
-        // Rebuild the skin with the new LED colour and repaint the tree. [RQ-GUI-031]
+        // Rebuild the skin with the new LED colour and repaint the tree; the
+        // block palette is carried across the rebuild so a customised palette
+        // survives an LED-colour change. [RQ-GUI-031, RQ-DSN-095, ADR-JUC-020]
+        const auto palette = _lookAndFeel->blockPalette();
         juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
         _lookAndFeel = std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(argb)));
+        _lookAndFeel->setBlockPalette(palette);
         juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
         if (auto* top = getTopLevelComponent())
         {
