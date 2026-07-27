@@ -6,6 +6,8 @@
 // parameter name so page-family blocks can retarget a control to another
 // instance. [RQ-GUI-030, RQ-GUI-032, RQ-GUI-010, ADR-JUC-006]
 
+#include "HoverRepaintingComboBox.hpp"
+
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
@@ -60,7 +62,10 @@ namespace xplorer::app
         std::unique_ptr<juce::TextEditor> _entryEditor;
     };
 
-    class BoundComboBox final : public juce::ComboBox, public BoundControl
+    // The hover repaint that RQ-GUI-041 needs comes from the shared
+    // HoverRepaintingComboBox base, not from a copy of it here.
+    // [RQ-GUI-041, ADR-JUC-017 (DEC-JUC-040)]
+    class BoundComboBox final : public HoverRepaintingComboBox, public BoundControl
     {
     public:
         BoundComboBox(ParameterBindingRegistry& registry, std::string parameterName,
@@ -69,12 +74,6 @@ namespace xplorer::app
         void setDisplayedValue(int value) override;
         [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
-
-        // juce::ComboBox does not repaint on plain hover (unlike Slider), so the
-        // LookAndFeel's hover state would never be redrawn; trigger it here.
-        // [RQ-GUI-041, ADR-JUC-017]
-        void mouseEnter(const juce::MouseEvent&) override { repaint(); }
-        void mouseExit(const juce::MouseEvent&) override { repaint(); }
 
     private:
         std::vector<int> _valueByRow;
