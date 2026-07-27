@@ -1,7 +1,10 @@
 # ADR-JUC-017: Hover, Keyboard-Focus and Disabled Rendering for Every Interactive Control
 
 ## Status
-Proposed
+Proposed. **Amended 2026-07-27** (GitHub issue #21): DEC-JUC-021 read the live
+hover state correctly but did not account for `juce::ComboBox` never
+triggering its own repaint on mouse enter/exit, so the painted hover state
+went stale. See DEC-JUC-040.
 
 <!-- Motivated by RQ-GUI-041 (hover), RQ-GUI-042 (keyboard focus), RQ-GUI-043
 (disabled); closes the "States missing" rows of the design-system component
@@ -108,6 +111,37 @@ without the two states reading as one.
   stroke width reuses `semantic.strokeLine`. (RQ-GUI-041, RQ-GUI-042, RQ-GUI-043;
   ADR-JUC-014)
 
+- **DEC-JUC-040 — Combo boxes must force their own repaint on hover
+  transitions; unified in one reusable base, not duplicated per consumer.**
+  DEC-JUC-021 made `drawComboBox` read `isMouseOverOrDragging()` live at paint
+  time, following RQ-DSN-062's "read, never cache" rule — correct for *when*
+  a paint happens, but silent on *whether* one happens. Unlike
+  `juce::Slider`/`juce::Button`-derived controls (which repaint themselves on
+  hover changes), a plain `juce::ComboBox` does not; nothing in the override
+  forced one, so the last-painted hover-brightened frame stayed on screen
+  after the pointer left, until an unrelated repaint happened to correct it.
+  Invisible on a single isolated combo (incidental repaints are frequent
+  enough to mask it), it became clearly visible sweeping the mouse fast down
+  the mod-matrix's 20-row source/destination column: several combos appeared
+  stuck highlighted at once (GitHub issue #21). `BoundComboBox`
+  (`BoundControls.hpp`) already carried a two-line
+  `mouseEnter`/`mouseExit` → `repaint()` fix for this, but only for combos
+  bound to a named model parameter through `ParameterBindingRegistry`; the
+  mod-matrix source/destination combos are plain `juce::ComboBox`, because a
+  matrix row is edited as one composite controller operation
+  (source+amount+destination+quantize together, with an old→new destination
+  delta) rather than through a single named parameter, so it was never
+  routed through `BoundComboBox` and never inherited the fix. Rather than
+  duplicating the same two-line override at every raw `juce::ComboBox` site
+  (already two consumers, `BoundComboBox` and `ModMatrixPanel`, with more
+  plausible in the future), the fix is extracted into one reusable
+  `HoverRepaintingComboBox : public juce::ComboBox` base (pure JUCE
+  Component plumbing, no dependency on `ParameterBindingRegistry` or any
+  binding concept) that both now inherit from — a single source of truth for
+  "a combo box in this app repaints on hover transitions," matching the
+  ADR's own single-sourcing intent for every other state in this document.
+  (RQ-GUI-041, issue #21)
+
 ## Consequences
 
 - **Easier:** the panel stops feeling inert under the mouse; keyboard users can
@@ -147,6 +181,19 @@ without the two states reading as one.
 - **Skip table-row hover entirely** (ship only Button-family + ComboBox hover):
   rejected — RQ-GUI-041 explicitly scopes the automation table in; leaving it
   out would under-deliver the requirement without a documented reason.
+- **Duplicate the `mouseEnter`/`mouseExit` → `repaint()` override at every raw
+  `juce::ComboBox` construction site** (DEC-JUC-040): rejected — it already
+  applies to two independent consumers (`BoundComboBox`, `ModMatrixPanel`)
+  with no framework hook to enforce it, so a future raw combo box would
+  silently reintroduce the same bug; one reusable base makes the fix
+  impossible to forget.
+- **Give `ModMatrixPanel`'s row combos to `BoundComboBox`** (reuse the
+  already-fixed class instead of unifying): rejected — `BoundComboBox` is
+  coupled to `ParameterBindingRegistry`'s named-parameter model, which the
+  matrix rows deliberately do not use (composite multi-field controller
+  operations, not a single named parameter); forcing that coupling just to
+  inherit a two-line repaint fix would reintroduce the dependency this ADR's
+  context explicitly documents as absent.
 
 ## Diagram
 
@@ -163,6 +210,13 @@ flowchart TB
         CB["drawComboBox — NEW\n(DEC-JUC-021)"]
         FR["focus-ring stroke\n(DEC-JUC-022, added on top)"]
     end
+
+    subgraph hrc["HoverRepaintingComboBox (DEC-JUC-040)"]
+        RP["mouseEnter/mouseExit -> repaint()"]
+    end
+    RP -.->|"forces the repaint\nCB's live read needs"| CB
+    BCB["BoundComboBox\n(ParameterBindingRegistry)"] --> hrc
+    MMC["ModMatrixPanel row combos\n(dedicated controller ops)"] --> hrc
 
     subgraph tbl["SettingsDialog::AutomationTableModel"]
         MM["MouseListener on TableListBox\n(mouseMove / mouseExit)"]
