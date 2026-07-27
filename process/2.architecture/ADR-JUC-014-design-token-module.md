@@ -1,7 +1,10 @@
 # ADR-JUC-014: Design Token Module — Single Source of Truth for JUCE UI Presentation
 
 ## Status
-Proposed (2026-07-19)
+Accepted (2026-07-19) — implemented and merged: the three-tier
+`DesignTokens.hpp` (global → semantic → component) is the single source of
+truth consumed by `BackgroundRenderer`, `XplorerLookAndFeel`,
+`PageFamilyBlock`, `ModMatrixPanel`, `SettingsDialog` and `BlockPalette`.
 
 ## Requirements
 RQ-DSN-001..006, RQ-DSN-010..011, RQ-DSN-020..024, RQ-DSN-060..063,

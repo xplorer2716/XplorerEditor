@@ -1,7 +1,9 @@
 # ADR-JUC-017: Hover, Keyboard-Focus and Disabled Rendering for Every Interactive Control
 
 ## Status
-Proposed. **Amended 2026-07-27** (GitHub issue #21): DEC-JUC-021 read the live
+Accepted — implemented and merged: DEC-JUC-020/022/024 (TASK-JUC-109),
+DEC-JUC-021 (TASK-JUC-110), DEC-JUC-023 (TASK-JUC-111), DEC-JUC-040
+(TASK-HLT-001, PR #24). **Amended 2026-07-27** (GitHub issue #21): DEC-JUC-021 read the live
 hover state correctly but did not account for `juce::ComboBox` never
 triggering its own repaint on mouse enter/exit, so the painted hover state
 went stale. See DEC-JUC-040.

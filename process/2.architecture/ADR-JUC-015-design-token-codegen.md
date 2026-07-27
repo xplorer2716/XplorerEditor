@@ -1,7 +1,10 @@
 # ADR-JUC-015: Design Token Codegen — One YAML Source, Generated C++ + Consumed Mockup
 
 ## Status
-Proposed (2026-07-19)
+Accepted (2026-07-19) — implemented and merged: `generate_design_tokens.py`
+regenerates `DesignTokens.hpp` from `design-tokens.yaml`, and `--check` is
+used as the staleness gate at every token change. Wiring `--check` into
+CMake/CI remains deferred, as recorded under Consequences.
 
 ## Requirements
 RQ-DSN-060..063, RQ-DSN-032 (structural sync mechanism), RQ-DSN-090..091.

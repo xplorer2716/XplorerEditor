@@ -1,7 +1,11 @@
 # ADR-JUC-020: User-Themeable Block Palette — Runtime Resolution, Persistence and Settings UI
 
 ## Status
-Proposed
+Accepted — implemented and merged to `main` (PR #23): TASK-GUI-005 (palette v2
+as the default tokens), TASK-GUI-006 (`BlockPalette` + LookAndFeel accessor +
+painter parameter + selector `BlockId`), TASK-GUI-007 (optional per-block
+persistence), TASK-GUI-008 (settings COLOURS group with live preview and
+Reset to defaults). All six decisions DEC-JUC-034..039 are in the code.
 
 <!-- Motivated by RQ-DSN-095 (block colours themeable through a single runtime
 accessor), RQ-SET-007 (per-block override persistence) and RQ-GUI-046 (settings

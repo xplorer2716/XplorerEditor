@@ -1,7 +1,11 @@
 # ADR-BLD-001: Alpha Pre-Release on Every `main` CI Build
 
 ## Status
-Proposed
+Accepted — implemented and merged to `main` (TASK-BLD-002). Verified
+end-to-end in production: every `main` merge since has published its alpha
+pre-release automatically (`alpha-72-2c82dfc`, `alpha-78-4dcb400`,
+`alpha-81-07b4e38`), each with `Xplorer.exe` attached, `prerelease: true`,
+and notes listing only the commits since the previous alpha.
 
 <!-- Motivated by RQ-BLD-009 (alpha pre-release on every main push). New
 functional area (build/release automation) distinct from the JUCE UI/model
