@@ -252,10 +252,12 @@ silently merged — owner confirms before migration):
   small`=11 and a new `text.smaller`=11.5 only if the owner rejects merging
   them) shall be confirmed one way or the other by the owner before the
   BackgroundRenderer migration task, not silently decided by this document.
-- **RQ-DSN-011** — Dynamic-fit sizing (combo-box shrink-to-fit, RQ-GUI-032)
+- **RQ-DSN-011** — Dynamic-fit sizing (combo-box shrink-to-fit, RQ-GUI-032/047)
   shall clamp between `text.display` (ceiling) and `text.dense` (floor)
-  instead of the locally-declared `BASE_SIZE`/`MIN_SIZE`; the fitting
-  algorithm itself (RQ-GUI-032) is unchanged.
+  instead of the locally-declared `BASE_SIZE`/`MIN_SIZE`. *(Amended for
+  RQ-GUI-047, issue #12 follow-up: the fitting algorithm now computes one
+  shared size from the full combo-box inventory, not a per-instance fit —
+  the clamp bounds themselves are unchanged.)*
 
 ### 2.3 Spacing & Layout Grid
 
