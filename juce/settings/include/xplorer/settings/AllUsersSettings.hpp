@@ -4,6 +4,9 @@
 
 #include "xplorer/model/XpanderConstants.hpp"
 
+#include <array>
+#include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -27,10 +30,21 @@ namespace xplorer::settings
 
         struct UiConfiguration
         {
+            /// Number of user-themeable functional-block colours. Array index
+            /// order is the app-side BlockId order: VCO, LAG, TRACK, VCF, ENV,
+            /// LFO, RAMP, MATRIX. [RQ-SET-007, ADR-JUC-020 (DEC-JUC-039)]
+            static constexpr std::size_t BLOCK_COLOUR_COUNT = 8;
+
             /// 32-bit ARGB, as .NET Color.ToArgb() persists it.
             int knobLedBorderColor = 0;
             bool knobMovementIsLinear = false;
             bool knobStyleIsStandard = false;
+            /// Individually optional per-block ARGB overrides; an unset entry
+            /// means "use the design-system default", so files from earlier
+            /// versions and imported .NET files (RQ-SET-006) load unchanged.
+            /// Reset-to-defaults CLEARS entries — defaults are never written
+            /// out as literals. [RQ-SET-007, ADR-JUC-020 (DEC-JUC-039)]
+            std::array<std::optional<int>, BLOCK_COLOUR_COUNT> blockColours{};
         };
 
         struct RandomizerConfiguration

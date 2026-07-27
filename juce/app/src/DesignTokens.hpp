@@ -75,14 +75,19 @@ namespace xplorer::app::tokens
         inline constexpr int space24 = 24;  // xl gap — progress bar height
         inline constexpr int dialogRowHeight = 28;  // SettingsDialog/ProgressWindow row height
         inline constexpr int dialogLabelWidth = 150;  // SettingsDialog label column width, sized to the longest existing label
-        inline const juce::Colour blockVco = juce::Colour(0xFF5C84B8);  // VCO1 / VCO2 / FM group
-        inline const juce::Colour blockLag = juce::Colour(0xFF7A828A);  // LAG
-        inline const juce::Colour blockTrack = juce::Colour(0xFFB79B5B);  // TRACK / tracking generator
-        inline const juce::Colour blockVcf = juce::Colour(0xFF5F9273);  // VCF / VCA
-        inline const juce::Colour blockEnv = juce::Colour(0xFFC27A52);  // envelope generator
-        inline const juce::Colour blockLfo = juce::Colour(0xFF7C73B8);  // LFO
-        inline const juce::Colour blockRamp = juce::Colour(0xFF5E9DA7);  // RAMP
-        inline const juce::Colour blockMatrix = juce::Colour(0xFFA66565);  // modulation matrix
+        inline constexpr int dialogSwatchWidth = 40;  // colour swatch cell width (value-preserving: the pre-existing knob-LED swatch literal)
+        inline constexpr int dialogChooseWidth = 100;  // uniform 'Choose...' button width (mockup: all colour buttons identical)
+        inline constexpr int dialogBlockLabelWidth = 90;  // block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')
+        inline constexpr int dialogResetWidth = 140;  // 'Reset to defaults' button width
+        inline constexpr int dialogGroupHeaderHeight = 16;  // vertical clearance under a GroupComponent title before the first row
+        inline const juce::Colour blockVco = juce::Colour(0xFF549ECB);  // VCO1 / VCO2 / FM group (v2, H238)
+        inline const juce::Colour blockLag = juce::Colour(0xFF8F969D);  // LAG (achromatic)
+        inline const juce::Colour blockTrack = juce::Colour(0xFFB19047);  // TRACK / tracking generator (v2)
+        inline const juce::Colour blockVcf = juce::Colour(0xFF7AA364);  // VCF / VCA (v2)
+        inline const juce::Colour blockEnv = juce::Colour(0xFFC88160);  // envelope generator (v2)
+        inline const juce::Colour blockLfo = juce::Colour(0xFFA087C9);  // LFO (v2)
+        inline const juce::Colour blockRamp = juce::Colour(0xFF37A9A3);  // RAMP (v2)
+        inline const juce::Colour blockMatrix = juce::Colour(0xFF6579EE);  // modulation matrix — Oberheim-signature blue (v2, L0.62/C0.175/H273)
         inline constexpr float sectionBarFadeEnd = 0.35F;  // section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)
         inline constexpr float blockFillAlpha = 0.18F;  // tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094
         inline constexpr float blockFrameRelief = 0.2F;  // block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094
@@ -153,6 +158,12 @@ namespace xplorer::app::tokens
         inline constexpr int layoutMargin = global::space12;  // dialog outer margin
         inline constexpr int dialogRowHeight = global::dialogRowHeight;
         inline constexpr int dialogLabelWidth = global::dialogLabelWidth;
+        inline constexpr int dialogSwatchWidth = global::dialogSwatchWidth;  // settings colour-swatch width, RQ-GUI-046
+        inline constexpr int dialogChooseWidth = global::dialogChooseWidth;  // uniform Choose... button width, RQ-GUI-046
+        inline constexpr int dialogBlockLabelWidth = global::dialogBlockLabelWidth;  // block label width in the colour grid, RQ-GUI-046
+        inline constexpr int dialogResetWidth = global::dialogResetWidth;  // Reset to defaults button width, RQ-GUI-046
+        inline constexpr int dialogGroupHeaderHeight = global::dialogGroupHeaderHeight;  // group-title clearance, RQ-GUI-046
+        inline const juce::Colour textHint = global::caption;  // muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046
         inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
         inline constexpr int controlRowHeight = global::controlRowHeight;  // shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)
     }

@@ -1,5 +1,6 @@
 #include "SettingsDialog.hpp"
 
+#include "BlockPalette.hpp"
 #include "DesignTokens.hpp"
 #include "Dialogs.hpp"
 
@@ -379,20 +380,67 @@ namespace xplorer::app
         };
 
         // ---- User interface page ------------------------------------------
+        // COLOURS group (knob LED + the eight block colours + Reset to
+        // defaults, presented as one coherent set) and KNOB BEHAVIOUR group
+        // (movement/style radios) — owner-validated mockup layout. Block
+        // colour edits preview live through the LookAndFeel palette; the
+        // dialog owns the cancel-restore snapshot. [RQ-GUI-046, RQ-DSN-095,
+        // ADR-JUC-020 (DEC-JUC-038/039)]
         class UiSettingsPage final : public juce::Component, private juce::ChangeListener
         {
         public:
-            explicit UiSettingsPage(settings::ISettingsService& settingsService)
+            UiSettingsPage(settings::ISettingsService& settingsService,
+                           std::function<void(const BlockPalette&)> onPalettePreview)
+                : _onPalettePreview(std::move(onPalettePreview))
             {
                 const auto& ui = settingsService.allUsersSettings().uiConfig;
                 _ledColour = juce::Colour(static_cast<juce::uint32>(ui.knobLedBorderColor));
+                _palette = resolveBlockPalette(ui);
+
+                _coloursGroup.setText("Colours");
+                addAndMakeVisible(_coloursGroup);
+                _knobGroup.setText("Knob behaviour");
+                addAndMakeVisible(_knobGroup);
+
+                // The unity message the owner asked for: one set, one reset.
+                setupHint(_unityHint,
+                          "Knob and functional-block colours form one set - "
+                          "Reset to defaults restores every colour below.");
+                setupHint(_blockHint,
+                          "Functional blocks - each colours its frame, fill, section "
+                          "header and instance-selector buttons.");
 
                 _ledLabel.setText("Knob LED colour", juce::dontSendNotification);
                 addAndMakeVisible(_ledLabel);
-                _chooseColour.setButtonText("Choose colour...");
-                _chooseColour.onClick = [this] { openColourSelector(); };
-                addAndMakeVisible(_chooseColour);
-                addAndMakeVisible(_swatch);
+                _ledSwatch.colour = _ledColour;
+                addAndMakeVisible(_ledSwatch);
+                _ledChoose.setButtonText(CHOOSE_BUTTON_TEXT);
+                _ledChoose.onClick = [this] { openColourSelector(LED_TARGET, _ledColour, _ledChoose); };
+                addAndMakeVisible(_ledChoose);
+
+                for (std::size_t i = 0; i < BLOCK_COLOUR_COUNT; ++i)
+                {
+                    const auto& descriptor = blockColourDescriptors()[i];
+                    auto& row = _blockRows[i];
+                    row.label.setText(descriptor.displayName, juce::dontSendNotification);
+                    addAndMakeVisible(row.label);
+                    row.swatch.colour = _palette.*(descriptor.member);
+                    addAndMakeVisible(row.swatch);
+                    row.choose.setButtonText(CHOOSE_BUTTON_TEXT);
+                    const auto target = static_cast<int>(i);
+                    row.choose.onClick = [this, target]
+                    {
+                        const auto index = static_cast<std::size_t>(target);
+                        openColourSelector(target,
+                                           _palette.*(blockColourDescriptors()[index].member),
+                                           _blockRows[index].choose);
+                    };
+                    addAndMakeVisible(row.choose);
+                }
+
+                _resetDefaults.setButtonText("Reset to defaults");
+                _resetDefaults.onClick = [this] { resetToDefaults(); };
+                addAndMakeVisible(_resetDefaults);
 
                 setupRadioPair(_movementLabel, "Knob movement", _linear, "Linear", _circular, "Circular",
                                MOVEMENT_GROUP, ui.knobMovementIsLinear);
@@ -405,53 +453,173 @@ namespace xplorer::app
                 ui.knobLedBorderColor = static_cast<int>(_ledColour.getARGB());
                 ui.knobMovementIsLinear = _linear.getToggleState();
                 ui.knobStyleIsStandard = _standard.getToggleState();
+
+                // A block equal to its default stores NO entry, so users who
+                // never customised (or who reset) keep following future palette
+                // revisions. [RQ-SET-007, DEC-JUC-039]
+                const auto defaults = defaultBlockPalette();
+                for (std::size_t i = 0; i < BLOCK_COLOUR_COUNT; ++i)
+                {
+                    const auto member = blockColourDescriptors()[i].member;
+                    const auto colour = _palette.*member;
+                    ui.blockColours[i] = colour == defaults.*member
+                                             ? std::nullopt
+                                             : std::make_optional(static_cast<int>(colour.getARGB()));
+                }
             }
 
             [[nodiscard]] int ledColourArgb() const { return static_cast<int>(_ledColour.getARGB()); }
 
             void paint(juce::Graphics& g) override
             {
-                g.setColour(_ledColour);
-                g.fillRect(_swatch.getBounds());
-                g.setColour(juce::Colours::grey);
-                g.drawRect(_swatch.getBounds());
+                // Separator between the knob-LED row and the block grid.
+                g.setColour(tokens::semantic::borderDefault);
+                g.fillRect(_separator);
             }
 
             void resized() override
             {
                 auto area = getLocalBounds().reduced(MARGIN);
-                auto ledRow = rowBounds(area);
-                _ledLabel.setBounds(ledRow.removeFromLeft(LABEL_WIDTH));
-                _swatch.setBounds(ledRow.removeFromLeft(40).reduced(tokens::semantic::layoutHairline));
-                _chooseColour.setBounds(ledRow.removeFromLeft(140));
+                const int gap = tokens::semantic::layoutSectionGap;
+                const int header = tokens::semantic::dialogGroupHeaderHeight;
 
-                area.removeFromTop(tokens::semantic::layoutSectionGap);
-                layoutRadioRow(area, _movementLabel, _linear, _circular);
-                layoutRadioRow(area, _styleLabel, _standard, _flat);
+                // ---- COLOURS group: hint, LED row, separator, block hint,
+                //      2x4 grid, reset row.
+                const int gridRows = static_cast<int>(BLOCK_COLOUR_COUNT) / GRID_COLUMNS;
+                const int coloursHeight = header + (3 + gridRows + 1) * ROW_HEIGHT + gap + 2 * MARGIN;
+                auto coloursArea = area.removeFromTop(coloursHeight);
+                _coloursGroup.setBounds(coloursArea);
+                auto inner = coloursArea.reduced(MARGIN).withTrimmedTop(header);
+                _unityHint.setBounds(inner.removeFromTop(ROW_HEIGHT));
+
+                auto ledRow = rowBounds(inner);
+                _ledLabel.setBounds(ledRow.removeFromLeft(LABEL_WIDTH));
+                _ledSwatch.setBounds(ledRow.removeFromLeft(tokens::semantic::dialogSwatchWidth)
+                                         .reduced(tokens::semantic::layoutHairline));
+                _ledChoose.setBounds(ledRow.removeFromLeft(tokens::semantic::dialogChooseWidth));
+
+                auto sepArea = inner.removeFromTop(gap);
+                _separator = sepArea.withSizeKeepingCentre(sepArea.getWidth(), 1);
+
+                _blockHint.setBounds(inner.removeFromTop(ROW_HEIGHT));
+                for (int r = 0; r < gridRows; ++r)
+                {
+                    auto row = rowBounds(inner);
+                    auto left = row.removeFromLeft(row.getWidth() / GRID_COLUMNS);
+                    layoutBlockCell(_blockRows[static_cast<std::size_t>(r)], left);
+                    layoutBlockCell(_blockRows[static_cast<std::size_t>(r + gridRows)], row);
+                }
+                _resetDefaults.setBounds(
+                    rowBounds(inner).removeFromRight(tokens::semantic::dialogResetWidth));
+
+                // ---- KNOB BEHAVIOUR group.
+                area.removeFromTop(gap);
+                auto knobArea = area.removeFromTop(header + 2 * ROW_HEIGHT + 2 * MARGIN);
+                _knobGroup.setBounds(knobArea);
+                auto knobInner = knobArea.reduced(MARGIN).withTrimmedTop(header);
+                layoutRadioRow(knobInner, _movementLabel, _linear, _circular);
+                layoutRadioRow(knobInner, _styleLabel, _standard, _flat);
             }
 
         private:
             static constexpr int MOVEMENT_GROUP = 4001;
             static constexpr int STYLE_GROUP = 4002;
+            static constexpr int GRID_COLUMNS = 2;    // block-colour grid, mockup 2x4
+            static constexpr int LED_TARGET = -1;     // openColourSelector target: knob LED
+            static constexpr int SELECTOR_SIZE = 300; // ColourSelector call-out edge
+            static constexpr const char* CHOOSE_BUTTON_TEXT = "Choose..."; // uniform per mockup
 
-            void openColourSelector()
+            /// A colour cell: repaints itself, so previews stay cheap.
+            struct Swatch final : juce::Component
             {
+                juce::Colour colour;
+                void paint(juce::Graphics& g) override
+                {
+                    g.setColour(colour);
+                    g.fillRect(getLocalBounds());
+                    g.setColour(tokens::semantic::borderDefault);
+                    g.drawRect(getLocalBounds());
+                }
+            };
+
+            struct BlockRow
+            {
+                juce::Label label;
+                Swatch swatch;
+                juce::TextButton choose;
+            };
+
+            void setupHint(juce::Label& hint, const juce::String& text)
+            {
+                hint.setText(text, juce::dontSendNotification);
+                hint.setColour(juce::Label::textColourId, tokens::semantic::textHint);
+                hint.setFont(juce::Font{juce::FontOptions{tokens::semantic::textCaption}});
+                addAndMakeVisible(hint);
+            }
+
+            void layoutBlockCell(BlockRow& row, juce::Rectangle<int> cell)
+            {
+                row.label.setBounds(cell.removeFromLeft(tokens::semantic::dialogBlockLabelWidth));
+                row.swatch.setBounds(cell.removeFromLeft(tokens::semantic::dialogSwatchWidth)
+                                         .reduced(tokens::semantic::layoutHairline));
+                row.choose.setBounds(cell.removeFromLeft(tokens::semantic::dialogChooseWidth));
+            }
+
+            void openColourSelector(int target, juce::Colour current, juce::Component& anchor)
+            {
+                _editTarget = target;
                 auto selector = std::make_unique<juce::ColourSelector>(
                     juce::ColourSelector::showColourAtTop | juce::ColourSelector::showSliders
                     | juce::ColourSelector::showColourspace);
-                selector->setCurrentColour(_ledColour);
-                selector->setSize(300, 300);
+                selector->setCurrentColour(current);
+                selector->setSize(SELECTOR_SIZE, SELECTOR_SIZE);
                 selector->addChangeListener(this);
-                juce::CallOutBox::launchAsynchronously(std::move(selector), _chooseColour.getScreenBounds(),
+                juce::CallOutBox::launchAsynchronously(std::move(selector), anchor.getScreenBounds(),
                                                        nullptr);
             }
 
             void changeListenerCallback(juce::ChangeBroadcaster* source) override
             {
-                if (auto* selector = dynamic_cast<juce::ColourSelector*>(source))
+                auto* selector = dynamic_cast<juce::ColourSelector*>(source);
+                if (selector == nullptr)
                 {
-                    _ledColour = selector->getCurrentColour();
-                    repaint();
+                    return;
+                }
+                const auto colour = selector->getCurrentColour();
+                if (_editTarget == LED_TARGET)
+                {
+                    // LED colour keeps its apply-on-accept path (no live
+                    // preview) — unchanged behaviour. [ADR-JUC-020]
+                    _ledColour = colour;
+                    _ledSwatch.colour = colour;
+                    _ledSwatch.repaint();
+                    return;
+                }
+                const auto index = static_cast<std::size_t>(_editTarget);
+                _palette.*(blockColourDescriptors()[index].member) = colour;
+                _blockRows[index].swatch.colour = colour;
+                _blockRows[index].swatch.repaint();
+                if (_onPalettePreview) // live preview [DEC-JUC-038]
+                {
+                    _onPalettePreview(_palette);
+                }
+            }
+
+            void resetToDefaults()
+            {
+                // One coherent set: knob LED + all eight blocks. [RQ-GUI-046]
+                _ledColour = juce::Colour(static_cast<juce::uint32>(
+                    settings::defaultAllUsersSettings().uiConfig.knobLedBorderColor));
+                _ledSwatch.colour = _ledColour;
+                _palette = defaultBlockPalette();
+                for (std::size_t i = 0; i < BLOCK_COLOUR_COUNT; ++i)
+                {
+                    _blockRows[i].swatch.colour = _palette.*(blockColourDescriptors()[i].member);
+                }
+                repaint();
+                if (_onPalettePreview)
+                {
+                    _onPalettePreview(_palette);
                 }
             }
 
@@ -480,10 +648,18 @@ namespace xplorer::app
                 second.setBounds(row.removeFromLeft(120));
             }
 
+            std::function<void(const BlockPalette&)> _onPalettePreview;
             juce::Colour _ledColour;
+            BlockPalette _palette;
+            int _editTarget = LED_TARGET;
+
+            juce::GroupComponent _coloursGroup, _knobGroup;
+            juce::Label _unityHint, _blockHint;
             juce::Label _ledLabel, _movementLabel, _styleLabel;
-            juce::TextButton _chooseColour;
-            juce::Component _swatch;
+            Swatch _ledSwatch;
+            juce::TextButton _ledChoose, _resetDefaults;
+            std::array<BlockRow, BLOCK_COLOUR_COUNT> _blockRows;
+            juce::Rectangle<int> _separator;
             juce::ToggleButton _linear, _circular, _standard, _flat;
         };
 
@@ -641,15 +817,20 @@ namespace xplorer::app
         public:
             SettingsContent(controller::XpanderController& controller,
                             settings::ISettingsService& settingsService, xpl::midi::MidiBackend& backend,
-                            std::function<void(int)> onLedColourChanged)
+                            std::function<void(int)> onLedColourChanged,
+                            std::function<void(const BlockPalette&)> onBlockPaletteChanged)
                 : _controller(controller), _settingsService(settingsService), _backend(backend),
                   _onLedColourChanged(std::move(onLedColourChanged)),
+                  _onBlockPaletteChanged(std::move(onBlockPaletteChanged)),
                   _tabs(juce::TabbedButtonBar::TabsAtTop)
             {
                 _originalLedColour = settingsService.allUsersSettings().uiConfig.knobLedBorderColor;
+                // Palette snapshot taken on open, restored on any non-accept
+                // close (Cancel, Esc, title bar). [DEC-JUC-038]
+                _originalPalette = resolveBlockPalette(settingsService.allUsersSettings().uiConfig);
 
                 auto* midiPage = new MidiSettingsPage(settingsService, backend);
-                auto* uiPage = new UiSettingsPage(settingsService);
+                auto* uiPage = new UiSettingsPage(settingsService, _onBlockPaletteChanged);
                 auto* randomPage = new RandomizerSettingsPage(settingsService);
                 _midiPage = midiPage;
                 _uiPage = uiPage;
@@ -670,6 +851,16 @@ namespace xplorer::app
 
                 // Taller: the MIDI page now hosts the scrollable automation table.
                 setSize(520, 600);
+            }
+
+            ~SettingsContent() override
+            {
+                // Any close that did not go through accept() reverts the live
+                // preview to the palette snapshot. [DEC-JUC-038, RQ-GUI-046]
+                if (!_accepted && _onBlockPaletteChanged)
+                {
+                    _onBlockPaletteChanged(_originalPalette);
+                }
             }
 
             void resized() override
@@ -697,6 +888,13 @@ namespace xplorer::app
                 {
                     _onLedColourChanged(newLed);
                 }
+                // Commit the accepted palette (override ?? default) as the live
+                // one; the destructor must not revert it. [DEC-JUC-039]
+                _accepted = true;
+                if (_onBlockPaletteChanged)
+                {
+                    _onBlockPaletteChanged(resolveBlockPalette(settings.uiConfig));
+                }
                 close();
             }
 
@@ -712,7 +910,10 @@ namespace xplorer::app
             settings::ISettingsService& _settingsService;
             xpl::midi::MidiBackend& _backend;
             std::function<void(int)> _onLedColourChanged;
+            std::function<void(const BlockPalette&)> _onBlockPaletteChanged;
             int _originalLedColour = 0;
+            BlockPalette _originalPalette;
+            bool _accepted = false;
 
             juce::TabbedComponent _tabs;
             MidiSettingsPage* _midiPage = nullptr;
@@ -724,11 +925,13 @@ namespace xplorer::app
 
     void showSettingsDialog(controller::XpanderController& controller,
                             settings::ISettingsService& settingsService, xpl::midi::MidiBackend& backend,
-                            std::function<void(int)> onLedColourChanged)
+                            std::function<void(int)> onLedColourChanged,
+                            std::function<void(const BlockPalette&)> onBlockPaletteChanged)
     {
         juce::DialogWindow::LaunchOptions options;
         options.content.setOwned(
-            new SettingsContent(controller, settingsService, backend, std::move(onLedColourChanged)));
+            new SettingsContent(controller, settingsService, backend, std::move(onLedColourChanged),
+                                std::move(onBlockPaletteChanged)));
         options.dialogTitle = "Settings";
         options.dialogBackgroundColour = tokens::semantic::surfaceBase;
         options.escapeKeyTriggersCloseButton = true;

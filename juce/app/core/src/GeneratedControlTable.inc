@@ -3,6 +3,15 @@
 // hand; regenerate with juce/app/core/tools/extract_control_table.py.
 // Logical canvas coordinates (reference y minus the cropped 32 px
 // menustrip band, see CANVAS_TOP_CROP). [RQ-GUI-001, ADR-JUC-013]
+//
+// Deviation (owner request, 2026-07-26, TASK-GUI-009): the reference
+// MainForm.Designer.cs placed the VCO2_MOD_{KEYB,LAG,LEV1,VIB}/
+// VCO2_WAVE_SYNC checkboxes 10 px left of their VCO1_MOD_* counterparts
+// (same widths, columns did not line up between the two rows). The
+// .NET source is archived (XplorerEditor-dotnet-archive), so this table
+// is now the source of truth; the VCO2 row and its FakePanel backdrop
+// were shifted +10 px to align every column with VCO1's, SYNC included.
+// [RQ-GUI-001]
     {"ENV_1", ControlKind::RadioButton, 525, 180, 49, 26, "ENV_1", "ENV 1"},
     {"ENV_2", ControlKind::RadioButton, 578, 180, 49, 26, "ENV_2", "ENV 2"},
     {"ENV_3", ControlKind::RadioButton, 631, 180, 49, 26, "ENV_3", "ENV 3"},
@@ -171,18 +180,18 @@
     {"VCO1_WAVESHAPE_TRI", ControlKind::CheckBoxValuedControl, 329, 69, 38, 18, "VCO1_WAVESHAPE_TRI", "TRI"},
     {"VCO2_DETUNE", ControlKind::KnobControl, 153, 347, 32, 32, "VCO2_DETUNE", ""},
     {"VCO2_FREQ", ControlKind::KnobControl, 66, 347, 32, 32, "VCO2_FREQ", ""},
-    {"VCO2_MODS", ControlKind::FakePanel, 61, 402, 370, 32, "", ""},
-    {"VCO2_MOD_KEYB", ControlKind::CheckBoxValuedControl, 144, 409, 51, 17, "VCO2_MOD_KEYB", "KEYB"},
-    {"VCO2_MOD_LAG", ControlKind::CheckBoxValuedControl, 203, 409, 44, 17, "VCO2_MOD_LAG", "LAG"},
-    {"VCO2_MOD_LEV1", ControlKind::CheckBoxValuedControl, 255, 409, 49, 17, "VCO2_MOD_LEV1", "LEV1"},
-    {"VCO2_MOD_VIB", ControlKind::CheckBoxValuedControl, 312, 409, 40, 17, "VCO2_MOD_VIB", "VIB"},
+    {"VCO2_MODS", ControlKind::FakePanel, 61, 402, 380, 32, "", ""},
+    {"VCO2_MOD_KEYB", ControlKind::CheckBoxValuedControl, 154, 409, 51, 17, "VCO2_MOD_KEYB", "KEYB"},
+    {"VCO2_MOD_LAG", ControlKind::CheckBoxValuedControl, 213, 409, 44, 17, "VCO2_MOD_LAG", "LAG"},
+    {"VCO2_MOD_LEV1", ControlKind::CheckBoxValuedControl, 265, 409, 49, 17, "VCO2_MOD_LEV1", "LEV1"},
+    {"VCO2_MOD_VIB", ControlKind::CheckBoxValuedControl, 322, 409, 40, 17, "VCO2_MOD_VIB", "VIB"},
     {"VCO2_PW", ControlKind::KnobControl, 244, 347, 32, 32, "VCO2_PW", ""},
     {"VCO2_VOLUME", ControlKind::KnobControl, 414, 245, 32, 32, "VCO2_VOLUME", ""},
     {"VCO2_WAVESHAPE_NOISE", ControlKind::CheckBoxValuedControl, 331, 301, 56, 17, "VCO2_WAVESHAPE_NOISE", "NOISE"},
     {"VCO2_WAVESHAPE_PULSE", ControlKind::CheckBoxValuedControl, 331, 284, 58, 17, "VCO2_WAVESHAPE_PULSE", "PULSE"},
     {"VCO2_WAVESHAPE_SAW", ControlKind::CheckBoxValuedControl, 331, 267, 48, 17, "VCO2_WAVESHAPE_SAW", "SAW"},
     {"VCO2_WAVESHAPE_TRI", ControlKind::CheckBoxValuedControl, 331, 250, 41, 17, "VCO2_WAVESHAPE_TRI", "TRI"},
-    {"VCO2_WAVE_SYNC", ControlKind::CheckBoxValuedControl, 361, 409, 52, 17, "VCO2_WAVE_SYNC", "SYNC"},
+    {"VCO2_WAVE_SYNC", ControlKind::CheckBoxValuedControl, 371, 409, 52, 17, "VCO2_WAVE_SYNC", "SYNC"},
     {"_ledPanelControl", ControlKind::LedPanelControl, 1190, 123, 32, 8, "", ""},
     {"_vfdDisplay", ControlKind::VacuumFluoDisplayControl, 951, 47, 267, 75, "", ""},
     {"btPatchGoto", ControlKind::BackgroundImageButton, 1032, 128, 19, 15, "", ""},

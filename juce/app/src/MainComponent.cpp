@@ -54,6 +54,10 @@ namespace xplorer::app
         _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
             juce::Colour(static_cast<juce::uint32>(
                 _settingsService->allUsersSettings().uiConfig.knobLedBorderColor))); // [RQ-GUI-031]
+        // Block palette: defaults with the persisted per-block overrides
+        // applied. [RQ-DSN-095, RQ-SET-007, ADR-JUC-020]
+        _lookAndFeel->setBlockPalette(
+            resolveBlockPalette(_settingsService->allUsersSettings().uiConfig));
         // Global skin: covers fixed-block, page-family and matrix controls alike.
         juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
         _vfd = std::make_unique<VfdDisplayHelper>(_display, *_controller);
@@ -495,7 +499,9 @@ namespace xplorer::app
     void MainComponent::paint(juce::Graphics& g)
     {
         g.fillAll(juce::Colours::black);
-        paintVectorBackground(g); // [RQ-GUI-037, ADR-JUC-013]
+        // Live palette from the single runtime authority. [RQ-GUI-037, RQ-DSN-095,
+        // ADR-JUC-013, ADR-JUC-020 (DEC-JUC-036)]
+        paintVectorBackground(g, _lookAndFeel->blockPalette());
     }
 
     // --- menu bar [RQ-GUI-008] ---------------------------------------------
@@ -629,14 +635,32 @@ namespace xplorer::app
     void MainComponent::openSettingsDialog()
     {
         showSettingsDialog(*_controller, *_settingsService, _backend,
-                           [this](int argb) { updateLedColour(argb); }); // [RQ-GUI-025]
+                           [this](int argb) { updateLedColour(argb); }, // [RQ-GUI-025]
+                           [this](const BlockPalette& palette)
+                           { updateBlockPalette(palette); }); // [RQ-GUI-046]
+    }
+
+    void MainComponent::updateBlockPalette(const BlockPalette& palette)
+    {
+        // Live preview / accept / cancel-restore all land here: mutate the
+        // palette in place and repaint the tree — no LookAndFeel rebuild.
+        // [RQ-DSN-095, ADR-JUC-020 (DEC-JUC-038)]
+        _lookAndFeel->setBlockPalette(palette);
+        if (auto* top = getTopLevelComponent())
+        {
+            top->sendLookAndFeelChange();
+        }
     }
 
     void MainComponent::updateLedColour(int argb)
     {
-        // Rebuild the skin with the new LED colour and repaint the tree. [RQ-GUI-031]
+        // Rebuild the skin with the new LED colour and repaint the tree; the
+        // block palette is carried across the rebuild so a customised palette
+        // survives an LED-colour change. [RQ-GUI-031, RQ-DSN-095, ADR-JUC-020]
+        const auto palette = _lookAndFeel->blockPalette();
         juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
         _lookAndFeel = std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(argb)));
+        _lookAndFeel->setBlockPalette(palette);
         juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
         if (auto* top = getTopLevelComponent())
         {

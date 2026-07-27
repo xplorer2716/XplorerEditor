@@ -4,6 +4,8 @@
 // LED ring (UiConfiguration.knobLedBorderColor) and a compact checkbox.
 // Applied in the skin pass; behavior is unchanged. [RQ-GUI-031]
 
+#include "BlockPalette.hpp"
+
 #include <juce_gui_extra/juce_gui_extra.h>
 
 namespace xplorer::app
@@ -17,6 +19,14 @@ namespace xplorer::app
         /// consumer (knobs, tick boxes, matrix highlight) derives from it, so a
         /// colour change only rebuilds this object. [ADR-JUC-011]
         [[nodiscard]] juce::Colour ledColour() const { return _ledColour; }
+
+        /// The single runtime source of truth for the block-identity palette
+        /// (defaults = design tokens, user overrides win). The painter takes it
+        /// as a parameter, selector buttons read it at paint time; live preview
+        /// mutates it in place (setBlockPalette + sendLookAndFeelChange), no
+        /// LookAndFeel rebuild. [RQ-DSN-095, ADR-JUC-020 (DEC-JUC-036/038)]
+        [[nodiscard]] const BlockPalette& blockPalette() const { return _blockPalette; }
+        void setBlockPalette(const BlockPalette& palette) { _blockPalette = palette; }
 
         void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
                               float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle,
@@ -51,5 +61,6 @@ namespace xplorer::app
                           bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted);
 
         juce::Colour _ledColour;
+        BlockPalette _blockPalette = defaultBlockPalette();
     };
 }
