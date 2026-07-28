@@ -2,6 +2,11 @@
 
 #include "DesignTokens.hpp"
 
+#include "xplorer/app/ComboBoxSizing.hpp"
+
+#include <string>
+#include <string_view>
+
 namespace xplorer::app
 {
     XplorerLookAndFeel::XplorerLookAndFeel(juce::Colour ledColour)
@@ -204,40 +209,46 @@ namespace xplorer::app
         }
     }
 
-    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox& box)
+    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox&)
     {
-        // Base size mirrors the stock LookAndFeel_V4::getComboBoxFont; shrunk
-        // (down to a legibility floor) so the widest item in THIS box's list
-        // fits the text area LookAndFeel_V4::positionComboBoxText lays out
-        // (box width minus its 30px arrow zone, minus the Label's default
-        // 5px left/right border). A per-box, not per-selection, size keeps it
-        // stable as the user changes the selection.
-        // Font-size bounds come from the shared type scale (RQ-DSN-011); the
-        // arrow/label geometry stays a local layout constant (spacing scale
-        // deferred, RQ-DSN-020).
-        constexpr float BASE_SIZE = tokens::semantic::textDisplay;
-        constexpr float MIN_SIZE = tokens::semantic::textDense;
-        constexpr int ARROW_ZONE = 30;
-        constexpr int LABEL_MARGIN = 10;
+        // ONE size for every combo box in the app: sizing each box against its
+        // own widest label (the mechanism this replaces) left every box legible
+        // but put up to seven different sizes on screen at once, one per label
+        // set. The size is a property of the whole inventory, so the
+        // `juce::ComboBox&` parameter is intentionally unused — do NOT restore
+        // a per-box read here. [RQ-GUI-047, ADR-JUC-021 (DEC-JUC-041/042)]
+        //
+        // Computed once and cached: the inputs are the static control table and
+        // enum label sets, so there is nothing to invalidate. In particular do
+        // NOT add a resize listener — control bounds are logical and fixed, and
+        // ScaledCanvasComponent scales the canvas by transform, which scales
+        // this text along with the diagram. [DEC-JUC-045]
+        if (!_sharedComboBoxFontSize.has_value())
+        {
+            // Bounds from the shared type scale (RQ-DSN-011); the arrow/label
+            // geometry mirrors LookAndFeel_V4::positionComboBoxText (box width
+            // minus its 30px arrow zone, minus the Label's 5px left/right
+            // border) and stays a local layout constant (spacing scale
+            // deferred, RQ-DSN-020).
+            constexpr float BASE_SIZE = tokens::semantic::textDisplay;
+            constexpr float MIN_SIZE = tokens::semantic::textDense;
+            constexpr int ARROW_ZONE = 30;
+            constexpr int LABEL_MARGIN = 10;
 
-        float size = juce::jmin(BASE_SIZE, static_cast<float>(box.getHeight()) * 0.85F);
-        const float availableWidth =
-            static_cast<float>(box.getWidth() - ARROW_ZONE - LABEL_MARGIN);
-        if (availableWidth <= 0.0F)
-        {
-            return juce::Font{juce::FontOptions{size}};
+            // The former per-box formula also capped the size at 85% of the box
+            // height. Every ComboBoxValuedControl in the table is 21 px high
+            // (21 * 0.85 = 17.85 > BASE_SIZE), so that cap never bound; it is
+            // not carried into the shared computation. A future shorter combo
+            // box would need it reinstated here.
+            const auto shared = computeSharedComboBoxFontSize(
+                collectComboBoxSizingInputs(), BASE_SIZE, MIN_SIZE, ARROW_ZONE, LABEL_MARGIN,
+                [](std::string_view text, float fontSize)
+                {
+                    return juce::Font{juce::FontOptions{fontSize}}.getStringWidthFloat(
+                        juce::String(std::string(text)));
+                });
+            _sharedComboBoxFontSize = shared.sharedSize;
         }
-
-        const juce::Font probe{juce::FontOptions{size}};
-        float widest = 0.0F;
-        for (int i = 0; i < box.getNumItems(); ++i)
-        {
-            widest = juce::jmax(widest, probe.getStringWidthFloat(box.getItemText(i)));
-        }
-        if (widest > availableWidth)
-        {
-            size = juce::jmax(MIN_SIZE, size * (availableWidth / widest));
-        }
-        return juce::Font{juce::FontOptions{size}};
+        return juce::Font{juce::FontOptions{*_sharedComboBoxFontSize}};
     }
 }

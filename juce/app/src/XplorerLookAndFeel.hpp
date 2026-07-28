@@ -8,6 +8,8 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
+#include <optional>
+
 namespace xplorer::app
 {
     class XplorerLookAndFeel final : public juce::LookAndFeel_V4
@@ -41,9 +43,13 @@ namespace xplorer::app
         void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
                               bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override;
 
-        // Shrinks the font per combo box so its widest item label always fits
-        // without ellipsis, instead of JUCE's default 70%-squish-then-truncate
-        // (reference combos never show "TRA..."). [RQ-GUI-032, issue #12]
+        // Returns the ONE font size shared by every combo box in the app, so
+        // the panel never shows several sizes at once, with no label ever
+        // ellipsized. The `box` parameter is deliberately unused: the size is
+        // a property of the whole inventory, not of the asking box. Computed
+        // once and cached (see _sharedComboBoxFontSize).
+        // [RQ-GUI-047, RQ-DSN-011, ADR-JUC-021 (DEC-JUC-041, DEC-JUC-045),
+        //  issue #12]
         juce::Font getComboBoxFont(juce::ComboBox& box) override;
 
         // Reproduces the stock combo (fill/outline/arrow) from tokens and adds
@@ -62,5 +68,14 @@ namespace xplorer::app
 
         juce::Colour _ledColour;
         BlockPalette _blockPalette = defaultBlockPalette();
+
+        /// Memoised shared combo-box font size. Its inputs are the static
+        /// control table and enum label sets, so it is computed once on first
+        /// use and never invalidated — in particular NOT on window resize
+        /// (control bounds are logical; ScaledCanvasComponent only transforms
+        /// the canvas) and NOT per combo-box construction. A fresh value only
+        /// arises when this whole object is rebuilt on an LED-colour change
+        /// (ADR-JUC-011). [ADR-JUC-021 (DEC-JUC-045)]
+        mutable std::optional<float> _sharedComboBoxFontSize;
     };
 }
