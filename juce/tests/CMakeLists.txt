@@ -65,7 +65,8 @@ catch_discover_tests(xpl_tests_controller)
 add_executable(xpl_tests_app
     app/ControlTableTests.cpp
     app/ParameterBindingRegistryTests.cpp
-    app/PageFamilyModelTests.cpp)
+    app/PageFamilyModelTests.cpp
+    app/ComboBoxSizingTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)

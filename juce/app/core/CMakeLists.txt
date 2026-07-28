@@ -4,6 +4,7 @@ add_library(xpl_app_core STATIC
     src/ControlTable.cpp
     src/ParameterBindingRegistry.cpp
     src/ControlMetadata.cpp
+    src/ComboBoxSizing.cpp
     src/PageFamilyModel.cpp
     src/ModulationHighlight.cpp
     src/MidiAutomationTable.cpp)
