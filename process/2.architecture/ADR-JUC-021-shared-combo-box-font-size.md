@@ -54,6 +54,17 @@ What the code imposes:
   widening at the shared size is an empirical question — it depends on real
   JUCE font metrics for the actual label strings, not something to guess by
   hand. It can only be answered by running the real computation.
+- The inputs to the computation are entirely **static**: `controlTable()` is a
+  compile-time table and `comboLabelsForControl()` resolves to fixed enum
+  label sets. Nothing about it needs a live `juce::ComboBox` instance — only
+  the *description* of the boxes that will exist. In particular, window
+  **resize changes none of it**: `ScaledCanvasComponent::resized()` only
+  applies a uniform `AffineTransform::scale(...)` to the whole canvas
+  (`MainComponent.cpp`), and never touches any child's bounds — every control
+  keeps its fixed **logical** width (`VCF_MODE` is 127 logical px at any
+  window size), and the same transform that scales the diagram scales the
+  text with it. This is the same logical-canvas model that already keeps the
+  whole panel crisp and proportional at any zoom (RQ-GUI-005, RQ-GUI-037).
 
 ## Decision
 
@@ -72,8 +83,8 @@ What the code imposes:
   `XplorerLookAndFeel::getComboBoxFont` (in `juce/app/src`, already
   JUCE-linked) becomes a thin adapter: call `collectComboBoxSizingInputs()`,
   pass a real `measureWidth` backed by `juce::Font::getStringWidthFloat`,
-  cache the single resulting size for the LookAndFeel's lifetime, and return
-  it for every combo box regardless of which one is asking. (RQ-GUI-047,
+  and return the resulting size for every combo box regardless of which one
+  is asking (lifetime and caching per DEC-JUC-045). (RQ-GUI-047,
   RQ-DSN-011, ADR-JUC-002)
 
 - **DEC-JUC-042 — The shared-size formula is the existing per-instance
@@ -107,6 +118,25 @@ What the code imposes:
   covering the whole group, not one note per control. (RQ-GUI-047's
   alignment-coherence clause)
 
+- **DEC-JUC-045 — Computed once per `XplorerLookAndFeel`, cached, and never
+  recomputed on resize or on combo-box construction.** JUCE calls
+  `getComboBoxFont` frequently — on layout, on repaint, on selection change,
+  for each of the ~48 combo boxes — so the adapter computes the shared size
+  **once** (first call, memoised in a `mutable` member) and returns the cached
+  value thereafter. It is explicitly **not** per-combo-box-instantiation work:
+  the computation reads only the static control table and label sets, so it
+  neither needs nor observes live `juce::ComboBox` instances. It is equally
+  **not** resize work: control bounds are logical and fixed, and resizing only
+  changes the canvas `AffineTransform` (see Context) — so **no resize listener
+  and no invalidation-on-resize is to be added**; doing so would be pure
+  overhead answering a question the logical-canvas model already answers. The
+  only event that legitimately produces a fresh value is the rebuild of the
+  whole `XplorerLookAndFeel` object on an LED-colour change
+  (`MainComponent::updateLedColour`, ADR-JUC-011): a new object starts with an
+  empty cache and recomputes once. Both facts are stated explicitly because a
+  future reader, seeing a `juce::ComboBox&` parameter go unused, is likely to
+  assume the opposite. (RQ-GUI-047, RQ-GUI-005, ADR-JUC-011)
+
 ## Consequences
 
 - **Easier:** the sizing *policy* is unit-testable exactly like every other
@@ -116,10 +146,11 @@ What the code imposes:
   included in the shared-size computation with no new wiring.
 - **Harder / constrained:** `getComboBoxFont` no longer answers per-`box`
   (its parameter is now unused beyond triggering the call) — a comment must
-  make that intentional, or a future reader may "fix" it back into a
-  per-instance read. The actual set of boxes needing widening (DEC-JUC-043)
-  is unknown until the real measurement runs; the geometry edit and its
-  count of affected rows cannot be finalised in this ADR.
+  make that intentional (DEC-JUC-045), or a future reader may "fix" it back
+  into a per-instance read, or bolt on a resize listener the logical-canvas
+  model makes unnecessary. The actual set of boxes needing widening
+  (DEC-JUC-043) is unknown until the real measurement runs; the geometry edit
+  and its count of affected rows cannot be finalised in this ADR.
 - **Reversible:** the split is additive (`xpl_app_core` gains one small new
   module; `getComboBoxFont`'s body changes, its signature does not); no
   other consumer of `controlTable()`/`comboLabelsForControl()` is touched.
@@ -145,6 +176,13 @@ What the code imposes:
   shared size turns out to be; gating it on the shared value would make
   widening decisions depend on unrelated boxes, which is fragile and harder
   to reason about than a per-box floor check.
+- **Recompute the shared size on window resize** (a resize listener
+  invalidating the cache): rejected — `ScaledCanvasComponent` resizes by
+  transforming the canvas, never by re-laying-out children, so every combo
+  box keeps its logical width and the same transform scales the text along
+  with the diagram. A resize-driven recomputation would burn work to arrive
+  at the identical value, and would invite the false belief that the sizing
+  depends on physical window size (DEC-JUC-045).
 - **Skip unit tests, verify only visually (the precedent from TASK-GUI-004/
   010/HLT-001):** rejected here specifically — those fixes were pure
   JUCE-paint/mouse-event plumbing with no headless-testable logic; this one
@@ -162,7 +200,10 @@ flowchart TD
     FAKE["test: fake measureWidth\n(xpl_tests_app, headless CI)"] -.-> COMPUTE
     REAL["production: juce::Font::getStringWidthFloat\n(juce/app/src, JUCE-linked)"] -.-> COMPUTE
     COMPUTE["computeSharedComboBoxFontSize()\n(DEC-JUC-042/043, pure, injected measurer)"]
-    COMPUTE --> SIZE["one shared font size\n-> XplorerLookAndFeel::getComboBoxFont\n(every combo box, RQ-GUI-047)"]
+    COMPUTE --> SIZE["one shared font size\ncached once per LookAndFeel (DEC-JUC-045)\n-> getComboBoxFont, every combo box (RQ-GUI-047)"]
     COMPUTE --> WIDEN["control ids below floor\n(DEC-JUC-043)"]
     WIDEN --> ROW["GeneratedControlTable.inc hand edit:\nwiden + reflow the whole row/group\n(DEC-JUC-044, inline deviation note)"]
+
+    RESIZE["window resize"] -.->|"AffineTransform only,\nlogical widths unchanged\n=> NO recompute (DEC-JUC-045)"| SIZE
+    LED["LED-colour change\n=> LookAndFeel rebuilt (ADR-JUC-011)"] -.->|"fresh object, empty cache\n=> recompute once"| COMPUTE
 ```
