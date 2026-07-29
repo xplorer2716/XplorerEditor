@@ -70,3 +70,26 @@ add_executable(xpl_tests_app
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)
+
+# Real-metrics combo-box fit check. Needs JUCE graphics and the embedded font,
+# so it only exists in an app-enabled build; the headless layer keeps its
+# JUCE-free coverage untouched. This is what makes the RQ-GUI-047 fit promise
+# verifiable per platform in CI: jassert only logs when no debugger is
+# attached, so the development-build assertion cannot fail a run on its own.
+# [RQ-GUI-047, RQ-GUI-048, RQ-DSN-096, ADR-JUC-022 (DEC-JUC-050)]
+if(XPL_BUILD_APP)
+    add_executable(xpl_tests_app_juce
+        app/ComboBoxRealMetricsTests.cpp)
+    target_include_directories(xpl_tests_app_juce PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
+    # Same JUCE feature switches as the app target, so this test compiles the
+    # very same juce_core/juce_graphics configuration the shipped binary does.
+    target_compile_definitions(xpl_tests_app_juce PRIVATE
+        JUCE_USE_CURL=0
+        JUCE_WEB_BROWSER=0
+        JUCE_STANDALONE_APPLICATION=1)
+    target_link_libraries(xpl_tests_app_juce PRIVATE
+        xpl_app_core XplorerAssets juce::juce_graphics juce::juce_events
+        xpl::warnings Catch2::Catch2WithMain)
+    catch_discover_tests(xpl_tests_app_juce)
+endif()
