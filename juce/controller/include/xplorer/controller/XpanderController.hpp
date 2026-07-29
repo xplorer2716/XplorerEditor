@@ -45,13 +45,18 @@ namespace xplorer::controller
         // --- patch operations [RQ-CTL-001..008] -----------------------------
         void loadTone(const std::string& filename);
         void loadTone(const std::string& filename, midiapp::model::IToneReader& reader) override;
-        /// The convenience overload below picks the Xplorer writer itself; the
-        /// inherited (filename, writer) overload stays reachable rather than
-        /// being hidden by it. Without this, AppleClang rejects the header
-        /// under -Woverloaded-virtual (warnings are errors, RQ-BLD-003) —
-        /// `loadTone` avoids it by declaring both overloads explicitly.
-        using midiapp::controller::AbstractController::saveTone;
-        void saveTone(const std::string& filename);
+        /// Xplorer-level save: picks the Xplorer writer, delegates to the
+        /// inherited `AbstractController::saveTone(filename, writer)`, then
+        /// clears the page clipboard — state the base class knows nothing
+        /// about. Deliberately NOT an override and deliberately NOT named
+        /// `saveTone`: it is a distinct operation that happens to build on the
+        /// inherited one, so it must not join its overload set. Sharing the
+        /// name would hide the inherited overload (C++ hides by name, not by
+        /// signature, unlike the C# original this was ported from) and would
+        /// invite a future reader to "fix" it by making it an override, which
+        /// would push the clipboard concern into a base contract that has no
+        /// clipboard. [RQ-CTL-002]
+        void saveXplorerTone(const std::string& filename);
         [[nodiscard]] model::SysexFileType determineSysexFileType(const std::string& fileName) const;
         [[nodiscard]] std::vector<std::pair<std::string, std::unique_ptr<midiapp::model::AbstractTone>>>
         extractSinglePatchesFromAllDataDumpFileToDirectory(const std::string& bankFilename,

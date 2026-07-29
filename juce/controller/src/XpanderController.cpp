@@ -151,7 +151,7 @@ namespace xplorer::controller
         start();
     }
 
-    void XpanderController::saveTone(const std::string& filename)
+    void XpanderController::saveXplorerTone(const std::string& filename)
     {
         model::XpanderToneWriter writer;
         AbstractController::saveTone(filename, writer); // [RQ-CTL-002]

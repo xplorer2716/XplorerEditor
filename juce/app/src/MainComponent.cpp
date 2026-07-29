@@ -386,7 +386,7 @@ namespace xplorer::app
                     const auto file = chooser.getResult();
                     if (file != juce::File())
                     {
-                        _controller->saveTone(file.getFullPathName().toStdString());
+                        _controller->saveXplorerTone(file.getFullPathName().toStdString());
                     }
                 });
         };
