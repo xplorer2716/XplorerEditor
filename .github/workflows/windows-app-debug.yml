@@ -25,6 +25,9 @@ on:
   pull_request:
     paths: ['juce/**', '.github/workflows/windows-app-debug.yml']
 
+permissions:
+  contents: write   # required to publish into the main-branch alpha release [RQ-BLD-013]
+
 jobs:
   windows-app-debug:
     name: Debug build + real-metrics checks (x64)
@@ -32,6 +35,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags: the alpha tag and notes are derived from them
 
       - name: Configure (MSVC, x64, GUI app, Debug)
         run: >
@@ -43,3 +48,31 @@ jobs:
 
       - name: Run unit tests (Debug, incl. real-metrics combo-box fit)
         run: ctest --test-dir juce/build-win-debug --build-config Debug --output-on-failure
+
+      - name: Locate the produced binary
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Recurse -Filter Xplorer.exe juce/build-win-debug |
+                 Select-Object -First 1
+          if (-not $exe) { throw "Xplorer.exe was not produced" }
+          Write-Host "Built: $($exe.FullName)"
+          "XPLORER_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload Windows Debug binary (amd64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-win-x64-debug
+          path: ${{ env.XPLORER_EXE }}
+          if-no-files-found: error
+
+      # ---- main-branch alpha pre-release [RQ-BLD-013] -----------------------
+      # Debug binaries ship alongside the Release ones so a tester hitting a
+      # bug can rerun on a build that logs its assertions instead of silently
+      # continuing — that is the whole reason this configuration exists.
+      - name: Publish into the shared alpha pre-release
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/actions/alpha-prerelease
+        with:
+          asset: ${{ env.XPLORER_EXE }}
+          asset-name: Xplorer-windows-x64-debug.exe
+          token: ${{ secrets.GITHUB_TOKEN }}

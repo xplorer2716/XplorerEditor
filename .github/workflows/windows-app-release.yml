@@ -15,7 +15,9 @@
 # On main only, a successful build is additionally published as a GitHub
 # Release marked pre-release (alpha preview, never "Latest"), so testers
 # always have a current build without it being mistaken for a production
-# release. [RQ-BLD-009, ADR-BLD-001]
+# release. That release is shared with the macOS and Debug build workflows —
+# one release per commit, carrying every platform/configuration binary.
+# [RQ-BLD-009, RQ-BLD-013, ADR-BLD-001, ADR-BLD-002]
 name: windows-app-release
 
 on:
@@ -77,31 +79,13 @@ jobs:
           path: ${{ env.XPLORER_EXE }}
           if-no-files-found: error
 
-      # ---- main-branch alpha pre-release [RQ-BLD-009, ADR-BLD-001] ----------
-      - name: Build alpha release notes
+      # ---- main-branch alpha pre-release [RQ-BLD-009, RQ-BLD-013] -----------
+      # One release per commit, shared with the three other build workflows;
+      # the tag derivation lives in the action so all four agree on it.
+      - name: Publish into the shared alpha pre-release
         if: github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          PREV_TAG=$(git describe --tags --match 'alpha-*' --abbrev=0 2>/dev/null || true)
-          {
-            echo "Automated alpha preview build of \`main\` — not a production release."
-            echo
-            echo "**Changes since the previous alpha build:**"
-            if [ -n "$PREV_TAG" ]; then
-              git log "${PREV_TAG}..HEAD" --pretty='- %s (%h)'
-            else
-              git log -20 --pretty='- %s (%h)'
-            fi
-          } > alpha-notes.md
-          echo "ALPHA_TAG=alpha-${{ github.run_number }}-$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
-
-      - name: Publish alpha pre-release
-        if: github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
+        uses: ./.github/actions/alpha-prerelease
         with:
-          tag_name: ${{ env.ALPHA_TAG }}
-          name: "Alpha preview ${{ env.ALPHA_TAG }}"
-          body_path: alpha-notes.md
-          prerelease: true
-          make_latest: false
-          files: ${{ env.XPLORER_EXE }}
+          asset: ${{ env.XPLORER_EXE }}
+          asset-name: Xplorer-windows-x64-release.exe
+          token: ${{ secrets.GITHUB_TOKEN }}

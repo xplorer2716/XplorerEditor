@@ -100,8 +100,13 @@ graph TD
 
 | Workflow | Runner | Role |
 |---|---|---|
-| `linux-headless-release.yml` | ubuntu-latest | Configure, build, `ctest` — headless scenarios on every push (RQ-BLD-007) |
-| `windows-app-release.yml` | windows-2022 | MSVC x64 build of `Xplorer.exe` + same test suite; uploads the binary as artifact for owner validation. `workflow_dispatch` input `run_tests` allows a binary-only run. MinGW cross-compile is not viable — JUCE `#error`s on it (RQ-BLD-008). |
+| `linux-headless-release.yml` | ubuntu-latest | Configure, build, `ctest` — headless scenarios on every push (RQ-BLD-007). `XPL_BUILD_APP` stays OFF, so the JUCE-linked suite is not built here. |
+| `windows-app-release.yml` | windows-2022 | MSVC x64 build of `Xplorer.exe` + same test suite; uploads the binary as artifact for owner validation. `workflow_dispatch` input `run_tests` allows a binary-only run. MinGW cross-compile is not viable — JUCE `#error`s on it (RQ-BLD-008). On `main`, also publishes an alpha pre-release (RQ-BLD-009, ADR-BLD-001). |
+| `windows-app-debug.yml` | windows-2022 | MSVC x64 Debug build with tests on — compiles the `#if JUCE_DEBUG` paths and runs the real-metrics combo-box fit test `xpl_tests_app_juce` (RQ-GUI-047, RQ-GUI-048, ADR-JUC-022). |
+| `macos-app-release.yml` | macos-latest | arm64 Release build of `Xplorer.app` + test suite; uploads the bundle as a CI artifact. Artifact-only — no GitHub Release (RQ-BLD-011, ADR-BLD-002). |
+| `macos-app-debug.yml` | macos-latest | arm64 Debug build with tests on — the macOS counterpart of `windows-app-debug`, extending the combo-box fit verification to macOS font metrics (RQ-BLD-012, ADR-BLD-002). |
+
+All five follow RQ-BLD-010: workflow file name, `name:` and job key are the same `<os>-<application>-<build>` string, one build configuration per file.
 
 ---
 

@@ -1,0 +1,71 @@
+# Attaches one built binary to the single alpha pre-release of the current
+# commit, creating that release if this is the first workflow to reach it.
+#
+# Why this is an action and not four copies of the same block: the four build
+# workflows must land on the SAME release, which means they must all compute
+# the SAME tag. Duplicating that derivation once per workflow is precisely the
+# kind of thing that drifts silently — one edit, four releases per commit.
+# Keeping it here makes "same tag" a property of the code rather than of
+# reviewer vigilance. [RQ-BLD-009, RQ-BLD-013, ADR-BLD-002 DEC-BLD-010]
+name: 'Publish into the main-branch alpha pre-release'
+description: 'Uploads one binary into the shared alpha pre-release for this commit, creating it if needed.'
+
+inputs:
+  asset:
+    description: 'Path of the file to attach.'
+    required: true
+  asset-name:
+    description: 'Name the asset carries on the release page — must be unique across the publishing workflows.'
+    required: true
+  token:
+    description: 'Token carrying contents: write.'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Publish into the shared alpha pre-release
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        ASSET: ${{ inputs.asset }}
+        ASSET_NAME: ${{ inputs.asset-name }}
+      run: |
+        set -euo pipefail
+
+        # Derived from the commit alone, never from github.run_number: that
+        # counter is per-workflow, so the four publishers would each compute a
+        # different tag and produce four releases for one commit. The commit
+        # count preserves the monotonic ordering the tag scheme was chosen for,
+        # and the short sha keeps the exact traceability. [DEC-BLD-010]
+        TAG="alpha-$(git rev-list --count HEAD)-$(git rev-parse --short HEAD)"
+        echo "Attaching $ASSET_NAME to $TAG"
+
+        if ! gh release view "$TAG" >/dev/null 2>&1; then
+          PREV_TAG=$(git describe --tags --match 'alpha-*' --abbrev=0 2>/dev/null || true)
+          {
+            echo "Automated alpha preview build of \`main\` — not a production release."
+            echo
+            echo "**Changes since the previous alpha build:**"
+            if [ -n "$PREV_TAG" ]; then
+              git log "${PREV_TAG}..HEAD" --pretty='- %s (%h)'
+            else
+              git log -20 --pretty='- %s (%h)'
+            fi
+          } > alpha-notes.md
+
+          # A concurrent publisher may create the release between the check
+          # above and this line; losing that race is harmless, so it is not an
+          # error. The upload below is the step that must succeed, and it will
+          # fail loudly if the release genuinely does not exist.
+          gh release create "$TAG" \
+            --prerelease --latest=false \
+            --title "Alpha preview $TAG" \
+            --notes-file alpha-notes.md || true
+        fi
+
+        # Renamed on the way out so the four assets coexist on one release and
+        # each states its own os/architecture/configuration.
+        mkdir -p .alpha-upload
+        cp "$ASSET" ".alpha-upload/$ASSET_NAME"
+        gh release upload "$TAG" ".alpha-upload/$ASSET_NAME" --clobber

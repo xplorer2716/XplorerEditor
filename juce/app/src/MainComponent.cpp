@@ -386,7 +386,7 @@ namespace xplorer::app
                     const auto file = chooser.getResult();
                     if (file != juce::File())
                     {
-                        _controller->saveTone(file.getFullPathName().toStdString());
+                        _controller->saveXplorerTone(file.getFullPathName().toStdString());
                     }
                 });
         };
@@ -742,7 +742,7 @@ namespace xplorer::app
             case model::SysexFileType::SingleTone:
                 try
                 {
-                    _controller->loadTone(path); // [RQ-CTL-001]
+                    _controller->loadXplorerTone(path); // [RQ-CTL-001]
                 }
                 catch (const std::exception& e)
                 {

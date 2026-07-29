@@ -1,0 +1,88 @@
+# Native macOS (Apple Silicon, arm64) DEBUG build of the JUCE GUI
+# application, for the two things the Release workflow cannot cover — the same
+# two that motivate windows-app-debug:
+#
+#  1. the development-only code paths (`#if JUCE_DEBUG`) are never compiled in
+#     a Release build, so a compile error inside one — such as the RQ-GUI-048
+#     start-up fit check — would go unnoticed until someone builds Debug;
+#  2. the combo-box fit promise of RQ-GUI-047 holds only as far as the text
+#     metrics of the platform it is measured on. ADR-JUC-022 embedded the
+#     typeface precisely to make advance widths a property of the build rather
+#     than of the host, but that reasoning was until now only ever *checked*
+#     on Windows and Linux. This job is what makes it checked on macOS too.
+#
+# As on Windows, the real gate is `xpl_tests_app_juce` and not the `jassert`
+# of RQ-GUI-048: jassert only breaks under an attached debugger and otherwise
+# just logs, so launching the app would pass even with an overflowing label.
+# [RQ-BLD-012, RQ-GUI-047, RQ-GUI-048, RQ-DSN-096, ADR-BLD-002, ADR-JUC-022]
+#
+# On main, the Debug bundle is also attached to the commit's alpha
+# pre-release, so a tester who hits a bug can rerun on a build that logs its
+# assertions instead of silently continuing. [RQ-BLD-013]
+#
+# Naming: workflow file, workflow name and job name are all
+# `macos-app-debug` — os-application-build, matching
+# `linux-headless-release`, `windows-app-release` and `windows-app-debug`.
+# [RQ-BLD-010]
+name: macos-app-debug
+
+on:
+  push:
+    paths: ['juce/**', '.github/workflows/macos-app-debug.yml']
+  pull_request:
+    paths: ['juce/**', '.github/workflows/macos-app-debug.yml']
+
+permissions:
+  contents: write   # required to publish into the main-branch alpha release [RQ-BLD-013]
+
+jobs:
+  macos-app-debug:
+    name: Debug build + real-metrics checks (arm64)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags: the alpha tag and notes are derived from them
+
+      # XPL_BUILD_APP=ON is what brings xpl_tests_app_juce into the build: the
+      # JUCE-linked suite only exists when the app layer does.
+      - name: Configure (arm64, GUI app, Debug)
+        run: >
+          cmake -S juce -B juce/build-mac-debug
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DXPL_BUILD_APP=ON -DXPL_BUILD_TESTS=ON
+
+      - name: Build (Debug)
+        run: cmake --build juce/build-mac-debug -j"$(sysctl -n hw.ncpu)"
+
+      - name: Run unit tests (Debug, incl. real-metrics combo-box fit)
+        run: ctest --test-dir juce/build-mac-debug --output-on-failure
+
+      - name: Locate the produced bundle
+        run: |
+          APP=$(find juce/build-mac-debug -maxdepth 6 -type d -name 'Xplorer.app' | head -n 1)
+          if [ -z "$APP" ]; then echo "Xplorer.app was not produced" >&2; exit 1; fi
+          echo "Built: $APP"
+          test -x "$APP/Contents/MacOS/Xplorer" || { echo "bundle has no executable" >&2; exit 1; }
+          echo "XPLORER_APP=$APP" >> "$GITHUB_ENV"
+
+      - name: Package the bundle
+        run: ditto -c -k --sequesterRsrc --keepParent "$XPLORER_APP" Xplorer-macos-arm64-debug.zip
+
+      - name: Upload macOS Debug bundle (arm64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-macos-arm64-debug
+          path: Xplorer-macos-arm64-debug.zip
+          if-no-files-found: error
+
+      # ---- main-branch alpha pre-release [RQ-BLD-013] -----------------------
+      - name: Publish into the shared alpha pre-release
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/actions/alpha-prerelease
+        with:
+          asset: Xplorer-macos-arm64-debug.zip
+          asset-name: Xplorer-macos-arm64-debug.zip
+          token: ${{ secrets.GITHUB_TOKEN }}
