@@ -128,7 +128,7 @@ namespace xplorer::controller
         return model::determineSysexFileType(fileName);
     }
 
-    void XpanderController::loadTone(const std::string& filename)
+    void XpanderController::loadXplorerTone(const std::string& filename)
     {
         model::XpanderToneReader reader;
         loadTone(filename, reader);

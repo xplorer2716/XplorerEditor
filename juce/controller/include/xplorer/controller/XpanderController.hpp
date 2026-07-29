@@ -43,7 +43,18 @@ namespace xplorer::controller
         void stop() override;
 
         // --- patch operations [RQ-CTL-001..008] -----------------------------
-        void loadTone(const std::string& filename);
+        /// Xplorer-level load, symmetric with `saveXplorerTone`: picks the
+        /// Xplorer reader, delegates to the override below, then clears the
+        /// page clipboard. Named apart from `loadTone` for the same reason —
+        /// it is a distinct operation, not a specialisation of the inherited
+        /// contract. Here the shared name would have been harmless (the
+        /// override below is declared too, so nothing gets hidden), but the
+        /// naming states the intent instead of relying on that accident.
+        void loadXplorerTone(const std::string& filename);
+        /// Genuine specialisation of the inherited contract, unlike the save
+        /// side: loading into the Xplorer controller really does more than the
+        /// base (all-notes-off, resync, full tone sent to the synth), so it
+        /// belongs in the virtual every polymorphic caller reaches.
         void loadTone(const std::string& filename, midiapp::model::IToneReader& reader) override;
         /// Xplorer-level save: picks the Xplorer writer, delegates to the
         /// inherited `AbstractController::saveTone(filename, writer)`, then

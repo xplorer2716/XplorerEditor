@@ -742,7 +742,7 @@ namespace xplorer::app
             case model::SysexFileType::SingleTone:
                 try
                 {
-                    _controller->loadTone(path); // [RQ-CTL-001]
+                    _controller->loadXplorerTone(path); // [RQ-CTL-001]
                 }
                 catch (const std::exception& e)
                 {
