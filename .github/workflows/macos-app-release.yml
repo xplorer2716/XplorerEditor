@@ -2,9 +2,10 @@
 # application. The bundle is uploaded as a downloadable CI artifact so the
 # owner can validate a macOS build without a local Xcode/CMake setup.
 #
-# Artifact-only by design: unlike windows-app-release, this workflow does NOT
-# publish a GitHub Release. The alpha pre-release stream stays scoped to
-# main-branch Windows builds. [RQ-BLD-011, ADR-BLD-002 DEC-BLD-008]
+# On main, the bundle is also attached to the commit's alpha pre-release —
+# the same release the Windows and Debug workflows publish into, so one
+# release page carries every platform/configuration for a given commit.
+# [RQ-BLD-011, RQ-BLD-013, ADR-BLD-002]
 #
 # arm64 is pinned explicitly rather than inherited from whatever macos-latest
 # happens to resolve to, so the scope decision is visible here.
@@ -26,6 +27,9 @@ on:
   pull_request:
     paths: ['juce/**', '.github/workflows/macos-app-release.yml']
 
+permissions:
+  contents: write   # required to publish into the main-branch alpha release [RQ-BLD-013]
+
 jobs:
   macos-app-release:
     name: Build Xplorer.app (arm64, Release)
@@ -33,6 +37,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history + tags: the alpha tag and notes are derived from them
 
       # Default (single-config) generator, so the configuration is chosen here
       # with CMAKE_BUILD_TYPE — not with --build/--config as on Windows'
@@ -71,3 +77,12 @@ jobs:
           name: Xplorer-macos-arm64
           path: Xplorer-macos-arm64.zip
           if-no-files-found: error
+
+      # ---- main-branch alpha pre-release [RQ-BLD-013] -----------------------
+      - name: Publish into the shared alpha pre-release
+        if: github.ref == 'refs/heads/main'
+        uses: ./.github/actions/alpha-prerelease
+        with:
+          asset: Xplorer-macos-arm64.zip
+          asset-name: Xplorer-macos-arm64-release.zip
+          token: ${{ secrets.GITHUB_TOKEN }}

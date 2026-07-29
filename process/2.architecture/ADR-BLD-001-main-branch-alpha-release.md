@@ -47,6 +47,14 @@ scripting needed for the parts they cover:
   commit; the `alpha-` prefix keeps it lexically and visually distinct from
   production tags (`vX.Y.Z`) so the two streams can never collide or be
   confused on the Releases page. (RQ-BLD-009)
+  > **Amended 2026-07-29 by ADR-BLD-002 DEC-BLD-010:** the `run_number`
+  > component is replaced by the commit count
+  > (`alpha-<commit-count>-<short-sha>`). Both intents above are preserved —
+  > monotonic ordering and exact traceability — but `github.run_number` is
+  > scoped to one workflow, and the alpha release is now published by four of
+  > them for the same commit. Tags created under the original scheme
+  > (`alpha-72-2c82dfc` … `alpha-81-07b4e38`) remain valid and are still
+  > matched by the `alpha-*` lookup that computes the release notes.
 
 - **DEC-BLD-003 — Release notes = commit log since the previous alpha tag.** A
   step runs `git describe --tags --match 'alpha-*' --abbrev=0` (previous
@@ -56,7 +64,14 @@ scripting needed for the parts they cover:
   subjects only, no diffs) and requires no external tool. (RQ-BLD-009)
 
 - **DEC-BLD-004 — `softprops/action-gh-release` with `prerelease: true`,
-  `make_latest: false`.** `make_latest: false` is the mechanism that keeps a
+  `make_latest: false`.**
+  > **Amended 2026-07-29 by ADR-BLD-002 DEC-BLD-010:** the action is replaced
+  > by `gh release create --prerelease --latest=false` / `gh release upload
+  > --clobber` inside a shared composite action. The two properties this
+  > decision exists for are unchanged (`prerelease` and never-"Latest"); what
+  > changed is that four workflows now publish to one release, which needs a
+  > create-if-absent-then-upload sequence that tolerates losing the creation
+  > race — expressible directly with `gh`, not with a single action step. `make_latest: false` is the mechanism that keeps a
   production release as GitHub's "Latest" badge even after a newer alpha is
   published — without it every alpha would silently become "Latest" and
   eclipse the real release, defeating the "never mistaken for production"

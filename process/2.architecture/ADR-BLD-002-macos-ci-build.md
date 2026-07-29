@@ -49,13 +49,13 @@ question).
   `macos-latest` happens to resolve to. A universal (arm64+x86_64) binary is
   out of scope (owner decision) — see Alternatives. (RQ-BLD-011)
 
-- **DEC-BLD-008 — Artifact-only: no GitHub Release, no alpha stream.**
-  Unlike `windows-app-release.yml`, the macOS Release job does not gain a
-  `permissions: contents: write` block or a `softprops/action-gh-release`
-  step. ADR-BLD-001's alpha pre-release stream (DEC-BLD-001) stays scoped to
-  `main`-branch Windows builds only; macOS builds are downloadable from the
-  Actions run itself. This is a narrower, easily-extended starting point, not
-  a rejection of ever adding a macOS release stream. (RQ-BLD-011)
+- **DEC-BLD-008 — ~~Artifact-only: no GitHub Release, no alpha stream.~~**
+  *Superseded by DEC-BLD-010 (2026-07-29, same session), before ever being
+  merged.* The original decision kept the macOS builds downloadable only from
+  the Actions run, leaving ADR-BLD-001's alpha stream scoped to `main`-branch
+  Windows builds. The owner asked instead that macOS — and both Debug
+  configurations — publish alongside Windows, which DEC-BLD-010 records. Kept
+  here rather than deleted so the reversal is legible. (RQ-BLD-011)
 
 - **DEC-BLD-009 — The Debug job closes the "font metrics unverified on
   macOS" gap ADR-JUC-022 left open.** `macos-app-debug.yml` builds with
@@ -68,6 +68,27 @@ question).
   this platform's text-rendering stack. No new test code is written — the
   existing JUCE-free and JUCE-linked suites are reused unchanged.
   (RQ-BLD-012, RQ-GUI-047, RQ-GUI-048, RQ-DSN-096, ADR-JUC-022)
+
+- **DEC-BLD-010 — One alpha pre-release per commit, four publishers, tag
+  derived from the commit alone.** All four build workflows attach their
+  binary to the *same* release, so a tester opens one page and finds every
+  platform and configuration for that commit. Making that work forces the tag
+  scheme to change: ADR-BLD-001's `alpha-<run_number>-<sha>` (DEC-BLD-002)
+  cannot be used, because `github.run_number` is **per workflow** — the four
+  publishers would each compute a different tag and produce four releases for
+  one commit. The tag becomes `alpha-<commit-count>-<short-sha>`, where
+  `git rev-list --count HEAD` is identical in all four runs while keeping the
+  monotonic ordering DEC-BLD-002 wanted; the short sha keeps the exact
+  traceability. The derivation, the notes and the create/upload sequence live
+  in a single composite action (`.github/actions/alpha-prerelease`) rather
+  than being copy-pasted four times — with four publishers, "they all compute
+  the same tag" has to be a property of the code, not of review. Publication
+  is idempotent and race-tolerant: whichever workflow arrives first creates
+  the release, the others tolerate losing that race and upload with
+  `--clobber`; the upload itself is unguarded, so a genuinely failed creation
+  still fails the run. Assets are renamed on upload
+  (`Xplorer-<os>-<arch>-<config>.<ext>`) so the four coexist and each states
+  what it is. (RQ-BLD-009, RQ-BLD-011, RQ-BLD-013, ADR-BLD-001)
 
 ## Consequences
 

@@ -45,6 +45,12 @@ namespace xplorer::controller
         // --- patch operations [RQ-CTL-001..008] -----------------------------
         void loadTone(const std::string& filename);
         void loadTone(const std::string& filename, midiapp::model::IToneReader& reader) override;
+        /// The convenience overload below picks the Xplorer writer itself; the
+        /// inherited (filename, writer) overload stays reachable rather than
+        /// being hidden by it. Without this, AppleClang rejects the header
+        /// under -Woverloaded-virtual (warnings are errors, RQ-BLD-003) —
+        /// `loadTone` avoids it by declaring both overloads explicitly.
+        using midiapp::controller::AbstractController::saveTone;
         void saveTone(const std::string& filename);
         [[nodiscard]] model::SysexFileType determineSysexFileType(const std::string& fileName) const;
         [[nodiscard]] std::vector<std::pair<std::string, std::unique_ptr<midiapp::model::AbstractTone>>>
