@@ -1,7 +1,20 @@
 # ADR-JUC-021: One Shared Font Size for Every Combo Box, Split Across the Headless/GUI Boundary
 
 ## Status
-Proposed
+**Superseded by ADR-JUC-022** (2026-07-28), before completing implementation.
+DEC-JUC-041/042/045 shipped (TASK-CBL-001/002) and were then withdrawn;
+DEC-JUC-043/044 were never implemented.
+
+*Why:* the central decision here — derive one size by aggregating the whole
+inventory — was measured against real JUCE metrics and produced 9.0 pt, the
+legibility floor, because the most constrained box governs the minimum. Even
+after widening the boxes below the floor, `MOD_DEST_*` would have pinned the
+whole panel at 9.38 pt, where `MOD_SRC_*` renders at 16 pt today. Consistency
+was achieved at the smallest common denominator — technically satisfying
+RQ-GUI-047 as then written, but a worse panel than before. The owner reframed
+the requirement (fixed size by design, per-group widths); ADR-JUC-022 records
+the replacement. The measurement that killed this design is kept below as the
+Consequences note, because it is the evidence for the successor.
 
 <!-- Motivated by RQ-GUI-047 (single shared combo-box font size, issue #12
 follow-up) and RQ-DSN-011 (as amended). Supersedes the per-instance mechanism

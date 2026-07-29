@@ -221,6 +221,35 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     changed, *When* it is applied, *Then* no component still shows the previous
     colour (no cached copy).
 
+- **RQ-DSN-096** — **The combo-box typeface SHALL be embedded, not resolved from
+  the host system.** Combo-box label text is the one place where the design
+  system makes a *dimensional* promise — that every value of every list fits its
+  control at the fixed size of RQ-GUI-047 — and that promise can only hold if
+  the glyph metrics are known. JUCE otherwise falls back to the platform default
+  sans-serif (Liberation Sans here, Segoe UI on Windows, SF on macOS), whose
+  advance widths differ, so a layout verified on one platform can truncate on
+  another. The application SHALL therefore ship a typeface as a binary asset and
+  use it for combo-box text, making the widths deterministic on every platform.
+  - The embedded face is **Roboto Condensed Regular** (Apache 2.0, compatible
+    with this project's GPLv3), owner-selected: condensed metrics let every
+    label fit the reference geometry unchanged, which no system face allowed.
+    Its licence text SHALL ship alongside the font file.
+  - Scope is **combo boxes only** (owner decision). Every other piece of text —
+    block titles, captions, check-box labels, dialogs — keeps the host font.
+    Widening the scope would restyle the whole application for no dimensional
+    benefit, since no other control makes a fit promise.
+  - The typeface SHALL be attached **explicitly** to each `juce::Font` that uses
+    it. Registering it as the LookAndFeel's default sans-serif is forbidden: on
+    the pinned JUCE version that path mis-maps glyph indices and renders text as
+    unrelated characters (observed with two independent, valid font files).
+  **Dependencies:** RQ-GUI-047, RQ-GUI-048, RQ-DSN-010, RQ-DSN-011; ADR-JUC-014.
+  - **Acceptance (Gherkin):** *Given* a build on any supported platform, *When*
+    a combo box renders, *Then* it uses the embedded face and its label widths
+    match the values the layout was verified against. *Given* the repository,
+    *When* the font asset is present, *Then* its licence text is present beside
+    it. *Given* any non-combo text, *When* it renders, *Then* it uses the host
+    font, unchanged.
+
 ### 2.2 Typography
 
 Nine distinct, independently-chosen sizes exist today, all in
