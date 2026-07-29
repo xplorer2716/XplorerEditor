@@ -100,8 +100,8 @@ graph TD
 
 | Workflow | Runner | Role |
 |---|---|---|
-| `juce-ci.yml` | ubuntu-latest | Configure, build, `ctest` — the 81 headless scenarios on every push (RQ-BLD-007) |
-| `juce-windows.yml` | windows-2022 | MSVC x64 build of `Xplorer.exe` + same test suite; uploads the binary as artifact for owner validation. `workflow_dispatch` input `run_tests` allows a binary-only run. MinGW cross-compile is not viable — JUCE `#error`s on it (RQ-BLD-008). |
+| `linux-headless-release.yml` | ubuntu-latest | Configure, build, `ctest` — headless scenarios on every push (RQ-BLD-007) |
+| `windows-app-release.yml` | windows-2022 | MSVC x64 build of `Xplorer.exe` + same test suite; uploads the binary as artifact for owner validation. `workflow_dispatch` input `run_tests` allows a binary-only run. MinGW cross-compile is not viable — JUCE `#error`s on it (RQ-BLD-008). |
 
 ---
 

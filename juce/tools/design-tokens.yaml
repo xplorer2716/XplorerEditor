@@ -106,6 +106,14 @@ tiers:
     dialogBlockLabelWidth: { kind: int, value: 90,  note: "block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')" }
     dialogResetWidth:      { kind: int, value: 140, note: "'Reset to defaults' button width" }
     dialogGroupHeaderHeight: { kind: int, value: 16, note: "vertical clearance under a GroupComponent title before the first row" }
+    # ---- combo-box text metrics (RQ-GUI-047, ADR-JUC-022). The size is a
+    #      design decision, not a computed value; the arrow/border values
+    #      reclaim the 40px LookAndFeel_V4 reserves for far taller controls
+    #      than our 21px combos, which is what lets the fixed size fit the
+    #      reference widths unchanged. ----
+    comboTextSize:    { kind: float, value: 12.0, note: "one fixed size for every combo box; measured to fit every label of every value list in the embedded face with >=9.9px to spare (RQ-GUI-047)" }
+    comboArrowZone:   { kind: int, value: 20, note: "arrow zone width, replacing LookAndFeel_V4's 30px (DEC-JUC-047)" }
+    comboLabelBorder: { kind: int, value: 2,  note: "combo Label left/right border, replacing juce::Label's default 5px (DEC-JUC-047)" }
 
     # ---- functional-block identity palette v2 (owner-selected "option B",
     #      2026-07): one hue per signal-path block so the panel reads as
@@ -219,6 +227,9 @@ tiers:
     dialogBlockLabelWidth: { alias: global.dialogBlockLabelWidth, note: "block label width in the colour grid, RQ-GUI-046" }
     dialogResetWidth:      { alias: global.dialogResetWidth,      note: "Reset to defaults button width, RQ-GUI-046" }
     dialogGroupHeaderHeight: { alias: global.dialogGroupHeaderHeight, note: "group-title clearance, RQ-GUI-046" }
+    comboTextSize:    { alias: global.comboTextSize,    note: "fixed combo-box text size, RQ-GUI-047" }
+    comboArrowZone:   { alias: global.comboArrowZone,   note: "combo arrow zone, RQ-GUI-047" }
+    comboLabelBorder: { alias: global.comboLabelBorder, note: "combo label border, RQ-GUI-047" }
     textHint:              { alias: global.caption, note: "muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }

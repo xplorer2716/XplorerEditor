@@ -1,0 +1,32 @@
+# CI for the JUCE (C++) port: headless build + tests of the non-UI layers, in
+# Release config.
+#
+# Naming: workflow file, workflow name and job name are all
+# `linux-headless-release` — os-application-build, matching
+# `windows-app-release` and `windows-app-debug`. One build configuration per
+# workflow, so a file name always names exactly one job. [RQ-BLD-007]
+name: linux-headless-release
+
+on:
+  push:
+    paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
+  pull_request:
+    paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
+
+jobs:
+  linux-headless-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ALSA headers (juce_audio_devices)
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev
+
+      - name: Configure
+        run: cmake -S juce -B juce/build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build juce/build -j"$(nproc)"
+
+      - name: Test
+        run: ctest --test-dir juce/build --output-on-failure

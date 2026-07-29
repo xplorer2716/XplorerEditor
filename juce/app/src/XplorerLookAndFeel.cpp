@@ -1,6 +1,12 @@
 #include "XplorerLookAndFeel.hpp"
 
+#include "BinaryData.h"
 #include "DesignTokens.hpp"
+
+#include "xplorer/app/ComboBoxSizing.hpp"
+
+#include <string>
+#include <string_view>
 
 namespace xplorer::app
 {
@@ -12,6 +18,39 @@ namespace xplorer::app
         setColour(juce::PopupMenu::backgroundColourId, tokens::semantic::surfaceRecessed);
         setColour(juce::ToggleButton::textColourId, tokens::semantic::textPrimary);
         setColour(juce::Label::textColourId, tokens::semantic::textPrimary);
+
+        // Embedded condensed face for combo-box text only: it makes the label
+        // widths a property of the build rather than of the host's default
+        // sans-serif, which is what lets the fixed size of RQ-GUI-047 fit the
+        // reference geometry on every platform. Deliberately NOT registered via
+        // setDefaultSansSerifTypeface — see getComboBoxFont.
+        // [RQ-DSN-096, ADR-JUC-022 (DEC-JUC-048)]
+        _comboTypeface = juce::Typeface::createSystemTypefaceFor(
+            BinaryData::RobotoCondensedRegular_ttf, BinaryData::RobotoCondensedRegular_ttfSize);
+        jassert(_comboTypeface != nullptr);
+
+#if JUCE_DEBUG
+        // The fit of every label in every combo box is settled at build time by
+        // measured values (RQ-GUI-047). The only ways it can silently break
+        // later are a new or renamed label, a width edit, or a typeface change —
+        // so a development build checks it once, against the real metrics, and
+        // names the offender. Release builds skip it: the condition is already
+        // decided. [RQ-GUI-048, ADR-JUC-022 (DEC-JUC-050)]
+        {
+            const auto font = comboFont();
+            const auto overflowing = comboBoxesOverflowingAt(
+                collectComboBoxSizingInputs(), tokens::semantic::comboTextSize,
+                tokens::semantic::comboArrowZone, tokens::semantic::comboLabelBorder,
+                [&font](std::string_view text, float)
+                { return font.getStringWidthFloat(juce::String(std::string(text))); });
+            for (const auto& id : overflowing)
+            {
+                DBG("RQ-GUI-048: combo box '" << id << "' cannot show its widest label at "
+                                              << tokens::semantic::comboTextSize << "pt");
+            }
+            jassert(overflowing.empty());
+        }
+#endif
     }
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -161,10 +200,13 @@ namespace xplorer::app
         // strokeLine, corner unified to the shared control radius) plus the
         // three interaction states: hover brightens the recessed fill, disabled
         // mutes the whole control at disabledAlpha, keyboard focus adds an accent
-        // ring. Arrow zone geometry stays a local layout constant (spacing scale
-        // deferred, RQ-DSN-020). [RQ-GUI-041..043, ADR-JUC-017]
-        constexpr int ARROW_ZONE_X = 30;   // right inset of the arrow zone
-        constexpr int ARROW_ZONE_W = 20;   // arrow zone width
+        // ring. The arrow zone is the design-system value that
+        // positionComboBoxText also reads, so text and arrow stay consistent;
+        // it is narrower than LookAndFeel_V4's 30 px, which is sized for far
+        // taller combo boxes. [RQ-GUI-041..043, ADR-JUC-017,
+        // RQ-GUI-047, ADR-JUC-022 (DEC-JUC-047)]
+        constexpr int ARROW_ZONE_X = tokens::semantic::comboArrowZone; // right inset of the arrow zone
+        constexpr int ARROW_ZONE_W = tokens::semantic::comboArrowZone - 4; // arrow glyph zone
         constexpr float ARROW_INSET = 3.0F;
         constexpr float ARROW_RISE = 2.0F;
         constexpr float ARROW_DROP = 3.0F;
@@ -204,40 +246,50 @@ namespace xplorer::app
         }
     }
 
-    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox& box)
+    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox&)
     {
-        // Base size mirrors the stock LookAndFeel_V4::getComboBoxFont; shrunk
-        // (down to a legibility floor) so the widest item in THIS box's list
-        // fits the text area LookAndFeel_V4::positionComboBoxText lays out
-        // (box width minus its 30px arrow zone, minus the Label's default
-        // 5px left/right border). A per-box, not per-selection, size keeps it
-        // stable as the user changes the selection.
-        // Font-size bounds come from the shared type scale (RQ-DSN-011); the
-        // arrow/label geometry stays a local layout constant (spacing scale
-        // deferred, RQ-DSN-020).
-        constexpr float BASE_SIZE = tokens::semantic::textDisplay;
-        constexpr float MIN_SIZE = tokens::semantic::textDense;
-        constexpr int ARROW_ZONE = 30;
-        constexpr int LABEL_MARGIN = 10;
+        // ONE fixed size for every combo box. Sizing each box against its own
+        // widest label (the mechanism this replaces) put up to seven different
+        // sizes on screen at once; deriving one size from the whole inventory
+        // was tried next and collapsed to the legibility floor, shrinking the
+        // whole panel. The size is therefore a design decision expressed as a
+        // token, and the `juce::ComboBox&` parameter is intentionally unused —
+        // do NOT reintroduce a per-box computation here.
+        // [RQ-GUI-047, ADR-JUC-022 (DEC-JUC-046)]
+        //
+        // The typeface is attached EXPLICITLY. Registering it through
+        // setDefaultSansSerifTypeface and letting this Font resolve to it
+        // implicitly renders text as unrelated characters on the pinned JUCE
+        // version (a systematic glyph-index offset, reproduced with two
+        // independent valid font files). [RQ-DSN-096, ADR-JUC-022 (DEC-JUC-049)]
+        return comboFont();
+    }
 
-        float size = juce::jmin(BASE_SIZE, static_cast<float>(box.getHeight()) * 0.85F);
-        const float availableWidth =
-            static_cast<float>(box.getWidth() - ARROW_ZONE - LABEL_MARGIN);
-        if (availableWidth <= 0.0F)
+    juce::Font XplorerLookAndFeel::comboFont() const
+    {
+        // Built FROM the typeface, not with a later withTypeface(): that setter
+        // requires the name/style fields to still be empty, which the default
+        // FontOptions does not guarantee, and asserts otherwise.
+        if (_comboTypeface != nullptr)
         {
-            return juce::Font{juce::FontOptions{size}};
+            return juce::Font{
+                juce::FontOptions{_comboTypeface}.withHeight(tokens::semantic::comboTextSize)};
         }
+        return juce::Font{juce::FontOptions{tokens::semantic::comboTextSize}};
+    }
 
-        const juce::Font probe{juce::FontOptions{size}};
-        float widest = 0.0F;
-        for (int i = 0; i < box.getNumItems(); ++i)
-        {
-            widest = juce::jmax(widest, probe.getStringWidthFloat(box.getItemText(i)));
-        }
-        if (widest > availableWidth)
-        {
-            size = juce::jmax(MIN_SIZE, size * (availableWidth / widest));
-        }
-        return juce::Font{juce::FontOptions{size}};
+    void XplorerLookAndFeel::positionComboBoxText(juce::ComboBox& box, juce::Label& label)
+    {
+        // Same two tokens drawComboBox uses for the arrow, so text and arrow
+        // cannot drift apart. They reclaim the 40 px LookAndFeel_V4 reserves
+        // (30 px arrow zone + the Label's 5 px borders) on controls it sizes
+        // for far taller combo boxes than the 21 px ones used here — which is
+        // what lets the fixed size fit the reference widths unchanged.
+        // [RQ-GUI-047, ADR-JUC-022 (DEC-JUC-047)]
+        label.setBorderSize(juce::BorderSize<int>(0, tokens::semantic::comboLabelBorder, 0,
+                                                  tokens::semantic::comboLabelBorder));
+        label.setBounds(1, 1, box.getWidth() - tokens::semantic::comboArrowZone,
+                        box.getHeight() - 2);
+        label.setFont(getComboBoxFont(box));
     }
 }

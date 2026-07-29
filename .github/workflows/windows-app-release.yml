@@ -1,23 +1,28 @@
-# Native Windows (MSVC, x64) build of the JUCE GUI application. JUCE does not
-# support MinGW (juce_TargetPlatform.h #errors on it), so the amd64 binary is
-# produced here with the Visual Studio toolchain and uploaded as an artifact
-# the owner can download and validate. [RQ-BLD-002, RQ-BLD-004, RQ-GUI]
+# Native Windows (MSVC, x64) RELEASE build of the JUCE GUI application. JUCE
+# does not support MinGW (juce_TargetPlatform.h #errors on it), so the amd64
+# binary is produced here with the Visual Studio toolchain and uploaded as an
+# artifact the owner can download and validate. [RQ-BLD-002, RQ-BLD-004, RQ-GUI]
+#
+# Naming: workflow file, workflow name and job name are all
+# `windows-app-release` — os-application-build, matching
+# `linux-headless-release` and `windows-app-debug`. One build configuration per
+# workflow, so a file name always names exactly one job.
 #
 # Tests run by default on push / pull_request. To build only the binary
-# without tests, trigger the workflow manually (Actions -> juce-windows ->
-# "Run workflow") and untick "Build and run the unit tests".
+# without tests, trigger the workflow manually (Actions -> windows-app-release
+# -> "Run workflow") and untick "Build and run the unit tests".
 #
 # On main only, a successful build is additionally published as a GitHub
 # Release marked pre-release (alpha preview, never "Latest"), so testers
 # always have a current build without it being mistaken for a production
 # release. [RQ-BLD-009, ADR-BLD-001]
-name: juce-windows
+name: windows-app-release
 
 on:
   push:
-    paths: ['juce/**', '.github/workflows/juce-windows.yml']
+    paths: ['juce/**', '.github/workflows/windows-app-release.yml']
   pull_request:
-    paths: ['juce/**', '.github/workflows/juce-windows.yml']
+    paths: ['juce/**', '.github/workflows/windows-app-release.yml']
   workflow_dispatch:
     inputs:
       run_tests:
@@ -34,8 +39,8 @@ permissions:
   contents: write   # required to publish the main-branch alpha release [RQ-BLD-009]
 
 jobs:
-  windows-app:
-    name: Build Xplorer.exe (x64)
+  windows-app-release:
+    name: Build Xplorer.exe (x64, Release)
     runs-on: windows-2022
 
     steps:

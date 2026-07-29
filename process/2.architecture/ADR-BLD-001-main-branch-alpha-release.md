@@ -13,7 +13,8 @@ architecture the ADR-JUC-* series covers, hence the ADR-BLD-* series. -->
 
 ## Context
 
-`juce-windows.yml` (RQ-BLD-008) already builds `Xplorer.exe` (MSVC/x64) on
+The Windows Release workflow (RQ-BLD-008; `windows-app-release.yml`, named
+`juce-windows.yml` when this ADR was written) already builds `Xplorer.exe` (MSVC/x64) on
 every push touching `juce/**`, uploading it as a CI artifact — but CI
 artifacts expire (repo default retention), are not linked from the Releases
 page, and carry no changelog. The owner wants every successful `main` build to
@@ -35,9 +36,10 @@ scripting needed for the parts they cover:
 
 - **DEC-BLD-001 — Scope: `main` push only, Windows job only, additive step.**
   The alpha-release step SHALL run only when `github.ref == 'refs/heads/main'`
-  on the existing `windows-app` job of `juce-windows.yml`, after the existing
+  on the existing Windows Release job (`windows-app-release.yml`, renamed from
+  `juce-windows.yml`'s `windows-app` job per RQ-BLD-010), after the existing
   build/test/locate steps succeed — not on PRs, not on other branches, not as
-  a new workflow. The Linux CI (`juce-ci.yml`, tests-only, no packaged binary)
+  a new workflow. The Linux CI (`linux-headless-release.yml`, tests-only, no packaged binary)
   is out of scope (owner decision: Windows only, RQ-BLD-009). (RQ-BLD-009)
 
 - **DEC-BLD-002 — Tag scheme: `alpha-<run_number>-<short-sha>`.** Monotonic
@@ -72,7 +74,7 @@ scripting needed for the parts they cover:
 - **Harder / constrained:** the Releases page grows one entry per `main` push
   that touches `juce/**` (mitigated by DEC-BLD-005 — accepted, not solved,
   here); `GITHUB_TOKEN` needs `contents: write` permission on this job, absent
-  today (`juce-windows.yml` currently requests no explicit `permissions:`
+  today (the workflow requested no explicit `permissions:`
   block, defaulting to the repo setting) — must be added explicitly.
 - **Neutral:** zero effect on the PR/branch build path (tests-only, same as
   today) and zero effect on the production tag/release process (RQ-BLD-002).
@@ -80,7 +82,7 @@ scripting needed for the parts they cover:
 ## Alternatives Considered
 
 - **A separate `release-alpha.yml` workflow:** rejected — it would rebuild
-  what `juce-windows.yml` just built (double build time, double MSVC cost) or
+  what the Windows Release workflow just built (double build time, double MSVC cost) or
   need artifact hand-off between workflows, both more complex than one
   additive step in the job that already has the binary in hand.
 - **Custom changelog generation (categorized by RQ/TASK prefix, etc.):**
@@ -98,7 +100,7 @@ scripting needed for the parts they cover:
 
 ```mermaid
 flowchart TD
-    A["push to main<br/>(paths: juce/**)"] --> B["juce-windows.yml<br/>windows-app job"]
+    A["push to main<br/>(paths: juce/**)"] --> B["windows-app-release.yml<br/>windows-app-release job"]
     B --> C["configure + build + test<br/>(existing steps, RQ-BLD-008)"]
     C --> D{"branch == main?"}
     D -- no --> E["stop: artifact upload only<br/>(existing behaviour, PRs/branches)"]

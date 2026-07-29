@@ -27,6 +27,10 @@ target_sources(XplorerApp PRIVATE
 # background is now drawn vectorially, so no bitmap is embedded. [ADR-JUC-013]
 juce_add_binary_data(XplorerAssets SOURCES
     assets/vfd-matrix.png
+    # Combo-box typeface: embedded so label widths are a property of the build,
+    # not of the host's default sans-serif. Licence text ships beside it.
+    # [RQ-DSN-096, ADR-JUC-022 (DEC-JUC-048)]
+    assets/RobotoCondensed-Regular.ttf
     assets/about.jpg
     assets/gotodown.gif
     assets/gotohover.gif

@@ -80,6 +80,9 @@ namespace xplorer::app::tokens
         inline constexpr int dialogBlockLabelWidth = 90;  // block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')
         inline constexpr int dialogResetWidth = 140;  // 'Reset to defaults' button width
         inline constexpr int dialogGroupHeaderHeight = 16;  // vertical clearance under a GroupComponent title before the first row
+        inline constexpr float comboTextSize = 12.0F;  // one fixed size for every combo box; measured to fit every label of every value list in the embedded face with >=9.9px to spare (RQ-GUI-047)
+        inline constexpr int comboArrowZone = 20;  // arrow zone width, replacing LookAndFeel_V4's 30px (DEC-JUC-047)
+        inline constexpr int comboLabelBorder = 2;  // combo Label left/right border, replacing juce::Label's default 5px (DEC-JUC-047)
         inline const juce::Colour blockVco = juce::Colour(0xFF549ECB);  // VCO1 / VCO2 / FM group (v2, H238)
         inline const juce::Colour blockLag = juce::Colour(0xFF8F969D);  // LAG (achromatic)
         inline const juce::Colour blockTrack = juce::Colour(0xFFB19047);  // TRACK / tracking generator (v2)
@@ -163,6 +166,9 @@ namespace xplorer::app::tokens
         inline constexpr int dialogBlockLabelWidth = global::dialogBlockLabelWidth;  // block label width in the colour grid, RQ-GUI-046
         inline constexpr int dialogResetWidth = global::dialogResetWidth;  // Reset to defaults button width, RQ-GUI-046
         inline constexpr int dialogGroupHeaderHeight = global::dialogGroupHeaderHeight;  // group-title clearance, RQ-GUI-046
+        inline constexpr float comboTextSize = global::comboTextSize;  // fixed combo-box text size, RQ-GUI-047
+        inline constexpr int comboArrowZone = global::comboArrowZone;  // combo arrow zone, RQ-GUI-047
+        inline constexpr int comboLabelBorder = global::comboLabelBorder;  // combo label border, RQ-GUI-047
         inline const juce::Colour textHint = global::caption;  // muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046
         inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
         inline constexpr int controlRowHeight = global::controlRowHeight;  // shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)
