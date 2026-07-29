@@ -1,0 +1,54 @@
+# Native macOS (Apple Silicon, arm64) DEBUG build of the JUCE GUI
+# application, for the two things the Release workflow cannot cover — the same
+# two that motivate windows-app-debug:
+#
+#  1. the development-only code paths (`#if JUCE_DEBUG`) are never compiled in
+#     a Release build, so a compile error inside one — such as the RQ-GUI-048
+#     start-up fit check — would go unnoticed until someone builds Debug;
+#  2. the combo-box fit promise of RQ-GUI-047 holds only as far as the text
+#     metrics of the platform it is measured on. ADR-JUC-022 embedded the
+#     typeface precisely to make advance widths a property of the build rather
+#     than of the host, but that reasoning was until now only ever *checked*
+#     on Windows and Linux. This job is what makes it checked on macOS too.
+#
+# As on Windows, the real gate is `xpl_tests_app_juce` and not the `jassert`
+# of RQ-GUI-048: jassert only breaks under an attached debugger and otherwise
+# just logs, so launching the app would pass even with an overflowing label.
+# [RQ-BLD-012, RQ-GUI-047, RQ-GUI-048, RQ-DSN-096, ADR-BLD-002, ADR-JUC-022]
+#
+# Tests only — no artifact upload (macos-app-release produces the bundle).
+#
+# Naming: workflow file, workflow name and job name are all
+# `macos-app-debug` — os-application-build, matching
+# `linux-headless-release`, `windows-app-release` and `windows-app-debug`.
+# [RQ-BLD-010]
+name: macos-app-debug
+
+on:
+  push:
+    paths: ['juce/**', '.github/workflows/macos-app-debug.yml']
+  pull_request:
+    paths: ['juce/**', '.github/workflows/macos-app-debug.yml']
+
+jobs:
+  macos-app-debug:
+    name: Debug build + real-metrics checks (arm64)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # XPL_BUILD_APP=ON is what brings xpl_tests_app_juce into the build: the
+      # JUCE-linked suite only exists when the app layer does.
+      - name: Configure (arm64, GUI app, Debug)
+        run: >
+          cmake -S juce -B juce/build-mac-debug
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_OSX_ARCHITECTURES=arm64
+          -DXPL_BUILD_APP=ON -DXPL_BUILD_TESTS=ON
+
+      - name: Build (Debug)
+        run: cmake --build juce/build-mac-debug -j"$(sysctl -n hw.ncpu)"
+
+      - name: Run unit tests (Debug, incl. real-metrics combo-box fit)
+        run: ctest --test-dir juce/build-mac-debug --output-on-failure
