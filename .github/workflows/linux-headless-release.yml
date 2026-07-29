@@ -1,11 +1,14 @@
-# CI for the JUCE (C++) port: headless build + tests of the non-UI layers. [RQ-BLD-007]
-name: juce-ci
+# CI for the JUCE (C++) port: headless build + tests of the non-UI layers, in
+# Release config. Named to stay consistent with juce-windows.yml's
+# windows-app / windows-app-debug jobs: this is the Linux counterpart of the
+# Release job, distinct from any future Debug/macOS job. [RQ-BLD-007]
+name: linux-headless-release
 
 on:
   push:
-    paths: ['juce/**', '.github/workflows/juce-ci.yml']
+    paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
   pull_request:
-    paths: ['juce/**', '.github/workflows/juce-ci.yml']
+    paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
 
 jobs:
   linux-headless:
