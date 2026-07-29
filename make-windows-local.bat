@@ -12,9 +12,10 @@ rem   * no test is built or run here;
 rem   * development-only checks guarded by JUCE_DEBUG are compiled out of a
 rem     Release build, which includes the combo-box label-fit assertion
 rem     RQ-GUI-048.
-rem The CI covers both: the juce-windows workflow builds Release AND Debug with
-rem tests enabled and runs every test, including the real-metrics combo-box fit
-rem check that only a JUCE-linked build can perform. [RQ-GUI-048, ADR-JUC-022]
+rem The CI covers both: the windows-app-release and windows-app-debug workflows
+rem build with tests enabled and run every test, including the real-metrics
+rem combo-box fit check that only a JUCE-linked build can perform.
+rem [RQ-GUI-048, ADR-JUC-022, RQ-BLD-010]
 
 setlocal
 
@@ -26,9 +27,9 @@ echo  This script only produces Xplorer.exe. It does not build or
 echo  run any test, and Release compiles out the development-only
 echo  checks - including the combo-box label-fit assertion.
 echo.
-echo  For the full suite, push the branch or run the "juce-windows"
-echo  workflow from the Actions tab: its Release and Debug jobs
-echo  build with tests ON and run all of them.
+echo  For the full suite, push the branch or run the
+echo  windows-app-release / windows-app-debug workflows from the
+echo  Actions tab: both build with tests ON and run all of them.
 echo ============================================================
 echo.
 

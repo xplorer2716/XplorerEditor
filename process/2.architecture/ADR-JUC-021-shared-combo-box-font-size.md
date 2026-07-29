@@ -52,9 +52,9 @@ What the code imposes:
   `CMakeLists.txt` builds it with `JUCE_MODULES_ONLY` skipped entirely
   outside `XPL_BUILD_APP`, specifically so `xpl_tests_app` and the rest of
   the headless layer never need GUI system libraries. The default CI job
-  (`juce-ci.yml` `linux-headless`) configures with `XPL_BUILD_APP` **off** and
+  (`linux-headless-release.yml`) configures with `XPL_BUILD_APP` **off** and
   runs on every push/PR; the JUCE-linked app (and its `ctest` pass) is only
-  built by `juce-windows.yml`, and only run there when `RUN_TESTS` is set.
+  built by `windows-app-release.yml`, and only run there when `RUN_TESTS` is set.
 - Actually measuring a string's pixel width at a candidate size needs
   `juce::Font::getStringWidthFloat` — real JUCE, unavailable to
   `xpl_app_core` without breaking the above.
@@ -92,7 +92,7 @@ What the code imposes:
   *policy* (aggregate every box, take the most-constraining one, clamp to the
   floor, report which boxes still don't fit) is therefore pure C++, testable
   by `xpl_tests_app` with a fake measurer, and covered by the always-run
-  `linux-headless` CI job — no change to `xpl_app_core`'s JUCE-free status.
+  `linux-headless-release` CI job — no change to `xpl_app_core`'s JUCE-free status.
   `XplorerLookAndFeel::getComboBoxFont` (in `juce/app/src`, already
   JUCE-linked) becomes a thin adapter: call `collectComboBoxSizingInputs()`,
   pass a real `measureWidth` backed by `juce::Font::getStringWidthFloat`,
@@ -177,7 +177,7 @@ What the code imposes:
   to implement and strictly satisfies both options the owner offered.
 - **Add `juce_graphics` to `xpl_app_core` so the whole computation
   (including real measurement) is testable in one place:** rejected — it
-  would force the always-run, GUI-library-free `linux-headless` CI job to
+  would force the always-run, GUI-library-free `linux-headless-release` CI job to
   need GUI system libraries for the first time, undoing the deliberate split
   `ADR-JUC-002`/the top-level `CMakeLists.txt` set up, for a testability gain
   the injected-measurer split already provides without the cost.

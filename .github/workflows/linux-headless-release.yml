@@ -1,7 +1,10 @@
 # CI for the JUCE (C++) port: headless build + tests of the non-UI layers, in
-# Release config. Named to stay consistent with juce-windows.yml's
-# windows-app / windows-app-debug jobs: this is the Linux counterpart of the
-# Release job, distinct from any future Debug/macOS job. [RQ-BLD-007]
+# Release config.
+#
+# Naming: workflow file, workflow name and job name are all
+# `linux-headless-release` — os-application-build, matching
+# `windows-app-release` and `windows-app-debug`. One build configuration per
+# workflow, so a file name always names exactly one job. [RQ-BLD-007]
 name: linux-headless-release
 
 on:
@@ -11,7 +14,7 @@ on:
     paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
 
 jobs:
-  linux-headless:
+  linux-headless-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
