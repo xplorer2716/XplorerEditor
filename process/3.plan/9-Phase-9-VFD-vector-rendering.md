@@ -123,7 +123,24 @@ it belongs in its own task.
 
 ### TASK-VFD-003: VFD token group in `design-tokens.yaml`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — 12 tokens in `global` (raw fitted values) aliased in
+  `component`, `DesignTokens.hpp` regenerated, generator `--check` idempotent,
+  build clean, suite 93/93.
+  - **Round-trip verified, which is the real check here:** the committed tokens
+    read back by `fit_vfd_tokens.py --check` re-score at **exactly 25.81/255**,
+    the value the fit produced. That rules out a normalisation bug in either
+    direction — the failure mode this task was most exposed to, since the fit
+    works in sheet pixels and the tokens are stored as cell-width fractions.
+  - **No `semantic` tier entry.** These are one component's geometry and
+    photometry, not roles anything else could share; a role invented to be
+    aliased exactly once is tier ceremony, not design system. Noted in the YAML
+    so the omission reads as deliberate.
+  - **`kind: float`, not a new `scalar` kind.** The emitter first produced
+    `scalar`, which `generate_design_tokens.py` rejects — it knows `colour`,
+    `float`, `int`. Aligned with the existing vocabulary rather than widening it.
+  - The pre-existing `-Wdeprecated-declarations` warning at
+    `XplorerLookAndFeel.cpp:189` is unrelated: verified present with these
+    changes stashed.
 - **Description**: Add the VFD token group — segment geometry, italic shear,
   stroke weight, segment gap, the two glow radii and amplitudes, the unlit level
   and the phosphor hue — in cell-normalised units, each carrying a `note`

@@ -323,7 +323,7 @@ def emit_yaml(p, unlit, error):
         f'    vfdPhosphor: {{ kind: colour, hex: "00FF{blue:02X}", note: "phosphor hue; red stays 0 until the core clips" }}',
     ]
     for name, (value, note) in tokens.items():
-        lines.append(f'    {name}: {{ kind: scalar, value: {value}, note: "{note}" }}')
+        lines.append(f'    {name}: {{ kind: float, value: {value}, note: "{note}" }}')
     return "\n".join(lines)
 
 

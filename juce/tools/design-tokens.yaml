@@ -139,6 +139,30 @@ tiers:
     #      boxes / radios / in-panel stacked rows so paired rows align) ----
     controlRowHeight: { kind: int, value: 17, note: "reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040" }
 
+    # ---- VFD 16-segment display (RQ-GUI-033, RQ-DSN-097, ADR-JUC-023) ----
+    # DERIVED, not hand-picked: juce/tools/fit_vfd_tokens.py fits these against
+    # the baseline sheet juce/app/assets/vfd-matrix.png and reaches RMSE
+    # 25.81/255 over the 51 glyphs that sheet draws. Re-derive with `--fit`;
+    # `--check` scores the values below and fails past its budget.
+    #
+    # Every length is a fraction of the glyph cell WIDTH — y included. The cell
+    # is 12x16, so normalised y runs 0..4/3 rather than 0..1: that keeps the
+    # unit cell isotropic so the renderer applies ONE uniform scale and round
+    # glow stays round. Normalising the two axes independently would read
+    # tidier and draw wrong.
+    vfdPhosphor:     { kind: colour, hex: "00FFA1", note: "phosphor hue; red stays 0 through the halo and only rises once the core clips, so this is the whole colour of the display" }
+    vfdSegLeft:      { kind: float, value: 0.28713, note: "left segment rail" }
+    vfdSegRight:     { kind: float, value: 0.75083, note: "right segment rail" }
+    vfdSegTop:       { kind: float, value: 0.11833, note: "top segment rail" }
+    vfdSegBottom:    { kind: float, value: 0.96333, note: "bottom segment rail; also the pivot the italic shear rotates about" }
+    vfdSegStroke:    { kind: float, value: 0.09583, note: "segment thickness" }
+    vfdSegGap:       { kind: float, value: 0.03222, note: "shortening at each segment end, so adjacent segments read as separate" }
+    vfdSegSlant:     { kind: float, value: 0.13267, note: "italic shear, x per unit y; dimensionless, so it does not scale" }
+    vfdGlowRadius:   { kind: float, value: 0.17906, note: "glow sigma. MUST be multiplied by the render scale (DEC-JUC-053) or the halo shrinks visually as the window grows" }
+    vfdGlowAmount:   { kind: float, value: 1.23067, note: "glow amplitude added over the core; one Gaussian, not two — see DEC-JUC-054 for why the second was refused" }
+    vfdUnlitLevel:   { kind: float, value: 0.08627, note: "always-drawn unlit segment bed. MEASURED off the baseline's blank cell, not fitted: left free it trades against the glow and parks on its bound, over-brightening the bed" }
+    vfdWhiteLift:    { kind: float, value: 0.43333, note: "how fast the core washes toward white once the phosphor hue clips past 1.0" }
+
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
   # -------------------------------------------------------------------
@@ -248,3 +272,20 @@ tiers:
     sectionBarFadeEnd:     { alias: global.sectionBarFadeEnd,  note: "block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092" }
     blockFillAlpha:        { alias: global.blockFillAlpha,     note: "blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094" }
     blockFrameRelief:      { alias: global.blockFrameRelief,   note: "blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094" }
+
+    # ---- VFD 16-segment display (RQ-GUI-033, RQ-DSN-097, ADR-JUC-023) ----
+    # No semantic tier for these: they are one component's geometry and
+    # photometry, not roles anything else could share. Inventing a role that
+    # exists to be aliased once would be tier ceremony, not design system.
+    vfdPhosphor:     { alias: global.vfdPhosphor,   note: "lit segment / halo colour" }
+    vfdSegLeft:      { alias: global.vfdSegLeft,    note: "segment rails, fractions of cell width" }
+    vfdSegRight:     { alias: global.vfdSegRight }
+    vfdSegTop:       { alias: global.vfdSegTop }
+    vfdSegBottom:    { alias: global.vfdSegBottom,  note: "also the italic shear pivot" }
+    vfdSegStroke:    { alias: global.vfdSegStroke }
+    vfdSegGap:       { alias: global.vfdSegGap }
+    vfdSegSlant:     { alias: global.vfdSegSlant }
+    vfdGlowRadius:   { alias: global.vfdGlowRadius, note: "multiply by the render scale — DEC-JUC-053" }
+    vfdGlowAmount:   { alias: global.vfdGlowAmount }
+    vfdUnlitLevel:   { alias: global.vfdUnlitLevel }
+    vfdWhiteLift:    { alias: global.vfdWhiteLift }
