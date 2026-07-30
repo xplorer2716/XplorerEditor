@@ -1,11 +1,16 @@
 #pragma once
 
-// VFD display: renders text as bitmap glyphs from the reference MATRIXTINY
-// sprite sheet (96 glyphs of 12x16, ASCII 32-126), black background, glyph
-// block centered, grid derived from the bounds like the reference
-// VacuumFluoDisplayControl (cols = width/12, lines = height/16). Direct
-// sprite-sheet paint + setBufferedToImage per ADR-JUC-007; the line content is
-// built by VfdDisplayHelper. [RQ-GUI-020, RQ-GUI-033]
+// VFD display: renders text as 16-segment glyphs drawn vectorially, on a black
+// background, glyph block centered, grid derived from the bounds like the
+// reference VacuumFluoDisplayControl (cols = width/12, lines = height/16).
+// The line content is built by VfdDisplayHelper.
+//
+// The grid, the centering, the setLines early-out and setBufferedToImage are
+// carried over unchanged from ADR-JUC-007; only the artwork inside each cell
+// changed, from a 12x16 sprite blit to VfdSegmentRenderer.
+// [RQ-GUI-020, RQ-GUI-033, RQ-GUI-049, ADR-JUC-023 (DEC-JUC-055)]
+
+#include "VfdSegmentRenderer.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -14,8 +19,10 @@ namespace xplorer::app
     class DisplayPanel final : public juce::Component
     {
     public:
-        static constexpr int GLYPH_WIDTH = 12;
-        static constexpr int GLYPH_HEIGHT = 16;
+        /// The grid unit, in logical pixels. The renderer is the authority on
+        /// glyph geometry, so these name its cell rather than repeating it.
+        static constexpr int GLYPH_WIDTH = VfdSegmentRenderer::CELL_WIDTH;
+        static constexpr int GLYPH_HEIGHT = VfdSegmentRenderer::CELL_HEIGHT;
 
         DisplayPanel();
 
@@ -33,7 +40,7 @@ namespace xplorer::app
         void paint(juce::Graphics& g) override;
 
     private:
-        juce::Image _glyphSheet;
+        VfdSegmentRenderer _renderer;
         juce::StringArray _lines;
     };
 }

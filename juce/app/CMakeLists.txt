@@ -24,10 +24,16 @@ target_sources(XplorerApp PRIVATE
     src/XplorerLookAndFeel.cpp
     src/JuceEventDispatcher.cpp)
 
-# UI assets (button images, VFD glyph sheet) embedded as binary data. The main
-# background is now drawn vectorially, so no bitmap is embedded. [ADR-JUC-013]
+# UI assets (button images) embedded as binary data. The main background and
+# the VFD glyphs are both drawn vectorially now, so neither is embedded.
+#
+# assets/vfd-matrix.png is deliberately NOT here while remaining in the
+# repository: it stopped being a runtime asset when ADR-JUC-023 replaced the
+# sprite blit, but it is the reference of record — the .NET tree that produced
+# it has left for XplorerEditor-dotnet-archive, so it is the only surviving
+# witness of the original artwork, and juce/tools/fit_vfd_tokens.py fits the
+# design tokens against it. [ADR-JUC-013, ADR-JUC-023]
 juce_add_binary_data(XplorerAssets SOURCES
-    assets/vfd-matrix.png
     # Combo-box typeface: embedded so label widths are a property of the build,
     # not of the host's default sans-serif. Licence text ships beside it.
     # [RQ-DSN-096, ADR-JUC-022 (DEC-JUC-048)]

@@ -1,24 +1,19 @@
 #include "DisplayPanel.hpp"
 
-#include "BinaryData.h"
-
 namespace xplorer::app
 {
-    namespace
-    {
-        constexpr int SHEET_COLUMNS = 32;   // glyphs per sheet row
-        constexpr int FIRST_GLYPH = 32;     // ' '
-        constexpr int LAST_GLYPH = 126;     // '~'; 127 and below 32 -> space
-    }
-
     DisplayPanel::DisplayPanel()
-        : _glyphSheet(juce::ImageCache::getFromMemory(BinaryData::vfdmatrix_png,
-                                                      BinaryData::vfdmatrix_pngSize))
     {
         // The whole surface is painted (black + glyph cells), and the text
-        // only changes via setLines: let JUCE cache the rendered image so
+        // only changes via setLines: let JUCE cache the rendered component so
         // unchanged text costs no paint at all (the reference achieved this
-        // with a hand-managed buffer bitmap + changed-cell diffing). [ADR-JUC-007]
+        // with a hand-managed buffer bitmap + changed-cell diffing).
+        //
+        // The cache is not a resolution trap, contrary to what one might
+        // expect of it: StandardCachedComponentImage allocates at
+        // bounds * getPhysicalPixelScaleFactor() and paints into it with that
+        // scale applied, so it follows the device resolution rather than the
+        // logical size. [ADR-JUC-007, carried over by ADR-JUC-023 DEC-JUC-055]
         setOpaque(true);
         setBufferedToImage(true);
         setInterceptsMouseClicks(false, false);
@@ -50,36 +45,34 @@ namespace xplorer::app
         g.fillAll(juce::Colours::black);
         const int cols = getWidth() / GLYPH_WIDTH;
         const int rows = getHeight() / GLYPH_HEIGHT;
-        if (cols <= 0 || rows <= 0 || _glyphSheet.isNull())
+        if (cols <= 0 || rows <= 0)
         {
             return;
         }
 
-        // Centered glyph block, unlit-dot 'space' cells filling the grid,
-        // as the reference (which pads its text to the full grid).
+        // Render at the resolution this context will actually be rasterised
+        // at, not at the logical size. getPhysicalPixelScaleFactor() is the
+        // square root of the accumulated transform's determinant, so it folds
+        // in both ScaledCanvasComponent's window scale and the display's DPI
+        // scale. Rendering at the logical size and letting the image be scaled
+        // is exactly the degradation this whole change removes. [DEC-JUC-053]
+        const auto scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+        const auto block = _renderer.renderBlock(_lines, cols, rows, scale);
+        if (block.isNull())
+        {
+            return;
+        }
+
+        // Centered glyph block, as the reference (which pads its text to the
+        // full grid). Drawn into its logical-size rectangle: the image already
+        // holds cols*rows cells at `scale`, so this lands one image pixel per
+        // device pixel — no resampling either way.
         const int left = (getWidth() - cols * GLYPH_WIDTH) / 2;
         const int top = (getHeight() - rows * GLYPH_HEIGHT) / 2;
-        // Nearest-neighbour under the canvas scale keeps the dot matrix crisp.
-        g.setImageResamplingQuality(juce::Graphics::lowResamplingQuality);
-
-        for (int row = 0; row < rows; ++row)
-        {
-            const auto line = row < _lines.size() ? _lines[row] : juce::String();
-            for (int col = 0; col < cols; ++col)
-            {
-                auto character = col < line.length() ? line[col] : juce::juce_wchar(' ');
-                if (character < FIRST_GLYPH || character > LAST_GLYPH)
-                {
-                    character = ' ';
-                }
-                const int index = static_cast<int>(character) - FIRST_GLYPH;
-                g.drawImage(_glyphSheet,
-                            left + col * GLYPH_WIDTH, top + row * GLYPH_HEIGHT,
-                            GLYPH_WIDTH, GLYPH_HEIGHT,
-                            (index % SHEET_COLUMNS) * GLYPH_WIDTH,
-                            (index / SHEET_COLUMNS) * GLYPH_HEIGHT,
-                            GLYPH_WIDTH, GLYPH_HEIGHT);
-            }
-        }
+        g.drawImage(block,
+                    juce::Rectangle<float>(static_cast<float>(left),
+                                           static_cast<float>(top),
+                                           static_cast<float>(cols * GLYPH_WIDTH),
+                                           static_cast<float>(rows * GLYPH_HEIGHT)));
     }
 }
