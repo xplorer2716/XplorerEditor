@@ -138,18 +138,29 @@ through the existing Xvfb/screenshot pipeline.
 - **Tier**: M
 - **Status**: Not Started
 - **Description**: A pure 16-segment renderer cannot draw the reference's `:`
-  (two separated dots) or `_` (a bar below the glyph body). Add explicit
-  primitives for them, selected through one small, data-driven per-character
-  override table so the divergence from the vendored table stays auditable in a
-  single place. `:` is the priority: it appears in every `NAME:VALUE` and every
-  `MIDI CC:` line.
-- **Requirement refs**: RQ-GUI-033
+  (two separated dots) or `_` (a bar below the glyph body), and cannot tell
+  lowercase `x` from `X`. Add explicit primitives for the three, selected
+  through one small, data-driven per-character override table so the divergence
+  from the vendored table stays auditable in a single place. `:` is the
+  priority: it appears in every `NAME:VALUE` and every `MIDI CC:` line.
+  *Scope extended 2026-07-30 (owner decision):* lowercase `x` joins the table.
+  Measured on the vendored data, the two collisions across all 95 glyphs are
+  `':'`/`'|'` (`0x2200`) and `'x'`/`'X'` (`0x5500`); the colon override was
+  already required for fidelity, so these two entries make every glyph render
+  distinctly (RQ-GUI-049). The vendored table is **not** edited — upstream's
+  `x = X` is correct for a pure 16-segment device.
+- **Requirement refs**: RQ-GUI-033, RQ-GUI-049
 - **ADR refs**: ADR-JUC-023 (DEC-JUC-052)
 - **Acceptance Criteria**:
   - *Given* `':'`, *When* it is rendered, *Then* it produces two vertically
     separated dots and not a continuous vertical bar.
+  - *Given* `'x'` and `'X'`, *When* both are rendered, *Then* they differ, the
+    lowercase form sitting in the lower half of the cell.
+  - *Given* `':'` and `'|'`, *When* both are rendered, *Then* they differ, `'|'`
+    keeping the centre verticals as a bar.
   - *Given* the override table, *When* it is read, *Then* every character that
-    diverges from the vendored table is listed there and nowhere else.
+    diverges from the vendored table is listed there and nowhere else, and the
+    vendored data file is unmodified.
   - *Given* a character with no override, *When* it is rendered, *Then* the
     vendored segment mask is used unchanged.
 - **Dependencies**: TASK-VFD-004
@@ -166,6 +177,9 @@ through the existing Xvfb/screenshot pipeline.
 - **Acceptance Criteria**:
   - *Given* each code point in 32–126, *When* it is rendered, *Then* its cell
     differs from the cell produced for a space — except for the space itself.
+  - *Given* all 95 code points in 32–126, *When* each is rendered, *Then* the 95
+    results are pairwise distinct (the two vendored-table collisions being
+    resolved by the TASK-VFD-005 overrides, not by editing the table).
   - *Given* a tone name containing lowercase letters, *When* it is shown, *Then*
     every letter is legible.
   - *Given* a code point outside 32–126, *When* it is rendered, *Then* it renders

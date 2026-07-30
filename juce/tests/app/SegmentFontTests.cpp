@@ -10,7 +10,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstdint>
 #include <initializer_list>
+#include <map>
 #include <set>
 #include <string>
 
@@ -240,12 +242,18 @@ SCENARIO("the font covers the whole printable ASCII range", "[RQ-GUI-049]")
         {
             THEN("every one is a real glyph, with 'x' the only uppercase alias")
             {
-                // The sheet had no lowercase artwork at all, so what
-                // RQ-GUI-049 asks for is legibility: a lowercase letter must
-                // light something. Distinctness from uppercase is NOT required
-                // and is not always achievable — 'x' is the four diagonals in
-                // both cases, and a 16-segment display has no smaller form to
-                // fall back on. It is the single such collision in the table.
+                // The sheet had no lowercase artwork at all, so at table level
+                // what matters is that a lowercase letter lights something.
+                // 'x' is the four diagonals in BOTH cases: a 16-segment cell
+                // draws lowercase in its lower half, but a crossing needs one
+                // '\' and one '/' stroke and both diagonal pairs start at the
+                // top corners, so no lower-half crossing exists. Upstream is
+                // right for a pure 16-segment device; RQ-GUI-049 nonetheless
+                // requires the two to render differently, which the renderer
+                // achieves with an off-model primitive (DEC-JUC-052) rather
+                // than by editing the vendored table. This suite therefore
+                // asserts the table as vendored — see the collision scenario
+                // below for what the renderer must resolve.
                 for (char letter = 'a'; letter <= 'z'; ++letter)
                 {
                     INFO("letter '" << letter << "'");
@@ -261,6 +269,43 @@ SCENARIO("the font covers the whole printable ASCII range", "[RQ-GUI-049]")
                         REQUIRE(lower != upper);
                     }
                 }
+            }
+        }
+    }
+}
+
+SCENARIO("the vendored table has exactly two known mask collisions", "[RQ-GUI-049]")
+{
+    GIVEN("all 95 printable code points")
+    {
+        WHEN("their masks are grouped")
+        {
+            std::map<std::uint16_t, std::string> byMask;
+            std::map<std::uint16_t, std::string> collisions;
+            for (int codePoint = FIRST_GLYPH; codePoint <= LAST_GLYPH; ++codePoint)
+            {
+                const auto mask = segmentMaskFor(codePoint);
+                const auto character = static_cast<char>(codePoint);
+                if (auto existing = byMask.find(mask); existing != byMask.end())
+                {
+                    collisions[mask] = existing->second + character;
+                }
+                else
+                {
+                    byMask[mask] = std::string(1, character);
+                }
+            }
+
+            THEN("they are ':' with '|' and 'x' with 'X', and nothing else")
+            {
+                // This pins the vendored data. RQ-GUI-049 requires all 95
+                // glyphs to render distinctly, and the renderer buys that with
+                // exactly two off-model overrides (DEC-JUC-052). If a table
+                // update ever introduced a third collision, that guarantee
+                // would break silently — so it must break here instead.
+                REQUIRE(collisions.size() == 2);
+                REQUIRE(collisions[0x2200] == ":|");
+                REQUIRE(collisions[0x5500] == "Xx");
             }
         }
     }

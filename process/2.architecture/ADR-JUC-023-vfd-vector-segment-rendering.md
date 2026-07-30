@@ -72,6 +72,21 @@ optimum and a vector port buys no visible improvement.
   primitives instead of a segment mask. The table SHALL be data, listed in one
   place, so the divergence from the vendored table is auditable rather than
   scattered through the renderer.
+  The table has **three** entries, two of which also resolve the only two
+  collisions in the vendored data (RQ-GUI-049 requires all 95 glyphs to render
+  distinctly):
+  | Character | Primitive | Reason |
+  |---|---|---|
+  | `:` | two separated dots | reference fidelity; also splits `0x2200` from `\|`, which keeps the centre verticals and is correctly a bar |
+  | `_` | bar below the glyph body | reference fidelity (the vendored mask uses the bottom horizontals instead) |
+  | `x` | half-height crossing | splits `0x5500` from `X` |
+  The lowercase `x` case is *not* a data defect to report upstream: a 16-segment
+  cell draws lowercase in its lower half, and a crossing needs one `\` and one
+  `/` stroke whose only available diagonal pairs (`K`,`N`) start at the **top**
+  corners. No lower-half crossing exists, so upstream's `x = X` is the correct
+  answer for a pure 16-segment device and the distinction has to come from
+  outside the model. Editing the vendored table instead would break its
+  diffability against upstream for no gain.
 
 - **DEC-JUC-053 — Paths built once in cell-normalised units; rendering happens
   at the physical pixel scale.** The 16 segment outlines and the off-model
