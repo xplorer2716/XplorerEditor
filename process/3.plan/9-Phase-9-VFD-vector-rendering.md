@@ -296,7 +296,19 @@ it belongs in its own task.
 
 ### TASK-VFD-007: Wire into `DisplayPanel`, retire the sprite blit
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — verified live under Xvfb at the launch geometry
+  (22×5 cells, unlit bed in every cell, glow present). Build clean, 105/105.
+  - The block is drawn into its **logical-size** rectangle from an image built
+    at the *device* scale, which lands one image pixel per device pixel. Drawing
+    it at its own pixel size, or building it at the logical size, would each
+    have reintroduced a resample — the exact degradation this plan removes.
+  - `GLYPH_WIDTH`/`GLYPH_HEIGHT` now name the renderer's cell rather than
+    repeating 12 and 16, so the grid formula and the glyph geometry cannot
+    drift apart.
+  - `vfd-matrix.png` removed from the binary data, **kept in the repository**,
+    with the reason recorded beside the CMake target rather than left implicit.
+    Verified all three ways: absent from `BinaryData.h`, still tracked by git,
+    and `fit_vfd_tokens.py --check` still finds it (25.81/26.00).
 - **Description**: Replace `DisplayPanel::paint`'s per-cell `drawImage` with the
   vector renderer, keeping the grid formula, the centering, the `setLines`
   early-out and `setBufferedToImage(true)` exactly as they are (DEC-JUC-055).
@@ -319,7 +331,22 @@ it belongs in its own task.
 
 ### TASK-VFD-008: Verification at scale 1.0 / 2.0 / 3.0
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: **Done** — captured from the running application under Xvfb by
+  actually resizing the window to 1260 / 2520 / 3780 px wide, giving canvas
+  scales of exactly 1.0, 2.0 and 3.0. The glyphs get *sharper* as the scale
+  rises rather than blockier, which is the whole point of the change.
+  - **A parameter edit shows all five content lines** (`* S99 XPLORER *`,
+    `ENV1 ATTACK:10`, blank, blank, `MIDI CC: 073`), with `:` rendering as two
+    dots in both places — the off-model primitive working where it matters most.
+  - Build warning-clean: after touching all five changed sources, the rebuild
+    emits **zero** warnings. The one at `XplorerLookAndFeel.cpp:189` is
+    pre-existing and unrelated (verified earlier by stashing).
+  - Suite 105/105.
+  - *Method note:* the first capture attempt cropped the wrong region at scales
+    2 and 3. `ScaledCanvasComponent` centres the canvas vertically inside the
+    area below the menu bar, so the VFD's screen y is
+    `24 + (h - 24 - 786·s)/2 + 40·s`, not `64·s`. Worth recording because any
+    future screenshot check of a canvas control needs the same formula.
 - **Description**: Build, run the suite, and verify the rendered panel under Xvfb
   at the three physical pixel scales that occur in practice — launch at 100 % DPI
   (scale exactly 1.0), launch on HiDPI (2.0), enlarged window on HiDPI (3.0) —
