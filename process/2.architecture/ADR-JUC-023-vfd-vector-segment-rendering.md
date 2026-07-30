@@ -107,9 +107,20 @@ optimum and a vector port buys no visible improvement.
   white — not of a second colour. The renderer SHALL therefore accumulate a
   scalar field (lit core, plus glow, over an always-drawn unlit bed) and convert
   to colour once at the end, preserving the phosphor hue below 1.0 and lifting
-  toward white above it. The glow SHALL have **two** components: a single
-  Gaussian cannot fit the measured falloff (≈0.25 of core at 1 px but still
-  ≈0.16 at 2 px, where one Gaussian predicts ≈0.005).
+  toward white above it.
+  The glow is a **single** Gaussian. This decision was initially written the
+  other way — two components, on the grounds that the falloff measured on an
+  isolated glyph (≈0.25 of core at 1 px but still ≈0.16 at 2 px) is too
+  wide-tailed for one Gaussian, which predicts ≈0.005 there. Fitting over the
+  whole drawn set refuted it: the two radii converge (2.10 px and 2.59 px on a
+  12×16 cell), which is what an over-parameterised model looks like, and the
+  second component buys 0.53 RMSE — 2 % — for twice the blur cost at paint
+  time, with no difference visible in a side-by-side render. One isolated glyph
+  was not a sound basis for a runtime cost paid on every repaint.
+  The **unlit bed level is measured, not fitted**: left as a free parameter it
+  trades against the glow and parks itself at its bound, visibly
+  over-brightening the unlit segments. It is read from the baseline's own blank
+  cell instead.
 
 - **DEC-JUC-055 — Grid, centering and caching are carried over from
   ADR-JUC-007 unchanged.** `cols = floor(w/12)`, `lines = floor(h/16)` computed
@@ -140,8 +151,9 @@ optimum and a vector port buys no visible improvement.
 - The cached image grows with the scale (≈0.9 MB at scale 3 for a 267×82 panel).
   Negligible, and unchanged in kind from today's cache.
 - Fidelity is now a tunable, not a fixed asset: the fitted parameter set reaches
-  a mean RMSE of ≈23.5/255 over the 51 drawn glyphs, and the residual is
-  dominated by table divergences (`Y`, `[`, `]`, `:`) rather than by the filters.
+  an RMSE of ≈25.8/255 over the 51 glyphs the baseline draws, and the residual is
+  dominated by table divergences (`Y`, `[`, `]`, `:`) rather than by the filters —
+  which is precisely why spending a second blur to shave 2 % off it was refused.
 - A conscious loss: the reference's hand-drawn cells for a few punctuation marks
   are approximations in the vendored table. DEC-JUC-052 covers the ones that
   matter; the rest (`.` notably) will differ slightly from the old artwork.
@@ -195,8 +207,8 @@ flowchart TD
         PATHS["16 segment Paths + primitives<br/>built once, unit cell<br/>DEC-JUC-053"]
         SCALE["physicalPixelScaleFactor()<br/>= sqrt(det) of accumulated transform"]
         CORE["lit core mask"]
-        GLOW["two-component glow<br/>radii x scale · DEC-JUC-054"]
-        BED["always-drawn unlit bed"]
+        GLOW["single-Gaussian glow<br/>radius x scale · DEC-JUC-054"]
+        BED["always-drawn unlit bed<br/>level measured, not fitted"]
         FIELD["scalar radiance field"]
         TONE["tone map<br/>hue below 1.0, white above"]
         CACHE["setBufferedToImage<br/>cache at bounds x scale<br/>DEC-JUC-055"]
