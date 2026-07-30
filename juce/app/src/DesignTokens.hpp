@@ -107,6 +107,11 @@ namespace xplorer::app::tokens
         inline constexpr float vfdGlowAmount = 1.23067F;  // glow amplitude added over the core; one Gaussian, not two — see DEC-JUC-054 for why the second was refused
         inline constexpr float vfdUnlitLevel = 0.08627F;  // always-drawn unlit segment bed. MEASURED off the baseline's blank cell, not fitted: left free it trades against the glow and parks on its bound, over-brightening the bed
         inline constexpr float vfdWhiteLift = 0.43333F;  // how fast the core washes toward white once the phosphor hue clips past 1.0
+        inline constexpr float vfdDotX = 0.31404F;  // colon dot centre, upright — the renderer applies the shear
+        inline constexpr float vfdDotSize = 0.18634F;  // colon dot side
+        inline constexpr float vfdDotUpperY = 0.4F;  // upper colon dot centre
+        inline constexpr float vfdDotLowerY = 0.73333F;  // lower colon dot centre
+        inline constexpr float vfdUnderscoreY = 1.0F;  // underscore bar centre; sits BELOW the bottom rail, which is precisely why no segment can express it
     }
 
     // -----------------------------------------------------------------
@@ -210,6 +215,11 @@ namespace xplorer::app::tokens
         inline constexpr float vfdGlowAmount = global::vfdGlowAmount;
         inline constexpr float vfdUnlitLevel = global::vfdUnlitLevel;
         inline constexpr float vfdWhiteLift = global::vfdWhiteLift;
+        inline constexpr float vfdDotX = global::vfdDotX;  // off-model primitives, DEC-JUC-052
+        inline constexpr float vfdDotSize = global::vfdDotSize;
+        inline constexpr float vfdDotUpperY = global::vfdDotUpperY;
+        inline constexpr float vfdDotLowerY = global::vfdDotLowerY;
+        inline constexpr float vfdUnderscoreY = global::vfdUnderscoreY;
     }
 
 }

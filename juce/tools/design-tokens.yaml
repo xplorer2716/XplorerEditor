@@ -163,6 +163,23 @@ tiers:
     vfdUnlitLevel:   { kind: float, value: 0.08627, note: "always-drawn unlit segment bed. MEASURED off the baseline's blank cell, not fitted: left free it trades against the glow and parks on its bound, over-brightening the bed" }
     vfdWhiteLift:    { kind: float, value: 0.43333, note: "how fast the core washes toward white once the phosphor hue clips past 1.0" }
 
+    # ---- off-model primitives (DEC-JUC-052) ----
+    # ':' is two separated dots and '_' a bar BELOW the glyph body. No
+    # combination of the 16 segments produces either, so both get an explicit
+    # primitive — and ':' is not decoration, it appears in every NAME:VALUE and
+    # every "MIDI CC:" line the display shows.
+    #
+    # MEASURED off the baseline's own cells by `fit_vfd_tokens.py --extras`; no
+    # optimisation, just bright-pixel centroids. Both colon dots sit at the same
+    # x there: un-sheared that leaves 0.53 px between them, exactly the shear a
+    # hand-drawn 12-px-wide cell could not express. Stored upright, sheared by
+    # the renderer like every other shape.
+    vfdDotX:         { kind: float, value: 0.31404, note: "colon dot centre, upright — the renderer applies the shear" }
+    vfdDotSize:      { kind: float, value: 0.18634, note: "colon dot side" }
+    vfdDotUpperY:    { kind: float, value: 0.40000, note: "upper colon dot centre" }
+    vfdDotLowerY:    { kind: float, value: 0.73333, note: "lower colon dot centre" }
+    vfdUnderscoreY:  { kind: float, value: 1.00000, note: "underscore bar centre; sits BELOW the bottom rail, which is precisely why no segment can express it" }
+
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
   # -------------------------------------------------------------------
@@ -289,3 +306,8 @@ tiers:
     vfdGlowAmount:   { alias: global.vfdGlowAmount }
     vfdUnlitLevel:   { alias: global.vfdUnlitLevel }
     vfdWhiteLift:    { alias: global.vfdWhiteLift }
+    vfdDotX:         { alias: global.vfdDotX,        note: "off-model primitives, DEC-JUC-052" }
+    vfdDotSize:      { alias: global.vfdDotSize }
+    vfdDotUpperY:    { alias: global.vfdDotUpperY }
+    vfdDotLowerY:    { alias: global.vfdDotLowerY }
+    vfdUnderscoreY:  { alias: global.vfdUnderscoreY }

@@ -6,6 +6,7 @@
 #include <juce_graphics/juce_graphics.h>
 
 #include <cmath>
+#include <vector>
 
 // The renderer's whole reason to exist is that it does NOT degrade with scale
 // (RQ-GUI-005, RQ-GUI-033): the sprite it replaces carried 12x16 px per glyph
@@ -240,6 +241,196 @@ SCENARIO("The grid is filled even when the text is shorter", "[RQ-GUI-033]")
             const auto lastCell = image.getClippedImage(
                 {cell, cellHeight, cell, cellHeight});
             REQUIRE(maxGreen(lastCell) > 0.0);
+        }
+    }
+}
+
+// --- off-model primitives (DEC-JUC-052) ------------------------------------
+
+namespace
+{
+    /// Of the rows between the first and last lit one, the fraction that are
+    /// dark.
+    ///
+    /// Counting *runs* of lit rows does not separate a colon from a pipe: on a
+    /// 16-segment cell a vertical bar is two stacked segments with the standard
+    /// hairline between them, so both give two runs. What separates them is how
+    /// much of their vertical extent is empty — a colon is mostly gap, a bar is
+    /// mostly bar.
+    double darkFractionOfSpan(const juce::Image& image, int threshold)
+    {
+        const juce::Image::BitmapData pixels(image, juce::Image::BitmapData::readOnly);
+        int first = -1;
+        int last = -1;
+        int darkRows = 0;
+        std::vector<bool> lit(static_cast<std::size_t>(image.getHeight()), false);
+        for (int y = 0; y < image.getHeight(); ++y)
+        {
+            int brightest = 0;
+            for (int x = 0; x < image.getWidth(); ++x)
+            {
+                brightest = juce::jmax(brightest,
+                                       static_cast<int>(pixels.getPixelColour(x, y).getGreen()));
+            }
+            lit[static_cast<std::size_t>(y)] = brightest >= threshold;
+            if (lit[static_cast<std::size_t>(y)])
+            {
+                first = first < 0 ? y : first;
+                last = y;
+            }
+        }
+        if (first < 0 || last <= first)
+        {
+            return 0.0;
+        }
+        for (int y = first; y <= last; ++y)
+        {
+            darkRows += lit[static_cast<std::size_t>(y)] ? 0 : 1;
+        }
+        return static_cast<double>(darkRows) / static_cast<double>(last - first + 1);
+    }
+
+    /// Topmost row whose brightest pixel clears `threshold`, or -1.
+    int firstLitRow(const juce::Image& image, int threshold)
+    {
+        const juce::Image::BitmapData pixels(image, juce::Image::BitmapData::readOnly);
+        for (int y = 0; y < image.getHeight(); ++y)
+        {
+            for (int x = 0; x < image.getWidth(); ++x)
+            {
+                if (pixels.getPixelColour(x, y).getGreen() >= threshold)
+                {
+                    return y;
+                }
+            }
+        }
+        return -1;
+    }
+
+    bool sameImage(const juce::Image& a, const juce::Image& b)
+    {
+        if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight())
+        {
+            return false;
+        }
+        const juce::Image::BitmapData left(a, juce::Image::BitmapData::readOnly);
+        const juce::Image::BitmapData right(b, juce::Image::BitmapData::readOnly);
+        for (int y = 0; y < a.getHeight(); ++y)
+        {
+            for (int x = 0; x < a.getWidth(); ++x)
+            {
+                if (left.getPixelColour(x, y) != right.getPixelColour(x, y))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    constexpr int LIT_THRESHOLD = 120;   // well clear of the unlit bed (~22)
+    constexpr float PROBE_SCALE = 8.0F;  // enough resolution to resolve a dot gap
+}
+
+SCENARIO("The colon is two dots, which no segment combination can make",
+         "[RQ-GUI-033][RQ-GUI-049]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("':' and '|', which share one mask in the vendored table (0x2200)")
+    {
+        const auto colon = renderer.renderBlock({":"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+        const auto pipe = renderer.renderBlock({"|"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+
+        THEN("the colon is mostly gap — two marks, not a broken bar")
+        {
+            REQUIRE(darkFractionOfSpan(colon, LIT_THRESHOLD) > 0.2);
+        }
+
+        THEN("the pipe stays essentially continuous, correctly")
+        {
+            // The override splits the collision without spoiling '|': it keeps
+            // the centre verticals, which is genuinely what a pipe looks like
+            // on this hardware — two stacked segments with the standard
+            // hairline, not two separated marks.
+            REQUIRE(darkFractionOfSpan(pipe, LIT_THRESHOLD) < 0.1);
+        }
+
+        THEN("the two render differently")
+        {
+            REQUIRE_FALSE(sameImage(colon, pipe));
+        }
+    }
+}
+
+SCENARIO("Lowercase x is distinguishable from uppercase X", "[RQ-GUI-049]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("'x' and 'X', which share one mask in the vendored table (0x5500)")
+    {
+        const auto lower = renderer.renderBlock({"x"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+        const auto upper = renderer.renderBlock({"X"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+
+        THEN("they render differently")
+        {
+            REQUIRE_FALSE(sameImage(lower, upper));
+        }
+
+        THEN("the lowercase form sits in the lower half of the cell")
+        {
+            // Which is where a 16-segment cell draws its lowercase, and why
+            // the table cannot express it: a crossing needs both diagonal
+            // pairs and those start at the top corners.
+            const auto lowerTop = firstLitRow(lower, LIT_THRESHOLD);
+            const auto upperTop = firstLitRow(upper, LIT_THRESHOLD);
+            REQUIRE(lowerTop > 0);
+            REQUIRE(upperTop > 0);
+            REQUIRE(lowerTop > upperTop);
+            REQUIRE(lowerTop > lower.getHeight() / 3);
+        }
+    }
+}
+
+SCENARIO("The underscore sits below the glyph body", "[RQ-GUI-033]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("'_' and '-', one below the body and one across its middle")
+    {
+        const auto underscore = renderer.renderBlock({"_"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+        const auto hyphen = renderer.renderBlock({"-"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+
+        THEN("the underscore's bar is lower than the hyphen's")
+        {
+            // The vendored mask draws '_' with the bottom horizontals, which
+            // lands it inside the body and reads as a strikethrough.
+            REQUIRE(firstLitRow(underscore, LIT_THRESHOLD)
+                    > firstLitRow(hyphen, LIT_THRESHOLD));
+        }
+    }
+}
+
+SCENARIO("The override table is the only divergence from the vendored data",
+         "[RQ-GUI-033]")
+{
+    GIVEN("the printable ASCII range")
+    {
+        THEN("exactly ':', '_' and 'x' are overridden")
+        {
+            // DEC-JUC-052 requires the divergence to live in one auditable
+            // place. If a fourth override appeared without this list changing,
+            // the audit trail would be a lie — so the list is the assertion.
+            for (int codePoint = FIRST_GLYPH; codePoint <= LAST_GLYPH; ++codePoint)
+            {
+                const auto expected = codePoint == ':' || codePoint == '_'
+                                      || codePoint == 'x';
+                INFO("code point " << codePoint);
+                REQUIRE(VfdSegmentRenderer::hasOverride(codePoint) == expected);
+            }
         }
     }
 }

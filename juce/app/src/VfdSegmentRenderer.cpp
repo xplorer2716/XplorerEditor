@@ -3,6 +3,7 @@
 #include "DesignTokens.hpp"
 
 #include <algorithm>
+#include <iterator>
 #include <cmath>
 
 namespace xplorer::app
@@ -61,6 +62,62 @@ namespace xplorer::app
         constexpr float sheared(float x, float y) noexcept
         {
             return x + vfd::vfdSegSlant * (RAIL_BOTTOM - y);
+        }
+
+        /// A sheared square centred on (x, y), used for the colon's dots.
+        juce::Path dotAt(float x, float y, float side)
+        {
+            const auto half = side * 0.5F;
+            juce::Path dot;
+            dot.startNewSubPath(sheared(x - half, y - half), y - half);
+            dot.lineTo(sheared(x + half, y - half), y - half);
+            dot.lineTo(sheared(x + half, y + half), y + half);
+            dot.lineTo(sheared(x - half, y + half), y + half);
+            dot.closeSubPath();
+            return dot;
+        }
+
+        /// A sheared stroke between two points, matching the segments' weight.
+        void addStroke(juce::Path& path, float x0, float y0, float x1, float y1)
+        {
+            path.addLineSegment({sheared(x0, y0), y0, sheared(x1, y1), y1},
+                                vfd::vfdSegStroke);
+        }
+
+        /// The off-model primitive for `codePoint`. [DEC-JUC-052]
+        juce::Path buildOverride(int codePoint)
+        {
+            juce::Path path;
+            switch (codePoint)
+            {
+                case ':':
+                    // Two disconnected marks — the one shape a segment display
+                    // fundamentally cannot form.
+                    path.addPath(dotAt(vfd::vfdDotX, vfd::vfdDotUpperY, vfd::vfdDotSize));
+                    path.addPath(dotAt(vfd::vfdDotX, vfd::vfdDotLowerY, vfd::vfdDotSize));
+                    break;
+
+                case '_':
+                    // Below the bottom rail, so outside the segment geometry
+                    // entirely. The vendored table approximates it with the two
+                    // bottom horizontals, which reads as a strikethrough.
+                    addStroke(path, RAIL_LEFT, vfd::vfdUnderscoreY,
+                              RAIL_RIGHT, vfd::vfdUnderscoreY);
+                    break;
+
+                case 'x':
+                    // A crossing confined to the lower half, which is where a
+                    // 16-segment cell draws its lowercase. Built from the
+                    // existing rails, so it needs no geometry of its own.
+                    addStroke(path, RAIL_LEFT, RAIL_MIDDLE_Y, RAIL_RIGHT, RAIL_BOTTOM);
+                    addStroke(path, RAIL_RIGHT, RAIL_MIDDLE_Y, RAIL_LEFT, RAIL_BOTTOM);
+                    break;
+
+                default:
+                    jassertfalse; // OVERRIDDEN_CHARACTERS and this switch disagree
+                    break;
+            }
+            return path;
         }
 
         /// One-dimensional Gaussian weights, normalised to sum to 1.
@@ -171,25 +228,64 @@ namespace xplorer::app
                                              sheared(endX, endY), endY},
                                             vfd::vfdSegStroke);
         }
+
+        for (std::size_t index = 0; index < OVERRIDDEN_CHARACTERS.size(); ++index)
+        {
+            _overrides[index] = buildOverride(OVERRIDDEN_CHARACTERS[index]);
+        }
+    }
+
+    bool VfdSegmentRenderer::hasOverride(int codePoint) noexcept
+    {
+        return std::find(OVERRIDDEN_CHARACTERS.begin(), OVERRIDDEN_CHARACTERS.end(),
+                         codePoint)
+               != OVERRIDDEN_CHARACTERS.end();
     }
 
     void VfdSegmentRenderer::paintGlyph(juce::Graphics& target,
-                                        std::uint16_t mask,
+                                        int codePoint,
                                         float originX,
                                         float originY,
                                         float cellWidth) const
     {
+        // One uniform scale for both axes: the normalised cell keeps the 12:16
+        // aspect precisely so this stays isotropic.
+        const auto placement = juce::AffineTransform::scale(cellWidth)
+                                   .translated(originX, originY);
+
+        const auto overridden = std::find(OVERRIDDEN_CHARACTERS.begin(),
+                                          OVERRIDDEN_CHARACTERS.end(), codePoint);
+        if (overridden != OVERRIDDEN_CHARACTERS.end())
+        {
+            const auto index = static_cast<std::size_t>(
+                std::distance(OVERRIDDEN_CHARACTERS.begin(), overridden));
+            target.fillPath(_overrides[index], placement);
+            return;
+        }
+
+        const auto mask = segmentMaskFor(codePoint);
         for (int bit = 0; bit < SEGMENT_COUNT; ++bit)
         {
-            if (!isLit(mask, static_cast<Segment>(bit)))
+            if (isLit(mask, static_cast<Segment>(bit)))
             {
-                continue;
+                target.fillPath(_segments[static_cast<std::size_t>(bit)], placement);
             }
-            // One uniform scale for both axes: the normalised cell keeps the
-            // 12:16 aspect precisely so this stays isotropic.
-            target.fillPath(_segments[static_cast<std::size_t>(bit)],
-                            juce::AffineTransform::scale(cellWidth)
-                                .translated(originX, originY));
+        }
+    }
+
+    void VfdSegmentRenderer::paintUnlitBed(juce::Graphics& target,
+                                           float originX,
+                                           float originY,
+                                           float cellWidth) const
+    {
+        // The bed is the segments only. The off-model primitives are not part
+        // of it: a real display's unlit state is its segments, and lighting a
+        // ghost colon in every cell would show marks the hardware never has.
+        const auto placement = juce::AffineTransform::scale(cellWidth)
+                                   .translated(originX, originY);
+        for (const auto& segment : _segments)
+        {
+            target.fillPath(segment, placement);
         }
     }
 
@@ -228,9 +324,8 @@ namespace xplorer::app
                     const auto character = column < line.length()
                                                ? static_cast<int>(line[column])
                                                : static_cast<int>(' ');
-                    paintGlyph(litGraphics, segmentMaskFor(character),
-                               originX, originY, cellWidth);
-                    paintGlyph(bedGraphics, 0xFFFF, originX, originY, cellWidth);
+                    paintGlyph(litGraphics, character, originX, originY, cellWidth);
+                    paintUnlitBed(bedGraphics, originX, originY, cellWidth);
                 }
             }
         }

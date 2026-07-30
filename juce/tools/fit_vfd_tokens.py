@@ -327,6 +327,87 @@ def emit_yaml(p, unlit, error):
     return "\n".join(lines)
 
 
+def measure_extras(cells, p):
+    """Geometry of the off-model primitives, read straight off the baseline.
+
+    ':' is two separated dots and '_' a bar below the glyph body — neither is
+    producible from any combination of the 16 segments, so DEC-JUC-052 gives
+    them explicit primitives. Their geometry is MEASURED here rather than
+    typed in by hand, for the same reason the segment geometry is fitted: a
+    number nobody can re-derive is a number nobody can check.
+
+    No optimisation involved — these are bright-pixel centroids. The dot x is
+    un-sheared with the fitted slant so the stored value is the upright one the
+    renderer will shear itself; without that, the italic lean would be applied
+    twice.
+    """
+    def bright(cell, threshold_ratio=0.5):
+        green = cell[:, :, 1]
+        return green > green.max() * threshold_ratio
+
+    colon = bright(cells[":"])
+    ys, xs = np.nonzero(colon)
+    middle = (ys.min() + ys.max()) / 2.0
+    upper = ys <= middle
+    lower = ~upper
+
+    def centroid(select):
+        return xs[select].mean(), ys[select].mean()
+
+    upper_x, upper_y = centroid(upper)
+    lower_x, lower_y = centroid(lower)
+
+    def unshear(x, y):
+        return x - p["slant"] * (p["yb"] - y)
+
+    # Both dots sit at the SAME x in the baseline. If the italic shear applied
+    # to them they would differ by ~0.5 px — which a hand-drawn 12-px-wide cell
+    # simply cannot express, so this is quantisation rather than evidence that
+    # the colon is upright. The renderer shears them like everything else (the
+    # display is resolution-independent now and can express it), and the value
+    # stored is the average upright position.
+    dot_x = (unshear(upper_x, upper_y) + unshear(lower_x, lower_y)) / 2.0
+    shear_disagreement = abs(unshear(upper_x, upper_y) - unshear(lower_x, lower_y))
+
+    dot_size = float(colon.sum()) / 2.0                    # pixels per dot
+    dot_side = dot_size ** 0.5
+
+    bar = bright(cells["_"])
+    bar_ys, _bar_xs = np.nonzero(bar)
+    underscore_y = bar_ys.mean()
+
+    return {
+        "vfdDotX": dot_x,
+        "vfdDotSize": dot_side,
+        "vfdDotUpperY": upper_y,
+        "vfdDotLowerY": lower_y,
+        "vfdUnderscoreY": underscore_y,
+    }, shear_disagreement
+
+
+def emit_extras(extras, disagreement):
+    lines = [
+        "    # ---- off-model primitives (DEC-JUC-052) ----",
+        "    # MEASURED off the baseline's own ':' and '_' cells by",
+        "    # fit_vfd_tokens.py --extras; no optimisation, just centroids.",
+        "    # Both colon dots sit at the same x in the baseline; un-sheared that",
+        f"    # leaves {disagreement:.2f} px between them, which is exactly the shear a",
+        "    # hand-drawn 12-px cell could not express. Stored upright, sheared by",
+        "    # the renderer like every other shape.",
+    ]
+    notes = {
+        "vfdDotX": "colon dot centre, upright (the renderer applies the shear)",
+        "vfdDotSize": "colon dot side",
+        "vfdDotUpperY": "upper colon dot centre",
+        "vfdDotLowerY": "lower colon dot centre",
+        "vfdUnderscoreY": "underscore bar centre; below the bottom rail, which is why no segment can express it",
+    }
+    for name, value in extras.items():
+        lines.append(f'    {name}: {{ kind: float, value: {round(value / CELL_W, TOKEN_PRECISION)}, '
+                     f'note: "{notes[name]}" }}')
+    return "\n".join(lines)
+
+
 def committed_tokens():
     """The VFD token values currently in design-tokens.yaml, or None."""
     data = yaml.safe_load(YAML_PATH.read_text(encoding="utf-8"))
@@ -369,6 +450,8 @@ def main() -> int:
     mode.add_argument("--emit", action="store_true", help="fit, then print the YAML block")
     mode.add_argument("--check", action="store_true",
                       help="score the committed tokens against the baseline")
+    mode.add_argument("--extras", action="store_true",
+                      help="measure the off-model primitive geometry (':' and '_')")
     args = parser.parse_args()
 
     masks = [mask for mask, _ in parse_vendor(VENDOR_PATH)]
@@ -394,6 +477,21 @@ def main() -> int:
             print("REGRESSED past the budget", file=sys.stderr)
             return 1
         print("within budget")
+        return 0
+
+    if args.extras:
+        tokens = committed_tokens()
+        if tokens is None:
+            print("\nNeeds the fitted tokens committed first (slant / bottom rail).",
+                  file=sys.stderr)
+            return 1
+        p, _ = denormalise(tokens)
+        extras, disagreement = measure_extras(cells, p)
+        print()
+        for name, value in extras.items():
+            print(f"  {name:16s} = {value:7.3f} px  ->  {value / CELL_W:.5f}")
+        print(f"\ncolon dots agree on one upright x to {disagreement:.3f} px")
+        print("\n" + emit_extras(extras, disagreement))
         return 0
 
     if not (args.fit or args.emit):

@@ -206,7 +206,30 @@ it belongs in its own task.
 
 ### TASK-VFD-005: Off-model primitives and their override table
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — three primitives, one table (`OVERRIDDEN_CHARACTERS`),
+  5 new measured tokens, 4 scenarios, suite 102/102.
+  - **Their geometry is measured, not typed in.** `fit_vfd_tokens.py --extras`
+    reads the dot and bar positions off the baseline's own `:` and `_` cells as
+    bright-pixel centroids — no optimisation involved, but the same principle as
+    the fit: a number nobody can re-derive is a number nobody can check.
+  - **A finding on the shear.** Both colon dots sit at the *same* x in the
+    baseline. Un-sheared that leaves 0.53 px between them — exactly the shear a
+    hand-drawn 12-px-wide cell could not express. So this is quantisation, not
+    evidence that the reference colon is upright, and the renderer shears the
+    dots like every other shape now that it can. The tool's first wording
+    claimed the agreement *confirmed* the shear model; that was backwards and
+    was corrected.
+  - **`x` needed no new geometry**: a lower-half crossing built from the
+    existing rails. `_` needed only its y.
+  - **Two test expectations of mine were wrong and were corrected, not forced.**
+    `|` does not render as one continuous bar: on a 16-segment cell a vertical
+    bar is two stacked segments with the standard hairline between them, so both
+    `:` and `|` give two runs of lit rows. Counting runs cannot separate them.
+    What does is how much of the vertical extent is empty — a colon is mostly
+    gap (>20%), a bar mostly bar (<10%).
+  - The unlit bed deliberately shows **segments only**, never the override
+    primitives: a real display's unlit state is its segments, and ghosting a
+    colon into every cell would show marks the hardware does not have.
 - **Description**: A pure 16-segment renderer cannot draw the reference's `:`
   (two separated dots) or `_` (a bar below the glyph body), and cannot tell
   lowercase `x` from `X`. Add explicit primitives for the three, selected
