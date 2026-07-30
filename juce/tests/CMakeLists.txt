@@ -66,7 +66,8 @@ add_executable(xpl_tests_app
     app/ControlTableTests.cpp
     app/ParameterBindingRegistryTests.cpp
     app/PageFamilyModelTests.cpp
-    app/ComboBoxSizingTests.cpp)
+    app/ComboBoxSizingTests.cpp
+    app/SegmentFontTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)
@@ -79,7 +80,9 @@ catch_discover_tests(xpl_tests_app)
 # [RQ-GUI-047, RQ-GUI-048, RQ-DSN-096, ADR-JUC-022 (DEC-JUC-050)]
 if(XPL_BUILD_APP)
     add_executable(xpl_tests_app_juce
-        app/ComboBoxRealMetricsTests.cpp)
+        app/ComboBoxRealMetricsTests.cpp
+        app/VfdSegmentRendererTests.cpp
+        ../app/src/VfdSegmentRenderer.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the

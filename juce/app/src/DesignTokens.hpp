@@ -95,6 +95,23 @@ namespace xplorer::app::tokens
         inline constexpr float blockFillAlpha = 0.18F;  // tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094
         inline constexpr float blockFrameRelief = 0.2F;  // block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094
         inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
+        inline const juce::Colour vfdPhosphor = juce::Colour(0xFF00FFA1);  // phosphor hue; red stays 0 through the halo and only rises once the core clips, so this is the whole colour of the display
+        inline constexpr float vfdSegLeft = 0.28713F;  // left segment rail
+        inline constexpr float vfdSegRight = 0.75083F;  // right segment rail
+        inline constexpr float vfdSegTop = 0.11833F;  // top segment rail
+        inline constexpr float vfdSegBottom = 0.96333F;  // bottom segment rail; also the pivot the italic shear rotates about
+        inline constexpr float vfdSegStroke = 0.09583F;  // segment thickness
+        inline constexpr float vfdSegGap = 0.03222F;  // shortening at each segment end, so adjacent segments read as separate
+        inline constexpr float vfdSegSlant = 0.13267F;  // italic shear, x per unit y; dimensionless, so it does not scale
+        inline constexpr float vfdGlowRadius = 0.17906F;  // glow sigma. MUST be multiplied by the render scale (DEC-JUC-053) or the halo shrinks visually as the window grows
+        inline constexpr float vfdGlowAmount = 1.23067F;  // glow amplitude added over the core; one Gaussian, not two — see DEC-JUC-054 for why the second was refused
+        inline constexpr float vfdUnlitLevel = 0.08627F;  // always-drawn unlit segment bed. MEASURED off the baseline's blank cell, not fitted: left free it trades against the glow and parks on its bound, over-brightening the bed
+        inline constexpr float vfdWhiteLift = 0.43333F;  // how fast the core washes toward white once the phosphor hue clips past 1.0
+        inline constexpr float vfdDotX = 0.31404F;  // colon dot centre, upright — the renderer applies the shear
+        inline constexpr float vfdDotSize = 0.18634F;  // colon dot side
+        inline constexpr float vfdDotUpperY = 0.4F;  // upper colon dot centre
+        inline constexpr float vfdDotLowerY = 0.73333F;  // lower colon dot centre
+        inline constexpr float vfdUnderscoreY = 1.0F;  // underscore bar centre; sits BELOW the bottom rail, which is precisely why no segment can express it
     }
 
     // -----------------------------------------------------------------
@@ -186,6 +203,23 @@ namespace xplorer::app::tokens
         inline constexpr float sectionBarFadeEnd = global::sectionBarFadeEnd;  // block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092
         inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
         inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
+        inline const juce::Colour vfdPhosphor = global::vfdPhosphor;  // lit segment / halo colour
+        inline constexpr float vfdSegLeft = global::vfdSegLeft;  // segment rails, fractions of cell width
+        inline constexpr float vfdSegRight = global::vfdSegRight;
+        inline constexpr float vfdSegTop = global::vfdSegTop;
+        inline constexpr float vfdSegBottom = global::vfdSegBottom;  // also the italic shear pivot
+        inline constexpr float vfdSegStroke = global::vfdSegStroke;
+        inline constexpr float vfdSegGap = global::vfdSegGap;
+        inline constexpr float vfdSegSlant = global::vfdSegSlant;
+        inline constexpr float vfdGlowRadius = global::vfdGlowRadius;  // multiply by the render scale — DEC-JUC-053
+        inline constexpr float vfdGlowAmount = global::vfdGlowAmount;
+        inline constexpr float vfdUnlitLevel = global::vfdUnlitLevel;
+        inline constexpr float vfdWhiteLift = global::vfdWhiteLift;
+        inline constexpr float vfdDotX = global::vfdDotX;  // off-model primitives, DEC-JUC-052
+        inline constexpr float vfdDotSize = global::vfdDotSize;
+        inline constexpr float vfdDotUpperY = global::vfdDotUpperY;
+        inline constexpr float vfdDotLowerY = global::vfdDotLowerY;
+        inline constexpr float vfdUnderscoreY = global::vfdUnderscoreY;
     }
 
 }
