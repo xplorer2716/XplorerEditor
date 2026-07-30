@@ -243,6 +243,35 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     the pinned JUCE version that path mis-maps glyph indices and renders text as
     unrelated characters (observed with two independent, valid font files).
   **Dependencies:** RQ-GUI-047, RQ-GUI-048, RQ-DSN-010, RQ-DSN-011; ADR-JUC-014.
+  <!-- RQ-DSN-097 follows; it is the VFD counterpart of this rule — a component
+       whose entire appearance is numeric must own a token group. -->
+
+- **RQ-DSN-097** — **The VFD appearance SHALL be defined by a design-system token
+  group, not by literals in the renderer.** Once the display is drawn vectorially
+  (RQ-GUI-033, ADR-JUC-023) its whole appearance is a set of numbers — segment
+  geometry, italic shear, stroke weight, glow radii and amplitudes, unlit level,
+  phosphor hue. Those numbers are exactly what the design system exists to own:
+  they are visual decisions, they were derived from a reference, and they will be
+  tuned. The token group SHALL live in `design-tokens.yaml` alongside every other
+  visual value and be consumed through the generated `DesignTokens.hpp`
+  (ADR-JUC-014, ADR-JUC-015); the renderer SHALL hold **no raw visual literal**.
+  - Geometry tokens SHALL be expressed in **cell-normalised units**, not pixels,
+    so the same values drive any rendering scale (RQ-GUI-033 requires rendering
+    at the physical pixel scale, which is not known at authoring time).
+  - Values derived by fitting against the inherited sprite sheet SHALL carry a
+    `note` recording that provenance, per the design-system rule that a deviation
+    from a reference is documented in the source of truth rather than inlined.
+  - The glow radii SHALL be authored as fractions of the cell, so that scaling the
+    render scales the halo with it; a glow whose radius is fixed in device pixels
+    would shrink visually as the window grows and is non-conformant.
+  **Dependencies:** RQ-GUI-033, RQ-DSN-010, RQ-DSN-011, RQ-DSN-061; ADR-JUC-014,
+  ADR-JUC-015, ADR-JUC-023.
+  - **Acceptance (Gherkin):** *Given* the VFD renderer source, *When* it is read,
+    *Then* every colour, length, radius and ratio it uses resolves to a token and
+    no numeric visual literal appears. *Given* a geometry token, *When* it is
+    read, *Then* its value is a fraction of the glyph cell, not a pixel count.
+    *Given* the render scale is doubled, *When* the panel is painted, *Then* the
+    glow radius in device pixels doubles with it.
   - **Acceptance (Gherkin):** *Given* a build on any supported platform, *When*
     a combo box renders, *Then* it uses the embedded face and its label widths
     match the values the layout was verified against. *Given* the repository,
@@ -612,3 +641,5 @@ silently merged — owner confirms before migration):
 | 070–071 | RQ-NFR-007, RQ-TST (process) |
 | 080–083 | ADR-JUC-011, ADR-JUC-013 |
 | 090–091 | `process/1.requirements/prompt.md` §1.2 |
+| 092–096 | RQ-GUI-046, RQ-GUI-047, RQ-GUI-048, RQ-SET-007, ADR-JUC-014, ADR-JUC-018–022 |
+| 097 | RQ-GUI-033, RQ-GUI-049, ADR-JUC-014, ADR-JUC-015, ADR-JUC-023 |

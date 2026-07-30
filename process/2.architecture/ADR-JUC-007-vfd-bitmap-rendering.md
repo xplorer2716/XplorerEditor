@@ -1,7 +1,22 @@
 # ADR-JUC-007: VFD Bitmap Glyph Rendering — Direct Sprite-Sheet Paint, JUCE-Cached
 
 ## Status
-Accepted (owner, 2026-07-13 — option (b) of the open point)
+Superseded by ADR-JUC-023 (owner, 2026-07-30 — session VFD)
+
+<!-- Accepted 2026-07-13 (option (b) of the open point) and shipped as such.
+Superseded because its central premise — that a 12×16 sprite cell is enough —
+only holds while the physical pixel scale stays at 1.0. Measured: at the launch
+geometry (1260×810 window, canvas scale exactly 1.0) the sprite is blitted 1:1
+and §4's nearest-neighbour choice is a no-op, so this ADR was right for that
+case; but at scale 2.0 (any HiDPI display) or on window enlargement it degrades
+with no recourse. Its §1 asset-extraction step also became unsatisfiable when
+the .NET tree left this repository. The grid formula and centering of §3, and
+the `setBufferedToImage` reasoning of §2, are carried over unchanged by
+ADR-JUC-023 — only the glyph artwork changes. [RQ-GUI-033 amended] -->
+
+## Superseded-decision index
+DEC-JUC-007-era decisions in this file are historical. Read ADR-JUC-023 for the
+decisions in force.
 
 ## Requirements
 RQ-GUI-020, RQ-GUI-031, RQ-GUI-033
