@@ -261,7 +261,21 @@ it belongs in its own task.
 
 ### TASK-VFD-006: Full ASCII 32–126 coverage
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — 3 scenarios, suite 105/105.
+  - **The proof is at the pixel, not at the table.** RQ-GUI-049 is about what
+    the display *shows*, so the test renders all 95 cells and compares their
+    appearance. Anything less would only have re-checked the mask table, which
+    `SegmentFontTests` already covers — and would have missed a collision
+    introduced by rasterisation rather than by the data.
+  - **Verified at scale 1 as well as at scale 4, deliberately.** Scale 1 is the
+    reference's own 12×16 cell and the *hardest* case, not the easiest: two
+    shapes have the fewest pixels available to differ in. The risk was real —
+    the lowercase `x` primitive is a half-height crossing, which could plausibly
+    have rasterised into the same cell as `X` at that size. **Result: 95 distinct
+    appearances at scale 1, 2 and 4.** If it holds at 1 it holds above.
+  - Out-of-range code points (31, 127, `€`, `é`) render byte-identically to the
+    space cell, so the previous behaviour is preserved rather than merely
+    "close".
 - **Description**: Close the inherited gap where 44 of 95 cells — every lowercase
   letter among them — rendered blank, silently dropping characters that reach the
   display from a synthesizer patch name or a `.syx` file.

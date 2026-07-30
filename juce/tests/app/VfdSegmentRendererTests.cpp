@@ -7,6 +7,8 @@
 
 #include <cmath>
 #include <vector>
+#include <map>
+#include <string>
 
 // The renderer's whole reason to exist is that it does NOT degrade with scale
 // (RQ-GUI-005, RQ-GUI-033): the sprite it replaces carried 12x16 px per glyph
@@ -430,6 +432,132 @@ SCENARIO("The override table is the only divergence from the vendored data",
                                       || codePoint == 'x';
                 INFO("code point " << codePoint);
                 REQUIRE(VfdSegmentRenderer::hasOverride(codePoint) == expected);
+            }
+        }
+    }
+}
+
+// --- ASCII coverage (RQ-GUI-049) -------------------------------------------
+
+namespace
+{
+    /// The rendered cell as an opaque key, for distinctness comparisons.
+    std::string cellSignature(const juce::Image& image)
+    {
+        const juce::Image::BitmapData pixels(image, juce::Image::BitmapData::readOnly);
+        std::string signature;
+        signature.reserve(static_cast<std::size_t>(image.getWidth() * image.getHeight()));
+        for (int y = 0; y < image.getHeight(); ++y)
+        {
+            for (int x = 0; x < image.getWidth(); ++x)
+            {
+                signature += static_cast<char>(pixels.getPixelColour(x, y).getGreen());
+            }
+        }
+        return signature;
+    }
+
+    juce::String oneCharacter(int codePoint)
+    {
+        return juce::String::charToString(static_cast<juce::juce_wchar>(codePoint));
+    }
+}
+
+SCENARIO("Every printable character renders, and no two render alike",
+         "[RQ-GUI-049]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    // Scale 1 is the demanding case, not the easy one: it is the reference's
+    // own 12x16 cell, where two shapes have the fewest pixels to differ in. If
+    // distinctness holds here it holds at every larger scale.
+    const float scales[] = {1.0F, 4.0F};
+
+    for (const auto scale : scales)
+    {
+        GIVEN("all 95 printable code points rendered at scale " + std::to_string(scale))
+        {
+            std::map<std::string, std::vector<int>> byAppearance;
+            for (int codePoint = FIRST_GLYPH; codePoint <= LAST_GLYPH; ++codePoint)
+            {
+                const auto image = renderer.renderBlock({oneCharacter(codePoint)},
+                                                        ONE_COLUMN, ONE_ROW, scale);
+                byAppearance[cellSignature(image)].push_back(codePoint);
+            }
+
+            THEN("all 95 are distinguishable from one another")
+            {
+                // The inherited sprite drew only 51 of these and left 44 cells
+                // blank — every lowercase letter among them. The vendored table
+                // covers all 95 but collides on ':'/'|' and 'x'/'X'; the
+                // off-model primitives (DEC-JUC-052) split both. This is where
+                // that claim is actually proved, at the pixel.
+                for (const auto& [appearance, characters] : byAppearance)
+                {
+                    juce::ignoreUnused(appearance);
+                    if (characters.size() > 1)
+                    {
+                        std::string clash;
+                        for (const auto codePoint : characters)
+                        {
+                            clash += static_cast<char>(codePoint);
+                        }
+                        INFO("characters sharing one appearance: " << clash);
+                        REQUIRE(characters.size() == 1);
+                    }
+                }
+                REQUIRE(static_cast<int>(byAppearance.size()) == GLYPH_COUNT);
+            }
+        }
+    }
+}
+
+SCENARIO("Lowercase letters are legible, where the sprite showed nothing",
+         "[RQ-GUI-049]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("a tone name in lowercase, as a synth or a .syx file can supply")
+    {
+        // Dialogs.cpp uppercases a name on *rename*, but a name read from the
+        // instrument is not normalised anywhere before it reaches the display.
+        const auto blank = cellSignature(
+            renderer.renderBlock({" "}, ONE_COLUMN, ONE_ROW, 4.0F));
+
+        THEN("every letter differs from a blank cell")
+        {
+            for (char letter = 'a'; letter <= 'z'; ++letter)
+            {
+                INFO("letter '" << letter << "'");
+                const auto image = renderer.renderBlock({juce::String::charToString(letter)},
+                                                        ONE_COLUMN, ONE_ROW, 4.0F);
+                REQUIRE(cellSignature(image) != blank);
+            }
+        }
+    }
+}
+
+SCENARIO("Characters outside the printable range render as a space",
+         "[RQ-GUI-033]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("code points below, above and well outside 32..126")
+    {
+        const auto blank = cellSignature(
+            renderer.renderBlock({" "}, ONE_COLUMN, ONE_ROW, 2.0F));
+
+        THEN("each renders exactly as the space does")
+        {
+            for (const auto codePoint : {FIRST_GLYPH - 1, LAST_GLYPH + 1, 0x20AC, 0x00E9})
+            {
+                INFO("code point " << codePoint);
+                const auto image = renderer.renderBlock({oneCharacter(codePoint)},
+                                                        ONE_COLUMN, ONE_ROW, 2.0F);
+                REQUIRE(cellSignature(image) == blank);
             }
         }
     }
