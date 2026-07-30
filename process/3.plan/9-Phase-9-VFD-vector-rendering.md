@@ -347,6 +347,24 @@ it belongs in its own task.
     area below the menu bar, so the VFD's screen y is
     `24 + (h - 24 - 786·s)/2 + 40·s`, not `64·s`. Worth recording because any
     future screenshot check of a canvas control needs the same formula.
+  - **Follow-up, owner-prompted: fractional scales.** Verifying only 1.0/2.0/3.0
+    covered the *rare* case and missed the usual one — dragging a window edge
+    produces 2.87 far more often than 3.0. Two things came out of closing that
+    gap:
+    - **A claim of mine was too strong.** "One image pixel per device pixel, no
+      resampling" holds only at whole-number scales. An image is a whole number
+      of pixels while the device rectangle is not, so at a fractional scale the
+      blit applies a sub-pixel resample. Measured drift: ≤ 0.4 px over a
+      758 px-wide block, i.e. under 0.1%. Captured from the running app at
+      scale 2.869 against 3.000 — indistinguishable. The comment in
+      `DisplayPanel::paint` now says this instead of overclaiming.
+      It remains categorically different from the sprite it replaced: the detail
+      is genuinely rendered at the target resolution and filtered by a fraction
+      of a pixel, rather than absent and magnified.
+    - **The tests now exercise 1.33, 2.5, 2.87 and 3.7** alongside the integers,
+      and assert the block size never drifts more than half a pixel from exact —
+      which is what would betray size arithmetic accumulating error across cells,
+      the failure that *would* be visible. Suite 106/106.
 - **Description**: Build, run the suite, and verify the rendered panel under Xvfb
   at the three physical pixel scales that occur in practice — launch at 100 % DPI
   (scale exactly 1.0), launch on HiDPI (2.0), enlarged window on HiDPI (3.0) —

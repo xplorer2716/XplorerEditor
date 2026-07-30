@@ -122,15 +122,57 @@ SCENARIO("The glow radius follows the render scale", "[RQ-GUI-033][RQ-DSN-097]")
         // luminance across scales therefore catches precisely that omission —
         // which is the failure mode DEC-JUC-053 exists to prevent.
         const auto atOne = meanGreen(renderer.renderBlock(lines, ONE_COLUMN, ONE_ROW, 1.0F));
-        const auto atTwo = meanGreen(renderer.renderBlock(lines, ONE_COLUMN, ONE_ROW, 2.0F));
-        const auto atThree = meanGreen(renderer.renderBlock(lines, ONE_COLUMN, ONE_ROW, 3.0F));
 
         THEN("the light per unit area stays essentially constant")
         {
             REQUIRE(atOne > 0.0);
             constexpr double tolerance = 0.15; // 15% of the scale-1 value
-            REQUIRE(std::abs(atTwo - atOne) / atOne < tolerance);
-            REQUIRE(std::abs(atThree - atOne) / atOne < tolerance);
+            // Fractional scales are in this list on purpose. Dragging a window
+            // edge produces them almost every time, so testing only 1/2/3
+            // would have covered the rare case and missed the usual one.
+            for (const auto scale : {2.0F, 3.0F, 1.33F, 2.5F, 2.87F})
+            {
+                INFO("scale " << scale);
+                const auto here = meanGreen(
+                    renderer.renderBlock(lines, ONE_COLUMN, ONE_ROW, scale));
+                REQUIRE(std::abs(here - atOne) / atOne < tolerance);
+            }
+        }
+    }
+}
+
+SCENARIO("A fractional render scale produces a correctly sized block",
+         "[RQ-GUI-033][RQ-GUI-005]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("the grid the display actually uses, at fractional scales")
+    {
+        constexpr int columns = 22;
+        constexpr int rows = 5;
+
+        THEN("the image never drifts more than half a pixel from the exact size")
+        {
+            // An image is a whole number of pixels while the device rectangle
+            // is not, so at a fractional scale the two cannot coincide: the
+            // blit ends up applying a sub-pixel resample. That is acceptable —
+            // under 0.1% and invisible — but only while the drift stays within
+            // rounding. Anything larger would mean the size arithmetic had
+            // started accumulating error across cells, which WOULD show.
+            for (const auto scale : {1.33F, 2.5F, 2.87F, 3.7F})
+            {
+                const auto block = renderer.renderBlock({"599 XPLORER"},
+                                                        columns, rows, scale);
+                const auto exactWidth = static_cast<float>(columns)
+                                        * VfdSegmentRenderer::CELL_WIDTH * scale;
+                const auto exactHeight = static_cast<float>(rows)
+                                         * VfdSegmentRenderer::CELL_HEIGHT * scale;
+                INFO("scale " << scale << " gave " << block.getWidth()
+                              << "x" << block.getHeight());
+                REQUIRE(std::abs(static_cast<float>(block.getWidth()) - exactWidth) <= 0.5F);
+                REQUIRE(std::abs(static_cast<float>(block.getHeight()) - exactHeight) <= 0.5F);
+            }
         }
     }
 }

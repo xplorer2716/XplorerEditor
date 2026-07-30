@@ -64,9 +64,17 @@ namespace xplorer::app
         }
 
         // Centered glyph block, as the reference (which pads its text to the
-        // full grid). Drawn into its logical-size rectangle: the image already
-        // holds cols*rows cells at `scale`, so this lands one image pixel per
-        // device pixel — no resampling either way.
+        // full grid). Drawn into its logical-size rectangle, which the context
+        // maps back to the device size the image was built for.
+        //
+        // That lands one image pixel per device pixel only when `scale` is a
+        // whole number. It usually is not — dragging a window edge gives 2.87
+        // as readily as 3.0 — and an image is a whole number of pixels while
+        // the device rectangle is not, so the blit then applies a sub-pixel
+        // resample (under 0.1%, measured; invisible side by side). That is
+        // categorically different from the sprite this replaced: the detail is
+        // genuinely rendered at the target resolution and merely filtered by a
+        // fraction of a pixel, rather than absent and magnified.
         const int left = (getWidth() - cols * GLYPH_WIDTH) / 2;
         const int top = (getHeight() - rows * GLYPH_HEIGHT) / 2;
         g.drawImage(block,
