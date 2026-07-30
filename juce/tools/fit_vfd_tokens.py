@@ -164,27 +164,39 @@ def blur(a, sigma):
     return out
 
 
-def render(mask_bits, p, ghost, unlit, supersample):
-    """One glyph cell as RGB 0..255, matching the reference's photometry.
+def photometry(core, ghost, p, unlit, scale=1.0):
+    """Lit-coverage mask -> RGB 0..255, the reference's light behaviour.
+
+    Split out of render() so an alternative geometry can reuse the photometry
+    unchanged (see tools/prototypes/); the renderer's own behaviour is defined
+    by DEC-JUC-054 and this is its executable statement.
 
     The reference's red channel is 0 through the whole halo and only rises at
     the saturated core: that is one hue accumulating past 1.0 and washing out
     to white, not two colours. So intensity is accumulated as a scalar field
-    and turned into colour exactly once (DEC-JUC-054).
+    and turned into colour exactly once.
 
     One glow component, not two. A two-component glow was tried — the falloff
     measured on an isolated glyph looked too wide-tailed for one Gaussian — but
     fitted over the whole drawn set the two radii converge (2.10 vs 2.59 px),
     which is what an over-parameterised model looks like. It bought 0.53 RMSE
     for twice the blur cost, with no visible difference. Dropped.
+
+    `scale` multiplies the glow radius: the radius is a fraction of the cell,
+    so a caller rendering at N times the reference resolution must pass N or
+    the halo shrinks visually as the window grows (DEC-JUC-053).
     """
-    core = core_mask(mask_bits, p, supersample)
-    field = core + p["glowAmount"] * blur(core, p["glow"])
+    field = core + p["glowAmount"] * blur(core, p["glow"] * scale)
     field = np.maximum(field, ghost * unlit)
     base = np.array([0.0, CHANNEL_MAX, p["blue"]]) / CHANNEL_MAX
     below = np.clip(field, 0, 1)[..., None] * base
     above = np.clip(field - 1.0, 0, None)[..., None]
     return np.clip(below + p["lift"] * above * (1.0 - base), 0, 1) * CHANNEL_MAX
+
+
+def render(mask_bits, p, ghost, unlit, supersample):
+    """One glyph cell as RGB 0..255, at the baseline sheet's own resolution."""
+    return photometry(core_mask(mask_bits, p, supersample), ghost, p, unlit)
 
 
 # --------------------------------------------------------------------------

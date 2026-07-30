@@ -48,6 +48,7 @@ it belongs in its own task.
 | TASK-VFD-006 | Full ASCII 32–126 coverage | M | RQ-GUI-049 |
 | TASK-VFD-007 | Wire into `DisplayPanel`, retire the sprite blit | M | RQ-GUI-033, DEC-JUC-055 |
 | TASK-VFD-008 | Verification at scale 1.0 / 2.0 / 3.0 | S | RQ-GUI-005, RQ-GUI-033, RQ-GUI-049 |
+| TASK-VFD-009 | Preserve the rejected triangle-lattice prototype | M | ADR-JUC-023 (Alternatives) |
 
 ---
 
@@ -255,4 +256,29 @@ it belongs in its own task.
   - *Given* the build, *When* it completes, *Then* it is warning-clean at the
     project's warning level and the test suite is green.
 - **Dependencies**: TASK-VFD-007
+- **Assignee**: AI
+
+### TASK-VFD-009: Preserve the rejected triangle-lattice prototype
+- **Tier**: M
+- **Status**: **Done** — `juce/tools/prototypes/triangle_lattice.py`.
+- **Description**: ADR-JUC-023's Alternatives section states that the
+  triangle-lattice skeleton "stays reusable if it is ever revisited". That was
+  **false as written**: the exploration lived only in a scratch directory and
+  would have been lost with the session container, even though the owner had
+  explicitly asked for the option to be explored. Commit the prototype so the
+  ADR's claim is true. Added mid-plan on owner decision.
+- **Requirement refs**: None — this traces to an ADR section, not a requirement;
+  it ships no behaviour.
+- **ADR refs**: ADR-JUC-023 (Alternatives)
+- **Acceptance Criteria**:
+  - *Given* the repository, *When* ADR-JUC-023's reusability claim is checked,
+    *Then* the referenced skeleton is present under version control.
+  - *Given* the prototype, *When* it is read, *Then* it imports the segment
+    table, geometry and photometry from the shipped tools rather than copying
+    them, so it cannot drift from them.
+  - *Given* the prototype, *When* the project is built, *Then* nothing
+    references it — no CMake target, no CI step, no runtime import.
+  - *Given* the prototype, *When* it is run, *Then* it renders a sample strip
+    showing the tiled-stroke look that motivated the option.
+- **Dependencies**: TASK-VFD-001, TASK-VFD-002
 - **Assignee**: AI
