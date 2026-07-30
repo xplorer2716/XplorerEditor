@@ -15,6 +15,7 @@ target_sources(XplorerApp PRIVATE
     src/PageFamilyBlock.cpp
     src/ModMatrixPanel.cpp
     src/DisplayPanel.cpp
+    src/VfdSegmentRenderer.cpp
     src/VfdDisplayHelper.cpp
     src/Dialogs.cpp
     src/SettingsDialog.cpp

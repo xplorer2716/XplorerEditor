@@ -159,7 +159,31 @@ it belongs in its own task.
 
 ### TASK-VFD-004: Vector segment renderer
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: **Done** — `VfdSegmentRenderer` (`juce/app/src/`), 5 scenarios in
+  `xpl_tests_app_juce`, suite 98/98, build clean. Output visually verified at
+  scale 1 and 3 against the Python model the tokens were fitted with: same halo,
+  same unlit bed, crisp at 3.
+  - **The renderer returns an `Image`, it does not paint into a `Graphics`.**
+    The glow is a blur and a blur needs a raster. The image is built at the
+    caller's device scale and drawn 1:1, so nothing is ever magnified —
+    `DisplayPanel` keeps owning bounds and centering (DEC-JUC-055, TASK-VFD-007).
+  - **The separable Gaussian is hand-written, deliberately.** JUCE offers
+    `ImageConvolutionKernel` (a 2D convolution — for this radius roughly 20x the
+    work for an identical result) and `applySingleChannelBoxBlurEffect` (a box
+    blur — a *different* kernel, which would have silently diverged from the
+    Gaussian the tokens were fitted against). Neither fits; two 1D passes do.
+  - **Testing the scale behaviour, not the glyph shapes.** Shapes are the
+    table's job (pinned by `SegmentFontTests`) and the look is the tokens' job
+    (pinned by `fit_vfd_tokens.py --check`). What only this layer can get wrong
+    is scale, so that is what the tests attack: proportional image size, detail
+    a magnification could not carry, and mean luminance held constant across
+    scales 1/2/3 — which is precisely how a glow radius that forgot to follow
+    the scale would betray itself (DEC-JUC-053).
+  - **A source grep for "no visual literal" was rejected as a test.** A regex
+    cannot tell a visual literal from an algorithmic constant, so it would have
+    produced false positives on `0.5F` (a midpoint) or `3.0F` (the Gaussian's
+    support). Replaced by a test that samples a below-saturation pixel and
+    checks its hue equals the token's — evidence the token is consumed.
 - **Description**: Build the 16 segment outlines once as `juce::Path` in a unit
   cell; accumulate a scalar radiance field (lit core + two-component glow over an
   always-drawn unlit bed) and tone-map it once, preserving the phosphor hue below
