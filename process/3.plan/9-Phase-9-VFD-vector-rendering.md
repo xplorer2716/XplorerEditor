@@ -44,7 +44,15 @@ through the existing Xvfb/screenshot pipeline.
 
 ### TASK-VFD-001: Vendor the 16-segment ASCII table
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — `juce/tools/vendor/16-Segment-ASCII_HEX-NDP.txt` vendored
+  verbatim (its MIT notice travels with the data), `generate_segment_font.py`
+  emits `GeneratedSegmentFont.inc` (95 masks, `--check` idempotent), public API
+  in `SegmentFont.hpp`. Suite green, 92/92 (+7 scenarios, 432 assertions).
+  *Finding:* the "every lowercase differs from its uppercase" expectation was
+  **wrong** and its test was corrected, not forced — `'x'` and `'X'` share mask
+  `0x5500` because a 16-segment cell has no distinct lowercase `x`. It is the
+  single collision in the table; RQ-GUI-049 asks for legibility, not case
+  distinctness, so the requirement stands unchanged.
 - **Description**: Bring `dmadison/LED-Segment-ASCII`'s 16-segment character map
   into the tree as generated data (95 masks, ASCII 32–126, one `uint16_t` each),
   preserving the upstream MIT notice, and pin the bit→geometry mapping with
