@@ -1,14 +1,21 @@
 #pragma once
 
-// VFD display: renders text as 16-segment glyphs drawn vectorially, on a black
-// background, glyph block centered, grid derived from the bounds like the
-// reference VacuumFluoDisplayControl (cols = width/12, lines = height/16).
-// The line content is built by VfdDisplayHelper.
+// VFD display: a recessed bezel around black glass, on which text is drawn as
+// 16-segment glyphs (VfdSegmentRenderer). The grid follows the reference
+// VacuumFluoDisplayControl formula (cols = width/12, lines = height/16), and
+// the line content is built by VfdDisplayHelper.
 //
-// The grid, the centering, the setLines early-out and setBufferedToImage are
-// carried over unchanged from ADR-JUC-007; only the artwork inside each cell
-// changed, from a 12x16 sprite blit to VfdSegmentRenderer.
-// [RQ-GUI-020, RQ-GUI-033, RQ-GUI-049, ADR-JUC-023 (DEC-JUC-055)]
+// The bounds cover BEZEL AND GLASS, not just the glass: the bezel's inner edge
+// has to line up with the glass to the pixel at any render scale, and only the
+// component that owns the geometry can guarantee that (DEC-JUC-058). The
+// consequence is that every grid computation works off an *inset* rectangle —
+// including maxCharsPerLine(), which VfdDisplayHelper uses as its wrap
+// threshold, so text would otherwise wrap to a width the glass does not have.
+//
+// The grid formula, the centering, the setLines early-out and
+// setBufferedToImage are carried over unchanged from ADR-JUC-007.
+// [RQ-GUI-020, RQ-GUI-033, RQ-GUI-049, RQ-GUI-050, RQ-DSN-098,
+//  ADR-JUC-023 (DEC-JUC-055), ADR-JUC-024 (DEC-JUC-057, DEC-JUC-058)]
 
 #include "VfdSegmentRenderer.hpp"
 
@@ -40,6 +47,13 @@ namespace xplorer::app
         void paint(juce::Graphics& g) override;
 
     private:
+        /// The glass: the bounds minus the bezel band. Everything to do with
+        /// the grid derives from this, never from the raw bounds.
+        [[nodiscard]] juce::Rectangle<int> glassBounds() const;
+
+        /// Band, rim hairlines and the shadow the band casts on the glass edge.
+        void paintBezel(juce::Graphics& g, juce::Rectangle<int> glass) const;
+
         VfdSegmentRenderer _renderer;
         juce::StringArray _lines;
     };

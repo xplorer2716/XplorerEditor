@@ -8,6 +8,9 @@ RQ-GUI-048 (development-build fit assertion) and RQ-DSN-096 (embedded combo-box
 typeface). Supersedes ADR-JUC-021 in full. Builds on ADR-JUC-014 (token module)
 and ADR-JUC-017 (the drawComboBox override this reuses). -->
 
+## Requirements
+RQ-GUI-047, RQ-GUI-048, RQ-DSN-096
+
 ## Context
 
 ADR-JUC-021 tried to *derive* one combo-box font size by aggregating the whole

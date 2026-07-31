@@ -180,6 +180,23 @@ tiers:
     vfdDotLowerY:    { kind: float, value: 0.73333, note: "lower colon dot centre" }
     vfdUnderscoreY:  { kind: float, value: 1.00000, note: "underscore bar centre; sits BELOW the bottom rail, which is precisely why no segment can express it" }
 
+    # ---- VFD bezel (RQ-GUI-050, RQ-DSN-098, ADR-JUC-024) ----
+    # CHOSEN, not measured — and that distinction matters here. The RQ-DSN-097
+    # values above were fitted against vfd-matrix.png; these have no baseline at
+    # all, because the .NET display had no bezel. fit_vfd_tokens.py is therefore
+    # NOT extended to them (DEC-JUC-061): deriving them would fabricate a
+    # provenance. Tune them by eye against the approved mockup.
+    #
+    # Lengths are LOGICAL pixels, not cell fractions: the bezel is panel
+    # furniture drawn in canvas coordinates, unlike the glyph geometry which had
+    # to be cell-relative to survive rescaling.
+    vfdBezelMarginV:     { kind: int,   value: 6,    note: "band thickness above and below the glass" }
+    vfdBezelMarginH:     { kind: int,   value: 4,    note: "band thickness left and right. DELIBERATELY thinner than the vertical one (DEC-JUC-060): at 6 the mockup crowded the modulation matrix on the right while having air above" }
+    vfdBezelInnerShadow: { kind: float, value: 0.75, note: "alpha of the shadow the band casts onto the glass edge — the cue that the glass sits BELOW the band" }
+    vfdBezelInnerWidth:  { kind: float, value: 3.0,  note: "width of that inner shadow" }
+    vfdBezelRimDark:     { kind: float, value: 0.5,  note: "alpha of the dark hairline on the bezel's TOP outer edge" }
+    vfdBezelRimLight:    { kind: float, value: 0.18, note: "alpha of the light hairline on the BOTTOM outer edge. Dark-top/light-bottom is the inverse of the raised-plate relief (RQ-DSN-094) — under light from above that inversion IS the difference between a recess and a bump, so the two must never converge" }
+
   # -------------------------------------------------------------------
   # TIER 2 — SEMANTIC : roles aliasing globals. Components reference these.
   # -------------------------------------------------------------------
@@ -311,3 +328,17 @@ tiers:
     vfdDotUpperY:    { alias: global.vfdDotUpperY }
     vfdDotLowerY:    { alias: global.vfdDotLowerY }
     vfdUnderscoreY:  { alias: global.vfdUnderscoreY }
+
+    # ---- VFD bezel (RQ-GUI-050, RQ-DSN-098, ADR-JUC-024) ----
+    # The band is the panel's own metal, INVERTED: the plate runs light at the
+    # top and dark at the bottom, the bezel the other way round. Aliasing the
+    # plate stops rather than restating their hex keeps that relationship
+    # visible — if the panel material is ever retuned, the bezel follows.
+    vfdBezelBandTop:     { alias: global.plateBot, note: "band gradient start (top) — the plate's DARK stop" }
+    vfdBezelBandBottom:  { alias: global.plateTop, note: "band gradient end (bottom) — the plate's LIGHT stop" }
+    vfdBezelMarginV:     { alias: global.vfdBezelMarginV }
+    vfdBezelMarginH:     { alias: global.vfdBezelMarginH,     note: "thinner than MarginV on purpose, DEC-JUC-060" }
+    vfdBezelInnerShadow: { alias: global.vfdBezelInnerShadow }
+    vfdBezelInnerWidth:  { alias: global.vfdBezelInnerWidth }
+    vfdBezelRimDark:     { alias: global.vfdBezelRimDark }
+    vfdBezelRimLight:    { alias: global.vfdBezelRimLight }

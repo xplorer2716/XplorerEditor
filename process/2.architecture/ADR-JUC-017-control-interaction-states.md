@@ -15,6 +15,9 @@ catalogue (RQ-DSN §4). References the shared state-to-code mapping
 disabled rule (RQ-DSN-032), the shared focus rule (RQ-DSN-033), the LED
 single-source-of-truth (ADR-JUC-011) and the token module (ADR-JUC-014). -->
 
+## Requirements
+RQ-GUI-041, RQ-GUI-042, RQ-GUI-043, RQ-DSN-023, RQ-DSN-031, RQ-DSN-032, RQ-DSN-033, RQ-DSN-062
+
 ## Context
 
 Verified directly in code before deciding (per the "never assume, read the source

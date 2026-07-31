@@ -23,6 +23,9 @@ Respects ADR-JUC-002's headless/GUI layering (xpl_app_core has no JUCE
 dependency) and ADR-JUC-014's token module (size bounds stay tokens, not
 literals). -->
 
+## Requirements
+RQ-GUI-047, RQ-DSN-011, RQ-GUI-032
+
 ## Context
 
 `XplorerLookAndFeel::getComboBoxFont(juce::ComboBox& box)` computes a font

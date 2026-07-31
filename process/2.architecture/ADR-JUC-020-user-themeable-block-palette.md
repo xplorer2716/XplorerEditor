@@ -13,6 +13,9 @@ UI + reset to defaults). Extends ADR-JUC-018 (block colours in the painter),
 ADR-JUC-019 (selector buttons) and follows ADR-JUC-011's single-source-of-truth
 rule for the knob LED colour. -->
 
+## Requirements
+RQ-DSN-095, RQ-SET-007, RQ-GUI-046
+
 ## Context
 
 The block-identity colours are today **compile-time** `constexpr juce::Colour`

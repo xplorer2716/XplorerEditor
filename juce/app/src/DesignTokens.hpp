@@ -112,6 +112,12 @@ namespace xplorer::app::tokens
         inline constexpr float vfdDotUpperY = 0.4F;  // upper colon dot centre
         inline constexpr float vfdDotLowerY = 0.73333F;  // lower colon dot centre
         inline constexpr float vfdUnderscoreY = 1.0F;  // underscore bar centre; sits BELOW the bottom rail, which is precisely why no segment can express it
+        inline constexpr int vfdBezelMarginV = 6;  // band thickness above and below the glass
+        inline constexpr int vfdBezelMarginH = 4;  // band thickness left and right. DELIBERATELY thinner than the vertical one (DEC-JUC-060): at 6 the mockup crowded the modulation matrix on the right while having air above
+        inline constexpr float vfdBezelInnerShadow = 0.75F;  // alpha of the shadow the band casts onto the glass edge — the cue that the glass sits BELOW the band
+        inline constexpr float vfdBezelInnerWidth = 3.0F;  // width of that inner shadow
+        inline constexpr float vfdBezelRimDark = 0.5F;  // alpha of the dark hairline on the bezel's TOP outer edge
+        inline constexpr float vfdBezelRimLight = 0.18F;  // alpha of the light hairline on the BOTTOM outer edge. Dark-top/light-bottom is the inverse of the raised-plate relief (RQ-DSN-094) — under light from above that inversion IS the difference between a recess and a bump, so the two must never converge
     }
 
     // -----------------------------------------------------------------
@@ -220,6 +226,14 @@ namespace xplorer::app::tokens
         inline constexpr float vfdDotUpperY = global::vfdDotUpperY;
         inline constexpr float vfdDotLowerY = global::vfdDotLowerY;
         inline constexpr float vfdUnderscoreY = global::vfdUnderscoreY;
+        inline const juce::Colour vfdBezelBandTop = global::plateBot;  // band gradient start (top) — the plate's DARK stop
+        inline const juce::Colour vfdBezelBandBottom = global::plateTop;  // band gradient end (bottom) — the plate's LIGHT stop
+        inline constexpr int vfdBezelMarginV = global::vfdBezelMarginV;
+        inline constexpr int vfdBezelMarginH = global::vfdBezelMarginH;  // thinner than MarginV on purpose, DEC-JUC-060
+        inline constexpr float vfdBezelInnerShadow = global::vfdBezelInnerShadow;
+        inline constexpr float vfdBezelInnerWidth = global::vfdBezelInnerWidth;
+        inline constexpr float vfdBezelRimDark = global::vfdBezelRimDark;
+        inline constexpr float vfdBezelRimLight = global::vfdBezelRimLight;
     }
 
 }
