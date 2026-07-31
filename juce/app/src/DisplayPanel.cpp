@@ -26,15 +26,25 @@ namespace xplorer::app
         setInterceptsMouseClicks(false, false);
     }
 
+    // Both accessors measure the GLASS, never the bounds — the bounds include
+    // the bezel band now (DEC-JUC-058). VfdDisplayHelper uses
+    // maxCharsPerLine() as its wrap threshold, so measuring the bounds would
+    // let a line wrap to a width the glass does not have and put characters
+    // under the band.
+    //
+    // At today's margins the two happen to agree (275/12 and 267/12 both floor
+    // to 22; 94/16 and 82/16 both to 5), which is exactly what would have kept
+    // the mistake invisible until someone retuned a margin token.
+
     int DisplayPanel::maxCharsPerLine() const
     {
-        const int cols = getWidth() / GLYPH_WIDTH;
+        const int cols = glassBounds().getWidth() / GLYPH_WIDTH;
         return cols > 0 ? cols : 22; // logical-canvas value before layout
     }
 
     int DisplayPanel::lineCount() const
     {
-        return getHeight() / GLYPH_HEIGHT;
+        return glassBounds().getHeight() / GLYPH_HEIGHT;
     }
 
     void DisplayPanel::setLines(juce::StringArray lines)

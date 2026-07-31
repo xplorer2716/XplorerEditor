@@ -155,7 +155,14 @@ restated in the tasks below so the plan stands on its own.
 
 ### TASK-DSP-004: Inset the glyph grid so wrapping matches the glass
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: **Done** — both accessors now measure `glassBounds()`. No
+  computation in the file reads the raw bounds any more. Suite 106/106.
+  - **The fix is invisible at today's values and provable at others.** With
+    margins 4/6 both the old and new forms give 22×5. Double them and the old
+    accessor claims **23×6** for a glass that holds 22×5 — a line wrapping to 23
+    characters would put text under the band, and a sixth row would be requested
+    that does not exist. That divergence is the verification; the current
+    agreement is the trap.
 - **Description**: `maxCharsPerLine()` and `lineCount()` derive the grid from
   the **inset** rectangle, not the full bounds. `VfdDisplayHelper` uses
   `maxCharsPerLine()` as its wrap threshold, so leaving it on the outer bounds
