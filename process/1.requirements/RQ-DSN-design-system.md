@@ -275,8 +275,8 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
 
 - **RQ-DSN-098** — **The VFD bezel SHALL have its own token group.** The bezel
   introduced by RQ-GUI-050 is a second, independent set of visual decisions
-  around the same component: band gradient stops, corner radius, the margin
-  between bezel and glass, and the alphas of its inner shadow, top-edge shadow
+  around the same component: band gradient stops, the margin between bezel
+  and glass, and the alphas of its inner shadow, top-edge shadow
   and bottom-edge highlight. They are visual values, so they belong in
   `design-tokens.yaml` like every other (ADR-JUC-014, ADR-JUC-015).
   - The **vertical and lateral margins SHALL be separate tokens**, not one
@@ -294,7 +294,7 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
   **Dependencies:** RQ-GUI-050, RQ-DSN-010, RQ-DSN-011, RQ-DSN-094, RQ-DSN-097;
   ADR-JUC-014, ADR-JUC-015, ADR-JUC-024.
   - **Acceptance (Gherkin):** *Given* the bezel renderer, *When* it is read,
-    *Then* every colour, radius, margin and alpha resolves to a token. *Given*
+    *Then* every colour, margin and alpha resolves to a token. *Given*
     the token group, *When* the margins are read, *Then* the vertical and
     lateral ones are distinct entries. *Given* any bezel token, *When* its note
     is read, *Then* it records that the value is a design choice rather than a

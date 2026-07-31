@@ -70,17 +70,25 @@ namespace xplorer::app
         // at the bottom. Under light from above that inversion is the whole
         // difference between a recess and a bump, which is why it must not be
         // confused with the raised-plate relief of RQ-DSN-094. [DEC-JUC-057]
+        //
+        // Square corners, deliberately (DEC-JUC-062). A rounded fill leaves the
+        // four corner pixels of the bounds untouched, and this component is
+        // opaque: JUCE then allocates its cache WITHOUT clearing it
+        // (StandardCachedComponentImage passes `! isOpaque()` as clearImage),
+        // so those pixels display uninitialised memory — measured as
+        // (126,1,1) and (100,65,86) against a (68,69,78) plate. Square corners
+        // make the setOpaque(true) promise true instead of patching around it,
+        // and a metal bezel cut into a plate has sharp outer corners anyway.
         g.setGradientFill({bezel::vfdBezelBandTop, outer.getX(), outer.getY(),
                            bezel::vfdBezelBandBottom, outer.getX(), outer.getBottom(), false});
-        g.fillRoundedRectangle(outer, bezel::vfdBezelRadius);
+        g.fillRect(outer);
 
         // Outer rim, same inversion: shadow on top, catch-light underneath.
-        const auto inset = outer.reduced(bezel::vfdBezelRadius, 0.0F);
         g.setColour(juce::Colours::black.withAlpha(bezel::vfdBezelRimDark));
-        g.drawLine(inset.getX(), outer.getY() + 0.5F, inset.getRight(), outer.getY() + 0.5F);
+        g.drawLine(outer.getX(), outer.getY() + 0.5F, outer.getRight(), outer.getY() + 0.5F);
         g.setColour(juce::Colours::white.withAlpha(bezel::vfdBezelRimLight));
-        g.drawLine(inset.getX(), outer.getBottom() - 0.5F,
-                   inset.getRight(), outer.getBottom() - 0.5F);
+        g.drawLine(outer.getX(), outer.getBottom() - 0.5F,
+                   outer.getRight(), outer.getBottom() - 0.5F);
 
         // The shadow the band casts onto the glass edge — the cue that the
         // glass sits *below* the band rather than flush with it. Drawn as a

@@ -190,7 +190,6 @@ tiers:
     # Lengths are LOGICAL pixels, not cell fractions: the bezel is panel
     # furniture drawn in canvas coordinates, unlike the glyph geometry which had
     # to be cell-relative to survive rescaling.
-    vfdBezelRadius:      { kind: float, value: 3.0,  note: "outer corner radius; tighter than a block frame's, so the bezel reads as hardware rather than as another labelled block" }
     vfdBezelMarginV:     { kind: int,   value: 6,    note: "band thickness above and below the glass" }
     vfdBezelMarginH:     { kind: int,   value: 4,    note: "band thickness left and right. DELIBERATELY thinner than the vertical one (DEC-JUC-060): at 6 the mockup crowded the modulation matrix on the right while having air above" }
     vfdBezelInnerShadow: { kind: float, value: 0.75, note: "alpha of the shadow the band casts onto the glass edge — the cue that the glass sits BELOW the band" }
@@ -337,7 +336,6 @@ tiers:
     # visible — if the panel material is ever retuned, the bezel follows.
     vfdBezelBandTop:     { alias: global.plateBot, note: "band gradient start (top) — the plate's DARK stop" }
     vfdBezelBandBottom:  { alias: global.plateTop, note: "band gradient end (bottom) — the plate's LIGHT stop" }
-    vfdBezelRadius:      { alias: global.vfdBezelRadius }
     vfdBezelMarginV:     { alias: global.vfdBezelMarginV }
     vfdBezelMarginH:     { alias: global.vfdBezelMarginH,     note: "thinner than MarginV on purpose, DEC-JUC-060" }
     vfdBezelInnerShadow: { alias: global.vfdBezelInnerShadow }

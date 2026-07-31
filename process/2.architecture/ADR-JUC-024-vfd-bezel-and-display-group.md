@@ -86,6 +86,24 @@ something, which is why this ADR is about placement as much as about drawing.
   each bezel token's note records that it is a design choice. Pretending to
   derive them would fabricate a provenance that does not exist.
 
+- **DEC-JUC-062 — The bezel has square corners, because the component is
+  opaque.** *(Added 2026-07-31, owner-reported defect.)* The first
+  implementation — and the mockup it came from — filled the band with
+  `fillRoundedRectangle`. That leaves the four corner pixels of the bounds
+  unpainted, and `DisplayPanel` declares `setOpaque(true)`. JUCE takes that
+  declaration literally: `StandardCachedComponentImage` allocates the cache with
+  `clearImage = ! isOpaque()`, so an opaque component's buffer is **never
+  cleared**. Those four pixels therefore displayed uninitialised memory —
+  measured `(126,1,1)` and `(100,65,86)` against a `(68,69,78)` plate.
+  Square corners make the opacity declaration true rather than patching around
+  it, and a metal bezel cut into a plate has sharp outer corners anyway.
+  *Rejected alternative:* `setOpaque(false)`. Correct in principle — the
+  component genuinely did not fill its bounds — but `MainComponent::paint` runs
+  the whole uncached vector background, so every VFD text change (i.e. every
+  knob movement) would have re-run that drawing clipped to the display.
+  *Consequence:* `vfdBezelRadius` is deleted rather than left unused. A token
+  nothing consumes is worse than no token: it reads as a knob that does nothing.
+
 ## Consequences
 
 - The display stops being the one unframed element of the façade, and the

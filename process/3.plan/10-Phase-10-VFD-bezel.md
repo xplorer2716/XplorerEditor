@@ -39,6 +39,7 @@ restated in the tasks below so the plan stands on its own.
 | TASK-DSP-003 | Draw the bezel in `DisplayPanel` | M | RQ-GUI-050, DEC-JUC-057/058 |
 | TASK-DSP-004 | Inset the glyph grid so wrapping matches the glass | S | RQ-GUI-020, DEC-JUC-058 |
 | TASK-DSP-005 | Verify against the approved mockup | S | RQ-GUI-050, RQ-GUI-022 |
+| TASK-DSP-006 | Square the bezel corners (uninitialised-memory defect) | S | RQ-GUI-050, DEC-JUC-062 |
 
 ---
 
@@ -214,3 +215,35 @@ restated in the tasks below so the plan stands on its own.
     existing suite (106) still passes.
 - **Dependencies**: TASK-DSP-004
 - **Assignee**: AI
+
+### TASK-DSP-006: Square the bezel corners
+- **Tier**: S
+- **Status**: **Done** — added mid-plan, owner-reported. Corners now carry the
+  band colour exactly: `(24,24,28)` top pair, `(101,102,109)` bottom pair.
+- **Description**: The rounded band left the four corner pixels of the bounds
+  unpainted while the component declares `setOpaque(true)`, so they displayed
+  uninitialised memory — `(126,1,1)` and `(100,65,86)` against a `(68,69,78)`
+  plate. Square the corners so the opacity declaration is true.
+- **Requirement refs**: RQ-GUI-050
+- **ADR refs**: ADR-JUC-024 (DEC-JUC-062)
+- **Acceptance Criteria**:
+  - *Given* the running application, *When* the four corner pixels of the
+    display panel are sampled, *Then* each carries the band colour and none
+    carries a value unrelated to the palette.
+  - *Given* the token set, *When* it is read, *Then* `vfdBezelRadius` is gone
+    rather than left unconsumed — a token nothing reads is a knob that does
+    nothing.
+- **Dependencies**: TASK-DSP-003
+- **Assignee**: AI
+
+---
+
+## Post-implementation note
+
+**The defect was in the approved mockup too.** It used the same
+`setOpaque(true)` + rounded fill, so its corners held garbage as well; it went
+unnoticed through mockup review and through TASK-DSP-005's own verification,
+which compared against that mockup and measured edges and gaps but never
+sampled a corner. Comparing against an approved artefact validates conformance,
+not correctness — the two are not the same check, and only one of them was
+being run.
