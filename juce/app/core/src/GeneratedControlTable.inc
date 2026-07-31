@@ -22,11 +22,15 @@
 // The reference left ONE pixel between the glass (ending y=122) and the LED
 // strip (starting y=123), so no bezel of any thickness fits without moving
 // something; the reference had no bezel and therefore no reason to leave room.
-// _vfdDisplay y 47 -> 31, which puts the bezel's top edge at canvas y=18,
-// level with the VCF block row. The LEDs (123 -> 117) and buttons (128 -> 122)
-// follow by 6 px so the gaps below the bezel are unchanged and the three keep
-// reading as one assembly. Recorded here rather than as an offset in
-// MainComponent so the table keeps matching the screen.
+// _vfdDisplay y 47 -> 30, which puts the bezel's top edge at canvas y=17.
+// That is the VCF frame's VISIBLE top: its 2 px stroke is centred on y=18,
+// so it starts being drawn at 17. Aligning on the geometric y instead left
+// the bezel one pixel low at every scale (measured 1/2/3/4 device px at
+// canvas scales 1.0/2.0/3.0/3.7 - a constant 1 logical px, TASK-DSP-007).
+// The LEDs (123 -> 116) and buttons (128 -> 121) follow by 7 px so the gaps
+// below the bezel are unchanged and the three keep reading as one assembly.
+// Recorded here rather than as an offset in MainComponent, so the table keeps
+// matching the screen.
 // [RQ-GUI-050, ADR-JUC-024 (DEC-JUC-059)]
     {"ENV_1", ControlKind::RadioButton, 525, 180, 49, 26, "ENV_1", "ENV 1"},
     {"ENV_2", ControlKind::RadioButton, 578, 180, 49, 26, "ENV_2", "ENV 2"},
@@ -208,16 +212,16 @@
     {"VCO2_WAVESHAPE_SAW", ControlKind::CheckBoxValuedControl, 331, 267, 48, 17, "VCO2_WAVESHAPE_SAW", "SAW"},
     {"VCO2_WAVESHAPE_TRI", ControlKind::CheckBoxValuedControl, 331, 250, 41, 17, "VCO2_WAVESHAPE_TRI", "TRI"},
     {"VCO2_WAVE_SYNC", ControlKind::CheckBoxValuedControl, 371, 409, 52, 17, "VCO2_WAVE_SYNC", "SYNC"},
-    {"_ledPanelControl", ControlKind::LedPanelControl, 1190, 117, 32, 8, "", ""},
-    {"_vfdDisplay", ControlKind::VacuumFluoDisplayControl, 951, 31, 267, 75, "", ""},
-    {"btPatchGoto", ControlKind::BackgroundImageButton, 1032, 122, 19, 15, "", ""},
-    {"btPatchLoad", ControlKind::BackgroundImageButton, 1082, 122, 19, 15, "", ""},
-    {"btPatchMinus", ControlKind::BackgroundImageButton, 982, 122, 19, 15, "", ""},
-    {"btPatchPlus", ControlKind::BackgroundImageButton, 1007, 122, 19, 15, "", ""},
-    {"btPatchRandom", ControlKind::BackgroundImageButton, 1057, 122, 19, 15, "", ""},
-    {"btPatchSave", ControlKind::BackgroundImageButton, 1107, 122, 19, 15, "", ""},
-    {"btPatchStore", ControlKind::BackgroundImageButton, 1132, 122, 19, 15, "", ""},
-    {"btSettings", ControlKind::BackgroundImageButton, 1157, 122, 19, 15, "", ""},
+    {"_ledPanelControl", ControlKind::LedPanelControl, 1190, 116, 32, 8, "", ""},
+    {"_vfdDisplay", ControlKind::VacuumFluoDisplayControl, 951, 30, 267, 75, "", ""},
+    {"btPatchGoto", ControlKind::BackgroundImageButton, 1032, 121, 19, 15, "", ""},
+    {"btPatchLoad", ControlKind::BackgroundImageButton, 1082, 121, 19, 15, "", ""},
+    {"btPatchMinus", ControlKind::BackgroundImageButton, 982, 121, 19, 15, "", ""},
+    {"btPatchPlus", ControlKind::BackgroundImageButton, 1007, 121, 19, 15, "", ""},
+    {"btPatchRandom", ControlKind::BackgroundImageButton, 1057, 121, 19, 15, "", ""},
+    {"btPatchSave", ControlKind::BackgroundImageButton, 1107, 121, 19, 15, "", ""},
+    {"btPatchStore", ControlKind::BackgroundImageButton, 1132, 121, 19, 15, "", ""},
+    {"btSettings", ControlKind::BackgroundImageButton, 1157, 121, 19, 15, "", ""},
     {"label1", ControlKind::Label, 67, 128, 72, 13, "", "VCO1 MOD ="},
     {"label2", ControlKind::Label, 67, 411, 72, 13, "", "VCO2 MOD ="},
     {"label3", ControlKind::Label, 531, 128, 64, 13, "", "VCF MOD ="},

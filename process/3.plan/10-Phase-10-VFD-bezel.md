@@ -40,6 +40,7 @@ restated in the tasks below so the plan stands on its own.
 | TASK-DSP-004 | Inset the glyph grid so wrapping matches the glass | S | RQ-GUI-020, DEC-JUC-058 |
 | TASK-DSP-005 | Verify against the approved mockup | S | RQ-GUI-050, RQ-GUI-022 |
 | TASK-DSP-006 | Square the bezel corners (uninitialised-memory defect) | S | RQ-GUI-050, DEC-JUC-062 |
+| TASK-DSP-007 | Align on the VCF frame's visible edge | S | RQ-GUI-050, DEC-JUC-059 |
 
 ---
 
@@ -248,3 +249,47 @@ which compared against that mockup and measured edges and gaps but never
 sampled a corner. Comparing against an approved artefact validates conformance,
 not correctness — the two are not the same check, and only one of them was
 being run.
+
+### TASK-DSP-007: Align on the VCF frame's visible edge, not its geometric y
+- **Tier**: S
+- **Status**: **Done** — added mid-plan, owner-prompted.
+- **Description**: TASK-DSP-005 reported "alignment holds" having checked scales
+  1.0 and 2.0 only. Asked about the others — including fractional ones — the
+  measurement showed the bezel sitting **1 logical pixel low at every scale**.
+  Cause: the VCF block frame is a 2 px stroke *centred* on y=18, so its visible
+  top edge is at y=17, while the bezel started at exactly 18. Aligning on the
+  block's geometric y is not aligning on what the eye sees. Display group lifted
+  one more pixel (`_vfdDisplay` 31→30, LEDs 117→116, buttons 122→121).
+- **Requirement refs**: RQ-GUI-050
+- **ADR refs**: ADR-JUC-024 (DEC-JUC-059)
+- **Acceptance Criteria**:
+  - *Given* canvas scales 1.0, 1.33, 2.0, 2.5, 2.87, 3.0 and 3.7, *When* the
+    bezel's top edge and the VCF frame's top edge are located, *Then* they
+    differ by at most one device pixel.
+- **Measured after the fix** (device rows, bezel vs VCF):
+
+  | scale | 1.0 | 1.33 | 2.0 | 2.5 | 2.87 | 3.0 | 3.7 |
+  |---|---|---|---|---|---|---|---|
+  | before | +1 | +2 | +2 | +3 | +3 | +3 | +4 |
+  | after | 0 | +1 | 0 | +1 | 0 | 0 | 0 |
+
+  The residual 1 px at 1.33 and 2.5 is sub-pixel rounding: the display goes
+  through its component cache while the background is painted directly, so at a
+  fractional scale the two can land either side of a pixel boundary. Not
+  correctable without snapping to the device grid, which JUCE does not expose
+  from `paint()`.
+- **Dependencies**: TASK-DSP-002, TASK-DSP-003
+- **Assignee**: AI
+
+---
+
+## Second post-implementation note
+
+**"Verified" meant two scales.** TASK-DSP-005 checked 1.0 and 2.0 and reported
+alignment as holding. It did hold — at the only two scales tested, and by a
+measurement that sampled canvas y=18 and found the block frame colour there,
+which it is, because the stroke straddles 18. Widening to seven scales, and
+looking for the frame's *visible* edge rather than its nominal one, showed a
+constant 1 px error. Same shape of gap as the one the owner caught in session
+VFD: a verification narrow enough to pass while the thing it claims to check is
+wrong.
