@@ -41,6 +41,7 @@ restated in the tasks below so the plan stands on its own.
 | TASK-DSP-005 | Verify against the approved mockup | S | RQ-GUI-050, RQ-GUI-022 |
 | TASK-DSP-006 | Square the bezel corners (uninitialised-memory defect) | S | RQ-GUI-050, DEC-JUC-062 |
 | TASK-DSP-007 | Align on the VCF frame's visible edge | S | RQ-GUI-050, DEC-JUC-059 |
+| TASK-DSP-008 | Refresh the README screenshot | S | RQ-GUI-050 |
 
 ---
 
@@ -293,3 +294,21 @@ looking for the frame's *visible* edge rather than its nominal one, showed a
 constant 1 px error. Same shape of gap as the one the owner caught in session
 VFD: a verification narrow enough to pass while the thing it claims to check is
 wrong.
+
+### TASK-DSP-008: Refresh the README screenshot
+- **Tier**: S
+- **Status**: **Done** — owner request, mid-plan.
+- **Description**: `README.XplorerFullScreen.jpg` still showed the pre-bezel
+  display. Recapture at the launch geometry with the application in a state that
+  exercises what the last two sessions added: a randomised patch (so every block
+  and the whole modulation matrix carry values) and a selected modulation entry
+  (so the display shows `SRC TO DEST` / `AMNT` / `QTZ` rather than an idle line).
+- **Requirement refs**: RQ-GUI-050, RQ-GUI-020
+- **ADR refs**: ADR-JUC-024
+- **Acceptance Criteria**:
+  - *Given* the new image, *When* it is compared with the old, *Then* it has the
+    same dimensions (1260×810) and encoding, so the README layout is unchanged.
+  - *Given* the new image, *When* the display is read, *Then* it shows a
+    modulation entry, and the bezel is visible around it.
+- **Dependencies**: TASK-DSP-007
+- **Assignee**: AI
