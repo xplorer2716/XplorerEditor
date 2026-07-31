@@ -44,7 +44,20 @@ restated in the tasks below so the plan stands on its own.
 
 ### TASK-DSP-001: Bezel token group in `design-tokens.yaml`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — 7 scalars in `global`, 9 aliases in `component`,
+  generator `--check` idempotent, build clean, suite 106/106.
+  - **Lateral margin set to 4, not the mockup's 6.** The mockup used one value
+    for both axes and the result crowded the modulation matrix on the right; the
+    plan left the number open rather than reconducting a defect it had itself
+    flagged.
+  - **The band aliases the plate stops instead of restating their hex** —
+    `BandTop → plateBot`, `BandBottom → plateTop`. The bezel is the panel's own
+    metal, inverted, and aliasing keeps that relationship visible: retune the
+    panel material and the bezel follows.
+  - **Lengths are logical pixels here, not cell fractions.** The RQ-DSN-097
+    glyph tokens had to be cell-relative to survive rescaling; the bezel is
+    panel furniture drawn in canvas coordinates, so the same choice would have
+    been cargo-culting.
 - **Description**: Add the `vfdBezel*` tokens — band gradient stops, corner
   radius, vertical and lateral margins, inner-shadow / top-rim / bottom-rim
   alphas — in the `global` tier with `component` aliases, and regenerate
