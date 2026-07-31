@@ -181,7 +181,23 @@ restated in the tasks below so the plan stands on its own.
 
 ### TASK-DSP-005: Verify against the approved mockup
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: **Done** — build warning-clean on the touched files, suite
+  106/106, token generator idempotent.
+  - Alignment holds at scale 1.0 **and** 2.0: bezel top `(24,24,28)`, plate
+    `(68,69,78)`, top edge level with the VCF block frame.
+  - A parameter edit shows all five lines (`* S99 XPLORER *`,
+    `ENV1 ATTACK:10`, blank, blank, `MIDI CC: 073`), grid 22×5, `:` as two dots.
+  - **The result differs from the approved mockup by 4.3 % of the display area,
+    from two causes — and only one of them was declared.**
+    - *Declared:* the lateral margin is 4 instead of 6 (TASK-DSP-001), which
+      accounts for the differing columns 945/946 and 1222/1223.
+    - **Undeclared, found by this check:** the inner shadow is drawn with
+      `drawRect` where the mockup used a rounded stroke, and it came out
+      **heavier** — the differing rows at canvas y 21–22 and 107–108. Side by
+      side the implemented version reads as a more convincing recess, so this
+      is not proposed as a regression; but it is a visible change to artwork the
+      owner approved, made incidentally rather than chosen, and it needs owner
+      confirmation rather than being absorbed silently into "verified".
 - **Description**: Build, capture the full window under Xvfb at 1:1, and compare
   with the approved mockup. Check the group's gaps and the alignment with the
   VCF row. `unit_tests = false`, so this is the verification.
