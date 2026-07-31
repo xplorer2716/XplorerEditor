@@ -9,6 +9,15 @@ Outputs: juce/app/core/src/GeneratedControlTable.inc
 
 The reference background bitmap is no longer extracted: the JUCE port draws
 the background vectorially (BackgroundRenderer, ADR-JUC-013).
+
+INERT — DO NOT RUN. Both inputs left this repository with the .NET tree
+(xplorer2716/XplorerEditor-dotnet-archive), so this script can no longer
+produce anything; running it would fail on the missing .resx rather than
+regenerate the table. GeneratedControlTable.inc is now **hand-maintained** and
+is itself the source of truth. Its header lists every deliberate deviation from
+the archived reference (TASK-GUI-009 VCO2 column alignment, TASK-DSP-002
+display-group lift). Kept in the tree as the record of how the table was
+originally derived. [ADR-JUC-024 (DEC-JUC-059)]
 """
 import re
 import xml.etree.ElementTree as ET

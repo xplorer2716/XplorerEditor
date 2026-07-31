@@ -81,7 +81,22 @@ restated in the tasks below so the plan stands on its own.
 
 ### TASK-DSP-002: Record the display-group lift in the control table
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — `_vfdDisplay` y 47→31, `_ledPanelControl` 123→117, the
+  eight buttons 128→122, with the rationale in the table header beside the
+  TASK-GUI-009 note. Build clean, suite 106/106.
+  - **One acceptance criterion of mine was written on a false premise.** It said
+    the deviation should be documented in `extract_control_table.py` "alongside
+    the existing TASK-GUI-009 one" — but TASK-GUI-009's deviation is *not* in
+    that script; it was applied by hand to the `.inc`. Worse, the script is
+    **inert**: both its `.NET` inputs left with the archive, so running it would
+    fail rather than overwrite anything. Recorded that fact in the script header
+    and in the table header instead of inventing a mechanism to satisfy a
+    criterion that assumed the wrong thing.
+  - **The lift is in the table; the bezel expansion is not.** `MainComponent`
+    applies no offset (DEC-JUC-059) but does expand the glass rect by the margin
+    *tokens* to get the panel bounds. Baking the expanded size into the table
+    would have coupled it to the tokens: retuning a margin would then silently
+    desynchronise the coordinates from the drawing.
 - **Description**: Move `_vfdDisplay`, `_ledPanelControl` and the eight
   `btPatch*`/`btSettings` entries up in `GeneratedControlTable.inc`, with a
   header note giving the rationale — as the TASK-GUI-009 VCO2 deviation did. The
@@ -96,9 +111,14 @@ restated in the tasks below so the plan stands on its own.
     deviation from the archived reference.
   - *Given* `MainComponent`, *When* the group is placed, *Then* it applies **no**
     offset of its own — the table is what the screen shows.
-  - *Given* the extractor script, *When* it is inspected, *Then* the deviation is
-    documented alongside the existing TASK-GUI-009 one rather than silently
-    overwritten on a future run.
+  - ~~*Given* the extractor script, *When* it is inspected, *Then* the deviation
+    is documented alongside the existing TASK-GUI-009 one rather than silently
+    overwritten on a future run.~~ **Withdrawn during implementation:** written
+    on a false premise. TASK-GUI-009's deviation is not in the script either —
+    it was hand-applied to the `.inc` — and the script is inert, both its `.NET`
+    inputs having left with the archive. Replaced by: *Given* the extractor
+    script, *When* it is read, *Then* it states that it can no longer run and
+    that the `.inc` is hand-maintained and authoritative.
 - **Dependencies**: None
 - **Assignee**: AI
 

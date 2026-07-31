@@ -333,10 +333,21 @@ namespace xplorer::app
         {
             // Owner-arbitrated deviation (ADR-JUC-007): the reference bounds
             // (267x75) only fit 4 glyph rows; grow to 5 rows (82 px) upward —
-            // the area above is free artwork, the shortcut buttons below
-            // (y=155) stay clear — so the MIDI CC line is always visible.
-            const int height = 5 * DisplayPanel::GLYPH_HEIGHT + 2;
-            _display.setBounds(spec->x, spec->y - (height - spec->height), spec->width, height);
+            // the area above is free artwork — so the MIDI CC line is always
+            // visible.
+            const int glassHeight = 5 * DisplayPanel::GLYPH_HEIGHT + 2;
+            const int glassY = spec->y - (glassHeight - spec->height);
+
+            // The panel's bounds cover the bezel as well as the glass
+            // (DEC-JUC-058), so they are the glass expanded by the band's
+            // thickness. The band is token-driven, hence computed here rather
+            // than baked into the control table: retuning a margin must not
+            // require editing coordinates. The *lift* is a layout decision and
+            // does live in the table (DEC-JUC-059) — this applies no offset of
+            // its own. [RQ-GUI-050, RQ-DSN-098]
+            _display.setBounds(juce::Rectangle<int>(spec->x, glassY, spec->width, glassHeight)
+                                   .expanded(tokens::component::vfdBezelMarginH,
+                                             tokens::component::vfdBezelMarginV));
             addAndMakeVisible(_display);
         }
 
