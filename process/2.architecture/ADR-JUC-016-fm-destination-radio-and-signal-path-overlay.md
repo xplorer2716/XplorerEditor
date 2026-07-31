@@ -12,6 +12,9 @@ RQ-GUI-039 is withdrawn accordingly; RQ-GUI-038 remains fulfilled.
 (active FM signal-path highlight). UI-affecting ADR: references the design
 system ADR-JUC-014 and the LED-colour single-source-of-truth ADR-JUC-011. -->
 
+## Requirements
+RQ-GUI-038, RQ-GUI-039
+
 ## Context
 
 Two owner requests on the FM/VCA block ([RQ-GUI-038], [RQ-GUI-039]):

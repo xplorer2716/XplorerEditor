@@ -8,6 +8,9 @@ RQ-DSN-092/093/094 (block colour family, colour-only scope guard, fill + frame
 relief). Bound to the mockup-first pipeline of ADR-JUC-013 and the token module
 of ADR-JUC-014/015. -->
 
+## Requirements
+RQ-GUI-044, RQ-DSN-092, RQ-DSN-093, RQ-DSN-094
+
 ## Context
 
 The block-identity colour system (palette, tinted fill, frame relief, coloured

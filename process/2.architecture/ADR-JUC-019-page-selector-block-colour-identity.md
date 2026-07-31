@@ -14,6 +14,9 @@ Builds on RQ-GUI-044 / ADR-JUC-018 (block identity colours in the painter),
 RQ-DSN-092/093/094 (block palette, colour-only scope, fill + relief) and must
 not regress RQ-GUI-041/042 (hover / keyboard focus). -->
 
+## Requirements
+RQ-GUI-045, RQ-GUI-044, RQ-DSN-092, RQ-DSN-093, RQ-DSN-094, RQ-GUI-041, RQ-GUI-042
+
 ## Context
 
 The block-identity colours are in place on the painted panel (ADR-JUC-018): each

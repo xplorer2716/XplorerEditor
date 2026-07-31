@@ -3,6 +3,9 @@
 ## Status
 Accepted (mockup owner-validated; implemented in TASK-JUC-080)
 
+## Requirements
+RQ-GUI-037, RQ-GUI-001, RQ-GUI-005, RQ-GUI-007
+
 ## Context
 The main window background is a 1260×813 JPEG (`main-background.jpg`, 427 KB in
 BinaryData) drawn stretched over the logical canvas. At any window scale other
