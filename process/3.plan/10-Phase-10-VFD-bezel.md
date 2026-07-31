@@ -194,11 +194,12 @@ restated in the tasks below so the plan stands on its own.
       accounts for the differing columns 945/946 and 1222/1223.
     - **Undeclared, found by this check:** the inner shadow is drawn with
       `drawRect` where the mockup used a rounded stroke, and it came out
-      **heavier** — the differing rows at canvas y 21–22 and 107–108. Side by
-      side the implemented version reads as a more convincing recess, so this
-      is not proposed as a regression; but it is a visible change to artwork the
-      owner approved, made incidentally rather than chosen, and it needs owner
-      confirmation rather than being absorbed silently into "verified".
+      **heavier** — the differing rows at canvas y 21–22 and 107–108. Made
+      incidentally rather than chosen, so it was put to the owner rather than
+      absorbed into "verified". **Owner reviewed both side by side and kept the
+      heavier shadow** (2026-07-31): it reads as a more convincing recess. Now
+      an accepted deviation, recorded in DEC-JUC-057 so nobody later "restores"
+      the mockup's lighter stroke thinking they are fixing a regression.
 - **Description**: Build, capture the full window under Xvfb at 1:1, and compare
   with the approved mockup. Check the group's gaps and the alignment with the
   VCF row. `unit_tests = false`, so this is the verification.

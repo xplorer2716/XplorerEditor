@@ -46,6 +46,13 @@ something, which is why this ADR is about placement as much as about drawing.
   that inversion is the entire difference between a recess and a bump. The two
   treatments must therefore never be given the same values, and are kept as
   separate token groups so they cannot silently converge.
+  The inner shadow is a **square stroke straddling the glass boundary**, which
+  renders heavier than the rounded stroke of the approved mockup. That drift was
+  incidental, not designed — it was surfaced by TASK-DSP-005's diff rather than
+  chosen — but the owner reviewed the two side by side and **kept the heavier
+  one** (2026-07-31): it reads as a more convincing recess. Recorded as an
+  accepted deviation from the mockup so a later reader does not "restore" the
+  lighter version thinking it fixes a regression.
 
 - **DEC-JUC-058 — The bezel belongs to `DisplayPanel`, not to
   `BackgroundRenderer`.** The alternative was tempting — the bezel is panel
