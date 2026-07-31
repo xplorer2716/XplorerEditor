@@ -272,6 +272,33 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     read, *Then* its value is a fraction of the glyph cell, not a pixel count.
     *Given* the render scale is doubled, *When* the panel is painted, *Then* the
     glow radius in device pixels doubles with it.
+
+- **RQ-DSN-098** — **The VFD bezel SHALL have its own token group.** The bezel
+  introduced by RQ-GUI-050 is a second, independent set of visual decisions
+  around the same component: band gradient stops, corner radius, the margin
+  between bezel and glass, and the alphas of its inner shadow, top-edge shadow
+  and bottom-edge highlight. They are visual values, so they belong in
+  `design-tokens.yaml` like every other (ADR-JUC-014, ADR-JUC-015).
+  - The **vertical and lateral margins SHALL be separate tokens**, not one
+    shared value. The mockup showed the bezel crowding the modulation matrix on
+    its right while having room above; a single margin cannot express that, and
+    collapsing them would force the design to accept whichever side looks worse.
+  - The bezel's relief SHALL be the **inverse** of the raised-plate treatment
+    (RQ-DSN-094: bright top, dark bottom). That is not decoration — it is what
+    distinguishes a recess from a bump under light from above, and the two must
+    not accidentally converge on the same values.
+  - These tokens are **chosen, not measured**: unlike the RQ-DSN-097 group there
+    is no reference artwork to fit against, since the .NET display had no bezel.
+    Their `note` SHALL say so, so a later reader does not go looking for a
+    baseline that never existed.
+  **Dependencies:** RQ-GUI-050, RQ-DSN-010, RQ-DSN-011, RQ-DSN-094, RQ-DSN-097;
+  ADR-JUC-014, ADR-JUC-015, ADR-JUC-024.
+  - **Acceptance (Gherkin):** *Given* the bezel renderer, *When* it is read,
+    *Then* every colour, radius, margin and alpha resolves to a token. *Given*
+    the token group, *When* the margins are read, *Then* the vertical and
+    lateral ones are distinct entries. *Given* any bezel token, *When* its note
+    is read, *Then* it records that the value is a design choice rather than a
+    measurement.
   - **Acceptance (Gherkin):** *Given* a build on any supported platform, *When*
     a combo box renders, *Then* it uses the embedded face and its label widths
     match the values the layout was verified against. *Given* the repository,
@@ -643,3 +670,4 @@ silently merged — owner confirms before migration):
 | 090–091 | `process/1.requirements/prompt.md` §1.2 |
 | 092–096 | RQ-GUI-046, RQ-GUI-047, RQ-GUI-048, RQ-SET-007, ADR-JUC-014, ADR-JUC-018–022 |
 | 097 | RQ-GUI-033, RQ-GUI-049, ADR-JUC-014, ADR-JUC-015, ADR-JUC-023 |
+| 098 | RQ-GUI-050, RQ-DSN-094, RQ-DSN-097, ADR-JUC-014, ADR-JUC-015, ADR-JUC-024 |

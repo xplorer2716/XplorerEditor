@@ -1,0 +1,148 @@
+# PLAN-DSP-001: VFD Bezel and Display-Group Alignment
+
+## Overview
+
+Frame the display with a recessed bezel and lift the display group (glass, MIDI
+LEDs, shortcut buttons) so the bezel's top edge lines up with the VCF block row.
+Implements ADR-JUC-024.
+
+Scope is the display's *surround* and *placement*. The glyph rendering of
+ADR-JUC-023 is untouched.
+
+## References
+
+- **Requirements**: RQ-GUI-050 *(new)*, RQ-DSN-098 *(new)*, RQ-GUI-001,
+  RQ-GUI-022, RQ-GUI-033, RQ-GUI-037, RQ-DSN-094
+- **ADRs**: ADR-JUC-024 *(this plan implements it)*; ADR-JUC-006 (control-table
+  deviation policy), ADR-JUC-013 (vector background), ADR-JUC-014 / ADR-JUC-015
+  (tokens), ADR-JUC-023 (the renderer this sits around)
+
+Session state: `unit_tests = false`, `platform = linux`, `chat_mode = chat-eco`.
+No unit tests are written; verification is the Xvfb/screenshot pipeline against
+the owner-approved mockup.
+
+**Approved mockup:** `full_bezelB_aligned.png`, owner-validated 2026-07-31. The
+throwaway patch that produced it is `vfd-bezel-B-aligned-mockup.patch` — both in
+the session scratchpad, i.e. **not durable**; the numbers that matter are
+restated in the tasks below so the plan stands on its own.
+
+**DoR — presented for owner approval before any task starts.**
+
+---
+
+## Tasks
+
+| Task | Description | Tier | RQ / ADR |
+|------|-------------|:-:|---|
+| TASK-DSP-001 | Bezel token group in `design-tokens.yaml` | M | RQ-DSN-098, DEC-JUC-057/060/061 |
+| TASK-DSP-002 | Record the display-group lift in the control table | M | RQ-GUI-050, DEC-JUC-059 |
+| TASK-DSP-003 | Draw the bezel in `DisplayPanel` | M | RQ-GUI-050, DEC-JUC-057/058 |
+| TASK-DSP-004 | Inset the glyph grid so wrapping matches the glass | S | RQ-GUI-020, DEC-JUC-058 |
+| TASK-DSP-005 | Verify against the approved mockup | S | RQ-GUI-050, RQ-GUI-022 |
+
+---
+
+### TASK-DSP-001: Bezel token group in `design-tokens.yaml`
+- **Tier**: M
+- **Status**: Not Started
+- **Description**: Add the `vfdBezel*` tokens — band gradient stops, corner
+  radius, vertical and lateral margins, inner-shadow / top-rim / bottom-rim
+  alphas — in the `global` tier with `component` aliases, and regenerate
+  `DesignTokens.hpp`. Every note records that the value is a **design choice**,
+  not a measurement: there is no reference artwork, the .NET display had no
+  bezel.
+- **Requirement refs**: RQ-DSN-098
+- **ADR refs**: ADR-JUC-024 (DEC-JUC-057, DEC-JUC-060, DEC-JUC-061)
+- **Acceptance Criteria**:
+  - *Given* the token group, *When* the margins are read, *Then* the vertical
+    and lateral ones are distinct entries (mockup values: 6 vertical, lateral to
+    be chosen — the mockup's 6 crowded the modulation matrix).
+  - *Given* any bezel token, *When* its note is read, *Then* it says the value
+    is chosen rather than fitted, so nobody looks for a baseline that never
+    existed.
+  - *Given* the bezel and the raised-plate tokens, *When* compared, *Then* the
+    bezel's relief runs dark-top/light-bottom and RQ-DSN-094's the other way.
+  - *Given* the generator, *When* run with `--check`, *Then* it is idempotent.
+- **Dependencies**: None
+- **Assignee**: AI
+
+### TASK-DSP-002: Record the display-group lift in the control table
+- **Tier**: M
+- **Status**: Not Started
+- **Description**: Move `_vfdDisplay`, `_ledPanelControl` and the eight
+  `btPatch*`/`btSettings` entries up in `GeneratedControlTable.inc`, with a
+  header note giving the rationale — as the TASK-GUI-009 VCO2 deviation did. The
+  mockup's numbers: display content lifted so the **bezel top** lands at canvas
+  `y=18` (level with the VCF row, drawn at mockup `y=45` minus the 27 px crop),
+  LEDs and buttons lifted 6 px so the gaps below the bezel are unchanged.
+- **Requirement refs**: RQ-GUI-050, RQ-GUI-001, RQ-GUI-022
+- **ADR refs**: ADR-JUC-024 (DEC-JUC-059), ADR-JUC-006
+- **Acceptance Criteria**:
+  - *Given* the control table, *When* the display-group entries are read,
+    *Then* their lifted coordinates are there, with a header note explaining the
+    deviation from the archived reference.
+  - *Given* `MainComponent`, *When* the group is placed, *Then* it applies **no**
+    offset of its own — the table is what the screen shows.
+  - *Given* the extractor script, *When* it is inspected, *Then* the deviation is
+    documented alongside the existing TASK-GUI-009 one rather than silently
+    overwritten on a future run.
+- **Dependencies**: None
+- **Assignee**: AI
+
+### TASK-DSP-003: Draw the bezel in `DisplayPanel`
+- **Tier**: M
+- **Status**: Not Started
+- **Description**: Paint the band, its two rim hairlines and the glass's inner
+  shadow, then the glass, then the glyph block — all from tokens, no literal.
+  The component's bounds now cover bezel **and** glass.
+- **Requirement refs**: RQ-GUI-050, RQ-DSN-098
+- **ADR refs**: ADR-JUC-024 (DEC-JUC-057, DEC-JUC-058)
+- **Acceptance Criteria**:
+  - *Given* the painted panel, *When* its edges are compared, *Then* the top rim
+    is darker than the band and the bottom rim lighter.
+  - *Given* the renderer source, *When* it is read, *Then* no bezel colour,
+    radius, margin or alpha appears as a literal.
+  - *Given* any render scale, *When* the panel is painted, *Then* the glass's
+    inner edge stays aligned with the bezel — the reason DEC-JUC-058 keeps both
+    in one component.
+- **Dependencies**: TASK-DSP-001, TASK-DSP-002
+- **Assignee**: AI
+
+### TASK-DSP-004: Inset the glyph grid so wrapping matches the glass
+- **Tier**: S
+- **Status**: Not Started
+- **Description**: `maxCharsPerLine()` and `lineCount()` derive the grid from
+  the **inset** rectangle, not the full bounds. `VfdDisplayHelper` uses
+  `maxCharsPerLine()` as its wrap threshold, so leaving it on the outer bounds
+  would wrap text to a width the glass does not have — text would be clipped by
+  the bezel. This is the one place where DEC-JUC-058's cost bites, hence its own
+  task rather than a line buried in TASK-DSP-003.
+- **Requirement refs**: RQ-GUI-020, RQ-GUI-033
+- **ADR refs**: ADR-JUC-024 (DEC-JUC-058)
+- **Acceptance Criteria**:
+  - *Given* the panel bounds, *When* the grid is computed, *Then* it comes from
+    the bounds minus the margins, and still yields 22×5 at the launch geometry.
+  - *Given* a parameter-edit line long enough to wrap, *When* it is shown,
+    *Then* it wraps inside the glass with no character under the bezel.
+- **Dependencies**: TASK-DSP-003
+- **Assignee**: AI
+
+### TASK-DSP-005: Verify against the approved mockup
+- **Tier**: S
+- **Status**: Not Started
+- **Description**: Build, capture the full window under Xvfb at 1:1, and compare
+  with the approved mockup. Check the group's gaps and the alignment with the
+  VCF row. `unit_tests = false`, so this is the verification.
+- **Requirement refs**: RQ-GUI-050, RQ-GUI-022, RQ-GUI-005
+- **ADR refs**: ADR-JUC-024
+- **Acceptance Criteria**:
+  - *Given* the built application, *When* captured at 1:1, *Then* the bezel's top
+    edge is level with the top of the VCF block row.
+  - *Given* the capture, *When* the display group is measured, *Then* the gaps
+    between bezel, LED strip and buttons match the approved mockup.
+  - *Given* an enlarged window, *When* captured, *Then* the bezel scales with the
+    canvas and stays aligned to the glass.
+  - *Given* the build, *When* it completes, *Then* it is warning-clean and the
+    existing suite (106) still passes.
+- **Dependencies**: TASK-DSP-004
+- **Assignee**: AI
