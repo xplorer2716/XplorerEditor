@@ -1,7 +1,14 @@
 #include "DisplayPanel.hpp"
 
+#include "DesignTokens.hpp"
+
 namespace xplorer::app
 {
+    namespace
+    {
+        namespace bezel = tokens::component;
+    }
+
     DisplayPanel::DisplayPanel()
     {
         // The whole surface is painted (black + glyph cells), and the text
@@ -40,11 +47,50 @@ namespace xplorer::app
         repaint();
     }
 
+    juce::Rectangle<int> DisplayPanel::glassBounds() const
+    {
+        return getLocalBounds().reduced(bezel::vfdBezelMarginH, bezel::vfdBezelMarginV);
+    }
+
+    void DisplayPanel::paintBezel(juce::Graphics& g, juce::Rectangle<int> glass) const
+    {
+        const auto outer = getLocalBounds().toFloat();
+
+        // The band is the panel's own metal, inverted: dark at the top, light
+        // at the bottom. Under light from above that inversion is the whole
+        // difference between a recess and a bump, which is why it must not be
+        // confused with the raised-plate relief of RQ-DSN-094. [DEC-JUC-057]
+        g.setGradientFill({bezel::vfdBezelBandTop, outer.getX(), outer.getY(),
+                           bezel::vfdBezelBandBottom, outer.getX(), outer.getBottom(), false});
+        g.fillRoundedRectangle(outer, bezel::vfdBezelRadius);
+
+        // Outer rim, same inversion: shadow on top, catch-light underneath.
+        const auto inset = outer.reduced(bezel::vfdBezelRadius, 0.0F);
+        g.setColour(juce::Colours::black.withAlpha(bezel::vfdBezelRimDark));
+        g.drawLine(inset.getX(), outer.getY() + 0.5F, inset.getRight(), outer.getY() + 0.5F);
+        g.setColour(juce::Colours::white.withAlpha(bezel::vfdBezelRimLight));
+        g.drawLine(inset.getX(), outer.getBottom() - 0.5F,
+                   inset.getRight(), outer.getBottom() - 0.5F);
+
+        // The shadow the band casts onto the glass edge — the cue that the
+        // glass sits *below* the band rather than flush with it. Drawn as a
+        // stroke straddling the glass boundary, so it darkens the band's inner
+        // lip and the glass's outer edge alike.
+        g.setColour(juce::Colours::black.withAlpha(bezel::vfdBezelInnerShadow));
+        g.drawRect(glass.toFloat().expanded(bezel::vfdBezelInnerWidth * 0.5F),
+                   bezel::vfdBezelInnerWidth);
+    }
+
     void DisplayPanel::paint(juce::Graphics& g)
     {
-        g.fillAll(juce::Colours::black);
-        const int cols = getWidth() / GLYPH_WIDTH;
-        const int rows = getHeight() / GLYPH_HEIGHT;
+        const auto glass = glassBounds();
+        paintBezel(g, glass);
+
+        g.setColour(juce::Colours::black);
+        g.fillRect(glass);
+
+        const int cols = glass.getWidth() / GLYPH_WIDTH;
+        const int rows = glass.getHeight() / GLYPH_HEIGHT;
         if (cols <= 0 || rows <= 0)
         {
             return;
@@ -75,8 +121,8 @@ namespace xplorer::app
         // categorically different from the sprite this replaced: the detail is
         // genuinely rendered at the target resolution and merely filtered by a
         // fraction of a pixel, rather than absent and magnified.
-        const int left = (getWidth() - cols * GLYPH_WIDTH) / 2;
-        const int top = (getHeight() - rows * GLYPH_HEIGHT) / 2;
+        const int left = glass.getX() + (glass.getWidth() - cols * GLYPH_WIDTH) / 2;
+        const int top = glass.getY() + (glass.getHeight() - rows * GLYPH_HEIGHT) / 2;
         g.drawImage(block,
                     juce::Rectangle<float>(static_cast<float>(left),
                                            static_cast<float>(top),

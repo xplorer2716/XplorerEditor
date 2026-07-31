@@ -124,7 +124,19 @@ restated in the tasks below so the plan stands on its own.
 
 ### TASK-DSP-003: Draw the bezel in `DisplayPanel`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — band, rim hairlines and inner shadow, all from tokens.
+  Build clean, suite 106/106. Measured from the running app (canvas coords):
+  bezel top edge `(24,24,28)` at y=18, bottom edge `(101,102,109)` at y=111,
+  surrounding plate `(68,69,78)` — the top reads darker than the plate and the
+  bottom lighter, which is the recess cue of DEC-JUC-057. The top edge sits on
+  the VCF block frame, so the alignment RQ-GUI-050 asks for holds.
+  - **Left deliberately for TASK-DSP-004:** `maxCharsPerLine()` and
+    `lineCount()` still derive from the raw bounds. They return 22×5 — the same
+    as the glass-based computation in `paint()` — but **only by coincidence**:
+    `275/12` and `267/12` both floor to 22, `94/16` and `82/16` both to 5. A
+    larger margin would separate them and text would wrap under the bezel. This
+    is the sort of accident that hides a bug until someone retunes a token,
+    which is exactly why the plan gave it its own task instead of a line here.
 - **Description**: Paint the band, its two rim hairlines and the glass's inner
   shadow, then the glass, then the glyph block — all from tokens, no literal.
   The component's bounds now cover bezel **and** glass.
