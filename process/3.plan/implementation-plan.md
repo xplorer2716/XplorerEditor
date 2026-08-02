@@ -16,6 +16,10 @@
 - [Phase 5 — View (JUCE app)](5-Phase-5-View.md)
 - [Phase 6 — Integration & cut-over](6-Phase-6-Integration.md)
 
+- [Phase 9 — VFD vector rendering (ADR-JUC-023)](9-Phase-9-VFD-vector-rendering.md)
+- [Phase 10 — VFD bezel (ADR-JUC-024)](10-Phase-10-VFD-bezel.md)
+- [Phase 11 — Window size, scale menu, VFD device-pixel grid (ADR-JUC-025 / ADR-JUC-026)](11-Phase-11-Window-Size-Scale.md)
+
 ### Cross-cutting
 
 - [Design System (RQ-DSN, ADR-JUC-014 / ADR-JUC-015)](7-Phase-7-Design%20System.md)

@@ -235,6 +235,21 @@ namespace xplorer::app
         }
     }
 
+    // Floored, not rounded — see the header: the glass has ~3 logical px of
+    // slack over its grid, so rounding up would put the outermost glyphs under
+    // the bezel. Clamped to 1 so a vanishing scale degrades to the smallest
+    // real cell rather than to nothing.
+    // [RQ-SCL-004, ADR-JUC-026 (DEC-JUC-069)]
+    int VfdSegmentRenderer::cellWidthForScale(float scale) noexcept
+    {
+        return juce::jmax(1, static_cast<int>(std::floor(static_cast<float>(CELL_WIDTH) * scale)));
+    }
+
+    int VfdSegmentRenderer::cellHeightForScale(float scale) noexcept
+    {
+        return juce::jmax(1, static_cast<int>(std::floor(static_cast<float>(CELL_HEIGHT) * scale)));
+    }
+
     bool VfdSegmentRenderer::hasOverride(int codePoint) noexcept
     {
         return std::find(OVERRIDDEN_CHARACTERS.begin(), OVERRIDDEN_CHARACTERS.end(),
@@ -294,10 +309,19 @@ namespace xplorer::app
                                                 int rows,
                                                 float scale) const
     {
-        const auto cellWidth = static_cast<float>(CELL_WIDTH) * scale;
-        const auto cellHeight = static_cast<float>(CELL_HEIGHT) * scale;
-        const auto width = juce::roundToInt(static_cast<float>(columns) * cellWidth);
-        const auto height = juce::roundToInt(static_cast<float>(rows) * cellHeight);
+        // The cell is snapped to whole device pixels before anything is laid
+        // out. Left in floating point, `column * 12 * scale` puts every column
+        // at a different sub-pixel phase, so the same character rasterises
+        // differently along a line — the defect RQ-SCL-004 names. Snapping the
+        // WIDTH alone is enough: the segment paths are normalised to it and
+        // the glow radius is a fraction of it, so one value carries the whole
+        // glyph onto the device grid. [DEC-JUC-069]
+        const auto cellWidthPixels = cellWidthForScale(scale);
+        const auto cellHeightPixels = cellHeightForScale(scale);
+        const auto cellWidth = static_cast<float>(cellWidthPixels);
+        const auto cellHeight = static_cast<float>(cellHeightPixels);
+        const auto width = columns * cellWidthPixels;
+        const auto height = rows * cellHeightPixels;
         if (width <= 0 || height <= 0)
         {
             return {};

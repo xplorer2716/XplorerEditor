@@ -30,6 +30,12 @@
 
 namespace xplorer::app
 {
+    /// Resizes `window` to a View-menu scale and re-centres it. One
+    /// implementation, two callers (the launch size in Main.cpp and the menu
+    /// handler here), so the size and the centring are stated once.
+    /// [RQ-SCL-001, RQ-SCL-002, ADR-JUC-025 (DEC-JUC-063, DEC-JUC-064)]
+    void applyWindowScale(juce::ResizableWindow& window, float scale);
+
     class MainComponent final : public juce::Component, public juce::MenuBarModel
     {
     public:
@@ -38,7 +44,8 @@ namespace xplorer::app
 
         void paint(juce::Graphics& g) override;
 
-        // MenuBarModel (File / Patch / Tools / Help). [RQ-GUI-008]
+        // MenuBarModel (File / Patch / View / Tools / Help). [RQ-GUI-008,
+        // RQ-SCL-002, RQ-SCL-003]
         juce::StringArray getMenuBarNames() override;
         juce::PopupMenu getMenuForIndex(int index, const juce::String& name) override;
         void menuItemSelected(int menuItemId, int topLevelMenuIndex) override;
@@ -58,6 +65,11 @@ namespace xplorer::app
         void onSynthPageChanged(const controller::PageChangeEvent& event);
         void onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event);
         void openSettingsDialog();
+        /// The window's current content width, or 0 when not yet parented —
+        /// what DEC-JUC-066 ticks the View menu against.
+        [[nodiscard]] int currentWindowWidth() const;
+        /// The top-level window, or nullptr before the component is parented.
+        [[nodiscard]] juce::ResizableWindow* topLevelWindow() const;
         void updateLedColour(int argb);
         void updateBlockPalette(const BlockPalette& palette); // [RQ-DSN-095, ADR-JUC-020]
         void backupAllData();
