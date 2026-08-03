@@ -105,9 +105,16 @@ not just the initial migration.
 - **RQ-DSN-004** — `colour.accent.default` shall remain the single runtime
   source of truth already established by `XplorerLookAndFeel::ledColour()`
   (ADR-JUC-011): the settings-provided user override and the token default
-  resolve through that one accessor; the modulation-matrix highlight and any
-  future consumer of the accent colour shall read the accessor, never cache
-  or hard-code a copy.
+  resolve through that one accessor; every consumer of the accent colour shall
+  read the accessor, never cache or hard-code a copy.
+  - *Amended 2026-08-03 (owner decision, session GUI).* The
+    **modulation-matrix highlight is no longer a consumer of the accent
+    colour**: RQ-GUI-052 rebuilds it on the functional-block identity family
+    (§2.1b) instead, so the highlight now brightens the block hue the combo
+    already carries. The single-accessor rule itself is unchanged and still
+    binds every remaining consumer (knob LED ring, checked toggle, keyboard
+    focus ring). The example is corrected here rather than left standing,
+    because a stale example in a rule this widely cited is read as the rule.
 - **RQ-DSN-005** — Component-tier colour tokens (§2 three-tier model) may
   apply a documented, named transformation of a semantic token — brighten by
   the shared hover factor (§2.6), or a fixed alpha (e.g. the tick-box border
@@ -328,6 +335,42 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     and none to `strokeLine`. *Given* the two roles, *When* their values are
     compared with `strokeBorder`, *Then* `strokeBorder` < `strokeDiagram` <
     `strokeLine`.
+
+- **RQ-DSN-100** — **The block-identity family SHALL extend to controls that
+  *reference* a block, not only to the panel areas that *are* one.** RQ-DSN-092
+  introduced the eight hues for the background diagram; RQ-GUI-045 already
+  applies them to the page-family selector buttons, and RQ-GUI-052 now applies
+  them to the modulation-matrix combo boxes. This requirement states the shared
+  rule so the third consumer does not invent a fourth convention:
+  - A control that references a functional block SHALL use **background = block
+    hue at `component.blockFillAlpha`, frame = block hue at full saturation** —
+    the same fill/frame relationship RQ-DSN-094 defines for the blocks
+    themselves. No new alpha and no new colour value are introduced for this.
+  - A control whose referenced value has **no** functional block SHALL keep its
+    default appearance unchanged. The neutral case is a real state, not an
+    oversight to be papered over with a placeholder hue.
+  - A **selection or cross-reference highlight** on such a control SHALL be
+    expressed by changing the **frame** (width and/or brightness), never by
+    replacing the background — the background is already carrying the block
+    identity, and overwriting it destroys information at the moment the user
+    is most interested in it. Where a highlight needs to be unmistakable on an
+    already-tinted control, it SHALL combine **`semantic.strokeDiagram`** (the
+    block-frame width, RQ-DSN-099) with **`motion.hoverBrighten`** (RQ-DSN-023)
+    rather than introduce a highlight-specific width or colour.
+  - Every consumer SHALL resolve the hue through the single runtime palette
+    accessor of RQ-DSN-095 — no compile-time token read, no cached copy — so
+    user re-theming reaches all of them at once.
+  **Dependencies:** RQ-GUI-045, RQ-GUI-052, RQ-DSN-023, RQ-DSN-092, RQ-DSN-094,
+  RQ-DSN-095, RQ-DSN-099; ADR-JUC-014, ADR-JUC-018, ADR-JUC-020, ADR-JUC-028.
+  - **Acceptance (Gherkin):** *Given* any block-referencing control, *When* it is
+    rendered, *Then* its fill alpha is `blockFillAlpha` and its frame is the pure
+    block hue, matching the block's own treatment. *Given* such a control whose
+    value has no block, *When* it is rendered, *Then* it is
+    indistinguishable from the same control before the block family existed.
+    *Given* a highlighted block-referencing control, *When* it is compared with
+    its resting state, *Then* only its frame differs. *Given* a user palette
+    change, *When* any consumer repaints, *Then* it shows the new hue without a
+    restart.
   - **Acceptance (Gherkin):** *Given* a build on any supported platform, *When*
     a combo box renders, *Then* it uses the embedded face and its label widths
     match the values the layout was verified against. *Given* the repository,
@@ -701,3 +744,4 @@ silently merged — owner confirms before migration):
 | 097 | RQ-GUI-033, RQ-GUI-049, ADR-JUC-014, ADR-JUC-015, ADR-JUC-023 |
 | 098 | RQ-GUI-050, RQ-DSN-094, RQ-DSN-097, ADR-JUC-014, ADR-JUC-015, ADR-JUC-024 |
 | 099 | RQ-GUI-051, RQ-GUI-037, RQ-GUI-044, RQ-DSN-021, RQ-DSN-094, ADR-JUC-013, ADR-JUC-014, ADR-JUC-015, ADR-JUC-027 |
+| 100 | RQ-GUI-045, RQ-GUI-052, RQ-DSN-023, RQ-DSN-092, RQ-DSN-094, RQ-DSN-095, RQ-DSN-099, ADR-JUC-014, ADR-JUC-018, ADR-JUC-020, ADR-JUC-028 |
