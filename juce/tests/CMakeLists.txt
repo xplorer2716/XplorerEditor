@@ -84,9 +84,14 @@ if(XPL_BUILD_APP)
         app/ComboBoxRealMetricsTests.cpp
         app/VfdSegmentRendererTests.cpp
         app/BackgroundRendererTests.cpp
+        app/BoundRadioGroupTests.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
-        ../app/src/BlockPalette.cpp)
+        ../app/src/BlockPalette.cpp
+        # BoundControls carries the RQ-GUI-053 orientation rule, which is a
+        # widget-geometry decision: it can only be pinned against real
+        # juce::Component bounds. [RQ-GUI-053, ADR-JUC-016 (DEC-JUC-086)]
+        ../app/src/BoundControls.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the
