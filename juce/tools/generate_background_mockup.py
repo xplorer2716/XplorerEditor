@@ -68,7 +68,10 @@ def _darker(hex_col: str, amount: float) -> str:
     return "#%02X%02X%02X" % (round(r * 255), round(g * 255), round(b * 255))
 
 # line width + font scale (names mirror BackgroundRenderer.cpp FS_*)
-LW = _num("strokeLine")
+# ONE width for every diagram stroke -- block frames, signal lines and neutral
+# sub-panel frames alike -- so the diagram reads as a single drawing rather than
+# a set of frames with lines of a different weight between them. [RQ-GUI-051]
+LW = _num("strokeDiagram")
 FS_SECTION = _num("textTitle")     # 15 — section titles
 FS_VCO = _num("textDisplay")       # 16 — VCO1 / VCO2
 FS_MIX = _num("textSubtitle")      # 14 — MIX / LAG / LFO / RAMP
@@ -156,34 +159,62 @@ svg.append(wood(W - 28))
 # Diagram geometry below stays in reference coordinates; translate the whole
 # group up over the cropped menustrip band (matches the JUCE painter).
 svg.append(f'<g transform="translate(0,-{CROP})">')
+DIAGRAM_START = len(svg)
+
+# ---------------------------------------------------------------- layering
+# Every diagram element carries a layer marker and the whole diagram is
+# re-ordered into LINES -> BOXES -> TEXT at output time, instead of being
+# painted in the reading order of the code below.
+#
+# Why: a signal line or knob stub that ends ON a block edge is written after
+# that block here (it belongs to the block's paragraph), so in code order its
+# rounded end-cap lands on top of the block -- a visible nub of neutral line
+# colour inside the coloured fill and across the frame. Painting every line
+# first and every block over them makes each block read as a solid object the
+# lines run *into*, which is the physical reading the diagram wants.
+# Text stays last so a label is never covered by the fill it sits on.
+# [RQ-GUI-051]
+_LINES, _BOXES, _TEXT = "1", "2", "3"
+_MARK = "\x00"
+
+
+def _tag(layer, markup):
+    """Prefix an element with its layer marker. Elements are concatenated with
+    `+` all over the script, so the marker travels with each element rather
+    than with the appended string as a whole."""
+    return f"{_MARK}{layer}{markup}"
+
 
 # ---------------------------------------------------------------- helpers
 def box(x, y, w, h, blk=None):
     """Block frame. `blk` = the owning block's key: the box is then filled with
     the block hue at FILL_A and framed with the relief gradient (pure hue on the
     top edge, darkened on the bottom edge). `None` = neutral, unfilled frame,
-    used for control sub-panels which must not compete with the blocks.
-    [RQ-GUI-044, RQ-DSN-094]"""
+    used for control sub-panels which must not compete with the blocks. Both
+    use the single diagram stroke width LW (RQ-GUI-051).
+    [RQ-GUI-044, RQ-DSN-094, RQ-GUI-051]"""
     if blk is None:
-        return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>'
-    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="{BLOCK[blk]}" '
-            f'fill-opacity="{FILL_A}" stroke="url(#frame-{blk})" stroke-width="{LW}"/>')
+        return _tag(_BOXES, f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
+    return _tag(_BOXES,
+                f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="2" fill="{BLOCK[blk]}" '
+                f'fill-opacity="{FILL_A}" stroke="url(#frame-{blk})" stroke-width="{LW}"/>')
 def line(x1, y1, x2, y2):
     # round caps so perpendicular segments join with a soft rounded corner
     # matching the block frames (JUCE PathStrokeType curved/rounded)
-    return f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{FRAME}" stroke-width="{LW}" stroke-linecap="round"/>'
+    return _tag(_LINES, f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{FRAME}" stroke-width="{LW}" stroke-linecap="round"/>')
 def stub(cx, y, ln=12):
     return line(cx, y, cx, y + ln)
 def T(x, y, s, size=FS_SECTION, w="bold", fill=TITLE, anchor="start", ls="0.5"):
-    return (f'<text x="{x}" y="{y}" font-family="Arial, Helvetica, sans-serif" font-size="{size}" '
-            f'font-weight="{w}" fill="{fill}" text-anchor="{anchor}" letter-spacing="{ls}">{s}</text>')
+    return _tag(_TEXT,
+                f'<text x="{x}" y="{y}" font-family="Arial, Helvetica, sans-serif" font-size="{size}" '
+                f'font-weight="{w}" fill="{fill}" text-anchor="{anchor}" letter-spacing="{ls}">{s}</text>')
 def caption(x, y, s):
     return T(x, y, s, FS_CAPTION, "normal", CAPTION, "middle", "0.5")
 def section(x, y, s, barw, blk):
     """Section header: label text + underline bar, both in the block's identity
     colour (replaces the former shared blue gradient). [RQ-GUI-044]"""
     return (T(x, y - 7, s, FS_SECTION, "bold", BLOCK[blk]) +
-            f'<rect x="{x}" y="{y}" width="{barw}" height="4.5" fill="url(#bar-{blk})"/>')
+            _tag(_TEXT, f'<rect x="{x}" y="{y}" width="{barw}" height="4.5" fill="url(#bar-{blk})"/>'))
 def outlab(x, y, s1, s2):
     return (line(x, y, x + 14, y) +
             T(x + 19, y - 2, s1, FS_OUT, "bold") + T(x + 19, y + 10, s2, FS_OUT, "bold"))
@@ -215,7 +246,7 @@ svg.append(line(276, 220, 284, 220) + line(284, 220, 284, 180))
 # the x=499 vertical, rising at x=513, then onto the VCF FREQ stub (y=82).
 svg.append(line(276, 230, 289, 230) + line(289, 230, 289, 180))
 svg.append(line(289, 180, 492, 180))
-svg.append(f'<path d="M492 180 A 7 7 0 0 1 506 180" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
+svg.append(_tag(_LINES, f'<path d="M492 180 A 7 7 0 0 1 506 180" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>'))
 svg.append(line(506, 180, 513, 180) + line(513, 180, 513, 82) + line(513, 82, 541, 82))
 
 # --- FM / VCO2 group
@@ -229,7 +260,7 @@ svg.append(line(381, 232, 405, 232))
 svg.append(box(405, 220, 53, 26, "vco") + T(431, 238, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(430, 246, 24))
 # VCO2-row VCA out -> right, then up at x=499 into the VCF  [owner point 2]
 svg.append(line(458, 232, 499, 232) + line(499, 232, 499, 70))
-svg.append(f'<path d="M499 70 Q499 58 509 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>')
+svg.append(_tag(_LINES, f'<path d="M499 70 Q499 58 509 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>'))
 svg.append(caption(430, 314, "VOLUME"))
 svg.append(box(51, 310, 147, 52, "vco") + T(64, 341, "VCO2", FS_VCO))
 for wave, y in [("TRIANGLE", 320), ("SAWTOOTH", 334), ("PULSE", 348)]:
@@ -239,7 +270,7 @@ svg.append(line(198, 320, 297, 320) + line(297, 320, 297, 228) + line(297, 228, 
 svg.append(line(198, 334, 303, 334) + line(303, 334, 303, 237) + line(303, 237, 329, 237))
 svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23, "vco") + T(259, 356, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(260, 363))
 svg.append(line(285, 348, 309, 348) + line(309, 348, 309, 246) + line(309, 246, 329, 246))
-svg.append(f'<text x="318" y="300" font-family="Arial" font-size="{FS_SMALL}" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>')
+svg.append(_tag(_TEXT, f'<text x="318" y="300" font-family="Arial" font-size="{FS_SMALL}" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>'))
 svg.append(line(317, 255, 329, 255) + line(317, 255, 317, 270))
 svg.append(stub(82, 362) + stub(169, 362))
 svg.append(caption(82, 418, "FREQUENCY") + caption(169, 418, "DETUNE") + caption(260, 418, "PULSE WIDTH"))
@@ -315,7 +346,25 @@ svg.append(section(527, 799, "RAMP X", 370, "ramp"))
 # ================================================================ RIGHT
 svg.append(section(958, 799, "MODULATION MATRIX", 268, "matrix"))
 
+# ---------------------------------------------------------------- z-order
+# Re-order the diagram out of code order into paint order (see "layering"
+# above). Splitting on the marker rather than tracking elements per append
+# keeps the geometry section untouched: every element carries its own layer,
+# regardless of how many were concatenated into one appended string.
+_diagram = "".join(svg[DIAGRAM_START:])
+del svg[DIAGRAM_START:]
+_layered = {_LINES: [], _BOXES: [], _TEXT: []}
+for _element in _diagram.split(_MARK):
+    if not _element:
+        continue
+    _layered[_element[0]].append(_element[1:])
+_missing = [k for k, v in _layered.items() if not v]
+assert not _missing, f"empty diagram layer(s): {_missing} — an element lost its marker"
+for _layer in (_LINES, _BOXES, _TEXT):
+    svg.append("".join(_layered[_layer]))
+
 svg.append('</g>')
 svg.append('</svg>')
 OUT_PATH.write_text("\n".join(svg), encoding="utf-8")
-print(f"SVG written to {OUT_PATH}")
+print(f"SVG written to {OUT_PATH}: "
+      f"{len(_layered[_LINES])} lines, {len(_layered[_BOXES])} boxes, {len(_layered[_TEXT])} text elements.")
