@@ -9,6 +9,8 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 using namespace xplorer::app;
 
@@ -230,6 +232,72 @@ SCENARIO("Knobs and selectors resolve to their modulation destination/source", "
         THEN("an unknown selector yields nothing")
         {
             CHECK_FALSE(modulationSourceForSelector("ENV_9").has_value());
+        }
+    }
+}
+
+SCENARIO("Every declared radio panel resolves to its reference options",
+         "[RQ-GUI-053][RQ-GUI-032]")
+{
+    // Regression guard for issue #31: ENV_X/RAMP_X_TRIG_SINGLE_MULTI were
+    // declared in the control table but absent from the option metadata, so the
+    // widget factories skipped them silently and a whole trigger mode was
+    // uneditable. [RQ-GUI-053, ADR-JUC-016 (DEC-JUC-087)]
+    const std::vector<std::pair<std::string, int>> singleMulti = {{"SINGLE", 0}, {"MULTI", 1}};
+
+    GIVEN("the control table")
+    {
+        std::set<std::string> panelIds;
+        for (const auto& spec : controlTable())
+        {
+            if (spec.kind == ControlKind::RadioButtonPanel)
+            {
+                panelIds.insert(spec.id);
+            }
+        }
+
+        THEN("it declares exactly the four reference radio panels")
+        {
+            CHECK(panelIds
+                  == std::set<std::string>{"ENV_X_TRIG_SINGLE_MULTI", "FM_DESTINATION",
+                                           "LAG_TIMING_LINEAR_EXPO", "RAMP_X_TRIG_SINGLE_MULTI"});
+        }
+
+        THEN("every one of them resolves to a non-empty option set")
+        {
+            for (const auto& id : panelIds)
+            {
+                INFO("radio panel without options: " << id);
+                CHECK_FALSE(radioPanelOptions(id).empty());
+            }
+        }
+    }
+
+    GIVEN("the page-family trigger panels")
+    {
+        THEN("both carry the reference SINGLE=0 / MULTI=1 pair, in reference order")
+        {
+            CHECK(radioPanelOptions("ENV_X_TRIG_SINGLE_MULTI") == singleMulti);
+            CHECK(radioPanelOptions("RAMP_X_TRIG_SINGLE_MULTI") == singleMulti);
+        }
+    }
+
+    GIVEN("the fixed-block panels")
+    {
+        THEN("their options are unchanged")
+        {
+            CHECK(radioPanelOptions("FM_DESTINATION")
+                  == std::vector<std::pair<std::string, int>>{{"VCO1", 0}, {"VCF", 1}});
+            CHECK(radioPanelOptions("LAG_TIMING_LINEAR_EXPO")
+                  == std::vector<std::pair<std::string, int>>{{"LINEAR", 0}, {"EXPO", 1}});
+        }
+    }
+
+    GIVEN("an id that is not a radio panel")
+    {
+        THEN("no options are returned")
+        {
+            CHECK(radioPanelOptions("VCO1_FREQ").empty());
         }
     }
 }

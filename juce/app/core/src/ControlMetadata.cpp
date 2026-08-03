@@ -32,10 +32,15 @@ namespace xplorer::app
 #include "GeneratedComboEnumMap.inc"
         };
 
-        // RadioButtonPanels of the fixed blocks. Values are authoritative
-        // (child-radio Tag integers from the reference); labels are derived
-        // from the child-radio names (the reference bakes them into the
-        // background bitmap). [RQ-GUI-032]
+        // Every RadioButtonPanel of the control table -- the two fixed-block
+        // panels and the two page-family trigger panels. Values are
+        // authoritative (child-radio Tag integers from the reference); labels
+        // are derived from the child-radio names (the reference bakes them into
+        // the background bitmap). Keeping all four here is what
+        // "every RadioButtonPanel spec resolves to options" asserts: the two
+        // ENV/RAMP rows were missing, so those controls were declared in the
+        // table and never built (issue #31).
+        // [RQ-GUI-032, RQ-GUI-053, ADR-JUC-016 (DEC-JUC-087)]
         struct RadioPanel
         {
             std::string_view controlId;
@@ -47,6 +52,9 @@ namespace xplorer::app
             static const std::vector<RadioPanel> panels = {
                 {"FM_DESTINATION", {{"VCO1", 0}, {"VCF", 1}}},
                 {"LAG_TIMING_LINEAR_EXPO", {{"LINEAR", 0}, {"EXPO", 1}}},
+                // rdSINGLE/rdRampXSingle Tag "0", rdMULTI/rdRampXMulti Tag "1".
+                {"ENV_X_TRIG_SINGLE_MULTI", {{"SINGLE", 0}, {"MULTI", 1}}},
+                {"RAMP_X_TRIG_SINGLE_MULTI", {{"SINGLE", 0}, {"MULTI", 1}}},
             };
             return panels;
         }

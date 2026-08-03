@@ -179,6 +179,22 @@ namespace xplorer::app
                     }
                     return std::make_unique<BoundComboBox>(registry, concreteParameterName, options);
                 }
+                case ControlKind::RadioButtonPanel:
+                {
+                    // The ENV X / RAMP X SINGLE-MULTI trigger panels. Same widget
+                    // as the fixed-block path (MainComponent), keyed on the shared
+                    // "_X_" tag like the combo above and bound to the concrete
+                    // instance -- so the block needs no radio-specific code at all
+                    // for instance switching. Was missing entirely, so both panels
+                    // fell through to nullptr and never appeared (issue #31).
+                    // [RQ-GUI-053, RQ-GUI-010, ADR-JUC-016 (DEC-JUC-085)]
+                    const auto options = radioPanelOptions(spec.tag);
+                    if (options.empty())
+                    {
+                        return nullptr;
+                    }
+                    return std::make_unique<BoundRadioGroup>(registry, concreteParameterName, options);
+                }
                 default:
                     return nullptr;
             }

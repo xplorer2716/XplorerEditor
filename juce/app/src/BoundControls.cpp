@@ -81,9 +81,11 @@ namespace xplorer::app
         : BoundControl(registry, std::move(parameterName))
     {
         int row = 1;
-        for (const auto& [label, value] : options)
+        // Not "label": juce::ComboBox has a member of that name, and this file
+        // is now compiled into the warnings-as-errors test target. [RQ-GUI-053]
+        for (const auto& [itemLabel, value] : options)
         {
-            addItem(label, row++);
+            addItem(itemLabel, row++);
             _valueByRow.push_back(value);
         }
         onChange = [this]
@@ -186,7 +188,28 @@ namespace xplorer::app
         {
             return;
         }
-        const int slotHeight = area.getHeight() / static_cast<int>(_options.size());
+        const int optionCount = static_cast<int>(_options.size());
+
+        // Orientation comes from the panel's own extracted bounds, never from a
+        // declared field: the reference geometry already says which way its
+        // designer laid the radios out. A panel too short to stack its options
+        // at the shared control-row height was drawn side by side there --
+        // ENV/RAMP SINGLE-MULTI (129x24, 126x22) -- while FM_DESTINATION (82x42)
+        // and LAG_TIMING (79x47) have the room and stay stacked. Both keep the
+        // control-row height, so radios stay on their sibling check boxes' row.
+        // [RQ-GUI-053, RQ-GUI-040, ADR-JUC-016 (DEC-JUC-086), ADR-JUC-014]
+        if (area.getHeight() < optionCount * tokens::semantic::controlRowHeight)
+        {
+            const int slotWidth = area.getWidth() / optionCount;
+            for (const auto& option : _options)
+            {
+                option.button->setBounds(
+                    area.removeFromLeft(slotWidth).withHeight(tokens::semantic::controlRowHeight));
+            }
+            return;
+        }
+
+        const int slotHeight = area.getHeight() / optionCount;
         for (const auto& option : _options)
         {
             option.button->setBounds(
