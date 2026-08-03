@@ -92,7 +92,8 @@ if(XPL_BUILD_APP)
         # BoundControls carries the RQ-GUI-053 orientation rule, which is a
         # widget-geometry decision: it can only be pinned against real
         # juce::Component bounds. [RQ-GUI-053, ADR-JUC-016 (DEC-JUC-086)]
-        ../app/src/BoundControls.cpp)
+        ../app/src/BoundControls.cpp
+        ../app/src/BlockPalette.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the
