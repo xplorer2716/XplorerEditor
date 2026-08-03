@@ -299,6 +299,35 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     lateral ones are distinct entries. *Given* any bezel token, *When* its note
     is read, *Then* it records that the value is a design choice rather than a
     measurement.
+
+- **RQ-DSN-099** — **The background diagram SHALL have one stroke role, distinct
+  from the control-widget stroke role.** Until now a single token
+  (`semantic.strokeLine`, 2.0px) served two unrelated consumers: every stroke of
+  the vector diagram (block frames, signal lines, sub-panel frames) **and**
+  several control-widget strokes (combo-box arrow, focus rings, page-family
+  selector outline). They coincided in value, not in meaning — so retuning the
+  diagram's weight for RQ-GUI-051 would silently have retuned the widgets too.
+  The two SHALL be separate roles:
+  - `semantic.strokeDiagram` — every stroke of the background diagram, **one
+    single width for all of them**. A block frame, a signal line and a neutral
+    sub-panel frame SHALL NOT differ in weight: the diagram is one drawing, and
+    an intermediate draft that gave block frames their own width made the lines
+    connecting them read as the heavier element (owner review, 2026-08-03).
+  - `semantic.strokeLine` — the control-widget strokes only. Its value is
+    unchanged, so no widget moves as a result of this split.
+  - The diagram stroke SHALL stay **thicker than `strokeBorder`** (the
+    button/tick-box frame), so a functional block still reads as stronger than a
+    widget drawn on top of it — the ordering, not just the values, is the design
+    decision, and it is what a regression test can hold.
+  **Dependencies:** RQ-GUI-051, RQ-GUI-037, RQ-GUI-044, RQ-DSN-005, RQ-DSN-021,
+  RQ-DSN-094; ADR-JUC-013, ADR-JUC-014, ADR-JUC-015, ADR-JUC-027.
+  - **Acceptance (Gherkin):** *Given* `design-tokens.yaml`, *When* the generator
+    runs, *Then* `strokeDiagram` and `strokeLine` both resolve and `--check`
+    reports the generated header in sync. *Given* the background painter, *When*
+    it is read, *Then* every stroke width it uses resolves to `strokeDiagram`
+    and none to `strokeLine`. *Given* the two roles, *When* their values are
+    compared with `strokeBorder`, *Then* `strokeBorder` < `strokeDiagram` <
+    `strokeLine`.
   - **Acceptance (Gherkin):** *Given* a build on any supported platform, *When*
     a combo box renders, *Then* it uses the embedded face and its label widths
     match the values the layout was verified against. *Given* the repository,
@@ -671,3 +700,4 @@ silently merged — owner confirms before migration):
 | 092–096 | RQ-GUI-046, RQ-GUI-047, RQ-GUI-048, RQ-SET-007, ADR-JUC-014, ADR-JUC-018–022 |
 | 097 | RQ-GUI-033, RQ-GUI-049, ADR-JUC-014, ADR-JUC-015, ADR-JUC-023 |
 | 098 | RQ-GUI-050, RQ-DSN-094, RQ-DSN-097, ADR-JUC-014, ADR-JUC-015, ADR-JUC-024 |
+| 099 | RQ-GUI-051, RQ-GUI-037, RQ-GUI-044, RQ-DSN-021, RQ-DSN-094, ADR-JUC-013, ADR-JUC-014, ADR-JUC-015, ADR-JUC-027 |
