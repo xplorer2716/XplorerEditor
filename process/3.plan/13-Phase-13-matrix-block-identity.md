@@ -41,6 +41,7 @@ third consumer of the block family invents nothing.
 | TASK-MTX-002 | `ModMatrixComboBox` carrying tint + highlight state | M | RQ-GUI-052, DEC-JUC-080 |
 | TASK-MTX-003 | Render tint and frame highlight in `drawComboBox` | M | RQ-GUI-052, RQ-DSN-100, DEC-JUC-078/081 |
 | TASK-MTX-004 | Wire `ModMatrixPanel`, retire the background-repaint highlight | M | RQ-GUI-018, RQ-GUI-052, DEC-JUC-082 |
+| TASK-MTX-005 | Make the focus ring additive: own width token, nested inside the border | M | RQ-GUI-042, RQ-DSN-033, DEC-JUC-083/084 |
 
 ---
 
@@ -113,11 +114,11 @@ third consumer of the block family invents nothing.
   - *Given* the same combo highlighted, *When* drawn, *Then* only the frame
     differs — brighter and at `strokeDiagram`.
   - *Given* a tinted combo that is also focused, *When* drawn, *Then* the focus
-    ring is still visible. *(Written expecting the block frame to remain visible
-    beside it; the running app showed the focus ring covers it entirely, being
-    drawn last and thicker. The criterion is corrected to what was actually
-    accepted — the focus affordance wins — rather than marked met as written.
-    Reasoning in ADR-JUC-028 Consequences.)*
+    ring is still visible and distinguishable from the block frame. *(Not met by
+    this task as first delivered — the ring covered the frame entirely, being
+    drawn last and thicker. Rather than accept that, the owner pushed back and
+    TASK-MTX-005 made the ring additive; the criterion is met as originally
+    written, by that task.)*
   - *Given* the renderer source, *When* read, *Then* no raw colour, alpha or
     width literal was introduced.
 - **Dependencies**: TASK-MTX-002
@@ -158,4 +159,47 @@ third consumer of the block family invents nothing.
   - *Given* the full suite, *When* it runs, *Then* every pre-existing test passes
     unmodified.
 - **Dependencies**: TASK-MTX-003
+- **Assignee**: AI
+
+### TASK-MTX-005: Make the focus ring additive — own width token, nested inside the border
+- **Tier**: M
+- **Status**: **Done** — owner-reported after TASK-MTX-004 ("c'est pas génial"),
+  then a second owner report on the corners once the first fix landed.
+  - **The proposal was to drop keyboard focus on the matrix combos; that was
+    rejected**, and the reasoning matters more than the fix: it would have
+    removed keyboard access to 40 controls — all matrix editing — to solve an
+    appearance problem, against RQ-GUI-042's own framing of focus as an
+    accessibility gap. RQ-GUI-042 already said the ring is "an **added**
+    outline"; the implementation drew it over the border. The defect was in the
+    focus ring, not in the matrix.
+  - **A second site had the identical defect:** `PageFamilyBlock` was hiding the
+    block-hue border RQ-GUI-045 gives the selector buttons, and had been since
+    that requirement shipped. Found only because the rule was being fixed rather
+    than the symptom.
+  - **Two geometry errors of my own, found by the owner, fixed at the source**
+    (DEC-JUC-084): a frame rectangle inset by a constant 0.5 instead of half its
+    stroke (clipped the 1.5 px highlight against the component bounds, squaring
+    the corner arc), and a focus ring inset without a matching radius reduction
+    (contours not parallel — the visible corner mismatch). The helper now
+    returns rectangle **and** radius together so neither can be applied without
+    the other.
+- **Description**: Add `semantic.strokeFocusRing` and use it at all four focus
+  sites; draw the ring beside the control border rather than over it — outside
+  where there is room (check box, radio), nested inside otherwise (combo box,
+  page-family selector) — via one shared `focusRingInside()` rule.
+- **Requirement refs**: RQ-GUI-042, RQ-DSN-033, RQ-GUI-045, RQ-GUI-052
+- **ADR refs**: ADR-JUC-028 (DEC-JUC-083, DEC-JUC-084)
+- **Acceptance Criteria**:
+  - *Given* a focused control that has its own border, *When* rendered, *Then*
+    both the border and the ring are visible. *(Verified: on a focused matrix
+    combo a scan across the edge reads `(160,135,201)` — the `blockLfo` token —
+    immediately followed by the accent ring at `(102,181,227)`.)*
+  - *Given* a focused control, *When* its corners are examined, *Then* the ring
+    follows the border's curve at a constant gap. *(Verified visually at 14x on
+    the untinted case; the tinted case shares the code path but was not
+    re-captured.)*
+  - *Given* the four focus sites, *When* read, *Then* they share one width token
+    and one nesting rule, with no per-site arithmetic.
+  - *Given* the suite, *When* it runs, *Then* 110/110 pass.
+- **Dependencies**: TASK-MTX-004
 - **Assignee**: AI

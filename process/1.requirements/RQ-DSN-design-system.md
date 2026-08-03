@@ -512,6 +512,33 @@ silently merged — owner confirms before migration):
   keyboard-navigable dialog is built or extended — this is a genuine
   accessibility gap in the current build (no component shows focus), not
   merely a consistency nice-to-have (§6).
+  - *Amended 2026-08-03 (owner decision, session GUI).* The focus ring SHALL be
+    **additive**: it is drawn **beside** the control's own border — outside it
+    where there is room, immediately inside it otherwise — and SHALL NOT be
+    drawn over that border. As first implemented it shared the border's
+    geometry at a greater width, so it *replaced* the border. That was
+    invisible while every border was a neutral grey carrying no information,
+    and became a defect the moment borders started carrying block identity
+    (RQ-GUI-045 selector buttons, RQ-GUI-052 matrix combos): focusing a control
+    erased the very information the user was navigating by.
+  - The ring's width SHALL be its **own** semantic role (`strokeFocusRing`),
+    not a width borrowed from another role. Borrowing is what let a change of
+    intent elsewhere silently retune the focus indicator, and a single role is
+    what keeps this rule *single and shared* across every control that draws
+    one — check box, radio, combo box, page-family selector.
+  - Where the ring sits inside a border, its position SHALL be derived from
+    that border's width by **one shared rule**, not restated per control: the
+    border width varies at run time on some controls (a matrix combo's frame
+    thickens while highlighted), so no fixed inset value can serve, and a
+    per-site calculation is the same duplication a token would have been.
+  **Dependencies:** RQ-GUI-042, RQ-GUI-045, RQ-GUI-052, RQ-DSN-099, RQ-DSN-100;
+  ADR-JUC-017, ADR-JUC-028.
+  - **Acceptance (Gherkin):** *Given* a focused control that also has its own
+    border, *When* it is rendered, *Then* both the border and the focus ring are
+    visible and distinguishable. *Given* two different focusable control types,
+    *When* both are focused, *Then* their rings share one width. *Given* the
+    renderer sources, *When* they are read, *Then* the focus-ring inset is
+    computed in exactly one place.
 
 ## 4. Component Catalogue
 

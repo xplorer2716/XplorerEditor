@@ -123,6 +123,68 @@ distinguishable.
   refresh sits in `refreshRow`, the one path every external change already goes
   through.
 
+- **DEC-JUC-083 — The focus ring becomes additive, with its own width role and
+  one shared inset rule.** *(Added 2026-08-03, owner-reported: "c'est pas
+  génial".)* The consequence recorded below — a focused matrix combo hiding its
+  block frame — was first accepted. The owner asked whether to drop keyboard
+  focus on the matrix combos instead; that was **rejected**, because it would
+  remove keyboard access to 40 controls, i.e. all matrix editing, to fix an
+  appearance problem. RQ-GUI-042 already specified "an **added** outline"; the
+  implementation drew the ring over the border at the same geometry and a
+  greater width, so it *replaced* it. The defect was in the focus ring, not in
+  the matrix.
+  Three parts, none of them matrix-specific:
+  1. **`semantic.strokeFocusRing`** (1.5 px) replaces the borrowed `strokeLine`
+     (2.0 px) at every focus site. Its own role, because RQ-DSN-033 requires one
+     *shared* focus rule: thinning only the combo's ring would have split it.
+     It coincides with `strokeDiagram` today and is deliberately not aliased to
+     it — same number, unrelated decisions.
+  2. **The ring is drawn beside the border, never on it** — outside where there
+     is room (check box, radio, already `expanded(1.0F)`), immediately inside
+     otherwise (combo box, page-family selector).
+  3. **The inset is one shared function**, `focusRingInset(borderWidth)`, not a
+     token and not per-site arithmetic. Not a token because the value is derived
+     from two of them *and* one operand varies at run time — a matrix combo's
+     border is 1.0 px at rest and 1.5 px highlighted — so no fixed number
+     serves; per-site arithmetic because that is the duplication a token would
+     have avoided, re-created by hand.
+  *Second site found while fixing the first:* `PageFamilyBlock` had the identical
+  defect, hiding the block-hue border RQ-GUI-045 gives the selector buttons. It
+  had been shipping since that requirement and nobody had reported it — which is
+  the argument for fixing the rule rather than the symptom.
+  *Verified:* on a focused matrix combo showing `LFO5`, a scan across the border
+  reads `(160,135,201)` — exactly the `blockLfo` token — immediately followed by
+  the accent ring at `(102,181,227)`. Two adjacent bands, neither hidden.
+
+- **DEC-JUC-084 — Two stroke-geometry rules the inset exposed, both fixed at the
+  source rather than per call site.** *(Owner-reported, 2026-08-03: "le bord bleu
+  intérieur semble être par dessus le cadre extérieur… c'est comme si le focusé
+  n'avait pas les mêmes angles dans les coins.")* Moving the focus ring inside
+  the border (DEC-JUC-083) surfaced two latent geometry errors. Both were
+  introduced by this ADR's own changes; recording them so the reasoning is not
+  rediscovered.
+  1. **A stroke is centred on its path, so its rectangle must be inset by half
+     the stroke — not by a constant.** The combo frame was drawn on
+     `bounds.reduced(0.5F)`, correct for the 1.0 px resting border but not for
+     the 1.5 px highlight, whose outer edge then fell 0.25 px outside the
+     component and was clipped by JUCE. Invisible along the straight edges; it
+     sliced the corner arc off square. Now `bounds.reduced(frameWidth * 0.5F)`,
+     which is width-independent and identical to the old value at 1.0 px.
+  2. **Shrinking a rounded rectangle requires shrinking its radius by the same
+     amount, or the contours are not parallel.** Insetting by `d` while keeping
+     the radius leaves a gap of `d` along the edges but `d√2` in the corners —
+     so the inner ring visibly departs from the outer one exactly at the
+     corners, which is what the owner saw. The focus ring's radius is now
+     `cornerRadius - inset`.
+  *The API shape is the fix, not just the arithmetic.* `focusRingInset()`
+  returned an inset alone, which let a caller move the rectangle and forget the
+  radius — and that is precisely the mistake that shipped. It is replaced by
+  `focusRingInside(borderBounds, cornerRadius, borderWidth)` returning **both**
+  the rectangle and the corrected radius, so the two cannot be separated at any
+  of the sites that use it. Same reasoning as DEC-JUC-083's "a rule, not a
+  token": the duplication worth eliminating is the *rule*, and a rule is only
+  eliminated once it cannot be half-applied.
+
 ## Consequences
 
 - The matrix gains the panel's colour language; a user can see which entries
@@ -135,19 +197,17 @@ distinguishable.
   That is a better seam than it sounds — the enum is data, the colours are
   presentation — but it is a real move of a public type and must land in one
   commit with its users.
-- The keyboard-focus ring on a matrix combo (RQ-GUI-042, accent colour,
-  `strokeLine` = 2.0 px) is drawn last and is thicker than both the resting
-  block frame (1.0 px) and the highlight frame (1.5 px), so **while a matrix
-  combo has keyboard focus it hides both** — observed in the running app while
-  verifying this plan, not predicted. Accepted rather than fixed: focus is a
-  deliberate, transient state on one control at a time, the block identity is
-  still carried by the fill (which nothing overdraws), and the alternative —
-  insetting or restyling the focus ring — would weaken an accessibility
-  affordance (RQ-GUI-042 is a genuine a11y gap-closure) to protect a decorative
-  one. Recorded because a reader who tabs through the matrix will otherwise
-  read it as a bug.
-  This is the first control carrying three independent frame meanings; a fourth
-  would need a rethink rather than another width.
+- ~~The keyboard-focus ring hides the block frame while a matrix combo is
+  focused, and that is accepted.~~ **Superseded by DEC-JUC-083 within this same
+  ADR.** It was first observed in the running app, accepted, and written up here
+  as a cost worth paying; the owner rejected that judgement on sight, and was
+  right to — the reasoning had quietly conflated "the ring must not be weakened"
+  with "the ring must stay where it is", when moving it costs the accessibility
+  affordance nothing. The paragraph is struck rather than deleted because the
+  accepted-then-reversed trade-off is the useful part of the record.
+  This is still the first control carrying three independent frame meanings
+  (block identity, cross-reference highlight, keyboard focus); a fourth would
+  need a rethink rather than another width or another inset.
 - `session.unit_tests = true`: the lookup tables get headless coverage in
   `xpl_tests_app` (no JUCE), including the neutral cases and full enum coverage.
   The rendering itself is verified in the running app against the requirement's

@@ -175,6 +175,7 @@ namespace xplorer::app::tokens
         inline constexpr float radiusControlInner = global::radius15;  // tick box checked fill
         inline constexpr float strokeBorder = global::stroke10;  // tick box border
         inline constexpr float strokeDiagram = global::stroke15;  // EVERY stroke of the background diagram: labelled block frames, signal lines and neutral control sub-panel frames, deliberately one single width so the diagram reads as one drawing (owner decision, RQ-GUI-051)
+        inline constexpr float strokeFocusRing = global::stroke15;  // keyboard-focus ring, ALL controls — its own role so the single shared focus rule (RQ-DSN-033) keeps one width. Was strokeLine (2.0): at that weight the ring out-drew the control border it sits beside and, where it shared its geometry, hid it entirely (RQ-GUI-052 matrix combos, RQ-GUI-045 selector buttons). Coincides with strokeDiagram today; they are independent decisions and must not be aliased to each other
         inline constexpr float strokeLine = global::stroke20;  // control-widget strokes: combo-box arrow, focus rings, page-family selector outline. No longer used by the background diagram — that moved to strokeDiagram (RQ-GUI-051)
         inline constexpr float strokeKnobRing = global::stroke24;  // knob track + value arc
         inline constexpr float hoverBrighten = global::hoverBrightenFactor;
