@@ -82,7 +82,10 @@ if(XPL_BUILD_APP)
     add_executable(xpl_tests_app_juce
         app/ComboBoxRealMetricsTests.cpp
         app/VfdSegmentRendererTests.cpp
-        ../app/src/VfdSegmentRenderer.cpp)
+        app/BackgroundRendererTests.cpp
+        ../app/src/VfdSegmentRenderer.cpp
+        ../app/src/BackgroundRenderer.cpp
+        ../app/src/BlockPalette.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the
@@ -91,8 +94,13 @@ if(XPL_BUILD_APP)
         JUCE_USE_CURL=0
         JUCE_WEB_BROWSER=0
         JUCE_STANDALONE_APPLICATION=1)
+    # juce_gui_extra + xpl_settings come in with BackgroundRenderer/BlockPalette
+    # (BackgroundRenderer.hpp includes juce_gui_extra; BlockPalette.hpp includes
+    # AllUsersSettings.hpp), so the paint-order test of RQ-GUI-051 can render the
+    # real painter rather than a re-implementation of it. [ADR-JUC-027]
     target_link_libraries(xpl_tests_app_juce PRIVATE
-        xpl_app_core XplorerAssets juce::juce_graphics juce::juce_events
+        xpl_app_core xpl_settings XplorerAssets
+        juce::juce_graphics juce::juce_gui_extra juce::juce_events
         xpl::warnings Catch2::Catch2WithMain)
     catch_discover_tests(xpl_tests_app_juce)
 endif()
