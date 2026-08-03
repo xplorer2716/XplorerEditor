@@ -4,10 +4,14 @@
 // (so it inherits the issue-#21 hover-repaint fix) that additionally carries the
 // two pieces of state XplorerLookAndFeel::drawComboBox needs to paint it —
 //
-//   * blockColour : the hue of the functional block its SELECTED VALUE belongs
-//                   to, or nullopt when that value has no block (VEL, NONE,
-//                   KBD, the pedals...). nullopt is a real state: the control
-//                   then renders exactly like every other combo box in the app.
+//   * blockId     : WHICH functional block its SELECTED VALUE belongs to, or
+//                   nullopt when that value has no block (VEL, NONE, KBD, the
+//                   pedals...). nullopt is a real state: the control then
+//                   renders exactly like every other combo box in the app.
+//                   The IDENTITY is stored, never the colour — the hue is
+//                   resolved from the LookAndFeel's live palette at paint time,
+//                   so a user re-theme reaches the matrix with no cached copy
+//                   to invalidate. [RQ-DSN-095, ADR-JUC-011]
 //   * highlighted : whether the RQ-GUI-018 cross-reference currently matches
 //                   this combo, i.e. the pointer is over a related knob or
 //                   page-family selector ELSEWHERE on the panel. This is not
@@ -22,7 +26,7 @@
 
 #include "HoverRepaintingComboBox.hpp"
 
-#include <juce_graphics/juce_graphics.h>
+#include "xplorer/app/BlockIdentity.hpp"
 
 #include <optional>
 
@@ -33,21 +37,21 @@ namespace xplorer::app
     public:
         using HoverRepaintingComboBox::HoverRepaintingComboBox;
 
-        /// Sets the hue of the block the selected value belongs to (nullopt =
-        /// no block). Called on every value change, not only at construction:
-        /// the tint follows the VALUE, so a patch load must move it too.
+        /// Sets which block the selected value belongs to (nullopt = no block).
+        /// Called on every value change, not only at construction: the tint
+        /// follows the VALUE, so a patch load must move it too.
         /// [ADR-JUC-028 (DEC-JUC-082)]
-        void setBlockColour(std::optional<juce::Colour> colour)
+        void setBlockId(std::optional<BlockId> blockId)
         {
-            if (_blockColour == colour)
+            if (_blockId == blockId)
             {
                 return; // repaint only on an actual change
             }
-            _blockColour = colour;
+            _blockId = blockId;
             repaint();
         }
 
-        [[nodiscard]] std::optional<juce::Colour> blockColour() const { return _blockColour; }
+        [[nodiscard]] std::optional<BlockId> blockId() const { return _blockId; }
 
         /// Marks this combo as matched by the modulation cross-reference.
         void setHighlighted(bool highlighted)
@@ -63,7 +67,7 @@ namespace xplorer::app
         [[nodiscard]] bool isHighlighted() const { return _highlighted; }
 
     private:
-        std::optional<juce::Colour> _blockColour;
+        std::optional<BlockId> _blockId;
         bool _highlighted = false;
     };
 }

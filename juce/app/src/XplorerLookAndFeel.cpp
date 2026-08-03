@@ -225,9 +225,14 @@ namespace xplorer::app
         // RQ-GUI-018 cross-reference matches them. Every other combo box in the
         // app resolves to nullptr here and is painted exactly as before.
         // [RQ-GUI-052, RQ-DSN-100, ADR-JUC-028 (DEC-JUC-078, DEC-JUC-080)]
+        // The combo stores the block IDENTITY; the hue is resolved here, from
+        // the live palette, so a user re-theme applies with no cached copy
+        // anywhere. [RQ-DSN-095, ADR-JUC-011, ADR-JUC-020 (DEC-JUC-036)]
         const auto* matrixBox = dynamic_cast<const ModMatrixComboBox*>(&box);
-        const auto blockColour =
-            matrixBox != nullptr ? matrixBox->blockColour() : std::nullopt;
+        const std::optional<juce::Colour> blockColour =
+            (matrixBox != nullptr && matrixBox->blockId().has_value())
+                ? std::optional<juce::Colour>{blockColourOf(_blockPalette, *matrixBox->blockId())}
+                : std::nullopt;
         const bool blockHighlighted = matrixBox != nullptr && matrixBox->isHighlighted();
 
         // The block tint is composited into an OPAQUE fill rather than left as

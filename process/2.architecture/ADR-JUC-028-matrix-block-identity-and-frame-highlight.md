@@ -136,11 +136,18 @@ distinguishable.
   presentation — but it is a real move of a public type and must land in one
   commit with its users.
 - The keyboard-focus ring on a matrix combo (RQ-GUI-042, accent colour,
-  `strokeLine` = 2.0 px) now coexists with a block frame (1.0/1.5 px) on the same
-  control. They stay distinguishable — different colour, and the focus ring is
-  the thickest of the three — but this is the first control carrying three
-  independent frame meanings, and a fourth would need a rethink rather than
-  another width.
+  `strokeLine` = 2.0 px) is drawn last and is thicker than both the resting
+  block frame (1.0 px) and the highlight frame (1.5 px), so **while a matrix
+  combo has keyboard focus it hides both** — observed in the running app while
+  verifying this plan, not predicted. Accepted rather than fixed: focus is a
+  deliberate, transient state on one control at a time, the block identity is
+  still carried by the fill (which nothing overdraws), and the alternative —
+  insetting or restyling the focus ring — would weaken an accessibility
+  affordance (RQ-GUI-042 is a genuine a11y gap-closure) to protect a decorative
+  one. Recorded because a reader who tabs through the matrix will otherwise
+  read it as a bug.
+  This is the first control carrying three independent frame meanings; a fourth
+  would need a rethink rather than another width.
 - `session.unit_tests = true`: the lookup tables get headless coverage in
   `xpl_tests_app` (no JUCE), including the neutral cases and full enum coverage.
   The rendering itself is verified in the running app against the requirement's

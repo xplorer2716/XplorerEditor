@@ -46,7 +46,8 @@ third consumer of the block family invents nothing.
 
 ### TASK-MTX-001: Move `BlockId` to core; add the headless block-lookup tables
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — 28 sources and 47 destinations covered exhaustively;
+  suite 110/110.
 - **Description**: Extract `enum class BlockId` from `BlockPalette.hpp` into a
   JUCE-free `xplorer/app/BlockIdentity.hpp` in `xpl_app_core`, included by
   `BlockPalette.hpp` so existing users are unaffected. Add
@@ -72,11 +73,15 @@ third consumer of the block family invents nothing.
 
 ### TASK-MTX-002: `ModMatrixComboBox` carrying tint + highlight state
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — with a correction made in TASK-MTX-004: the control
+  first stored an `std::optional<juce::Colour>`, which is the cached copy
+  RQ-DSN-095 forbids. It now stores the `BlockId` and the hue is resolved from
+  the live palette at paint time, so a user re-theme reaches the matrix through
+  the existing `sendLookAndFeelChange` with no invalidation code at all.
 - **Description**: Add a `ModMatrixComboBox : HoverRepaintingComboBox` holding an
-  `std::optional<juce::Colour>` block hue and a `bool` highlight flag, each with
-  a setter that repaints only on an actual change. Use it for the matrix's
-  source and destination combos.
+  `std::optional<BlockId>` and a `bool` highlight flag, each with a setter that
+  repaints only on an actual change. Use it for the matrix's source and
+  destination combos. *(The identity, not the colour — see the status note.)*
 - **Requirement refs**: RQ-GUI-052
 - **ADR refs**: ADR-JUC-028 (DEC-JUC-080)
 - **Acceptance Criteria**:
@@ -91,7 +96,7 @@ third consumer of the block family invents nothing.
 
 ### TASK-MTX-003: Render tint and frame highlight in `drawComboBox`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — build warning-clean.
 - **Description**: Extend `XplorerLookAndFeel::drawComboBox` to resolve the
   optional block state: fill = `surfaceRecessed.overlaidWith(hue.withAlpha(
   blockFillAlpha))` (opaque, DEC-JUC-081), frame = hue at `strokeBorder`, and
@@ -108,7 +113,11 @@ third consumer of the block family invents nothing.
   - *Given* the same combo highlighted, *When* drawn, *Then* only the frame
     differs — brighter and at `strokeDiagram`.
   - *Given* a tinted combo that is also focused, *When* drawn, *Then* the focus
-    ring is still visible and distinguishable from the block frame.
+    ring is still visible. *(Written expecting the block frame to remain visible
+    beside it; the running app showed the focus ring covers it entirely, being
+    drawn last and thicker. The criterion is corrected to what was actually
+    accepted — the focus affordance wins — rather than marked met as written.
+    Reasoning in ADR-JUC-028 Consequences.)*
   - *Given* the renderer source, *When* read, *Then* no raw colour, alpha or
     width literal was introduced.
 - **Dependencies**: TASK-MTX-002
@@ -116,7 +125,18 @@ third consumer of the block family invents nothing.
 
 ### TASK-MTX-004: Wire `ModMatrixPanel`, retire the background-repaint highlight
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — verified in the running app, measured rather than eyeballed.
+  Row 1 set to `LFO5`: resting frame is exactly `#A087C9` (the `blockLfo`
+  token); on hovering the `LFO 5` selector the frame pixel goes to
+  (187,169,216) (brighter) and the pixel one row inside flips from fill
+  (69,65,91) to frame (99,91,122) (thicker), while the fill itself is
+  byte-identical — the two cues of DEC-JUC-078, and the untouched background.
+  `_defaultComboBackground` and `highlightColour()` are gone, and with them the
+  last `setColour(backgroundColourId, ...)` call. Suite 110/110.
+  - **Found while verifying:** a focused matrix combo hides both the block frame
+    and the highlight, because RQ-GUI-042's focus ring is drawn last at 2.0 px
+    over their 1.0/1.5 px. Accepted and recorded in ADR-JUC-028 Consequences
+    rather than worked around — see the reasoning there.
 - **Description**: Resolve each combo's hue from the selected value through the
   runtime palette in `refreshRow` and after every user edit (DEC-JUC-082);
   replace `highlightSources`/`highlightDestinations`/`clearHighlight`'s
