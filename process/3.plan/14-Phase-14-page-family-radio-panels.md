@@ -56,7 +56,10 @@ observable once 002 places the controls.
 
 ### TASK-TRG-001: Add the two panels to `radioPanels()`; pin the table↔metadata invariant
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — the guard was proven to fail before it passes: with the
+  two rows temporarily removed the suite reported `radio panel without options:
+  RAMP_X_TRIG_SINGLE_MULTI` and 4 failed assertions; restored, 30/30 test cases.
+  A test written after the fix that was never seen red is not a regression guard.
 - **Description**: Add `ENV_X_TRIG_SINGLE_MULTI` and `RAMP_X_TRIG_SINGLE_MULTI`
   to `ControlMetadata.cpp`'s `radioPanels()` with the reference child-radio
   values (`SINGLE` = 0, `MULTI` = 1), and correct the table's comment, which
@@ -84,7 +87,12 @@ observable once 002 places the controls.
 
 ### TASK-TRG-002: `RadioButtonPanel` case in `PageFamilyBlock::makeControl`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — verified in the running app, driven rather than
+  eyeballed. Clicking `MULTI` in the ENV X trigger row deselected `SINGLE` and
+  put `ENV1 TRIG:MULTI` on the VFD (transmit + RQ-GUI-020 label in one gesture).
+  Switching ENV 1 → ENV 3 showed `SINGLE` (ENV 3's own value, not ENV 1's), and
+  switching back showed `MULTI` again — the rebinding round trip, with **no
+  page-family code beyond the one `switch` arm**, as DEC-JUC-085 predicted.
 - **Description**: Add the `ControlKind::RadioButtonPanel` case to
   `PageFamilyBlock`'s `makeControl`, constructing the same `BoundRadioGroup` the
   fixed-block path uses, with options keyed on the shared `_X_` tag (as the
@@ -111,7 +119,15 @@ observable once 002 places the controls.
 
 ### TASK-TRG-003: Geometry-derived orientation in `BoundRadioGroup::resized()` + layout test
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — suite 113/113 (110 at session start), build
+  warning-clean. Both ENV X and RAMP X show `SINGLE`/`MULTI` side by side on the
+  `GATED` check box's row in the running app.
+  - **Found while wiring the test:** compiling `BoundControls.cpp` into the
+    warnings-as-errors test target surfaced a pre-existing C4458 in
+    `BoundComboBox`'s constructor — the structured binding `label` hides
+    `juce::ComboBox::label`. Renamed to `itemLabel`; a rename, no behaviour
+    change, and the only edit made outside this plan's three sites. The warning
+    had been invisible because the app target does not build with `xpl::warnings`.
 - **Description**: Lay the options out horizontally when the panel is too short
   to stack them (`height < optionCount × semantic::controlRowHeight`),
   vertically otherwise (DEC-JUC-086); button height stays `controlRowHeight` in
