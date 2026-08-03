@@ -7,6 +7,7 @@
 // Used by the matrix hover highlight (RQ-GUI-018) and the VFD active-
 // destination "." marker (RQ-GUI-020). [ADR-JUC-010]
 
+#include "xplorer/app/BlockIdentity.hpp"
 #include "xplorer/model/XpanderConstants.hpp"
 
 #include <optional>
@@ -25,4 +26,20 @@ namespace xplorer::app
     /// e.g. "ENV_1"), or nullopt when it is not a source.
     [[nodiscard]] std::optional<model::EnumModulationSourcesModMatrix>
     modulationSourceForSelector(const std::string& selectorId);
+
+    /// The functional block a modulation source belongs to, or nullopt when it
+    /// belongs to none — KBD, VEL, RVEL, PRES, PED1/2, VIB, LEV1/2 and NONE are
+    /// performance/global sources with no area on the panel. nullopt is a real
+    /// state (the control keeps its default appearance), not a missing entry.
+    /// [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-079)]
+    [[nodiscard]] std::optional<BlockId>
+    modulationSourceBlock(model::EnumModulationSourcesModMatrix source);
+
+    /// The functional block a modulation destination belongs to. Every
+    /// destination maps to one — the model has no TRACK, RAMP or MATRIX
+    /// destination — but the optional is kept for symmetry with the source
+    /// side and so a future destination cannot silently default to a block.
+    /// [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-079)]
+    [[nodiscard]] std::optional<BlockId>
+    modulationDestinationBlock(model::EnumModulationDestinations destination);
 }

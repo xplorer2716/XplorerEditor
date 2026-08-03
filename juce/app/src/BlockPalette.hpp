@@ -8,6 +8,7 @@
 // through the descriptor table instead. [RQ-DSN-095, ADR-JUC-020
 // (DEC-JUC-034, DEC-JUC-035)]
 
+#include "xplorer/app/BlockIdentity.hpp"
 #include "xplorer/settings/AllUsersSettings.hpp"
 
 #include <juce_graphics/juce_graphics.h>
@@ -24,20 +25,9 @@ namespace xplorer::app
         juce::Colour vco, lag, track, vcf, env, lfo, ramp, matrix;
     };
 
-    /// Identity of a functional block for the generic consumers. Order is the
-    /// persistence contract: UiConfiguration::blockColours is indexed by this
-    /// enum's value. [DEC-JUC-035, RQ-SET-007]
-    enum class BlockId : std::size_t
-    {
-        Vco,
-        Lag,
-        Track,
-        Vcf,
-        Env,
-        Lfo,
-        Ramp,
-        Matrix
-    };
+    // BlockId is declared in xplorer/app/BlockIdentity.hpp (headless core), so
+    // the JUCE-free modulation cross-reference can map a source/destination to
+    // its block. [ADR-JUC-028 (DEC-JUC-079)]
 
     inline constexpr std::size_t BLOCK_COLOUR_COUNT =
         settings::AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT;

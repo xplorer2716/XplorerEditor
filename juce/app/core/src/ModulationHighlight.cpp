@@ -115,4 +115,123 @@ namespace xplorer::app
         }
         return std::nullopt;
     }
+
+    std::optional<BlockId> modulationSourceBlock(EnumModulationSourcesModMatrix source)
+    {
+        switch (source)
+        {
+            case EnumModulationSourcesModMatrix::LAG:
+                return BlockId::Lag;
+
+            case EnumModulationSourcesModMatrix::TRK1:
+            case EnumModulationSourcesModMatrix::TRK2:
+            case EnumModulationSourcesModMatrix::TRK3:
+                return BlockId::Track;
+
+            case EnumModulationSourcesModMatrix::RMP1:
+            case EnumModulationSourcesModMatrix::RMP2:
+            case EnumModulationSourcesModMatrix::RMP3:
+            case EnumModulationSourcesModMatrix::RMP4:
+                return BlockId::Ramp;
+
+            case EnumModulationSourcesModMatrix::ENV1:
+            case EnumModulationSourcesModMatrix::ENV2:
+            case EnumModulationSourcesModMatrix::ENV3:
+            case EnumModulationSourcesModMatrix::ENV4:
+            case EnumModulationSourcesModMatrix::ENV5:
+                return BlockId::Env;
+
+            case EnumModulationSourcesModMatrix::LFO1:
+            case EnumModulationSourcesModMatrix::LFO2:
+            case EnumModulationSourcesModMatrix::LFO3:
+            case EnumModulationSourcesModMatrix::LFO4:
+            case EnumModulationSourcesModMatrix::LFO5:
+                return BlockId::Lfo;
+
+            // Performance and global sources: the keyboard, the pedals, the
+            // touch responses and the vibrato/level modifiers have no area on
+            // the panel to borrow a colour from. Listed explicitly rather than
+            // left to a default, so a source added later is a compile error
+            // here instead of silently rendering neutral.
+            case EnumModulationSourcesModMatrix::KBD:
+            case EnumModulationSourcesModMatrix::VEL:
+            case EnumModulationSourcesModMatrix::RVEL:
+            case EnumModulationSourcesModMatrix::PRES:
+            case EnumModulationSourcesModMatrix::PED1:
+            case EnumModulationSourcesModMatrix::PED2:
+            case EnumModulationSourcesModMatrix::VIB:
+            case EnumModulationSourcesModMatrix::LEV1:
+            case EnumModulationSourcesModMatrix::LEV2:
+            case EnumModulationSourcesModMatrix::NONE:
+                return std::nullopt;
+        }
+        return std::nullopt;
+    }
+
+    std::optional<BlockId> modulationDestinationBlock(EnumModulationDestinations destination)
+    {
+        switch (destination)
+        {
+            // FM_AMP is the FM VCA, which BackgroundRenderer already draws in
+            // the VCO group's hue — the matrix follows the panel rather than
+            // inventing a separate grouping.
+            case EnumModulationDestinations::VCO1_FRQ:
+            case EnumModulationDestinations::VCO1_PW:
+            case EnumModulationDestinations::VCO1_VOL:
+            case EnumModulationDestinations::VCO2_FRQ:
+            case EnumModulationDestinations::VCO2_PW:
+            case EnumModulationDestinations::VCO2_VOL:
+            case EnumModulationDestinations::FM_AMP:
+                return BlockId::Vco;
+
+            case EnumModulationDestinations::VCF_FRQ:
+            case EnumModulationDestinations::VCF_RES:
+            case EnumModulationDestinations::VCA1_VOL:
+            case EnumModulationDestinations::VCA2_VOL:
+                return BlockId::Vcf;
+
+            case EnumModulationDestinations::LFO1_SPD:
+            case EnumModulationDestinations::LFO1_AMP:
+            case EnumModulationDestinations::LFO2_SPD:
+            case EnumModulationDestinations::LFO2_AMP:
+            case EnumModulationDestinations::LFO3_SPD:
+            case EnumModulationDestinations::LFO3_AMP:
+            case EnumModulationDestinations::LFO4_SPD:
+            case EnumModulationDestinations::LFO4_AMP:
+            case EnumModulationDestinations::LFO5_SPD:
+            case EnumModulationDestinations::LFO5_AMP:
+                return BlockId::Lfo;
+
+            case EnumModulationDestinations::ENV1_DLY:
+            case EnumModulationDestinations::ENV1_ATK:
+            case EnumModulationDestinations::ENV1_DCY:
+            case EnumModulationDestinations::ENV1_REL:
+            case EnumModulationDestinations::ENV1_AMP:
+            case EnumModulationDestinations::ENV2_DLY:
+            case EnumModulationDestinations::ENV2_ATK:
+            case EnumModulationDestinations::ENV2_DCY:
+            case EnumModulationDestinations::ENV2_REL:
+            case EnumModulationDestinations::ENV2_AMP:
+            case EnumModulationDestinations::ENV3_DLY:
+            case EnumModulationDestinations::ENV3_ATK:
+            case EnumModulationDestinations::ENV3_DCY:
+            case EnumModulationDestinations::ENV3_REL:
+            case EnumModulationDestinations::ENV3_AMP:
+            case EnumModulationDestinations::ENV4_DLY:
+            case EnumModulationDestinations::ENV4_ATK:
+            case EnumModulationDestinations::ENV4_DCY:
+            case EnumModulationDestinations::ENV4_REL:
+            case EnumModulationDestinations::ENV4_AMP:
+            case EnumModulationDestinations::ENV5_DLY:
+            case EnumModulationDestinations::ENV5_ATK:
+            case EnumModulationDestinations::ENV5_DCY:
+            case EnumModulationDestinations::ENV5_REL:
+            case EnumModulationDestinations::ENV5_AMP:
+                return BlockId::Env;
+
+            case EnumModulationDestinations::LAG_RATE:
+                return BlockId::Lag;
+        }
+        return std::nullopt;
+    }
 }
