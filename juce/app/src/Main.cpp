@@ -18,9 +18,12 @@ namespace xplorer::app
                                    juce::DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar(true);
-            setContentOwned(new ScaledCanvasComponent(), true);
-            setResizable(true, true); // [RQ-GUI-005]
-            centreWithSize(getWidth(), getHeight());
+            // resizeToFitContent = false: the window states the size and the
+            // content follows, rather than the content's constructor stating
+            // it and the window reading it back. [DEC-JUC-064]
+            setContentOwned(new ScaledCanvasComponent(), false);
+            setResizable(true, true);        // [RQ-GUI-005]
+            applyWindowScale(*this, 1.0F);   // opens at 1x [RQ-SCL-001]
             setVisible(true);
         }
 

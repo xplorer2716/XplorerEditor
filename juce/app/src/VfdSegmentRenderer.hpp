@@ -32,6 +32,22 @@ namespace xplorer::app
         static constexpr int CELL_WIDTH = 12;
         static constexpr int CELL_HEIGHT = 16;
 
+        /// The cell advance in WHOLE device pixels at `scale`, per axis.
+        ///
+        /// Floored, never rounded: the glass has about three logical pixels of
+        /// horizontal slack over the grid it holds, so rounding up would push
+        /// the outermost glyphs under the bezel band. Flooring costs under one
+        /// device pixel per cell and can never overflow.
+        ///
+        /// The two axes are independent, and that is sound rather than sloppy:
+        /// paintGlyph takes only the cell WIDTH and draws the glyph in
+        /// normalised units with y running 0..4/3, so glyph SHAPE is always
+        /// exactly 3:4 whatever the height. The height is a row pitch — line
+        /// leading — not a drawing dimension.
+        /// [RQ-SCL-004, ADR-JUC-026 (DEC-JUC-069)]
+        [[nodiscard]] static int cellWidthForScale(float scale) noexcept;
+        [[nodiscard]] static int cellHeightForScale(float scale) noexcept;
+
         /// Characters drawn by an off-model primitive instead of by segments.
         /// The list is short and lives in exactly one place on purpose: it is
         /// the whole of this port's divergence from the vendored table, and it
@@ -60,6 +76,10 @@ namespace xplorer::app
         /// `Graphics::getInternalContext().getPhysicalPixelScaleFactor()`; the
         /// glow radius is multiplied by it, without which the halo would shrink
         /// visually as the window grows (DEC-JUC-053).
+        ///
+        /// The cell is snapped to whole device pixels (DEC-JUC-069), so the
+        /// returned image is NOT `columns * CELL_WIDTH * scale` wide in
+        /// general — read its actual dimensions and draw it 1:1 (DEC-JUC-070).
         [[nodiscard]] juce::Image renderBlock(const juce::StringArray& lines,
                                               int columns,
                                               int rows,

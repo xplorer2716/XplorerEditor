@@ -5,6 +5,7 @@
 // types and tags from MainForm.Designer.cs). Coordinates are in the
 // logical canvas space (the reference client area). [RQ-GUI-001, ADR-JUC-006]
 
+#include <array>
 #include <span>
 
 namespace xplorer::app
@@ -17,6 +18,43 @@ namespace xplorer::app
     /// CANVAS_TOP_CROP shifts every control up by the same amount. A matching
     /// 5 px black margin sits at the bottom. [ADR-JUC-013]
     inline constexpr int LOGICAL_CANVAS_HEIGHT = 786;
+
+    // --- Window geometry [RQ-SCL-001, RQ-SCL-002, ADR-JUC-025] --------------
+    //
+    // The canvas constants above are a COORDINATE GRID: the space the control
+    // table is expressed in. The two below are a WINDOW SIZE. They are not the
+    // same quantity and no ratio between them is computed anywhere — the only
+    // place the two systems meet is ScaledCanvasComponent's render transform
+    // (RQ-GUI-005). [DEC-JUC-068]
+
+    /// The in-window menu-bar strip. The port renders File/Patch/View/Tools/
+    /// Help itself rather than using a native OS menu, so the strip lives
+    /// inside the content area and every window height carries it.
+    inline constexpr int MENU_BAR_HEIGHT = 24;
+
+    /// The application's 1x display scale, as a content width in logical px.
+    /// Owner-chosen (2026-08-02): the .NET reference was measured launching at
+    /// ~1473 px because WinForms DPI-autoscaled it, so its declared
+    /// ClientSize width of 1260 was never what the user actually saw; 1440
+    /// reads as that familiar size while clearing a 1920x1080 display.
+    inline constexpr int WINDOW_WIDTH_AT_1X = 1440;
+
+    /// Main-window content size, in logical pixels.
+    struct WindowSize
+    {
+        int width;
+        int height;
+    };
+
+    /// The window content size for a View-menu scale. Width is a plain
+    /// multiple of WINDOW_WIDTH_AT_1X; height is whatever preserves the canvas
+    /// aspect ratio, plus the menu bar. Sole authority for "what size is scale
+    /// N" — the launch size and every menu preset both come through here.
+    /// [DEC-JUC-063]
+    [[nodiscard]] WindowSize windowSizeForScale(float scale);
+
+    /// The View-menu presets, in menu order. [RQ-SCL-002]
+    inline constexpr std::array<float, 5> WINDOW_SCALE_PRESETS{1.0F, 1.25F, 1.5F, 1.75F, 2.0F};
 
     /// Reference control types (WinForms / MidiApp.UIControls vocabulary,
     /// kept verbatim so the table stays diffable against the reference).
