@@ -3,6 +3,7 @@
 #include "DesignTokens.hpp"
 #include "xplorer/app/ControlTable.hpp"
 
+#include <functional>
 #include <vector>
 
 // Vector background painter. Every primitive below transcribes 1:1 the
@@ -36,7 +37,13 @@ namespace xplorer::app
         const juce::Colour& BAR_BOT = tokens::semantic::sectionBarBot;
         // ---- geometry: appearance (stroke/radius) from tokens; layout (canvas,
         //      rail, stub) stays local — spacing scale deferred (RQ-DSN-020) ----
-        constexpr float LINE_WIDTH = tokens::semantic::strokeLine;   // frames + signal lines
+        // ONE width for every diagram stroke — block frames, signal lines and
+        // neutral sub-panel frames alike. A draft that gave block frames their
+        // own weight made the connecting wires read as the heavier element; the
+        // diagram is one drawing and has one line weight. Control widgets keep
+        // `strokeLine`, which is why that role still exists.
+        // [RQ-GUI-051, RQ-DSN-099, ADR-JUC-027 (DEC-JUC-074)]
+        constexpr float LINE_WIDTH = tokens::semantic::strokeDiagram;
         constexpr float CORNER = tokens::semantic::radiusControl;    // block corner radius
         constexpr int STUB_LENGTH = 12;          // default control-tick length
         constexpr int RAIL_WIDTH = 28;           // wood side rail
@@ -156,48 +163,65 @@ namespace xplorer::app
         // instead of the notched butt-cap junction drawLine leaves. [RQ-GUI-037]
         const juce::PathStrokeType frameStroke{
             LINE_WIDTH, juce::PathStrokeType::curved, juce::PathStrokeType::rounded};
+        // ---- paint order ----------------------------------------------------
+        // The statements below stay in reading order — each block's paragraph
+        // keeps its geometry together, which is the form the owner validated —
+        // but they no longer paint in that order. Every primitive appends a
+        // closure to one of three layers, replayed at the end as
+        // lines -> boxes -> text.
+        //
+        // Why: a knob stub or signal line that ends ON a block edge belongs to
+        // that block's paragraph, so in reading order it is drawn AFTER the
+        // block and its rounded end-cap lands on top — a nub of neutral FRAME
+        // colour inside the coloured fill and across the frame. Painting every
+        // line first and every block over them removes the case by
+        // construction. Text is a third layer because several labels are
+        // emitted before their own block, and a label under a 0.30-alpha fill
+        // is muddied rather than hidden — subtle enough to ship unnoticed.
+        //
+        // This SUPERSEDES the coloured-border re-stroke pass that used to close
+        // this function (owner request, 2026-07-27): it repaired the border and
+        // left the fill, which only passed while the fill was nearly invisible.
+        // [RQ-GUI-051, ADR-JUC-027 (DEC-JUC-075)]
+        using DrawCommand = std::function<void()>;
+        std::vector<DrawCommand> lineLayer, boxLayer, textLayer;
+
         // A labelled block is filled with its identity hue at blockFillAlpha and
         // framed with a top-bright/bottom-dark gradient, so it reads as a slightly
         // raised plate; passing no colour keeps the neutral unfilled frame used by
         // control sub-panels. Ported 1:1 from the owner-validated mockup.
         // [RQ-GUI-044, RQ-DSN-094, ADR-JUC-018 (DEC-JUC-025/026)]
-        //
-        // Coloured-block borders are recorded here and re-stroked in a final
-        // pass at the end of the function (owner request, 2026-07-27): a knob
-        // stub/signal line touching a block's edge is drawn AFTER the block in
-        // mockup order, and its rounded end-cap bled a notch of the neutral
-        // FRAME colour over the coloured border, breaking its continuity. A
-        // neutral (uncoloured) box's border is FRAME already, so a stub over it
-        // is invisible and needs no touch-up -- only coloured blocks are
-        // recorded. [RQ-GUI-037]
-        struct ColouredBlockBorder { float x, y, w, h; const juce::Colour* block; };
-        std::vector<ColouredBlockBorder> colouredBorders;
         const auto box = [&](float x, float y, float w, float h,
                              const juce::Colour* block = nullptr)
         {
-            if (block != nullptr)
+            boxLayer.push_back([&g, x, y, w, h, block]
             {
-                g.setColour(block->withAlpha(tokens::component::blockFillAlpha));
-                g.fillRoundedRectangle(x, y, w, h, CORNER);
-                juce::ColourGradient relief{*block, x, y,
-                                            block->darker(tokens::component::blockFrameRelief),
-                                            x, y + h, false};
-                g.setGradientFill(relief);
-                colouredBorders.push_back({x, y, w, h, block});
-            }
-            else
-            {
-                g.setColour(FRAME);
-            }
-            g.drawRoundedRectangle(x, y, w, h, CORNER, LINE_WIDTH);
+                if (block != nullptr)
+                {
+                    g.setColour(block->withAlpha(tokens::component::blockFillAlpha));
+                    g.fillRoundedRectangle(x, y, w, h, CORNER);
+                    juce::ColourGradient relief{*block, x, y,
+                                                block->darker(tokens::component::blockFrameRelief),
+                                                x, y + h, false};
+                    g.setGradientFill(relief);
+                }
+                else
+                {
+                    g.setColour(FRAME);
+                }
+                g.drawRoundedRectangle(x, y, w, h, CORNER, LINE_WIDTH);
+            });
         };
         const auto line = [&](float x1, float y1, float x2, float y2)
         {
-            g.setColour(FRAME);
-            juce::Path segment;
-            segment.startNewSubPath(x1, y1);
-            segment.lineTo(x2, y2);
-            g.strokePath(segment, frameStroke);
+            lineLayer.push_back([&g, &frameStroke, x1, y1, x2, y2]
+            {
+                g.setColour(FRAME);
+                juce::Path segment;
+                segment.startNewSubPath(x1, y1);
+                segment.lineTo(x2, y2);
+                g.strokePath(segment, frameStroke);
+            });
         };
         const auto stub = [&](int cx, int y, int len = STUB_LENGTH)
         {
@@ -207,9 +231,12 @@ namespace xplorer::app
         const auto text = [&](int x, int y, const juce::String& s, float size, bool bold,
                               juce::Colour colour, juce::Justification just)
         {
-            g.setColour(colour);
-            g.setFont(makeFont(size, bold));
-            g.drawSingleLineText(s, x, y, just);
+            textLayer.push_back([&g, x, y, s, size, bold, colour, just]
+            {
+                g.setColour(colour);
+                g.setFont(makeFont(size, bold));
+                g.drawSingleLineText(s, x, y, just);
+            });
         };
         const auto caption = [&](int x, int y, const juce::String& s)
         {
@@ -223,12 +250,15 @@ namespace xplorer::app
                                  int barWidth = SECTION_BAR_WIDTH)
         {
             text(x, y - SECTION_TITLE_RISE, s, FS_SECTION, true, block, juce::Justification::left);
-            juce::ColourGradient bar{block, static_cast<float>(x), static_cast<float>(y),
-                                     block.withAlpha(tokens::component::sectionBarFadeEnd),
-                                     static_cast<float>(x + barWidth), static_cast<float>(y), false};
-            g.setGradientFill(bar);
-            g.fillRect(static_cast<float>(x), static_cast<float>(y),
-                       static_cast<float>(barWidth), SECTION_BAR_HEIGHT);
+            textLayer.push_back([&g, x, y, barWidth, block]
+            {
+                juce::ColourGradient bar{block, static_cast<float>(x), static_cast<float>(y),
+                                         block.withAlpha(tokens::component::sectionBarFadeEnd),
+                                         static_cast<float>(x + barWidth), static_cast<float>(y), false};
+                g.setGradientFill(bar);
+                g.fillRect(static_cast<float>(x), static_cast<float>(y),
+                           static_cast<float>(barWidth), SECTION_BAR_HEIGHT);
+            });
         };
         const auto outLabel = [&](int x, int y, const juce::String& l1, const juce::String& l2)
         {
@@ -287,13 +317,14 @@ namespace xplorer::app
         line(276, 230, 289, 230);
         line(289, 230, 289, 180);
         line(289, 180, 492, 180);
+        lineLayer.push_back([&g, &frameStroke]
         {
             juce::Path hop; // semicircular bump over x=499 (SVG arc M492 180 A7 7 0 0 1 506 180)
             hop.startNewSubPath(492.0F, 180.0F);
             hop.quadraticTo(499.0F, 166.0F, 506.0F, 180.0F);
             g.setColour(FRAME);
             g.strokePath(hop, frameStroke);
-        }
+        });
         line(506, 180, 513, 180);
         line(513, 180, 513, 82);
         line(513, 82, 541, 82);
@@ -315,13 +346,14 @@ namespace xplorer::app
         // VCO2-row VCA out -> right, then up at x=499 into the VCF
         line(458, 232, 499, 232);
         line(499, 232, 499, 70);
+        lineLayer.push_back([&g, &frameStroke]
         {
             juce::Path curve; // SVG M499 70 Q499 58 509 58
             curve.startNewSubPath(499.0F, 70.0F);
             curve.quadraticTo(499.0F, 58.0F, 509.0F, 58.0F);
             g.setColour(FRAME);
             g.strokePath(curve, frameStroke);
-        }
+        });
         caption(430, 314, "VOLUME");
         box(51, 310, 147, 52, &BLK_VCO);
         blockTitle(64, 341, "VCO2", FS_VCO, juce::Justification::left);
@@ -342,12 +374,19 @@ namespace xplorer::app
         line(285, 348, 309, 348);
         line(309, 348, 309, 246);
         line(309, 246, 329, 246);
+        // The rotation must live INSIDE the deferred closure: text() no longer
+        // paints where it is called, so a ScopedSaveState wrapped around the
+        // call would be popped long before the text layer is replayed.
+        // [ADR-JUC-027 (DEC-JUC-075)]
+        textLayer.push_back([&g]
         {
             juce::Graphics::ScopedSaveState state{g};
             g.addTransform(juce::AffineTransform::rotation(
                 -juce::MathConstants<float>::halfPi, 318.0F, 300.0F));
-            text(318, 300, "NOISE", FS_SMALL, true, CAPTION, juce::Justification::left);
-        }
+            g.setColour(CAPTION);
+            g.setFont(makeFont(FS_SMALL, true));
+            g.drawSingleLineText("NOISE", 318, 300, juce::Justification::left);
+        });
         line(317, 255, 329, 255);
         line(317, 255, 317, 270);
         stub(82, 362);
@@ -482,17 +521,14 @@ namespace xplorer::app
         // ================================================= RIGHT =============
         section(958, 799, "MODULATION MATRIX", BLK_MATRIX, 268);
 
-        // Final pass: re-stroke every coloured block's border on top of
-        // everything drawn above, so knob-stub/signal-line end-caps that
-        // touched an edge earlier no longer notch it. Same relief gradient as
-        // the original stroke, fill untouched. [RQ-GUI-037]
-        for (const auto& border : colouredBorders)
-        {
-            juce::ColourGradient relief{*border.block, border.x, border.y,
-                                        border.block->darker(tokens::component::blockFrameRelief),
-                                        border.x, border.y + border.h, false};
-            g.setGradientFill(relief);
-            g.drawRoundedRectangle(border.x, border.y, border.w, border.h, CORNER, LINE_WIDTH);
-        }
+        // Nothing above has painted yet: replay the layers in paint order, so a
+        // signal line can never land on the block it runs into.
+        // [RQ-GUI-051, ADR-JUC-027 (DEC-JUC-075)]
+        for (const auto& drawLine : lineLayer)
+            drawLine();
+        for (const auto& drawBox : boxLayer)
+            drawBox();
+        for (const auto& drawText : textLayer)
+            drawText();
     }
 }
