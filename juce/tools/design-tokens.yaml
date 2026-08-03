@@ -74,6 +74,7 @@ tiers:
     radius20: { kind: float, value: 2.0 }
     radius15: { kind: float, value: 1.5 }
     stroke10: { kind: float, value: 1.0 }
+    stroke15: { kind: float, value: 1.5, note: "every stroke of the background diagram — block frames, signal lines, control sub-panel frames. Thicker than the button/control frame (stroke10), thinner than the former uniform diagram width (stroke20), RQ-GUI-051" }
     stroke20: { kind: float, value: 2.0 }
     stroke24: { kind: float, value: 2.4 }
 
@@ -132,7 +133,7 @@ tiers:
     blockRamp:   { kind: colour, hex: "37A9A3", note: "RAMP (v2)" }
     blockMatrix: { kind: colour, hex: "6579EE", note: "modulation matrix — Oberheim-signature blue (v2, L0.62/C0.175/H273)" }
     sectionBarFadeEnd: { kind: float, value: 0.35, note: "section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)" }
-    blockFillAlpha:    { kind: float, value: 0.18, note: "tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094" }
+    blockFillAlpha:    { kind: float, value: 0.30, note: "tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule." }
     blockFrameRelief:  { kind: float, value: 0.2,  note: "block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094" }
 
     # ---- main-panel control-row height (MainForm-extracted; shared by check
@@ -265,7 +266,8 @@ tiers:
     radiusControl:      { alias: global.radius20, note: "tick box outer, block corner" }
     radiusControlInner: { alias: global.radius15, note: "tick box checked fill" }
     strokeBorder:       { alias: global.stroke10, note: "tick box border" }
-    strokeLine:         { alias: global.stroke20, note: "frames + signal lines" }
+    strokeDiagram:      { alias: global.stroke15, note: "EVERY stroke of the background diagram: labelled block frames, signal lines and neutral control sub-panel frames, deliberately one single width so the diagram reads as one drawing (owner decision, RQ-GUI-051)" }
+    strokeLine:         { alias: global.stroke20, note: "control-widget strokes: combo-box arrow, focus rings, page-family selector outline. No longer used by the background diagram — that moved to strokeDiagram (RQ-GUI-051)" }
     strokeKnobRing:     { alias: global.stroke24, note: "knob track + value arc" }
 
     # ---- motion roles ----

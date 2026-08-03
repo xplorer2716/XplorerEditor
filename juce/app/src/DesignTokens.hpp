@@ -60,6 +60,7 @@ namespace xplorer::app::tokens
         inline constexpr float radius20 = 2.0F;
         inline constexpr float radius15 = 1.5F;
         inline constexpr float stroke10 = 1.0F;
+        inline constexpr float stroke15 = 1.5F;  // every stroke of the background diagram — block frames, signal lines, control sub-panel frames. Thicker than the button/control frame (stroke10), thinner than the former uniform diagram width (stroke20), RQ-GUI-051
         inline constexpr float stroke20 = 2.0F;
         inline constexpr float stroke24 = 2.4F;
         inline constexpr float hoverBrightenFactor = 0.4F;  // knob ring hover brighten
@@ -92,7 +93,7 @@ namespace xplorer::app::tokens
         inline const juce::Colour blockRamp = juce::Colour(0xFF37A9A3);  // RAMP (v2)
         inline const juce::Colour blockMatrix = juce::Colour(0xFF6579EE);  // modulation matrix — Oberheim-signature blue (v2, L0.62/C0.175/H273)
         inline constexpr float sectionBarFadeEnd = 0.35F;  // section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)
-        inline constexpr float blockFillAlpha = 0.18F;  // tinted block fill: block hue at this alpha over the panel plate (measured from the owner-supplied modernisation mockup: fill #443326 on plate #242528 for block #C27A52). RQ-DSN-094
+        inline constexpr float blockFillAlpha = 0.3F;  // tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule.
         inline constexpr float blockFrameRelief = 0.2F;  // block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094
         inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
         inline const juce::Colour vfdPhosphor = juce::Colour(0xFF00FFA1);  // phosphor hue; red stays 0 through the halo and only rises once the core clips, so this is the whole colour of the display
@@ -173,7 +174,8 @@ namespace xplorer::app::tokens
         inline constexpr float radiusControl = global::radius20;  // tick box outer, block corner
         inline constexpr float radiusControlInner = global::radius15;  // tick box checked fill
         inline constexpr float strokeBorder = global::stroke10;  // tick box border
-        inline constexpr float strokeLine = global::stroke20;  // frames + signal lines
+        inline constexpr float strokeDiagram = global::stroke15;  // EVERY stroke of the background diagram: labelled block frames, signal lines and neutral control sub-panel frames, deliberately one single width so the diagram reads as one drawing (owner decision, RQ-GUI-051)
+        inline constexpr float strokeLine = global::stroke20;  // control-widget strokes: combo-box arrow, focus rings, page-family selector outline. No longer used by the background diagram — that moved to strokeDiagram (RQ-GUI-051)
         inline constexpr float strokeKnobRing = global::stroke24;  // knob track + value arc
         inline constexpr float hoverBrighten = global::hoverBrightenFactor;
         inline constexpr int indicatorHoldMs = global::indicatorHoldMs;
