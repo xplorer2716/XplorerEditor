@@ -105,9 +105,16 @@ not just the initial migration.
 - **RQ-DSN-004** — `colour.accent.default` shall remain the single runtime
   source of truth already established by `XplorerLookAndFeel::ledColour()`
   (ADR-JUC-011): the settings-provided user override and the token default
-  resolve through that one accessor; the modulation-matrix highlight and any
-  future consumer of the accent colour shall read the accessor, never cache
-  or hard-code a copy.
+  resolve through that one accessor; every consumer of the accent colour shall
+  read the accessor, never cache or hard-code a copy.
+  - *Amended 2026-08-03 (owner decision, session GUI).* The
+    **modulation-matrix highlight is no longer a consumer of the accent
+    colour**: RQ-GUI-052 rebuilds it on the functional-block identity family
+    (§2.1b) instead, so the highlight now brightens the block hue the combo
+    already carries. The single-accessor rule itself is unchanged and still
+    binds every remaining consumer (knob LED ring, checked toggle, keyboard
+    focus ring). The example is corrected here rather than left standing,
+    because a stale example in a rule this widely cited is read as the rule.
 - **RQ-DSN-005** — Component-tier colour tokens (§2 three-tier model) may
   apply a documented, named transformation of a semantic token — brighten by
   the shared hover factor (§2.6), or a fixed alpha (e.g. the tick-box border
@@ -299,6 +306,71 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     lateral ones are distinct entries. *Given* any bezel token, *When* its note
     is read, *Then* it records that the value is a design choice rather than a
     measurement.
+
+- **RQ-DSN-099** — **The background diagram SHALL have one stroke role, distinct
+  from the control-widget stroke role.** Until now a single token
+  (`semantic.strokeLine`, 2.0px) served two unrelated consumers: every stroke of
+  the vector diagram (block frames, signal lines, sub-panel frames) **and**
+  several control-widget strokes (combo-box arrow, focus rings, page-family
+  selector outline). They coincided in value, not in meaning — so retuning the
+  diagram's weight for RQ-GUI-051 would silently have retuned the widgets too.
+  The two SHALL be separate roles:
+  - `semantic.strokeDiagram` — every stroke of the background diagram, **one
+    single width for all of them**. A block frame, a signal line and a neutral
+    sub-panel frame SHALL NOT differ in weight: the diagram is one drawing, and
+    an intermediate draft that gave block frames their own width made the lines
+    connecting them read as the heavier element (owner review, 2026-08-03).
+  - `semantic.strokeLine` — the control-widget strokes only. Its value is
+    unchanged, so no widget moves as a result of this split.
+  - The diagram stroke SHALL stay **thicker than `strokeBorder`** (the
+    button/tick-box frame), so a functional block still reads as stronger than a
+    widget drawn on top of it — the ordering, not just the values, is the design
+    decision, and it is what a regression test can hold.
+  **Dependencies:** RQ-GUI-051, RQ-GUI-037, RQ-GUI-044, RQ-DSN-005, RQ-DSN-021,
+  RQ-DSN-094; ADR-JUC-013, ADR-JUC-014, ADR-JUC-015, ADR-JUC-027.
+  - **Acceptance (Gherkin):** *Given* `design-tokens.yaml`, *When* the generator
+    runs, *Then* `strokeDiagram` and `strokeLine` both resolve and `--check`
+    reports the generated header in sync. *Given* the background painter, *When*
+    it is read, *Then* every stroke width it uses resolves to `strokeDiagram`
+    and none to `strokeLine`. *Given* the two roles, *When* their values are
+    compared with `strokeBorder`, *Then* `strokeBorder` < `strokeDiagram` <
+    `strokeLine`.
+
+- **RQ-DSN-100** — **The block-identity family SHALL extend to controls that
+  *reference* a block, not only to the panel areas that *are* one.** RQ-DSN-092
+  introduced the eight hues for the background diagram; RQ-GUI-045 already
+  applies them to the page-family selector buttons, and RQ-GUI-052 now applies
+  them to the modulation-matrix combo boxes. This requirement states the shared
+  rule so the third consumer does not invent a fourth convention:
+  - A control that references a functional block SHALL use **background = block
+    hue at `component.blockFillAlpha`, frame = block hue at full saturation** —
+    the same fill/frame relationship RQ-DSN-094 defines for the blocks
+    themselves. No new alpha and no new colour value are introduced for this.
+  - A control whose referenced value has **no** functional block SHALL keep its
+    default appearance unchanged. The neutral case is a real state, not an
+    oversight to be papered over with a placeholder hue.
+  - A **selection or cross-reference highlight** on such a control SHALL be
+    expressed by changing the **frame** (width and/or brightness), never by
+    replacing the background — the background is already carrying the block
+    identity, and overwriting it destroys information at the moment the user
+    is most interested in it. Where a highlight needs to be unmistakable on an
+    already-tinted control, it SHALL combine **`semantic.strokeDiagram`** (the
+    block-frame width, RQ-DSN-099) with **`motion.hoverBrighten`** (RQ-DSN-023)
+    rather than introduce a highlight-specific width or colour.
+  - Every consumer SHALL resolve the hue through the single runtime palette
+    accessor of RQ-DSN-095 — no compile-time token read, no cached copy — so
+    user re-theming reaches all of them at once.
+  **Dependencies:** RQ-GUI-045, RQ-GUI-052, RQ-DSN-023, RQ-DSN-092, RQ-DSN-094,
+  RQ-DSN-095, RQ-DSN-099; ADR-JUC-014, ADR-JUC-018, ADR-JUC-020, ADR-JUC-028.
+  - **Acceptance (Gherkin):** *Given* any block-referencing control, *When* it is
+    rendered, *Then* its fill alpha is `blockFillAlpha` and its frame is the pure
+    block hue, matching the block's own treatment. *Given* such a control whose
+    value has no block, *When* it is rendered, *Then* it is
+    indistinguishable from the same control before the block family existed.
+    *Given* a highlighted block-referencing control, *When* it is compared with
+    its resting state, *Then* only its frame differs. *Given* a user palette
+    change, *When* any consumer repaints, *Then* it shows the new hue without a
+    restart.
   - **Acceptance (Gherkin):** *Given* a build on any supported platform, *When*
     a combo box renders, *Then* it uses the embedded face and its label widths
     match the values the layout was verified against. *Given* the repository,
@@ -440,6 +512,33 @@ silently merged — owner confirms before migration):
   keyboard-navigable dialog is built or extended — this is a genuine
   accessibility gap in the current build (no component shows focus), not
   merely a consistency nice-to-have (§6).
+  - *Amended 2026-08-03 (owner decision, session GUI).* The focus ring SHALL be
+    **additive**: it is drawn **beside** the control's own border — outside it
+    where there is room, immediately inside it otherwise — and SHALL NOT be
+    drawn over that border. As first implemented it shared the border's
+    geometry at a greater width, so it *replaced* the border. That was
+    invisible while every border was a neutral grey carrying no information,
+    and became a defect the moment borders started carrying block identity
+    (RQ-GUI-045 selector buttons, RQ-GUI-052 matrix combos): focusing a control
+    erased the very information the user was navigating by.
+  - The ring's width SHALL be its **own** semantic role (`strokeFocusRing`),
+    not a width borrowed from another role. Borrowing is what let a change of
+    intent elsewhere silently retune the focus indicator, and a single role is
+    what keeps this rule *single and shared* across every control that draws
+    one — check box, radio, combo box, page-family selector.
+  - Where the ring sits inside a border, its position SHALL be derived from
+    that border's width by **one shared rule**, not restated per control: the
+    border width varies at run time on some controls (a matrix combo's frame
+    thickens while highlighted), so no fixed inset value can serve, and a
+    per-site calculation is the same duplication a token would have been.
+  **Dependencies:** RQ-GUI-042, RQ-GUI-045, RQ-GUI-052, RQ-DSN-099, RQ-DSN-100;
+  ADR-JUC-017, ADR-JUC-028.
+  - **Acceptance (Gherkin):** *Given* a focused control that also has its own
+    border, *When* it is rendered, *Then* both the border and the focus ring are
+    visible and distinguishable. *Given* two different focusable control types,
+    *When* both are focused, *Then* their rings share one width. *Given* the
+    renderer sources, *When* they are read, *Then* the focus-ring inset is
+    computed in exactly one place.
 
 ## 4. Component Catalogue
 
@@ -671,3 +770,5 @@ silently merged — owner confirms before migration):
 | 092–096 | RQ-GUI-046, RQ-GUI-047, RQ-GUI-048, RQ-SET-007, ADR-JUC-014, ADR-JUC-018–022 |
 | 097 | RQ-GUI-033, RQ-GUI-049, ADR-JUC-014, ADR-JUC-015, ADR-JUC-023 |
 | 098 | RQ-GUI-050, RQ-DSN-094, RQ-DSN-097, ADR-JUC-014, ADR-JUC-015, ADR-JUC-024 |
+| 099 | RQ-GUI-051, RQ-GUI-037, RQ-GUI-044, RQ-DSN-021, RQ-DSN-094, ADR-JUC-013, ADR-JUC-014, ADR-JUC-015, ADR-JUC-027 |
+| 100 | RQ-GUI-045, RQ-GUI-052, RQ-DSN-023, RQ-DSN-092, RQ-DSN-094, RQ-DSN-095, RQ-DSN-099, ADR-JUC-014, ADR-JUC-018, ADR-JUC-020, ADR-JUC-028 |

@@ -1,9 +1,7 @@
 #include "ModMatrixPanel.hpp"
 
-#include "DesignTokens.hpp"
-#include "HoverRepaintingComboBox.hpp"
-#include "XplorerLookAndFeel.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
+#include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/ModulationMatrixEntry.hpp"
 
 namespace xplorer::app
@@ -17,27 +15,7 @@ namespace xplorer::app
         {
             buildRow(parent, entryNumber);
         }
-        // Default combo background from the LookAndFeel, captured before any
-        // highlight so clearHighlight can restore it.
-        _defaultComboBackground = _rows[0].source != nullptr
-                                      ? _rows[0].source->findColour(juce::ComboBox::backgroundColourId)
-                                      : tokens::semantic::surfaceRecessed;
         refreshAll();
-    }
-
-    juce::Colour ModMatrixPanel::highlightColour() const
-    {
-        // Single source of truth: the knob LED colour owned by the LookAndFeel
-        // (ADR-JUC-011). Re-read on every highlight, so a settings change applies
-        // immediately with no cached copy.
-        if (_rows[0].source != nullptr)
-        {
-            if (const auto* laf = dynamic_cast<const XplorerLookAndFeel*>(&_rows[0].source->getLookAndFeel()))
-            {
-                return laf->ledColour();
-            }
-        }
-        return _defaultComboBackground.brighter(0.5F); // neutral fallback
     }
 
     const ControlSpec* ModMatrixPanel::specFor(const std::string& id) const
@@ -58,13 +36,16 @@ namespace xplorer::app
         const auto suffix = std::to_string(entryNumber);
 
         // Source combo (EnumModulationSourcesModMatrix; ordinal == value).
-        // HoverRepaintingComboBox, not a raw juce::ComboBox: these rows are not
-        // parameter-bound (composite controller operations, see the header), so
-        // they need the shared hover-repaint base to keep RQ-GUI-041's hover
-        // state from going stale. [ADR-JUC-017 (DEC-JUC-040), issue #21]
+        // ModMatrixComboBox, not a raw juce::ComboBox: it carries the block tint
+        // and cross-reference-highlight state the LookAndFeel paints from
+        // (RQ-GUI-052), and inherits HoverRepaintingComboBox so RQ-GUI-041's
+        // hover state cannot go stale — these rows are not parameter-bound
+        // (composite controller operations, see the header), so nothing else
+        // would repaint them. [ADR-JUC-017 (DEC-JUC-040), issue #21,
+        // ADR-JUC-028 (DEC-JUC-080)]
         if (const auto* spec = specFor("MOD_SRC_" + suffix))
         {
-            row.source = std::make_unique<HoverRepaintingComboBox>();
+            row.source = std::make_unique<ModMatrixComboBox>();
             const auto labels = comboLabelsForControl(spec->tag);
             for (std::size_t i = 0; i < labels.size(); ++i)
             {
@@ -89,7 +70,7 @@ namespace xplorer::app
         // Destination combo (EnumModulationDestinations; ordinal == value).
         if (const auto* spec = specFor("MOD_DEST_" + suffix))
         {
-            row.destination = std::make_unique<HoverRepaintingComboBox>();
+            row.destination = std::make_unique<ModMatrixComboBox>();
             const auto labels = comboLabelsForControl(spec->tag);
             for (std::size_t i = 0; i < labels.size(); ++i)
             {
@@ -137,6 +118,13 @@ namespace xplorer::app
         {
             row.quantize->setToggleState(entry.quantize() != 0, juce::dontSendNotification);
         }
+        // The block tint follows the SELECTED VALUE, so it is re-resolved here
+        // rather than at construction: this is the one path every external
+        // change goes through (patch load, synth edit, automation, full tone
+        // change), and skipping it would leave the matrix correct until the
+        // first load and quietly wrong afterwards.
+        // [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-082)]
+        applyBlockIdentity(entryNumber);
         _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = static_cast<int>(entry.destination);
         _refreshing = false;
     }
@@ -154,6 +142,29 @@ namespace xplorer::app
         int comboValue(const juce::ComboBox& combo) { return combo.getSelectedId() - 1; }
     }
 
+    void ModMatrixPanel::applyBlockIdentity(int entryNumber)
+    {
+        const auto& entry = _controller.getModulationEntryByNumber(entryNumber);
+        auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
+
+        // Only the identity is pushed to the control — the hue is resolved from
+        // the live palette when the LookAndFeel paints, so a user re-theme needs
+        // no invalidation here. [RQ-DSN-095, ADR-JUC-028 (DEC-JUC-080)]
+        if (row.source != nullptr)
+        {
+            row.source->setBlockId(modulationSourceBlock(entry.source));
+        }
+        if (row.destination != nullptr)
+        {
+            row.destination->setBlockId(modulationDestinationBlock(entry.destination));
+        }
+    }
+
+    // The highlight now sets a FLAG the LookAndFeel renders as a thicker,
+    // brighter frame; it no longer repaints the background, which carries the
+    // block identity of RQ-GUI-052. The row-matching rules below are the
+    // reference behaviour and are unchanged.
+    // [RQ-GUI-018 (amended), RQ-GUI-052, ADR-JUC-028 (DEC-JUC-078)]
     void ModMatrixPanel::highlightSources(int sourceValue)
     {
         for (int entryNumber = 1; entryNumber <= 20; ++entryNumber)
@@ -162,7 +173,7 @@ namespace xplorer::app
             auto& combo = _rows[static_cast<std::size_t>(entryNumber - 1)].source;
             if (combo != nullptr && static_cast<int>(entry.source) == sourceValue)
             {
-                combo->setColour(juce::ComboBox::backgroundColourId, highlightColour());
+                combo->setHighlighted(true);
             }
         }
     }
@@ -176,7 +187,7 @@ namespace xplorer::app
             if (combo != nullptr && static_cast<int>(entry.destination) == destValue
                 && entry.source != model::EnumModulationSourcesModMatrix::NONE)
             {
-                combo->setColour(juce::ComboBox::backgroundColourId, highlightColour());
+                combo->setHighlighted(true);
             }
         }
     }
@@ -187,11 +198,11 @@ namespace xplorer::app
         {
             if (row.source != nullptr)
             {
-                row.source->setColour(juce::ComboBox::backgroundColourId, _defaultComboBackground);
+                row.source->setHighlighted(false);
             }
             if (row.destination != nullptr)
             {
-                row.destination->setColour(juce::ComboBox::backgroundColourId, _defaultComboBackground);
+                row.destination->setHighlighted(false);
             }
         }
     }
@@ -207,6 +218,7 @@ namespace xplorer::app
                                            static_cast<int>(row.amount->getValue()),
                                            row.quantize->getToggleState() ? 1 : 0,
                                            comboValue(*row.destination), entryNumber);
+        applyBlockIdentity(entryNumber);
         if (_editHandler)
         {
             _editHandler(entryNumber);
@@ -247,6 +259,7 @@ namespace xplorer::app
                                                 row.quantize->getToggleState() ? 1 : 0,
                                                 oldDestination, newDestination, entryNumber);
         _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = newDestination;
+        applyBlockIdentity(entryNumber);
         if (_editHandler)
         {
             _editHandler(entryNumber);

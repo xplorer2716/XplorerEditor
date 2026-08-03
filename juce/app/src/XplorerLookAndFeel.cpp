@@ -2,9 +2,11 @@
 
 #include "BinaryData.h"
 #include "DesignTokens.hpp"
+#include "ModMatrixComboBox.hpp"
 
 #include "xplorer/app/ComboBoxSizing.hpp"
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -120,7 +122,7 @@ namespace xplorer::app
         {
             g.setColour(_ledColour);
             g.drawRoundedRectangle(box.expanded(1.0F), tokens::semantic::radiusControl,
-                                   tokens::semantic::strokeLine);
+                                   tokens::semantic::strokeFocusRing);
         }
     }
 
@@ -155,7 +157,7 @@ namespace xplorer::app
         if (isEnabled && component.hasKeyboardFocus(true))
         {
             g.setColour(_ledColour);
-            g.drawEllipse(box.expanded(1.0F), tokens::semantic::strokeLine);
+            g.drawEllipse(box.expanded(1.0F), tokens::semantic::strokeFocusRing);
         }
     }
 
@@ -218,7 +220,32 @@ namespace xplorer::app
         const float corner = tokens::semantic::radiusControl;
         const auto bounds = juce::Rectangle<int>(0, 0, width, height).toFloat();
 
-        auto fill = box.findColour(juce::ComboBox::backgroundColourId);
+        // Modulation-matrix combos carry the identity of the functional block
+        // their SELECTED VALUE belongs to, and are frame-highlighted when the
+        // RQ-GUI-018 cross-reference matches them. Every other combo box in the
+        // app resolves to nullptr here and is painted exactly as before.
+        // [RQ-GUI-052, RQ-DSN-100, ADR-JUC-028 (DEC-JUC-078, DEC-JUC-080)]
+        // The combo stores the block IDENTITY; the hue is resolved here, from
+        // the live palette, so a user re-theme applies with no cached copy
+        // anywhere. [RQ-DSN-095, ADR-JUC-011, ADR-JUC-020 (DEC-JUC-036)]
+        const auto* matrixBox = dynamic_cast<const ModMatrixComboBox*>(&box);
+        const std::optional<juce::Colour> blockColour =
+            (matrixBox != nullptr && matrixBox->blockId().has_value())
+                ? std::optional<juce::Colour>{blockColourOf(_blockPalette, *matrixBox->blockId())}
+                : std::nullopt;
+        const bool blockHighlighted = matrixBox != nullptr && matrixBox->isHighlighted();
+
+        // The block tint is composited into an OPAQUE fill rather than left as
+        // an alpha to blend at paint time: the matrix sits on the vector panel
+        // background, so a translucent combo would take its colour from
+        // whatever row it happens to sit over, and its text contrast with it.
+        // The design system specifies a fill over the CONTROL surface, not a
+        // window into the panel. [ADR-JUC-028 (DEC-JUC-081), RQ-DSN-100]
+        auto fill = blockColour.has_value()
+                        ? box.findColour(juce::ComboBox::backgroundColourId)
+                              .overlaidWith(blockColour->withAlpha(
+                                  tokens::component::blockFillAlpha))
+                        : box.findColour(juce::ComboBox::backgroundColourId);
         if (hovered)
         {
             fill = fill.brighter(tokens::semantic::hoverBrighten);
@@ -226,8 +253,30 @@ namespace xplorer::app
         g.setColour(fill.withMultipliedAlpha(disabledMul));
         g.fillRoundedRectangle(bounds, corner);
 
-        g.setColour(box.findColour(juce::ComboBox::outlineColourId).withMultipliedAlpha(disabledMul));
-        g.drawRoundedRectangle(bounds.reduced(0.5F), corner, tokens::semantic::strokeBorder);
+        // Frame. A highlighted block combo thickens to the block-frame width AND
+        // brightens: on a control already saturated with its block hue, neither
+        // cue carries on its own — the width step is half a pixel, and a
+        // brightness step alone reads as a rendering artefact. The background is
+        // deliberately NOT touched, because it is what carries the block
+        // identity. [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-078)]
+        const auto frameColour =
+            blockColour.has_value()
+                ? (blockHighlighted ? blockColour->brighter(tokens::semantic::hoverBrighten)
+                                    : *blockColour)
+                : box.findColour(juce::ComboBox::outlineColourId);
+        const float frameWidth = (blockColour.has_value() && blockHighlighted)
+                                     ? tokens::semantic::strokeDiagram
+                                     : tokens::semantic::strokeBorder;
+        // Inset by HALF THE STROKE, not by a fixed 0.5: a stroke is centred on
+        // its path, so only that inset puts its outer edge exactly on the
+        // component bounds. The former 0.5 was calibrated for a 1 px frame; at
+        // the 1.5 px highlight width the outer edge fell 0.25 px outside the
+        // component and JUCE clipped it — invisible along the straight edges,
+        // but it sliced the corner arc off square and left a dark stair-step in
+        // each corner. [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-084)]
+        const auto frameBounds = bounds.reduced(frameWidth * 0.5F);
+        g.setColour(frameColour.withMultipliedAlpha(disabledMul));
+        g.drawRoundedRectangle(frameBounds, corner, frameWidth);
 
         const auto arrowZone =
             juce::Rectangle<int>(width - ARROW_ZONE_X, 0, ARROW_ZONE_W, height).toFloat();
@@ -239,10 +288,18 @@ namespace xplorer::app
                         .withMultipliedAlpha(ARROW_ENABLED_ALPHA * disabledMul));
         g.strokePath(path, juce::PathStrokeType(tokens::semantic::strokeLine));
 
+        // The focus ring is drawn JUST INSIDE the frame, not over it: RQ-GUI-042
+        // specifies "an added outline", and at the same geometry a thicker ring
+        // replaced the frame rather than adding to it — which hid the block
+        // identity the frame now carries. Inset by half of each stroke so the
+        // two sit edge to edge without overlapping.
+        // [RQ-GUI-042, RQ-DSN-033, ADR-JUC-028 (DEC-JUC-083)]
         if (enabled && box.hasKeyboardFocus(true))
         {
+            const auto ring = focusRingInside(frameBounds, corner, frameWidth);
             g.setColour(_ledColour);
-            g.drawRoundedRectangle(bounds.reduced(0.5F), corner, tokens::semantic::strokeLine);
+            g.drawRoundedRectangle(ring.bounds, ring.cornerRadius,
+                                   tokens::semantic::strokeFocusRing);
         }
     }
 

@@ -6,6 +6,7 @@
 // operations, not plain parameters). Port of ModulationMatrixManager.
 // [RQ-GUI-015..017, ADR-JUC-006]
 
+#include "ModMatrixComboBox.hpp"
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/controller/XpanderController.hpp"
 
@@ -32,23 +33,25 @@ namespace xplorer::app
         /// The app wires this to the VFD, like the reference. [RQ-GUI-020]
         void setEditHandler(std::function<void(int)> handler) { _editHandler = std::move(handler); }
 
-        // Hover highlight (reference ModulationMatrixHighlight). The colour is
-        // derived from the live LookAndFeel, not cached, so it tracks the LED
-        // setting (ADR-JUC-011). [RQ-GUI-018]
+        // Cross-reference highlight (reference ModulationMatrixHighlight). The
+        // matched combos are flagged, and the LookAndFeel renders the flag as a
+        // thicker, brighter frame in the combo's own block hue — the background
+        // is left alone because it carries the block identity of RQ-GUI-052.
+        // [RQ-GUI-018 (rendering amended), RQ-GUI-052, ADR-JUC-028]
         /// Highlight source combos currently set to sourceValue.
         void highlightSources(int sourceValue);
         /// Highlight destination combos set to destValue whose row has an
         /// active source (≠ NONE).
         void highlightDestinations(int destValue);
-        /// Restore every combo's default background.
+        /// Clear the highlight flag on every combo.
         void clearHighlight();
 
     private:
         struct Row
         {
-            std::unique_ptr<juce::ComboBox> source;
+            std::unique_ptr<ModMatrixComboBox> source;
             std::unique_ptr<juce::Slider> amount;
-            std::unique_ptr<juce::ComboBox> destination;
+            std::unique_ptr<ModMatrixComboBox> destination;
             std::unique_ptr<juce::ToggleButton> quantize;
         };
 
@@ -59,13 +62,14 @@ namespace xplorer::app
         void onDestinationChanged(int entryNumber);
         void onQuantizeChanged(int entryNumber);
 
-        [[nodiscard]] juce::Colour highlightColour() const;
+        /// Re-resolves the block identity of a row's two combos from their
+        /// currently selected values. [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-082)]
+        void applyBlockIdentity(int entryNumber);
 
         controller::XpanderController& _controller;
         std::array<Row, 20> _rows;
         std::array<int, 20> _currentDestination{}; // tracks old destination for change ops
         std::function<void(int)> _editHandler;
-        juce::Colour _defaultComboBackground;
         bool _refreshing = false;
     };
 }

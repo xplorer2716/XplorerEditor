@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"exit=$?\")",
+      "Bash(git checkout *)"
+    ]
+  }
+}
