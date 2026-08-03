@@ -68,7 +68,8 @@ add_executable(xpl_tests_app
     app/PageFamilyModelTests.cpp
     app/ComboBoxSizingTests.cpp
     app/ModulationHighlightTests.cpp
-    app/SegmentFontTests.cpp)
+    app/SegmentFontTests.cpp
+    app/WindowGeometryTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)

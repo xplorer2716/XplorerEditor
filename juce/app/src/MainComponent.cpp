@@ -517,9 +517,67 @@ namespace xplorer::app
 
     // --- menu bar [RQ-GUI-008] ---------------------------------------------
 
+    void applyWindowScale(juce::ResizableWindow& window, float scale)
+    {
+        const auto size = windowSizeForScale(scale);
+
+        // If the preset does not fit the display the window is on, full
+        // screen is the closest equivalent to "as large as this preset asks
+        // for" — an oversized window that spills off-screen serves the user
+        // worse than the largest size the screen actually has. [RQ-SCL-002]
+        const auto* display = juce::Desktop::getInstance().getDisplays().getDisplayForRect(
+            window.getScreenBounds());
+        if (display != nullptr
+            && (size.width > display->userArea.getWidth() || size.height > display->userArea.getHeight()))
+        {
+            window.setFullScreen(true);
+            return;
+        }
+
+        if (window.isFullScreen())
+        {
+            window.setFullScreen(false);
+        }
+        window.centreWithSize(size.width, size.height);
+    }
+
+    namespace
+    {
+        // View-menu item ids. Kept clear of every existing range because
+        // menuItemSelected dispatches by id, which is what lets "View" be
+        // inserted mid-bar without disturbing Patch/Tools/Help. [DEC-JUC-065]
+        constexpr int VIEW_SCALE_FIRST_ID = 50;
+        constexpr int VIEW_FULL_SCREEN_ID = 60;
+
+        juce::String scaleItemName(float scale)
+        {
+            // "1x", "1.25x", ... — trailing zeros trimmed so 1.5 does not read
+            // as "1.50x".
+            auto text = juce::String(scale, 2).trimCharactersAtEnd("0").trimCharactersAtEnd(".");
+            return text + "x";
+        }
+    }
+
     juce::StringArray MainComponent::getMenuBarNames()
     {
-        return {"File", "Patch", "Tools", "Help"};
+        return {"File", "Patch", "View", "Tools", "Help"};
+    }
+
+    int MainComponent::currentWindowWidth() const
+    {
+        // The content component is what carries the size RQ-SCL-001/002 state;
+        // the DocumentWindow's own bounds equal it only because the port uses a
+        // native title bar, so ask the content rather than rely on that.
+        if (const auto* canvas = findParentComponentOfClass<ScaledCanvasComponent>())
+        {
+            return canvas->getWidth();
+        }
+        return 0;
+    }
+
+    juce::ResizableWindow* MainComponent::topLevelWindow() const
+    {
+        return dynamic_cast<juce::ResizableWindow*>(getTopLevelComponent());
     }
 
     juce::PopupMenu MainComponent::getMenuForIndex(int index, const juce::String&)
@@ -543,7 +601,25 @@ namespace xplorer::app
                 menu.addItem(14, "Rename...");
                 menu.addItem(15, "Randomize");
                 break;
-            case 2: // Tools
+            case 2: // View [RQ-SCL-002, RQ-SCL-003]
+            {
+                // Ticked from the window's ACTUAL width, never from a memory of
+                // the last click: a dragged or OS-clamped window then correctly
+                // shows nothing ticked. [DEC-JUC-066]
+                const auto width = currentWindowWidth();
+                for (std::size_t i = 0; i < WINDOW_SCALE_PRESETS.size(); ++i)
+                {
+                    const auto scale = WINDOW_SCALE_PRESETS[i];
+                    menu.addItem(VIEW_SCALE_FIRST_ID + static_cast<int>(i), scaleItemName(scale),
+                                 true, windowSizeForScale(scale).width == width);
+                }
+                menu.addSeparator();
+                const auto* window = topLevelWindow();
+                menu.addItem(VIEW_FULL_SCREEN_ID, "Full screen", true,
+                             window != nullptr && window->isFullScreen());
+                break;
+            }
+            case 3: // Tools
             {
                 menu.addItem(20, "Settings...");
                 menu.addItem(21, "Tune request");
@@ -558,7 +634,7 @@ namespace xplorer::app
                 menu.addSubMenu("Backup/Restore...", allDataDump);
                 break;
             }
-            case 3: // Help
+            case 4: // Help
                 menu.addItem(30, "About");
                 break;
             default:
@@ -569,6 +645,28 @@ namespace xplorer::app
 
     void MainComponent::menuItemSelected(int menuItemId, int)
     {
+        // View menu, handled before the switch because its scale items are a
+        // contiguous id range rather than individual cases. [RQ-SCL-002]
+        const auto scaleIndex = menuItemId - VIEW_SCALE_FIRST_ID;
+        if (scaleIndex >= 0 && scaleIndex < static_cast<int>(WINDOW_SCALE_PRESETS.size()))
+        {
+            if (auto* window = topLevelWindow())
+            {
+                applyWindowScale(*window, WINDOW_SCALE_PRESETS[static_cast<std::size_t>(scaleIndex)]);
+            }
+            return;
+        }
+        if (menuItemId == VIEW_FULL_SCREEN_ID) // [RQ-SCL-003, DEC-JUC-067]
+        {
+            if (auto* window = topLevelWindow())
+            {
+                // JUCE keeps the pre-fullscreen bounds itself and restores them
+                // on the way back, so no geometry is remembered here.
+                window->setFullScreen(!window->isFullScreen());
+            }
+            return;
+        }
+
         switch (menuItemId)
         {
             case 2: // Open — reuse the load action
@@ -856,7 +954,9 @@ namespace xplorer::app
     {
         addAndMakeVisible(_menuBar);
         addAndMakeVisible(_canvas);
-        setSize(LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT + 24);
+        // No setSize here: the window states the size (windowSizeForScale) and
+        // this component is laid out to it. Setting it here too would be a
+        // second place declaring what the launch size is. [DEC-JUC-064]
     }
 
     ScaledCanvasComponent::~ScaledCanvasComponent()
@@ -867,7 +967,7 @@ namespace xplorer::app
     void ScaledCanvasComponent::resized()
     {
         auto area = getLocalBounds();
-        _menuBar.setBounds(area.removeFromTop(24));
+        _menuBar.setBounds(area.removeFromTop(MENU_BAR_HEIGHT));
 
         // Uniform scale, aspect ratio preserved, canvas centered below the menu. [RQ-GUI-005]
         const auto scale = juce::jmin(static_cast<float>(area.getWidth()) / LOGICAL_CANVAS_WIDTH,

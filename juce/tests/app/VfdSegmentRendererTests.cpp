@@ -107,6 +107,148 @@ SCENARIO("The renderer rasterises at the requested scale rather than magnifying"
     }
 }
 
+// --- Device-pixel grid [RQ-SCL-004, ADR-JUC-026] ---------------------------
+//
+// Rasterising at the device scale (above) was never in question; what these
+// pin is the GRID the cells sit on. At a fractional scale the old float cell
+// put every column at a different sub-pixel phase, so the same character came
+// out slightly different depending on where it sat in the line. Full screen on
+// every common 16:9 resolution is such a scale, which is why this is the
+// normal case rather than an edge one.
+
+SCENARIO("The glyph cell is a whole number of device pixels at any scale", "[RQ-SCL-004]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+    const juce::StringArray lines{"8"};
+
+    GIVEN("the fractional scales the application actually produces")
+    {
+        // Full screen on 1080p / 1440p / 2160p, then the 1x, 1.5x and 2x View
+        // presets (canvas scale = window width / 1260).
+        for (const auto scale : {1.3435F, 1.8015F, 2.7176F, 1.1429F, 1.7143F, 2.2857F})
+        {
+            const auto cellWidth = VfdSegmentRenderer::cellWidthForScale(scale);
+            const auto cellHeight = VfdSegmentRenderer::cellHeightForScale(scale);
+
+            THEN("the rendered block is an exact multiple of the whole-pixel cell")
+            {
+                const auto block = renderer.renderBlock(lines, ONE_COLUMN, ONE_ROW, scale);
+                REQUIRE_FALSE(block.isNull());
+                CHECK(block.getWidth() == cellWidth);
+                CHECK(block.getHeight() == cellHeight);
+            }
+
+            THEN("the cell never exceeds its nominal size")
+            {
+                // One-sided on purpose: an oversized cell would push the
+                // outermost glyphs under the bezel band, which has only ~3
+                // logical px of slack to give. [DEC-JUC-069]
+                CHECK(static_cast<float>(cellWidth)
+                      <= static_cast<float>(VfdSegmentRenderer::CELL_WIDTH) * scale);
+                CHECK(static_cast<float>(cellHeight)
+                      <= static_cast<float>(VfdSegmentRenderer::CELL_HEIGHT) * scale);
+            }
+
+            THEN("it stays within one device pixel of nominal")
+            {
+                CHECK(static_cast<float>(VfdSegmentRenderer::CELL_WIDTH) * scale
+                          - static_cast<float>(cellWidth)
+                      < 1.0F);
+                CHECK(static_cast<float>(VfdSegmentRenderer::CELL_HEIGHT) * scale
+                          - static_cast<float>(cellHeight)
+                      < 1.0F);
+            }
+
+            THEN("the glyph still fits the row pitch")
+            {
+                // paintGlyph draws 4/3 of the cell WIDTH tall, whatever the
+                // height; the row pitch must clear that or lines would touch.
+                CHECK(cellWidth * VfdSegmentRenderer::CELL_HEIGHT
+                      <= cellHeight * VfdSegmentRenderer::CELL_WIDTH
+                             + VfdSegmentRenderer::CELL_WIDTH);
+            }
+        }
+    }
+
+    GIVEN("a scale small enough to floor to nothing")
+    {
+        THEN("the cell clamps to one pixel instead of collapsing")
+        {
+            CHECK(VfdSegmentRenderer::cellWidthForScale(0.01F) == 1);
+            CHECK(VfdSegmentRenderer::cellHeightForScale(0.01F) == 1);
+            const auto block = renderer.renderBlock(lines, ONE_COLUMN, ONE_ROW, 0.01F);
+            CHECK_FALSE(block.isNull());
+        }
+    }
+
+    GIVEN("whole scales")
+    {
+        THEN("the snap leaves them untouched")
+        {
+            // The snap must not perturb the cases that were already aligned.
+            CHECK(VfdSegmentRenderer::cellWidthForScale(1.0F) == VfdSegmentRenderer::CELL_WIDTH);
+            CHECK(VfdSegmentRenderer::cellHeightForScale(1.0F) == VfdSegmentRenderer::CELL_HEIGHT);
+            CHECK(VfdSegmentRenderer::cellWidthForScale(2.0F) == 2 * VfdSegmentRenderer::CELL_WIDTH);
+            CHECK(VfdSegmentRenderer::cellHeightForScale(2.0F)
+                  == 2 * VfdSegmentRenderer::CELL_HEIGHT);
+        }
+    }
+}
+
+SCENARIO("Repeated characters render identically along a line", "[RQ-SCL-004]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("a line of identical glyphs at a deliberately fractional scale")
+    {
+        // 1.8015 is full screen on 2560x1440 — the owner's own case.
+        constexpr float FRACTIONAL_SCALE = 1.8015F;
+        constexpr int COLUMNS = 8;
+        const juce::StringArray lines{"88888888"};
+
+        // Only cells with a full glyph on both sides AND both image edges at
+        // least two cells away are compared. The glow is a Gaussian of sigma
+        // 0.179 cell (vfdGlowRadius), so at two cells the contribution from
+        // beyond the block is ~11 sigma, i.e. nothing: these cells see an
+        // identical field and must therefore be bit-identical. Comparing the
+        // outermost cells instead would test the blur's edge behaviour, which
+        // is not what RQ-SCL-004 is about.
+        constexpr int FIRST_INTERIOR = 2;
+        constexpr int LAST_INTERIOR = COLUMNS - 3;
+
+        const auto block = renderer.renderBlock(lines, COLUMNS, ONE_ROW, FRACTIONAL_SCALE);
+        REQUIRE_FALSE(block.isNull());
+
+        THEN("the interior cells are pixel-identical to one another")
+        {
+            const auto cellWidth = block.getWidth() / COLUMNS;
+            REQUIRE(cellWidth * COLUMNS == block.getWidth());
+
+            const juce::Image::BitmapData pixels(block, juce::Image::BitmapData::readOnly);
+            for (int column = FIRST_INTERIOR + 1; column <= LAST_INTERIOR; ++column)
+            {
+                int differing = 0;
+                for (int y = 0; y < block.getHeight(); ++y)
+                {
+                    for (int x = 0; x < cellWidth; ++x)
+                    {
+                        if (pixels.getPixelColour(FIRST_INTERIOR * cellWidth + x, y)
+                            != pixels.getPixelColour(column * cellWidth + x, y))
+                        {
+                            ++differing;
+                        }
+                    }
+                }
+                INFO("column " << column << " differs from column " << FIRST_INTERIOR << " in "
+                               << differing << " pixels");
+                CHECK(differing == 0);
+            }
+        }
+    }
+}
+
 SCENARIO("The glow radius follows the render scale", "[RQ-GUI-033][RQ-DSN-097]")
 {
     const juce::ScopedJuceInitialiser_GUI juceInit;
@@ -152,14 +294,21 @@ SCENARIO("A fractional render scale produces a correctly sized block",
         constexpr int columns = 22;
         constexpr int rows = 5;
 
-        THEN("the image never drifts more than half a pixel from the exact size")
+        THEN("the block is at most one device pixel per cell under the exact size")
         {
-            // An image is a whole number of pixels while the device rectangle
-            // is not, so at a fractional scale the two cannot coincide: the
-            // blit ends up applying a sub-pixel resample. That is acceptable —
-            // under 0.1% and invisible — but only while the drift stays within
-            // rounding. Anything larger would mean the size arithmetic had
-            // started accumulating error across cells, which WOULD show.
+            // AMENDED for RQ-SCL-004 (was: "never drifts more than half a
+            // pixel from the exact size"). The old bound asserted the absence
+            // of the very snap ADR-JUC-026 introduces, so it could not survive
+            // the change on either side — it is the contract that moved, not
+            // an expectation bent to make a failure go away.
+            //
+            // The new contract is one-sided and tighter where it matters: the
+            // block may be SMALLER than nominal by the floor's remainder — up
+            // to one device pixel per cell — and may never be LARGER, because
+            // the glass it is centred in has only ~3 logical px of slack and an
+            // oversized block would slide under the bezel band. The one-sided
+            // bound is what pins that, and it is what the original half-pixel
+            // bound was really protecting: no error accumulating across cells.
             for (const auto scale : {1.33F, 2.5F, 2.87F, 3.7F})
             {
                 const auto block = renderer.renderBlock({"599 XPLORER"},
@@ -170,8 +319,12 @@ SCENARIO("A fractional render scale produces a correctly sized block",
                                          * VfdSegmentRenderer::CELL_HEIGHT * scale;
                 INFO("scale " << scale << " gave " << block.getWidth()
                               << "x" << block.getHeight());
-                REQUIRE(std::abs(static_cast<float>(block.getWidth()) - exactWidth) <= 0.5F);
-                REQUIRE(std::abs(static_cast<float>(block.getHeight()) - exactHeight) <= 0.5F);
+                REQUIRE(static_cast<float>(block.getWidth()) <= exactWidth);
+                REQUIRE(static_cast<float>(block.getHeight()) <= exactHeight);
+                REQUIRE(exactWidth - static_cast<float>(block.getWidth())
+                        < static_cast<float>(columns));
+                REQUIRE(exactHeight - static_cast<float>(block.getHeight())
+                        < static_cast<float>(rows));
             }
         }
     }

@@ -2,6 +2,8 @@
 
 #include "DesignTokens.hpp"
 
+#include <cmath>
+
 namespace xplorer::app
 {
     namespace
@@ -121,6 +123,10 @@ namespace xplorer::app
         // scale. Rendering at the logical size and letting the image be scaled
         // is exactly the degradation this whole change removes. [DEC-JUC-053]
         const auto scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+        if (scale <= 0.0F)
+        {
+            return;
+        }
         const auto block = _renderer.renderBlock(_lines, cols, rows, scale);
         if (block.isNull())
         {
@@ -128,23 +134,22 @@ namespace xplorer::app
         }
 
         // Centered glyph block, as the reference (which pads its text to the
-        // full grid). Drawn into its logical-size rectangle, which the context
-        // maps back to the device size the image was built for.
+        // full grid) — but positioned and sized in DEVICE space, then converted
+        // back, so the blit is 1:1 with no resampling filter. [DEC-JUC-070]
         //
-        // That lands one image pixel per device pixel only when `scale` is a
-        // whole number. It usually is not — dragging a window edge gives 2.87
-        // as readily as 3.0 — and an image is a whole number of pixels while
-        // the device rectangle is not, so the blit then applies a sub-pixel
-        // resample (under 0.1%, measured; invisible side by side). That is
-        // categorically different from the sprite this replaced: the detail is
-        // genuinely rendered at the target resolution and merely filtered by a
-        // fraction of a pixel, rather than absent and magnified.
-        const int left = glass.getX() + (glass.getWidth() - cols * GLYPH_WIDTH) / 2;
-        const int top = glass.getY() + (glass.getHeight() - rows * GLYPH_HEIGHT) / 2;
+        // The renderer snapped the cell to whole device pixels (DEC-JUC-069),
+        // so the image is no longer `cols * GLYPH_WIDTH * scale` wide: its own
+        // dimensions are the authority. Sizing the destination from the logical
+        // grid instead would stretch the image by the fraction the snap removed
+        // and undo the alignment it was rendered for.
+        const auto blockWidth = static_cast<float>(block.getWidth());
+        const auto blockHeight = static_cast<float>(block.getHeight());
+        const auto deviceLeft = std::round(static_cast<float>(glass.getX()) * scale
+                                           + (static_cast<float>(glass.getWidth()) * scale - blockWidth) * 0.5F);
+        const auto deviceTop = std::round(static_cast<float>(glass.getY()) * scale
+                                          + (static_cast<float>(glass.getHeight()) * scale - blockHeight) * 0.5F);
         g.drawImage(block,
-                    juce::Rectangle<float>(static_cast<float>(left),
-                                           static_cast<float>(top),
-                                           static_cast<float>(cols * GLYPH_WIDTH),
-                                           static_cast<float>(rows * GLYPH_HEIGHT)));
+                    juce::Rectangle<float>(deviceLeft / scale, deviceTop / scale,
+                                           blockWidth / scale, blockHeight / scale));
     }
 }
