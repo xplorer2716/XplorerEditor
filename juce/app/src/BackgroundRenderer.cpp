@@ -32,9 +32,6 @@ namespace xplorer::app
         const juce::Colour& WOOD_3 = tokens::semantic::panelWood3;
         const juce::Colour& WOOD_4 = tokens::semantic::panelWood4;
         const juce::Colour& WOOD_GRAIN = tokens::semantic::panelWoodGrain;
-        const juce::Colour& BAR_TOP = tokens::semantic::sectionBarTop; // section underline gradient
-        const juce::Colour& BAR_MID = tokens::semantic::sectionBarMid;
-        const juce::Colour& BAR_BOT = tokens::semantic::sectionBarBot;
         // ---- geometry: appearance (stroke/radius) from tokens; layout (canvas,
         //      rail, stub) stays local — spacing scale deferred (RQ-DSN-020) ----
         // ONE width for every diagram stroke — block frames, signal lines and
