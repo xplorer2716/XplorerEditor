@@ -1,7 +1,6 @@
 #include "ModMatrixPanel.hpp"
 
 #include "DesignTokens.hpp"
-#include "HoverRepaintingComboBox.hpp"
 #include "XplorerLookAndFeel.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/model/ModulationMatrixEntry.hpp"
@@ -58,13 +57,16 @@ namespace xplorer::app
         const auto suffix = std::to_string(entryNumber);
 
         // Source combo (EnumModulationSourcesModMatrix; ordinal == value).
-        // HoverRepaintingComboBox, not a raw juce::ComboBox: these rows are not
-        // parameter-bound (composite controller operations, see the header), so
-        // they need the shared hover-repaint base to keep RQ-GUI-041's hover
-        // state from going stale. [ADR-JUC-017 (DEC-JUC-040), issue #21]
+        // ModMatrixComboBox, not a raw juce::ComboBox: it carries the block tint
+        // and cross-reference-highlight state the LookAndFeel paints from
+        // (RQ-GUI-052), and inherits HoverRepaintingComboBox so RQ-GUI-041's
+        // hover state cannot go stale — these rows are not parameter-bound
+        // (composite controller operations, see the header), so nothing else
+        // would repaint them. [ADR-JUC-017 (DEC-JUC-040), issue #21,
+        // ADR-JUC-028 (DEC-JUC-080)]
         if (const auto* spec = specFor("MOD_SRC_" + suffix))
         {
-            row.source = std::make_unique<HoverRepaintingComboBox>();
+            row.source = std::make_unique<ModMatrixComboBox>();
             const auto labels = comboLabelsForControl(spec->tag);
             for (std::size_t i = 0; i < labels.size(); ++i)
             {
@@ -89,7 +91,7 @@ namespace xplorer::app
         // Destination combo (EnumModulationDestinations; ordinal == value).
         if (const auto* spec = specFor("MOD_DEST_" + suffix))
         {
-            row.destination = std::make_unique<HoverRepaintingComboBox>();
+            row.destination = std::make_unique<ModMatrixComboBox>();
             const auto labels = comboLabelsForControl(spec->tag);
             for (std::size_t i = 0; i < labels.size(); ++i)
             {

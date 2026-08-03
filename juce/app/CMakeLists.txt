@@ -13,6 +13,7 @@ target_sources(XplorerApp PRIVATE
     src/BlockPalette.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
+    src/ModMatrixComboBox.hpp
     src/ModMatrixPanel.cpp
     src/DisplayPanel.cpp
     src/VfdSegmentRenderer.cpp

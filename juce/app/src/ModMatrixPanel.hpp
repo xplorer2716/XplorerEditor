@@ -6,6 +6,7 @@
 // operations, not plain parameters). Port of ModulationMatrixManager.
 // [RQ-GUI-015..017, ADR-JUC-006]
 
+#include "ModMatrixComboBox.hpp"
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/controller/XpanderController.hpp"
 
@@ -46,9 +47,9 @@ namespace xplorer::app
     private:
         struct Row
         {
-            std::unique_ptr<juce::ComboBox> source;
+            std::unique_ptr<ModMatrixComboBox> source;
             std::unique_ptr<juce::Slider> amount;
-            std::unique_ptr<juce::ComboBox> destination;
+            std::unique_ptr<ModMatrixComboBox> destination;
             std::unique_ptr<juce::ToggleButton> quantize;
         };
 
