@@ -73,18 +73,6 @@ namespace xplorer::app
         g.setColour(hovered ? blockColour.brighter(tokens::semantic::hoverBrighten) : blockColour);
         g.drawRoundedRectangle(bounds, corner, tokens::semantic::strokeBorder);
 
-        // Inside the block border, not over it — same reason as the matrix
-        // combos: at the shared geometry a thicker ring replaced the border
-        // rather than adding to it, hiding the block identity RQ-GUI-045 gives
-        // these buttons. [RQ-GUI-042, RQ-DSN-033, ADR-JUC-028 (DEC-JUC-083)]
-        if (isEnabled() && hasKeyboardFocus(true) && laf != nullptr)
-        {
-            const auto ring = focusRingInside(bounds, corner, tokens::semantic::strokeBorder);
-            g.setColour(laf->ledColour());
-            g.drawRoundedRectangle(ring.bounds, ring.cornerRadius,
-                                   tokens::semantic::strokeFocusRing);
-        }
-
         getLookAndFeel().drawButtonText(g, *this, shouldDrawButtonAsHighlighted, false);
     }
 
