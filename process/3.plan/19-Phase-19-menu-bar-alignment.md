@@ -72,7 +72,11 @@ final item ids to build its table against.
 
 ### TASK-GFX-008: Embed menu icons; wire the default-patch file copy
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done**. Three PNGs added to `XplorerAssets`; `POST_BUILD`
+  `copy_if_different` of `oberheim.syx` added to `XplorerApp`. Verified:
+  `BinaryData.h` declares `menu_new_png` (380 B), `menu_open_png` (690 B),
+  `menu_save_png` (669 B) with their `*Size` companions; `oberheim.syx` (406 B)
+  present next to `Xplorer.exe` after the build. Build clean.
 - **Description**: Add `assets/menu_new.png`, `assets/menu_open.png`,
   `assets/menu_save.png` (already extracted and committed) to
   `juce_add_binary_data(XplorerAssets SOURCES ...)` in `juce/app/CMakeLists.txt`.
