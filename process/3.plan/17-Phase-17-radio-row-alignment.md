@@ -91,7 +91,18 @@ That is a regression guard the old test was not.
 
 ### TASK-GFX-005: Side-by-side radio options fill the panel height
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — commit 50cb5f3. `.withHeight(controlRowHeight)` dropped
+  from the horizontal branch; both header comments corrected to state which
+  geometry source governs each branch. Height assertions replaced by an
+  indicator-centre guard read from the real control table (ENV X / RAMP X
+  trigger radios vs. their `GATED` check box), proven red first: reverting the
+  fix and rebuilding failed exactly 4 assertions at `3.0 <= 1.0` — the predicted
+  3 px, both panels — then passed once restored. Full rebuild clean; all 6
+  suites green, 0 test modified beyond the justified replacement:
+  `xpl_tests_app_juce` 323/323 (+9 from the new guard), `xpl_tests_app`
+  2014/2014, `xpl_tests_framework` 123/123, `xpl_tests_model` 333/333,
+  `xpl_tests_midi` 68/68, `xpl_tests_settings` 31/31, `xpl_tests_controller`
+  99/99.
 - **Description**: In `BoundRadioGroup::resized()`, drop `.withHeight(
   tokens::semantic::controlRowHeight)` from the horizontal branch so each option
   takes the full height of its slot (the panel's height); update the comment to
@@ -136,3 +147,5 @@ That is a regression guard the old test was not.
       governed by extracted reference geometry.
 - [x] **Owner approval** — granted 2026-08-04 after review of the diagnosis and
       the test-change impact.
+- [x] Task Done; full test suite green; ADR-JUC-016's DEC-JUC-094 ready to move
+      from Proposed-by-addition to Accepted alongside the ADR's existing status.
