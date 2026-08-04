@@ -276,9 +276,6 @@ tiers:
     # ---- motion roles ----
     hoverBrighten:   { alias: global.hoverBrightenFactor }
     indicatorHoldMs: { alias: global.indicatorHoldMs }
-    indicatorSize:       { alias: global.indicatorSize,       note: "MIDI LED lamp diameter, RQ-GUI-056" }
-    indicatorGlowAlpha:  { alias: global.indicatorGlowAlpha,  note: "MIDI LED glow peak alpha, RQ-GUI-056" }
-    indicatorGlowRadius: { alias: global.indicatorGlowRadius, note: "MIDI LED glow radius multiplier, RQ-GUI-056" }
 
     # ---- layout roles (dialogs; TASK-JUC-098, RQ-DSN-020) ----
     layoutHairline:   { alias: global.space2,  note: "SettingsDialog row/swatch fine inset" }
@@ -314,6 +311,13 @@ tiers:
     sectionBarFadeEnd:     { alias: global.sectionBarFadeEnd,  note: "block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092" }
     blockFillAlpha:        { alias: global.blockFillAlpha,     note: "blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094" }
     blockFrameRelief:      { alias: global.blockFrameRelief,   note: "blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094" }
+
+    # ---- MIDI activity LED (RQ-GUI-056, ADR-JUC-031) ----
+    # No semantic tier for these, same reasoning as the VFD group below: one
+    # component's own geometry/photometry, not a role anything else shares.
+    indicatorSize:       { alias: global.indicatorSize,       note: "MIDI LED lamp diameter, RQ-GUI-056" }
+    indicatorGlowAlpha:  { alias: global.indicatorGlowAlpha,  note: "MIDI LED glow peak alpha, RQ-GUI-056" }
+    indicatorGlowRadius: { alias: global.indicatorGlowRadius, note: "MIDI LED glow radius multiplier, RQ-GUI-056" }
 
     # ---- VFD 16-segment display (RQ-GUI-033, RQ-DSN-097, ADR-JUC-023) ----
     # No semantic tier for these: they are one component's geometry and

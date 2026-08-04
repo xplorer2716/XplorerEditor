@@ -351,12 +351,16 @@ namespace xplorer::app
             addAndMakeVisible(_display);
         }
 
-        // MIDI activity LED.
+        // MIDI activity LED. Bounds are the extracted spec expanded by the
+        // glow margin (DEC-JUC-097) -- same idiom as the VFD bezel above,
+        // applied here because the 8 px-tall panel has no room of its own
+        // for a lit lamp's glow. [RQ-GUI-056, ADR-JUC-031]
         for (const auto& spec : controlTable())
         {
             if (spec.kind == ControlKind::LedPanelControl)
             {
-                _midiLed.setBounds(spec.x, spec.y, spec.width, spec.height);
+                _midiLed.setBounds(juce::Rectangle<int>(spec.x, spec.y, spec.width, spec.height)
+                                       .expanded(ledGlowMarginPx()));
                 addAndMakeVisible(_midiLed);
             }
         }
@@ -484,26 +488,58 @@ namespace xplorer::app
 
     void MainComponent::LedPanelComponent::paint(juce::Graphics& g)
     {
+        // This component's bounds are the extracted _ledPanelControl rect
+        // expanded by ledGlowMarginPx() (DEC-JUC-097); `area` below undoes
+        // that inflation, so every lamp position is derived from the ORIGINAL
+        // panel rect and never moves when the margin retunes.
+        const auto area = getLocalBounds().reduced(ledGlowMarginPx());
+
         // Reference LedPanelControl: automation-in / synth-in / synth-out.
+        // Round lamp, glow, then rim -- a dedicated indicator treatment, not
+        // a control one (DEC-JUC-095): a check box/radio says "you may set
+        // this", an LED reports state the user cannot set.
+        // [RQ-GUI-056, ADR-JUC-031]
         static const std::array<juce::Colour, LED_COUNT> onColours = {
             tokens::semantic::indicatorAutomation, tokens::semantic::indicatorSynthIn,
             tokens::semantic::indicatorSynthOut};
         const auto offColour = tokens::semantic::indicatorOffFill;
         const auto borderColour = tokens::semantic::indicatorOffBorder;
 
+        const int size = tokens::component::indicatorSize;
         const auto now = juce::Time::currentTimeMillis();
-        const int horizontalSpace = (getWidth() - LED_COUNT * LED_SIZE) / (LED_COUNT + 1);
-        const int y = (getHeight() - LED_SIZE) / 2;
+        const int horizontalSpace = (area.getWidth() - LED_COUNT * size) / (LED_COUNT + 1);
+        const float y = static_cast<float>(area.getY() + (area.getHeight() - size) / 2);
+
         for (int i = 0; i < LED_COUNT; ++i)
         {
-            const juce::Rectangle<int> led(horizontalSpace * (i + 1) + i * LED_SIZE, y,
-                                           LED_SIZE, LED_SIZE);
-            g.setColour(_litUntil[static_cast<std::size_t>(i)] > now
-                            ? onColours[static_cast<std::size_t>(i)]
-                            : offColour);
-            g.fillRect(led);
+            const auto index = static_cast<std::size_t>(i);
+            const bool lit = _litUntil[index] > now;
+            const juce::Rectangle<float> lamp(
+                static_cast<float>(area.getX() + horizontalSpace * (i + 1) + i * size), y,
+                static_cast<float>(size), static_cast<float>(size));
+
+            if (lit)
+            {
+                // Glow beneath the body, only while lit, so a lit LED reads
+                // as emitting rather than as a colour swap. Radius is a
+                // MULTIPLE OF THE LAMP'S OWN RADIUS, verified clear of the
+                // VFD glass and the button row (ADR-JUC-031, DEC-JUC-095).
+                const auto centre = lamp.getCentre();
+                const float glowRadius =
+                    static_cast<float>(size) * 0.5F * tokens::component::indicatorGlowRadius;
+                const auto& onColour = onColours[index];
+                juce::ColourGradient glow(
+                    onColour.withAlpha(tokens::component::indicatorGlowAlpha), centre,
+                    onColour.withAlpha(0.0F), centre.translated(glowRadius, 0.0F), true);
+                g.setGradientFill(glow);
+                g.fillEllipse(juce::Rectangle<float>(glowRadius * 2.0F, glowRadius * 2.0F)
+                                  .withCentre(centre));
+            }
+
+            g.setColour(lit ? onColours[index] : offColour);
+            g.fillEllipse(lamp);
             g.setColour(borderColour);
-            g.drawRect(led, 1);
+            g.drawEllipse(lamp, tokens::semantic::strokeBorder);
         }
     }
 

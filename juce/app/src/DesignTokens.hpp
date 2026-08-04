@@ -182,9 +182,6 @@ namespace xplorer::app::tokens
         inline constexpr float strokeKnobRing = global::stroke24;  // knob track + value arc
         inline constexpr float hoverBrighten = global::hoverBrightenFactor;
         inline constexpr int indicatorHoldMs = global::indicatorHoldMs;
-        inline constexpr int indicatorSize = global::indicatorSize;  // MIDI LED lamp diameter, RQ-GUI-056
-        inline constexpr float indicatorGlowAlpha = global::indicatorGlowAlpha;  // MIDI LED glow peak alpha, RQ-GUI-056
-        inline constexpr float indicatorGlowRadius = global::indicatorGlowRadius;  // MIDI LED glow radius multiplier, RQ-GUI-056
         inline constexpr int layoutHairline = global::space2;  // SettingsDialog row/swatch fine inset
         inline constexpr int layoutFieldGap = global::space4;  // SettingsDialog pre-table gap
         inline constexpr int layoutSectionGap = global::space6;  // SettingsDialog section gaps, ProgressWindow label/bar gap
@@ -217,6 +214,9 @@ namespace xplorer::app::tokens
         inline constexpr float sectionBarFadeEnd = global::sectionBarFadeEnd;  // block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092
         inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
         inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
+        inline constexpr int indicatorSize = global::indicatorSize;  // MIDI LED lamp diameter, RQ-GUI-056
+        inline constexpr float indicatorGlowAlpha = global::indicatorGlowAlpha;  // MIDI LED glow peak alpha, RQ-GUI-056
+        inline constexpr float indicatorGlowRadius = global::indicatorGlowRadius;  // MIDI LED glow radius multiplier, RQ-GUI-056
         inline const juce::Colour vfdPhosphor = global::vfdPhosphor;  // lit segment / halo colour
         inline constexpr float vfdSegLeft = global::vfdSegLeft;  // segment rails, fractions of cell width
         inline constexpr float vfdSegRight = global::vfdSegRight;

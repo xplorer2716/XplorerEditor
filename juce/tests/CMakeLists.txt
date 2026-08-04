@@ -86,6 +86,7 @@ if(XPL_BUILD_APP)
         app/VfdSegmentRendererTests.cpp
         app/BackgroundRendererTests.cpp
         app/BoundRadioGroupTests.cpp
+        app/LedPanelGeometryTests.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
         ../app/src/BlockPalette.cpp

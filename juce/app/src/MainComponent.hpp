@@ -25,6 +25,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <array>
+#include <cmath>
 #include <memory>
 #include <vector>
 
@@ -123,11 +124,18 @@ namespace xplorer::app
         // progress window shows the right range/labels (event has no mode).
         bool _allDataDumpModeIsAll = false;
 
-        // MIDI traffic LED panel (LedPanelControl port): three 5 px square
-        // LEDs — automation-in green, synth-in blue, synth-out red — each
-        // holding ~100 ms past the last event of its source, retriggered by
-        // traffic. The 30 ms decay timer only runs while a LED is lit.
-        // [RQ-GUI-022, ADR-JUC-008]
+        // MIDI traffic LED panel (LedPanelControl port): three round lamps —
+        // automation-in green, synth-in blue, synth-out red — each holding
+        // ~100 ms past the last event of its source, retriggered by traffic.
+        // The 30 ms decay timer only runs while a LED is lit. A lit lamp shows
+        // a radial glow beneath its body; the extracted panel is only 8 px
+        // tall and has no room for one, so this component's bounds are the
+        // panel expanded by ledGlowMarginPx() on every side (the one place in
+        // the app where a component's bounds differ from its control-table
+        // spec) and paint() re-derives the un-inflated panel area from its own
+        // bounds so no lamp moves when the margin changes.
+        // [RQ-GUI-022, RQ-GUI-056, ADR-JUC-008, ADR-JUC-031 (DEC-JUC-095,
+        // DEC-JUC-097)]
         class LedPanelComponent final : public juce::Component, private juce::Timer
         {
         public:
@@ -137,7 +145,6 @@ namespace xplorer::app
 
         private:
             static constexpr int LED_COUNT = 3;
-            static constexpr int LED_SIZE = 5;         // reference LedSize
             static constexpr int HOLD_MILLISECONDS = tokens::semantic::indicatorHoldMs;
             static constexpr int TICK_MILLISECONDS = 30;
 
@@ -147,6 +154,19 @@ namespace xplorer::app
         };
         LedPanelComponent _midiLed;
     };
+
+    /// How far LedPanelComponent's bounds must extend past its extracted
+    /// _ledPanelControl rect on every side so a lit lamp's glow is never
+    /// clipped by its own component bounds -- the full glow radius, which is
+    /// also the largest distance any lamp centre is from that rect's edge in
+    /// practice, so this stays generous rather than tightly fitted per lamp.
+    /// [RQ-GUI-056, ADR-JUC-031 (DEC-JUC-097)]
+    [[nodiscard]] inline int ledGlowMarginPx() noexcept
+    {
+        const float radius = static_cast<float>(tokens::component::indicatorSize) * 0.5F
+                            * tokens::component::indicatorGlowRadius;
+        return static_cast<int>(std::ceil(radius));
+    }
 
     /// Resizable host: a menu bar strip on top, the uniformly-scaled canvas
     /// below. Also the window-wide drop target for .syx files (reference

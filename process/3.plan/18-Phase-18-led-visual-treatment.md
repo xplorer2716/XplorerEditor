@@ -101,7 +101,26 @@ Sequential: 007 consumes the tokens 006 adds.
 
 ### TASK-GFX-007: Round lamps with rim and glow, on inflated painting bounds
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done**. `LED_SIZE` removed from `MainComponent.hpp`;
+  `LedPanelComponent::paint` draws glow (radial gradient, only while lit) then
+  filled circle then 1 px rim (`strokeBorder`); placement in `MainComponent.cpp`
+  expands the extracted spec by the new `ledGlowMarginPx()` helper, `paint()`
+  un-inflates via `getLocalBounds().reduced(...)` so lamp centres never move.
+  **Caught during build:** the three tokens had been added to the SEMANTIC tier
+  in TASK-GFX-006, not COMPONENT as the code and ADR required — MSVC error,
+  fixed by relocating them in `design-tokens.yaml` (component tier, same
+  reasoning as the VFD-only tokens) and regenerating. Verified visually: app
+  launched, screenshot of the idle strip shows three round lamps with a visible
+  rim, correctly positioned under the VFD glass, clearly distinct from the old
+  flat squares (no live MIDI traffic available to capture the glow directly;
+  the lit path is code-reviewed and geometry-guarded instead). Added
+  `LedPanelGeometryTests.cpp` (new, `xpl_tests_app_juce`) per the plan's
+  Verification section — asserts `indicatorSize` against all three ceilings
+  using the token and the real control-table spec. Full rebuild clean; all 6
+  suites green: `xpl_tests_app_juce` 331/331 (+8 new), `xpl_tests_app` 2014/2014,
+  `xpl_tests_framework` 123/123, `xpl_tests_model` 333/333, `xpl_tests_midi`
+  68/68, `xpl_tests_settings` 31/31, `xpl_tests_controller` 99/99. 0 test
+  modified.
 - **Description**: Rework `MainComponent::LedPanelComponent`:
   1. Remove `static constexpr int LED_SIZE = 5` — the last visual literal in this
      component — and read `tokens::component::indicatorSize` instead.
