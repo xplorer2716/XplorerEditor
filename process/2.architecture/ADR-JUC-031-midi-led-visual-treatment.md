@@ -1,7 +1,12 @@
 # ADR-JUC-031: MIDI LED Visual Treatment — A Lamp, Not a Control
 
 ## Status
-Proposed
+Accepted — implemented and merged to `feature/GFX`: DEC-JUC-095/096/097
+(TASK-GFX-006/007, PLAN-GFX-004). Full build clean, verified visually (round
+lamps with rim, correctly positioned under the VFD glass; no live MIDI traffic
+available to capture the glow, verified by code review and by the new
+`LedPanelGeometryTests` size-envelope guard instead), all 6 test suites green,
+0 test modified.
 
 <!-- Motivated by RQ-GUI-056 (refined LED appearance under the VFD). Extends the
 rendering half of ADR-JUC-008 (per-device MIDI LEDs) and leaves its behaviour

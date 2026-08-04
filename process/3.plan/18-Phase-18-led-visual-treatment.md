@@ -183,3 +183,5 @@ Sequential: 007 consumes the tokens 006 adds.
       remaining literal.
 - [x] **Owner approval** — treatment, size and first-version framing agreed
       2026-08-04.
+- [x] Both tasks Done; full test suite green; ADR-JUC-031 ready to move from
+      Proposed to Accepted.
