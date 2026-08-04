@@ -13,42 +13,6 @@
 
 namespace xplorer::app
 {
-    /// Where a keyboard-focus ring goes when it must sit immediately INSIDE a
-    /// control's own border rather than on top of it — RQ-GUI-042 specifies
-    /// "an added outline", and a ring sharing the border's geometry replaces it
-    /// rather than adding to it.
-    ///
-    /// Returns the rectangle AND the corner radius **together, deliberately**.
-    /// Shrinking a rounded rectangle without also shrinking its radius does not
-    /// produce a parallel contour: the gap is `inset` along the straight edges
-    /// but `inset * sqrt(2)` in the corners, so the inner ring visibly fails to
-    /// follow the outer one — which is exactly the defect this shape prevents
-    /// (owner-reported, 2026-08-03). Handing back a rectangle alone would let a
-    /// caller inset without correcting the radius, one call site at a time.
-    ///
-    /// A function and not a token: the inset is not a design value but a
-    /// consequence of two of them, and one operand varies at run time — a
-    /// modulation-matrix combo's border is `strokeBorder` at rest and
-    /// `strokeDiagram` while highlighted (RQ-GUI-052) — so no fixed number can
-    /// serve it, and naming one token per case would multiply values that all
-    /// encode one rule.
-    /// [RQ-GUI-042, RQ-DSN-033, ADR-JUC-028 (DEC-JUC-083, DEC-JUC-084)]
-    struct FocusRingGeometry
-    {
-        juce::Rectangle<float> bounds;
-        float cornerRadius;
-    };
-
-    [[nodiscard]] inline FocusRingGeometry focusRingInside(juce::Rectangle<float> borderBounds,
-                                                           float cornerRadius,
-                                                           float borderWidth) noexcept
-    {
-        // Half of each stroke: the two rings then sit edge to edge, touching
-        // but not overlapping, whatever the border width is.
-        const float inset = (borderWidth + tokens::semantic::strokeFocusRing) * 0.5F;
-        return {borderBounds.reduced(inset), juce::jmax(0.0F, cornerRadius - inset)};
-    }
-
     class XplorerLookAndFeel final : public juce::LookAndFeel_V4
     {
     public:
