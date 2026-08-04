@@ -8,6 +8,13 @@ hover state correctly but did not account for `juce::ComboBox` never
 triggering its own repaint on mouse enter/exit, so the painted hover state
 went stale. See DEC-JUC-040.
 
+**Partially superseded 2026-08-04 by ADR-JUC-029 (owner decision, session GFX):
+DEC-JUC-022 — the keyboard-focus ring — is withdrawn, and with it this ADR's
+whole Focused state.** The other decisions stand unchanged: hover (DEC-JUC-020,
+DEC-JUC-021, DEC-JUC-023, DEC-JUC-040) and disabled (DEC-JUC-020, DEC-JUC-024)
+remain in force exactly as written. This ADR therefore now covers **two** of the
+three states it was written for. [RQ-GUI-054 supersedes RQ-GUI-042]
+
 <!-- Motivated by RQ-GUI-041 (hover), RQ-GUI-042 (keyboard focus), RQ-GUI-043
 (disabled); closes the "States missing" rows of the design-system component
 catalogue (RQ-DSN §4). References the shared state-to-code mapping
@@ -83,7 +90,13 @@ without the two states reading as one.
   other visual change to the combo (arrow, popup, text sizing untouched).
   (RQ-GUI-041, RQ-GUI-043)
 
-- **DEC-JUC-022 — Focus ring composes as an addition, not a fill swap.** Every
+- **DEC-JUC-022 — Focus ring composes as an addition, not a fill swap.**
+  **SUPERSEDED 2026-08-04 by ADR-JUC-029 (DEC-JUC-088): there is no focus ring
+  any more.** This decision was first amended by ADR-JUC-028 (DEC-JUC-083) —
+  which corrected the "around the control's outer bounds" geometry below, since
+  at that geometry the ring *replaced* the border instead of adding to it — and
+  is now withdrawn outright. Kept verbatim as the record of what shipped.
+  ~~Every
   control routed through the overrides above additionally checks
   `component.hasKeyboardFocus(true)` and, when true, strokes an outline in the
   accent colour (`XplorerLookAndFeel::ledColour()`, ADR-JUC-011's single source
@@ -92,7 +105,7 @@ without the two states reading as one.
   distinct from the thinner 1 px `strokeBorder` used for the tick-box border
   itself, so the ring reads as a separate element, not a thicker border). Drawn
   last, on top of the idle/hover/disabled fill, so it composes with any of the
-  three rather than replacing them. (RQ-GUI-042)
+  three rather than replacing them.~~ (RQ-GUI-042 — withdrawn)
 
 - **DEC-JUC-023 — Table-row hover is tracked manually; no framework hook
   exists for it.** `TableListBoxModel` has no per-row hover callback (verified
@@ -112,9 +125,13 @@ without the two states reading as one.
   float aliasing a global, ADR-JUC-014). No other new token: hover reuses
   `component.knobRingHoverBrighten`'s underlying `semantic.hoverBrighten`
   (RQ-DSN-023 — one shared factor, not knob-specific despite its current name),
-  the focus colour reuses the runtime LED colour (ADR-JUC-011), and the focus
-  stroke width reuses `semantic.strokeLine`. (RQ-GUI-041, RQ-GUI-042, RQ-GUI-043;
-  ADR-JUC-014)
+  ~~the focus colour reuses the runtime LED colour (ADR-JUC-011), and the focus
+  stroke width reuses `semantic.strokeLine`~~. (RQ-GUI-041, RQ-GUI-042,
+  RQ-GUI-043; ADR-JUC-014)
+  *The struck clause is moot as of 2026-08-04 (ADR-JUC-029): the focus ring's
+  width later became its own `strokeFocusRing` role (ADR-JUC-028, DEC-JUC-083)
+  and both the ring and that role are now removed. `disabledAlpha` — the actual
+  subject of this decision — is unaffected and stays.*
 
 - **DEC-JUC-040 — Combo boxes must force their own repaint on hover
   transitions; unified in one reusable base, not duplicated per consumer.**
@@ -149,8 +166,11 @@ without the two states reading as one.
 
 ## Consequences
 
-- **Easier:** the panel stops feeling inert under the mouse; keyboard users can
-  finally see where focus is (closes a real accessibility gap, RQ-DSN-033); a
+- **Easier:** the panel stops feeling inert under the mouse; ~~keyboard users can
+  finally see where focus is (closes a real accessibility gap, RQ-DSN-033)~~
+  *(reversed 2026-08-04 by ADR-JUC-029: the gap is re-opened deliberately, in
+  part — the VFD's last-action readout of RQ-GUI-020 covers a user who is
+  *acting*, not one who is only tabbing)*; a
   future `setEnabled(false)` call anywhere renders correctly for free, with no
   new per-call-site styling decision. All three states are single-sourced
   (RQ-DSN-062 pattern already established by the knob and the FM/LAG radios),

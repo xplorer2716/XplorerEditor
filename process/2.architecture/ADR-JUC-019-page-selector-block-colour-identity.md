@@ -8,6 +8,12 @@ palette became user-themeable (RQ-DSN-095) a cached copy would go stale, so the
 button stores its `BlockId` and resolves the live palette at paint time. Every
 other decision here (self-painting, fill/border rules, hover/focus, verification)
 stands unchanged.
+**DEC-JUC-032 partially superseded 2026-08-04 by ADR-JUC-029 (DEC-JUC-088):** its
+focus half is void — `paintButton` no longer draws a focus ring, because
+RQ-GUI-054 removes the indicator from every control. Its **hover** half stands,
+and so does the no-regression obligation it expresses: a self-painting button must
+still reproduce whatever shared feedback the other controls have, which is now
+hover and disabled only. [RQ-GUI-054 supersedes RQ-GUI-042]
 
 <!-- Motivated by RQ-GUI-045 (selector buttons carry their block's colour).
 Builds on RQ-GUI-044 / ADR-JUC-018 (block identity colours in the painter),
@@ -79,10 +85,13 @@ Constraints found by reading the code:
   not dropping them.** Because `paintButton` bypasses `LookAndFeel_V4`, the
   stock hover/focus/pressed feedback disappears unless reproduced. The override
   SHALL therefore apply the shared `hoverBrighten` factor when
-  `shouldDrawButtonAsHighlighted` (RQ-GUI-041, RQ-DSN-023) and draw the accent
-  focus ring when `hasKeyboardFocus(true)` (RQ-GUI-042) — the same rules the
+  `shouldDrawButtonAsHighlighted` (RQ-GUI-041, RQ-DSN-023) ~~and draw the accent
+  focus ring when `hasKeyboardFocus(true)` (RQ-GUI-042)~~ — the same rules the
   check boxes, radios and combo boxes already follow (ADR-JUC-017). This is a
-  no-regression obligation, not new scope. (RQ-GUI-041, RQ-GUI-042)
+  no-regression obligation, not new scope. (RQ-GUI-041, ~~RQ-GUI-042~~)
+  *Focus half struck 2026-08-04 (ADR-JUC-029, DEC-JUC-088): there is no focus
+  ring on any control to mirror. The obligation itself is unchanged — this button
+  paints itself, so it must reproduce the shared feedback that does exist.*
 
 - **DEC-JUC-033 — Verification by pixel sampling against the block's own fill.**
   The active selector's background is sampled under Xvfb and compared with the
@@ -136,6 +145,6 @@ flowchart TD
     P --> FILL{"getToggleState()?"}
     FILL -- "active" --> F1["fill = hue.withAlpha(blockFillAlpha)<br/>= the block's own fill (DEC-JUC-031)"]
     FILL -- "inactive" --> F2["neutral background"]
-    P --> HF["hover: hoverBrighten (RQ-GUI-041)<br/>focus: accent ring (RQ-GUI-042)<br/>(DEC-JUC-032)"]
+    P --> HF["hover: hoverBrighten (RQ-GUI-041)<br/>focus: REMOVED 2026-08-04<br/>(RQ-GUI-054, ADR-JUC-029)<br/>(DEC-JUC-032)"]
     P --> TXT["caption via LookAndFeel::drawButtonText<br/>(unchanged)"]
 ```
