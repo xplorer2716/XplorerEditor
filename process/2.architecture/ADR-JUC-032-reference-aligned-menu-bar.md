@@ -1,7 +1,19 @@
 # ADR-JUC-032: Reference-Aligned Menu Bar — Icons, Order and Keyboard Shortcuts
 
 ## Status
-Proposed
+Accepted — implemented and merged to `feature/GFX`: DEC-JUC-098/099/100/101
+(TASK-GFX-008/009/010, PLAN-GFX-005). Full build clean, owner-verified visually
+(menu order, icons, displayed and functional shortcuts, and the RQ-GUI-027
+Ctrl+C/Ctrl+V non-regression), all 6 test suites green, 0 test modified.
+
+*Amendment to DEC-JUC-099 found in implementation:* the shortcut table has 13
+entries, not 16 — the three reference shortcuts left out belong to items this
+port does not have (`Save as`, dropped by owner decision) or that were already
+ported elsewhere (the page context menu's Ctrl+C/Ctrl+V, in
+`PageSelectorButton::keyPressed` under RQ-GUI-027). Also: `MainComponent` is
+not the root component and JUCE bubbles keys upward, so `ScaledCanvasComponent`
+forwards down to it — without that, shortcuts would only have worked while some
+control held focus.
 
 <!-- Motivated by RQ-GUI-008 (corrected 2026-08-04) — the menu bar's order,
 labels, icons and shortcuts must match `XplorerEditor-dotnet-archive`'s

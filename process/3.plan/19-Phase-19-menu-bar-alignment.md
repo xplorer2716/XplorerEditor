@@ -241,5 +241,17 @@ final item ids to build its table against.
 - [x] Each task references its requirement and ADR IDs.
 - [x] No UI literal introduced without a named constant (URLs, ids, the shortcut
       table) — DoD applies at Tier M.
-- [ ] **Owner approval — pending.** Requirement, ADR and plan are written; no
-      code has been touched beyond the already-extracted icon PNGs.
+- [x] **Owner approval** — granted 2026-08-04.
+- [x] All three tasks Done, each owner-verified visually; full suite green;
+      ADR-JUC-032 ready to move from Proposed to Accepted.
+
+## Outcome
+
+Every menu now matches the reference in order, labels, icons and shortcuts,
+with the two sanctioned departures (View, Piano keyboard) intact. Three items
+that were **missing entirely** are now present and working — Synchronize and
+the three Help entries — and one that was **present but dead** (File > New,
+in the menu with no dispatch case) now loads the bundled default patch.
+
+*Not carried over, by owner decision:* the reference's "Save as"
+(`Ctrl+Shift+S`), redundant with a Save that already always prompts.
