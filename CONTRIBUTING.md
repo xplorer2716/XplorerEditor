@@ -51,12 +51,17 @@ AI-agent-assisted contribution.**
 This repository is developed using the **AGNOS lightweight agentic
 development process** — requirements, architecture decisions, plans and
 tasks, all cross-referenced with traceable IDs, so that every change stays
-explainable and auditable. The full, authoritative procedure is defined
-here and is **not duplicated in this document**, to avoid the two copies
-drifting apart:
+explainable and auditable. The process definition is written to be
+tool-neutral and is directly executable by both **GitHub Copilot** and
+**Claude Code**. The full, authoritative procedure is defined once and is
+**not duplicated in this document**, to avoid multiple copies drifting
+apart:
 
-- **Process definition**: [.github/instructions/agnos-sw-eng.v2.instructions.md](.github/instructions/agnos-sw-eng.v2.instructions.md)
-- **Claude Code entry point**: [CLAUDE.md](CLAUDE.md) (tool-specific mapping onto the process above)
+- **Process definition (tool-neutral, authoritative)**: [.github/instructions/agnos-sw-eng.v2.instructions.md](.github/instructions/agnos-sw-eng.v2.instructions.md) — GitHub Copilot discovers and applies this file natively (standard `.github/instructions/` convention); no extra setup is required for Copilot.
+- **Claude Code entry point**: [CLAUDE.md](CLAUDE.md) — Claude Code does not auto-discover `.github/instructions/`, so this file imports the process definition above and maps its two tool-specific touch points (the user-question tool, the git workflow skill) onto Claude Code's equivalents.
+
+Whichever agent you use, the process it must follow is the same one; only
+the entry point differs.
 
 In short, an AI agent preparing a change here is expected to author or
 reference the relevant requirement (`RQ-*`), architecture decision
