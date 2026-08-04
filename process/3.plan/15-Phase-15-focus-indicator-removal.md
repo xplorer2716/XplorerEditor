@@ -114,7 +114,9 @@ Strictly sequential — see "why the order matters" above.
 
 ### TASK-GFX-001: Remove the focus branch from the three `XplorerLookAndFeel` draw overrides
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — commit c9a9226. `XplorerApp` (Debug) built clean; the
+  three focus branches and both header comments removed as specified;
+  `drawTickBox`/`drawRadioBox`'s now-unused `component` parameter left unnamed.
 - **Description**: In `XplorerLookAndFeel.cpp`, delete the three
   `hasKeyboardFocus(true)` blocks — `drawTickBox` (~121–126), `drawRadioBox`
   (~157–161), `drawComboBox` (~291–303, including its explanatory comment) — and
@@ -150,7 +152,8 @@ Strictly sequential — see "why the order matters" above.
 
 ### TASK-GFX-002: Remove the focus branch from `PageSelectorButton::paintButton`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — commit 7e2a45a. `XplorerApp` (Debug) rebuilt clean;
+  `setWantsKeyboardFocus(true)` and `laf`'s other use (block palette) untouched.
 - **Description**: In `PageFamilyBlock.cpp`, delete the
   `isEnabled() && hasKeyboardFocus(true) && laf != nullptr` block (~76–86) and its
   comment. `laf` stays — it also resolves the live block palette (~50–52).
@@ -180,7 +183,14 @@ Strictly sequential — see "why the order matters" above.
 
 ### TASK-GFX-003: Delete the focus-ring helper and the `strokeFocusRing` token; regenerate
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: **Done** — commit 56122e7. `focusRingInside`/`FocusRingGeometry`
+  removed from `XplorerLookAndFeel.hpp`; `strokeFocusRing` removed from
+  `design-tokens.yaml`; `DesignTokens.hpp` regenerated, `--check` clean;
+  `BackgroundRendererTests.cpp` comment corrected (assertions untouched). Full
+  rebuild clean; all 6 suites green, 0 test modified: `xpl_tests_app_juce`
+  314/314, `xpl_tests_app` 2014/2014, `xpl_tests_framework` 123/123,
+  `xpl_tests_model` 333/333, `xpl_tests_midi` 68/68, `xpl_tests_settings`
+  31/31, `xpl_tests_controller` 99/99.
 - **Description**: Remove the now-orphaned design-system vocabulary, in the right
   order and through the generator, never by hand-editing the generated header:
   1. Delete `FocusRingGeometry` and `focusRingInside()` from
@@ -227,5 +237,6 @@ Strictly sequential — see "why the order matters" above.
 - [x] UI tasks list the design-system IDs they depend on (RQ-DSN-063, RQ-DSN-099,
       RQ-DSN-030; ADR-JUC-014, ADR-JUC-015). No task introduces a visual literal —
       all three only remove tokens and token consumers.
-- [ ] **Owner approval — pending.** Requirements, ADR and plan are written; no
-      code has been touched.
+- [x] **Owner approval** — granted 2026-08-04, session GFX.
+- [x] All three tasks Done; full test suite green; ADR-JUC-029 ready to move
+      from Proposed to Accepted.

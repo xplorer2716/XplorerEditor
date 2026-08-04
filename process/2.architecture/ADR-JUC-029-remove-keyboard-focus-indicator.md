@@ -1,7 +1,9 @@
 # ADR-JUC-029: Removal of the Keyboard-Focus Visual Indicator
 
 ## Status
-Proposed
+Accepted — implemented and merged to `feature/GFX`: DEC-JUC-088/089/090/091
+(TASK-GFX-001/002/003, PLAN-GFX-001). Full build clean, all 6 test suites green
+(2982 assertions), 0 test modified.
 
 <!-- Motivated by RQ-GUI-054 (no keyboard-focus visual indicator). Supersedes
 RQ-GUI-042 and the focus half of RQ-DSN-033, both withdrawn. Partially supersedes
