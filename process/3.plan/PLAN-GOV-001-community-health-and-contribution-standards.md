@@ -29,6 +29,7 @@ This plan implements the tasks in the format specified by the AGNOS process.
 | TASK-GOV-003 | Author structured issue templates (bug report, feature request, config) | M | RQ-GOV-004, RQ-GOV-005, RQ-GOV-008, ADR-GOV-001 (DEC-GOV-001, DEC-GOV-005) |
 | TASK-GOV-004 | Author `PULL_REQUEST_TEMPLATE.md` | M | RQ-GOV-006, ADR-GOV-001 (DEC-GOV-004) |
 | TASK-GOV-005 | Update `README.md` Contributing/Community section | S | RQ-GOV-007 |
+| TASK-GOV-006 | Correct "What's new in the JUCE port" README section (stale focus-indicator claim; missing shipped GFX improvements) | S | RQ-GUI-054/055/056, RQ-SCL-001..004, ADR-JUC-023/024/025/026/029/030/031/032 |
 
 No cross-task code dependency — each produces an independent file — but
 TASK-GOV-005 (README) references the artifacts produced by 001-004, so it
@@ -126,10 +127,39 @@ runs last.
 
 ---
 
+### TASK-GOV-006: Correct "What's new in the JUCE port" README section
+- **Tier**: S
+- **Status**: Done
+- **Description**: The section claimed a keyboard-focus visual indicator,
+  which ADR-JUC-029 removed (owner: "l'histoire du focus ce n'est plus
+  vrai"). Corrected the claim and added the other shipped GFX-session
+  improvements the section had not caught up with: window size presets /
+  full screen and device-pixel-snapped VFD glyph grid (ADR-JUC-025/026),
+  recessed VFD bezel and vector segment rendering (ADR-JUC-023/024), the
+  MIDI-activity lamp redesign (ADR-JUC-031), the reference-aligned menu bar
+  (ADR-JUC-032), and splash-screen removal (ADR-JUC-030). No new
+  requirement or ADR — this traces to artifacts that already exist and are
+  Accepted; the task only brings README's marketing copy back in sync with
+  what actually shipped.
+- **Requirement refs**: RQ-GUI-054, RQ-GUI-055, RQ-GUI-056, RQ-SCL-001,
+  RQ-SCL-002, RQ-SCL-003, RQ-SCL-004
+- **ADR refs**: ADR-JUC-023, ADR-JUC-024, ADR-JUC-025, ADR-JUC-026,
+  ADR-JUC-029, ADR-JUC-030, ADR-JUC-031, ADR-JUC-032
+- **Acceptance Criteria** (Gherkin):
+  - *Given* `README.md`'s "What's new in the JUCE port" section, *When*
+    read, *Then* it makes no claim about a keyboard-focus indicator.
+  - *Given* that section, *When* read against the ADR-JUC-023/024/025/026/
+    030/031/032 Consequences sections, *Then* every remaining claim is
+    still true.
+- **Dependencies**: None
+- **Assignee**: AI
+
+---
+
 ## Definition of Ready
 
 - [x] Each task has a description, Gherkin acceptance criteria and a tier.
 - [x] Each task references its requirement and ADR IDs.
 - [x] **Owner approval** — granted 2026-08-05 (RQ-GOV-004 amended to drop the
       .NET dropdown per owner instruction before implementation started).
-- [x] All five tasks Done.
+- [x] All six tasks Done.

@@ -19,7 +19,7 @@ With Xplorer you can tweak the sound simultaneously using a computer mouse, a ha
 Xplorer is being migrated from its original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation. The JUCE port is the active development effort and lives under [juce](juce). Most features are already available; if you want to test it before the official release, compile it from the `main` branch source code — on Windows, run [make-windows-local-release-no-tests](make-windows-local-release-no-tests) (CMake + MSVC), or configure the [juce](juce) CMake project directly on any platform.
 
 - **Alpha preview available**: the latest JUCE development version for Windows and macOS is available as an alpha preview in the releases stream: https://github.com/xplorer2716/XplorerEditor/releases
-- **Latest official (.NET) release**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/latest) — the next official release (JUCE-based) will be published in the same release stream
+- **Latest official (.NET) release**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/latest) — the next official release (JUCE-based) will be published in the same releases stream
 
 - **Legacy .NET source code**: archived at [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
 
@@ -40,9 +40,12 @@ Xplorer is being migrated from its original .NET/WinForms implementation to a cr
 ### What's new in the JUCE port
 
 - **Vector-drawn, resizable user interface** — the whole panel (background, block frames, signal-path diagram) is drawn with vector primitives instead of a fixed bitmap, so it stays crisp at any window size and on high-resolution displays
-- **Colour-coded functional blocks** — VCO, VCF, ENV, LFO, RAMP, LAG, TRACK and the Modulation Matrix each carry their own colour identity (frame, fill and section header), making the signal-path diagram easier to read at a glance
+- **Window size presets & full screen** — a View menu offers five size presets (1x to 2x) plus full screen, falling back to full screen automatically when a preset doesn't fit the display; the VFD's glyph grid is snapped to whole device pixels so text stays equally crisp at every scale
+- **Colour-coded functional blocks** — VCO, VCF, ENV, LFO, RAMP, LAG, TRACK and the Modulation Matrix each carry their own colour identity (frame, fill and section header), with a live modulation-matrix highlight, making the signal-path diagram easier to read at a glance
+- **Refined VFD display** — a recessed bezel and vector-drawn segments, with the three MIDI-activity indicators redesigned as glowing lamps instead of flat squares
+- **Reference-aligned menu bar** — menu order, icons and keyboard shortcuts now match the original hardware editor exactly
 - **Native cross-platform target** — Windows, Linux and macOS, on a modern C++20/JUCE stack with no legacy third-party framework dependency, and a future path to run as a plugin inside DAWs
-- **Modernised interaction feedback** — consistent hover/keyboard-focus/disabled states across every control, radio-button selectors matching the reference hardware panel (e.g. FM destination, LAG timing), and a live modulation-matrix highlight
+- **Modernised interaction feedback** — consistent hover and disabled states across every control, radio-button selectors matching the reference hardware panel (e.g. FM destination, LAG timing), and instant startup with no splash screen
 
 This port also aims to demonstrate the integration of AI software development agents such as GitHub Copilot and Claude Code into the SDLC, by following a strict process and ensuring end-to-end traceability, using the AGNOS lightweight agentic development process (see the [process](process) folder).
 
