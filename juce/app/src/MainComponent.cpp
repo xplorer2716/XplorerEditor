@@ -585,6 +585,29 @@ namespace xplorer::app
         constexpr int VIEW_SCALE_FIRST_ID = 50;
         constexpr int VIEW_FULL_SCREEN_ID = 60;
 
+        // The three URLs the reference's Help menu opens, verbatim from its
+        // XplorerConstants. Opened in the system browser, no networking of our
+        // own -- same as the reference's OpenBrowserWithUrl.
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+        constexpr const char* USER_MANUAL_URL =
+            "https://github.com/xplorer2716/XplorerEditor/blob/main/Xplorer/xdata/manual/"
+            "XplorerUserManual.pdf";
+        constexpr const char* RELEASES_URL = "https://github.com/xplorer2716/XplorerEditor/releases";
+        constexpr const char* WEBSITE_URL = "https://xplorer2716.github.io/XplorerEditor.site/";
+
+        // The default patch File > New loads, copied beside the executable by
+        // the build (app/CMakeLists.txt). The reference resolves it the same
+        // way -- executable directory + this name -- and "New" there means
+        // "load this patch", not "blank the editor".
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+        constexpr const char* DEFAULT_TONE_FILENAME = "oberheim.syx";
+
+        [[nodiscard]] juce::File defaultToneFile()
+        {
+            return juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                .getSiblingFile(DEFAULT_TONE_FILENAME);
+        }
+
         juce::String scaleItemName(float scale)
         {
             // "1x", "1.25x", ... — trailing zeros trimmed so 1.5 does not read
@@ -621,21 +644,31 @@ namespace xplorer::app
         juce::PopupMenu menu;
         switch (index)
         {
+            // Order, wording and grouping are the reference's own, read from
+            // MainForm.Designer.cs's DropDownItems.AddRange calls and the
+            // matching .resx strings -- not an approximation.
+            // [RQ-GUI-008, ADR-JUC-032]
             case 0: // File
                 menu.addItem(1, "New");
-                menu.addItem(2, "Open...");
-                menu.addItem(3, "Save...");
+                menu.addItem(2, "Open");
+                menu.addSeparator();
+                // The reference's "Save as" is deliberately absent: our Save
+                // already always prompts for a destination (no current-file
+                // path is tracked), so it IS the reference's Save as.
+                // [RQ-GUI-008, owner-confirmed deviation]
+                menu.addItem(3, "Save");
                 menu.addSeparator();
                 menu.addItem(4, "Exit");
                 break;
             case 1: // Patch
-                menu.addItem(10, "Next");
                 menu.addItem(11, "Previous");
-                menu.addItem(12, "Go to...");
-                menu.addItem(13, "Store...");
+                menu.addItem(10, "Next");
+                menu.addItem(12, "Go to patch...");
                 menu.addSeparator();
-                menu.addItem(14, "Rename...");
                 menu.addItem(15, "Randomize");
+                menu.addItem(14, "Rename");
+                menu.addItem(13, "Store");
+                menu.addItem(16, "Synchronize");
                 break;
             case 2: // View [RQ-SCL-002, RQ-SCL-003]
             {
@@ -657,8 +690,11 @@ namespace xplorer::app
             }
             case 3: // Tools
             {
-                menu.addItem(20, "Settings...");
-                menu.addItem(21, "Tune request");
+                menu.addItem(20, "Settings");
+                menu.addItem(21, "Tune Request");
+                // No reference counterpart -- the second sanctioned JUCE-only
+                // item after the View menu, kept at the owner's decision.
+                // [RQ-GUI-028, RQ-GUI-008]
                 menu.addItem(22, "Piano keyboard");
                 juce::PopupMenu singlePatches;
                 singlePatches.addItem(40, "Get all single patches from synth");
@@ -671,7 +707,11 @@ namespace xplorer::app
                 break;
             }
             case 4: // Help
-                menu.addItem(30, "About");
+                menu.addItem(31, "Xplorer help");
+                menu.addSeparator();
+                menu.addItem(32, "Check for new releases");
+                menu.addItem(33, "Go to website");
+                menu.addItem(30, "About...");
                 break;
             default:
                 break;
@@ -705,6 +745,32 @@ namespace xplorer::app
 
         switch (menuItemId)
         {
+            case 1: // New — load the bundled default patch, like the reference's
+                    // FileOperationsManager.NewPatch(). Not a blank editor: the
+                    // program number comes from the file's own sysex data.
+                    // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+            {
+                const auto file = defaultToneFile();
+                if (!file.existsAsFile())
+                {
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::MessageBoxIconType::WarningIcon, "New patch",
+                        "Unable to create a new patch: " + file.getFullPathName() + " is missing.");
+                    break;
+                }
+                try
+                {
+                    _controller->loadXplorerTone(file.getFullPathName().toStdString());
+                }
+                catch (const std::exception& e)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "New patch",
+                                                          juce::String("Unable to create a new patch: ")
+                                                              + e.what());
+                }
+                break;
+            }
             case 2: // Open — reuse the load action
                 _shortcutActions["btPatchLoad"]();
                 break;
@@ -740,6 +806,12 @@ namespace xplorer::app
             case 15:
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
                 break;
+            case 16: // Synchronize — re-fetch the current patch from the synth,
+                     // the same call Go to / Store already make.
+                     // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+                _controller->sendProgramChangeAndGetSinglePatchFromSynth(
+                    _controller->currentProgramNumber());
+                break;
             case 20:
                 openSettingsDialog();
                 break;
@@ -759,6 +831,18 @@ namespace xplorer::app
                 break;
             case 30:
                 showAboutDialog("Xplorer 0.1.0");
+                break;
+            // The three Help URLs, opened in the system browser exactly as the
+            // reference's OpenBrowserWithUrl does — no update check of our own.
+            // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+            case 31:
+                juce::URL(USER_MANUAL_URL).launchInDefaultBrowser();
+                break;
+            case 32:
+                juce::URL(RELEASES_URL).launchInDefaultBrowser();
+                break;
+            case 33:
+                juce::URL(WEBSITE_URL).launchInDefaultBrowser();
                 break;
             case 40:
                 getAllSinglePatchesFromSynth();

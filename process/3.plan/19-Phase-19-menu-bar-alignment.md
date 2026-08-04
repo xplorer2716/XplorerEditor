@@ -101,7 +101,22 @@ final item ids to build its table against.
 
 ### TASK-GFX-009: File/Patch/Help menu content — order, labels, new items
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done**. File/Patch/Help rebuilt to the reference order; Tools
+  label casing corrected ("Tune request" → "Tune Request", "Settings..." →
+  "Settings"). New ids 16 (Synchronize) and 31/32/33 (Xplorer help / Check for
+  new releases / Go to website) added to both the menus and
+  `menuItemSelected`; id 1 ("New") was a **dead menu item** — present in the
+  menu with no dispatch case at all — and is now wired to load
+  `oberheim.syx` via `loadXplorerTone`. URLs and the default-tone filename are
+  named constants. **Owner-verified visually**: File = New, Open, sep, Save,
+  sep, Exit (no "Save as"); Patch = Previous, Next, Go to patch..., sep,
+  Randomize, Rename, Store, Synchronize; Tools = Settings, Tune Request, Piano
+  keyboard, Single patches..., Backup/Restore...; Help = Xplorer help, sep,
+  Check for new releases, Go to website, About... — all four confirmed correct
+  and in order. Icons/shortcuts are absent as expected (TASK-GFX-010). Full
+  rebuild clean; all 6 suites green (`xpl_tests_app_juce` 331/331,
+  `xpl_tests_app` 2014/2014, framework 123, model 333, midi 68, settings 31,
+  controller 99), 0 test modified.
 - **Description**: In `MainComponent::getMenuForIndex`, rebuild the File,
   Patch and Help cases to the table in this plan's Overview (Tools already
   matches, aside from label casing "Tune request" → "Tune Request" — folded in
