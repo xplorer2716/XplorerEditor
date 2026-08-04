@@ -56,13 +56,15 @@ This port also aims to demonstrate the integration of AI software development ag
 - [juce](juce): active JUCE-based source tree (build instructions, CMake setup)
 - [process](process): AGNOS requirements / architecture-decision / plan artifacts
 
-## Contributing
+## Community
 
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request and describe your changes
+- Found a bug or have an idea? Open an issue using the
+  [Bug Report](https://github.com/xplorer2716/XplorerEditor/issues/new?template=bug_report.yml) or
+  [Feature Request](https://github.com/xplorer2716/XplorerEditor/issues/new?template=feature_request.yml) form.
+- Want to contribute code? See [CONTRIBUTING.md](CONTRIBUTING.md) — it
+  covers the workflow and, if you use an AI coding agent (GitHub Copilot,
+  Claude Code, ...), the mandatory AGNOS process.
+- This project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Credits
 

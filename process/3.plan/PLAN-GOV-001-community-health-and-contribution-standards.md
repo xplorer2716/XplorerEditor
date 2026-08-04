@@ -111,7 +111,7 @@ runs last.
 
 ### TASK-GOV-005: Update README Contributing/Community section
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Replace `README.md`'s inline fork/branch/PR list with a
   short Community/Contributing section linking `CONTRIBUTING.md` and
   `CODE_OF_CONDUCT.md`.
@@ -130,4 +130,6 @@ runs last.
 
 - [x] Each task has a description, Gherkin acceptance criteria and a tier.
 - [x] Each task references its requirement and ADR IDs.
-- [ ] **Owner approval** — pending.
+- [x] **Owner approval** — granted 2026-08-05 (RQ-GOV-004 amended to drop the
+      .NET dropdown per owner instruction before implementation started).
+- [x] All five tasks Done.
