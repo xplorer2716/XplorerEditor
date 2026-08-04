@@ -94,7 +94,7 @@ runs last.
 
 ### TASK-GOV-004: Author Pull Request template
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Add `.github/PULL_REQUEST_TEMPLATE.md` with description,
   related-issue, AGNOS-traceability-IDs fields and a checklist including
   Code of Conduct acknowledgement and the AI-assistance/AGNOS-compliance
