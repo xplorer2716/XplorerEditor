@@ -63,14 +63,24 @@ Sequential: 007 consumes the tokens 006 adds.
 
 ### TASK-GFX-006: Add the LED tokens and regenerate
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — commit pending. Three tokens added to
+  `design-tokens.yaml` (`indicatorSize=7`, `indicatorGlowAlpha=0.55`,
+  `indicatorGlowRadius=2.0`); `DesignTokens.hpp` regenerated, `--check` clean.
+  `indicatorGlowRadius`'s note corrected during review to state explicitly it
+  multiplies the lamp's own **radius**, not its diameter — verified against the
+  real clearance around `_ledPanelControl` (glow reaches 7 px past the dot at
+  the 7 px first version; the diameter reading would have reached 14 px and left
+  only ~0.5 px before the VFD glass). No consumer yet (TASK-GFX-007). Full
+  rebuild clean; all 6 suites green, 0 test modified.
 - **Description**: Add to `juce/tools/design-tokens.yaml` — the single source of
   truth (RQ-DSN-063) — three globals and their component-tier aliases, following
   the existing `disabledAlpha` / `knobTrackAlpha` pattern:
   `indicatorSize` (int, **7**, note recording that it is a first version pending
   owner visual review and naming the three ceilings of DEC-JUC-096),
   `indicatorGlowAlpha` (float) and `indicatorGlowRadius` (float, a multiplier of
-  the diameter). Regenerate `DesignTokens.hpp` with
+  the lamp's own radius — checked against the panel's real clearance to the VFD
+  glass and the button row so the glow cannot reach either; see the token note).
+  Regenerate `DesignTokens.hpp` with
   `python juce/tools/generate_design_tokens.py`, then verify with `--check`
   (ADR-JUC-015 — never hand-edit the header). No consumer yet; this task only
   makes the vocabulary exist.

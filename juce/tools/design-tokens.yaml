@@ -77,11 +77,14 @@ tiers:
     stroke15: { kind: float, value: 1.5, note: "every stroke of the background diagram — block frames, signal lines, control sub-panel frames. Thicker than the button/control frame (stroke10), thinner than the former uniform diagram width (stroke20), RQ-GUI-051" }
     stroke20: { kind: float, value: 2.0 }
     stroke24: { kind: float, value: 2.4 }
+    indicatorSize: { kind: int, value: 7, note: "MIDI LED lamp diameter. FIRST VERSION (owner, 2026-08-04, RQ-GUI-056): 7 px is provisional and expected to be retuned after visual review -- which is why it is a token and no longer a LED_SIZE constant. Three independent ceilings, all satisfied: <= 10 (twice the 5 px .NET reference, owner allowance), < 14 (the check-box indicator, so a read-only lamp can never be mistaken for a control), <= 8 (three lamps plus spacing must fit the extracted 32x8 _ledPanelControl bounds -- the binding limit). ADR-JUC-031 (DEC-JUC-096)" }
 
     # ---- motion / timing ----
     hoverBrightenFactor: { kind: float, value: 0.4, note: "knob ring hover brighten" }
     tickBoxBorderAlpha:  { kind: float, value: 0.6, note: "tick-box border vs accent" }
     indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
+    indicatorGlowAlpha:  { kind: float, value: 0.55, note: "peak opacity of the radial glow at a lit MIDI LED's centre, fading to fully transparent at its outer edge. Below the accent hover brighten (0.4 is a colour delta, this is an alpha) and deliberately under 1.0: a glow that reaches full opacity reads as a second, larger lamp rather than as light around the first. ADR-JUC-031 (DEC-JUC-095)" }
+    indicatorGlowRadius: { kind: float, value: 2.0,  note: "glow outer radius as a MULTIPLE of the lamp's own radius (indicatorSize/2), not of its diameter -- at 2.0 the glow reaches exactly one lamp-radius past the visible dot's edge (3.5 px at the 7 px first version), so retuning indicatorSize scales the halo with it. Checked against the real clearance around _ledPanelControl (11 px to the VFD glass, 14+ px to the button row): a diameter-multiple reading would have reached 14 px and left only 0.5 px before touching the glass -- deliberately kept well inside instead. Also sets how far LedPanelComponent inflates its painting bounds past the extracted panel rect, since the 8 px-high panel has no room for a halo (DEC-JUC-097). ADR-JUC-031 (DEC-JUC-095)" }
     knobTrackAlpha:      { kind: float, value: 0.2, note: "owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash." }
     disabledAlpha:       { kind: float, value: 0.5, note: "owner-confirmed 2026-07: shared Disabled treatment for check boxes/radios/combos (RQ-DSN-032, TASK-JUC-109/110, ADR-JUC-017)" }
 
@@ -273,6 +276,9 @@ tiers:
     # ---- motion roles ----
     hoverBrighten:   { alias: global.hoverBrightenFactor }
     indicatorHoldMs: { alias: global.indicatorHoldMs }
+    indicatorSize:       { alias: global.indicatorSize,       note: "MIDI LED lamp diameter, RQ-GUI-056" }
+    indicatorGlowAlpha:  { alias: global.indicatorGlowAlpha,  note: "MIDI LED glow peak alpha, RQ-GUI-056" }
+    indicatorGlowRadius: { alias: global.indicatorGlowRadius, note: "MIDI LED glow radius multiplier, RQ-GUI-056" }
 
     # ---- layout roles (dialogs; TASK-JUC-098, RQ-DSN-020) ----
     layoutHairline:   { alias: global.space2,  note: "SettingsDialog row/swatch fine inset" }
