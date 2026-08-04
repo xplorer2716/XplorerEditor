@@ -16,10 +16,13 @@ With Xplorer you can tweak the sound simultaneously using a computer mouse, a ha
 
 ## Status
 
-Xplorer is being migrated from its original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation. The JUCE port is the active development effort and lives under [juce](juce). Most features are already available; if you want to test it before the official release, compile it from the `main` branch source code — on Windows, run [make-windows-local.bat](make-windows-local.bat) (CMake + MSVC), or configure the [juce](juce) CMake project directly on any platform.
+Xplorer is being migrated from its original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation. The JUCE port is the active development effort and lives under [juce](juce). Most features are already available; if you want to test it before the official release, compile it from the `main` branch source code — on Windows, run [make-windows-local-release-no-tests](make-windows-local-release-no-tests) (CMake + MSVC), or configure the [juce](juce) CMake project directly on any platform.
+
+- **Alpha preview available**: the latest JUCE development version for Windows and macOS is available as an alpha preview in the releases stream: https://github.com/xplorer2716/XplorerEditor/releases
+- **Latest official (.NET) release**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/latest) — the next official release (JUCE-based) will be published in the same release stream
 
 - **Legacy .NET source code**: archived at [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
-- **Latest official (.NET) release**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/tag/v2025.12.7.1) — the next official release (JUCE-based) will be published in the same release stream
+
 
 ## Main features
 
