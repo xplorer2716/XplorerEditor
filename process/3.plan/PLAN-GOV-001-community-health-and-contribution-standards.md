@@ -75,7 +75,7 @@ runs last.
 
 ### TASK-GOV-003: Author structured issue templates
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Add `.github/ISSUE_TEMPLATE/bug_report.yml`,
   `feature_request.yml` (GitHub Issue Forms, required fields, DEC-GOV-001)
   and `config.yml` (`blank_issues_enabled: false`, DEC-GOV-005). Every

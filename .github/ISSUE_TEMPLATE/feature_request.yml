@@ -1,0 +1,67 @@
+# RQ-GOV-005, RQ-GOV-008 / ADR-GOV-001 (DEC-GOV-001)
+name: "✨ Feature Request"
+description: Suggest an idea or improvement for Xplorer.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Separating the *problem* from
+        the *solution* below helps a maintainer — or an AI assistant reading
+        this issue — understand what you actually need, not just what you
+        happen to be asking for.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or motivation
+      description: >
+        What problem are you trying to solve, or what feels missing or
+        frustrating today? Describe the situation, not the fix.
+      placeholder: "Example: there is no way to rename a patch without going through the synth panel."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What would you like Xplorer to do instead? Be as concrete as you can.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area impacted
+      description: Which part of Xplorer does this concern?
+      options:
+        - User interface
+        - MIDI communication
+        - Patch management (load / save / backup)
+        - Build / CI / packaging
+        - Documentation
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: >
+        Optional — any workaround you currently use, or other approaches
+        you considered instead of this one.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I have read and agree to follow the [Code of Conduct](../../CODE_OF_CONDUCT.md).
+          required: true
