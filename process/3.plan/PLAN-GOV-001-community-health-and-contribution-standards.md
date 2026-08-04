@@ -55,7 +55,7 @@ runs last.
 
 ### TASK-GOV-002: Author Contributing Guide
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Add `CONTRIBUTING.md` describing the fork/branch/PR
   workflow, links to the issue templates (TASK-GOV-003) and PR template
   (TASK-GOV-004), and the non-negotiable clause: any contribution prepared
