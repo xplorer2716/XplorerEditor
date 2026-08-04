@@ -322,6 +322,11 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     connecting them read as the heavier element (owner review, 2026-08-03).
   - `semantic.strokeLine` — the control-widget strokes only. Its value is
     unchanged, so no widget moves as a result of this split.
+    - *Amended 2026-08-04 (session GFX).* The "focus rings" listed above among
+      this role's consumers are gone: they had already moved to their own
+      `strokeFocusRing` role (ADR-JUC-028, DEC-JUC-083), and RQ-GUI-054 has now
+      removed the indicator and that role altogether. `strokeLine`'s value and
+      its remaining consumers are untouched.
   - The diagram stroke SHALL stay **thicker than `strokeBorder`** (the
     button/tick-box frame), so a functional block still reads as stronger than a
     widget drawn on top of it — the ordering, not just the values, is the design
@@ -490,7 +495,7 @@ silently merged — owner confirms before migration):
 | Idle/default | no interaction | base component tokens | all |
 | Hover | pointer over, not pressed | brighten `colour.accent.default` (or the relevant token) by `motion.hoverBrighten` | **knob only** (ADR-JUC-009) |
 | Active/pressed | pointer down/dragging | same rule as Hover (JUCE's `isMouseOverOrDragging(true)` already covers both) | knob only |
-| Focused | keyboard focus | **not yet defined** — no component shows a distinct focus ring today | none |
+| Focused | keyboard focus | **none — deliberately not styled** (RQ-GUI-054, ADR-JUC-029): a focused control is indistinguishable from an idle one. Defined by RQ-GUI-042/RQ-DSN-033, implemented as an accent ring, then **withdrawn 2026-08-04** (owner decision, session GFX) — it competed graphically with the block-identity frames of RQ-GUI-045/RQ-GUI-052. Focus*ability* is unchanged; only its rendering is gone | none, by design |
 | Disabled | control inactive | **not yet defined** — no shared opacity/desaturation rule exists | none |
 | Selected | represents chosen option | background = `colour.surface.selected` | `SettingsDialog` list rows only |
 
@@ -498,6 +503,12 @@ silently merged — owner confirms before migration):
   shall declare which of the states above it implements; a control with no
   entry for Hover/Disabled/Focused is not assumed exempt — it is an open gap
   to close, tracked per-component in §4's table.
+  - *Amended 2026-08-04 (owner decision, session GFX).* **Focused is the one
+    exception, and it is a closed decision rather than an open gap:** RQ-GUI-054
+    forbids any focus rendering, so a control with no Focused entry is conformant
+    and SHALL NOT be treated as unfinished. Hover and Disabled keep the rule
+    above unchanged. Without this exception the "not assumed exempt" clause would
+    re-open, on every future control, a gap the owner has deliberately closed.
 - **RQ-DSN-031** — WHEN toggle buttons, combo boxes and `SettingsDialog` list
   rows gain a hover state (currently absent — only the rotary knob has one),
   they shall use the same `colour.accent.default` + `motion.hoverBrighten`
@@ -508,7 +519,11 @@ silently merged — owner confirms before migration):
   50% — value to be confirmed by the owner, not asserted here) and applied
   to every control that can be disabled; no control-specific disabled
   treatment shall be introduced independently.
-- **RQ-DSN-033** — A keyboard-focus visual rule shall be defined before any
+- **RQ-DSN-033** *(**WITHDRAWN 2026-08-04** — owner decision, session GFX;
+  superseded by RQ-GUI-054, architecture ADR-JUC-029. The rule below was defined,
+  implemented and twice reworked; **it is no longer in force.** The design system
+  now specifies **no** focus treatment — see §3's Focused row. Kept as the
+  historical record.)* — A keyboard-focus visual rule shall be defined before any
   keyboard-navigable dialog is built or extended — this is a genuine
   accessibility gap in the current build (no component shows focus), not
   merely a consistency nice-to-have (§6).
@@ -539,8 +554,25 @@ silently merged — owner confirms before migration):
     *When* both are focused, *Then* their rings share one width. *Given* the
     renderer sources, *When* they are read, *Then* the focus-ring inset is
     computed in exactly one place.
+  - *Withdrawal note (2026-08-04, session GFX).* Both amendments above were made
+    to stop the ring hiding the borders it sat on; they succeeded, and the ring
+    was still judged a graphic conflict — on a matrix combo it is a fourth frame
+    meaning beside block identity, cross-reference highlight and the control's own
+    border. `semantic.strokeFocusRing`, introduced here, has no consumer left and
+    is removed from the token source of truth (RQ-DSN-063) by RQ-GUI-054, as is
+    the shared `focusRingInside()` rule. The accessibility premise is partly —
+    **not fully** — answered by the VFD's last-action readout (RQ-GUI-020): it
+    reports the last *action*, not the current focus *position*, so a user merely
+    tabbing has no cue. That residual gap is accepted knowingly (ADR-JUC-029,
+    DEC-JUC-088).
 
 ## 4. Component Catalogue
+
+*Focused is **not** an open gap in the tables below: RQ-GUI-054 removed the focus
+indicator entirely, so "Focused" appearing under "States missing" means
+"deliberately not styled", not "still to do" (RQ-DSN-030 as amended). The Hover
+and Disabled entries are a separate matter: they predate ADR-JUC-017, which
+implemented both, and are stale for that reason alone — out of scope here.*
 
 ### RotaryKnob (`BoundKnob` + `XplorerLookAndFeel::drawRotarySlider`)
 | Field | Value |
@@ -670,7 +702,10 @@ silently merged — owner confirms before migration):
   mechanical, testable by the grep-based check of RQ-DSN-071).
 - **RQ-DSN-062** — State-to-code mapping: Hover/Active uses
   `juce::Component::isMouseOverOrDragging()`; Disabled uses `isEnabled()`;
-  Focused uses `hasKeyboardFocus()`; Selected is component-local state
+  ~~Focused uses `hasKeyboardFocus()`~~ *(struck 2026-08-04, session GFX:
+  RQ-GUI-054 removed the Focused rendering, so no `draw*` override reads
+  `hasKeyboardFocus()` — the state has no visual rule left to resolve)*;
+  Selected is component-local state
   (e.g. `SettingsDialog`'s row index) — each `draw*` override reads the
   live JUCE state and resolves the matching §3 rule, no cached per-instance
   state duplicating what JUCE already tracks (same principle as

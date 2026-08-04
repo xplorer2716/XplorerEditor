@@ -3,6 +3,15 @@
 ## Status
 Proposed
 
+**Partially superseded 2026-08-04 by ADR-JUC-029 (owner decision, session GFX).**
+DEC-JUC-083 is withdrawn in full and DEC-JUC-084 in part: the keyboard-focus ring
+this ADR spent two rounds repositioning is removed altogether, so
+`semantic.strokeFocusRing` and the shared `focusRingInside()` rule go with it.
+**The matrix work itself is untouched** — DEC-JUC-078/079/080/081/082 stand, and
+so does DEC-JUC-084's *frame* rule (a stroked rectangle is inset by half its own
+stroke), which is a general fact about strokes and is what keeps the 1.5 px
+highlight from being clipped. [RQ-GUI-054 supersedes RQ-GUI-042]
+
 <!-- Motivated by RQ-GUI-052 (matrix block colours + frame highlight) and
 RQ-DSN-100 (the shared block-referencing-control rule). Amends the rendering
 half of RQ-GUI-018 / ADR-JUC-010 and removes the matrix from the accent-colour
@@ -124,7 +133,15 @@ distinguishable.
   through.
 
 - **DEC-JUC-083 — The focus ring becomes additive, with its own width role and
-  one shared inset rule.** *(Added 2026-08-03, owner-reported: "c'est pas
+  one shared inset rule.** **SUPERSEDED 2026-08-04 by ADR-JUC-029 (DEC-JUC-088):
+  the ring is removed, so there is nothing left to make additive.** Read as the
+  record of the intermediate step — and of a rejected option that was later taken
+  in a different form: the owner asked here whether to *drop keyboard focus on
+  the matrix combos*, which was rightly refused because it would have removed
+  keyboard **access** to 40 controls. ADR-JUC-029 removes the focus **rendering**
+  at every site instead, and leaves every control focusable. The two are not the
+  same proposal, and the reasoning below does not argue against the second.
+  *(Added 2026-08-03, owner-reported: "c'est pas
   génial".)* The consequence recorded below — a focused matrix combo hiding its
   block frame — was first accepted. The owner asked whether to drop keyboard
   focus on the matrix combos instead; that was **rejected**, because it would
@@ -157,7 +174,13 @@ distinguishable.
   the accent ring at `(102,181,227)`. Two adjacent bands, neither hidden.
 
 - **DEC-JUC-084 — Two stroke-geometry rules the inset exposed, both fixed at the
-  source rather than per call site.** *(Owner-reported, 2026-08-03: "le bord bleu
+  source rather than per call site.** **Partially superseded 2026-08-04 by
+  ADR-JUC-029 (DEC-JUC-088):** rule 1 (a stroke is centred on its path, so its
+  rectangle is inset by *half the stroke*) **stands** — it governs the matrix
+  combo's own frame at 1.0/1.5 px and is what stops the highlight being clipped.
+  Rule 2, the matching radius reduction, and the `focusRingInside()` helper that
+  binds them exist **only** to place a focus ring inside a border; they are
+  removed with it. *(Owner-reported, 2026-08-03: "le bord bleu
   intérieur semble être par dessus le cadre extérieur… c'est comme si le focusé
   n'avait pas les mêmes angles dans les coins.")* Moving the focus ring inside
   the border (DEC-JUC-083) surfaced two latent geometry errors. Both were
@@ -208,6 +231,12 @@ distinguishable.
   This is still the first control carrying three independent frame meanings
   (block identity, cross-reference highlight, keyboard focus); a fourth would
   need a rethink rather than another width or another inset.
+  **Epilogue, 2026-08-04 (ADR-JUC-029).** The rethink arrived without a fourth
+  meaning being added: the owner's verdict on the *three* was that they already
+  compete. Keyboard focus — the only one of the three that carries no information
+  about the patch — is the one removed. The matrix combo now carries two frame
+  meanings, and the "a fourth would need a rethink" line is left standing as the
+  threshold it was: it was reached from below, not from above.
 - `session.unit_tests = true`: the lookup tables get headless coverage in
   `xpl_tests_app` (no JUCE), including the neutral cases and full enum coverage.
   The rendering itself is verified in the running app against the requirement's

@@ -89,13 +89,13 @@ namespace xplorer::app
         g.strokePath(ring, juce::PathStrokeType(tokens::semantic::strokeKnobRing));
     }
 
-    void XplorerLookAndFeel::drawTickBox(juce::Graphics& g, juce::Component& component, float x, float y, float w,
+    void XplorerLookAndFeel::drawTickBox(juce::Graphics& g, juce::Component&, float x, float y, float w,
                                          float h, bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted,
                                          bool)
     {
         // Hover brightens the existing border/fill; Disabled mutes the whole
-        // box; Focus adds an accent-ring outline on top of either -- the three
-        // states compose rather than replace each other. [RQ-GUI-041..043, ADR-JUC-017]
+        // box -- the two states compose rather than replace each other.
+        // [RQ-GUI-041, RQ-GUI-043, ADR-JUC-017]
         const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
         const float disabledMul = isEnabled ? 1.0F : tokens::component::disabledAlpha;
         const bool hovered = isEnabled && shouldDrawButtonAsHighlighted;
@@ -117,21 +117,14 @@ namespace xplorer::app
             g.setColour(fillColour.withMultipliedAlpha(disabledMul));
             g.fillRoundedRectangle(box.reduced(2.0F), tokens::semantic::radiusControlInner);
         }
-
-        if (isEnabled && component.hasKeyboardFocus(true))
-        {
-            g.setColour(_ledColour);
-            g.drawRoundedRectangle(box.expanded(1.0F), tokens::semantic::radiusControl,
-                                   tokens::semantic::strokeFocusRing);
-        }
     }
 
-    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, juce::Component& component, float x, float y, float w,
+    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, juce::Component&, float x, float y, float w,
                                           float h, bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted)
     {
         // Circular sibling of drawTickBox; same token palette, AA insets and
-        // hover/disabled/focus behaviour so radios and check boxes stay
-        // visually consistent. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041..043, ADR-JUC-017]
+        // hover/disabled behaviour so radios and check boxes stay visually
+        // consistent. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041, RQ-GUI-043, ADR-JUC-017]
         const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
         const float disabledMul = isEnabled ? 1.0F : tokens::component::disabledAlpha;
         const bool hovered = isEnabled && shouldDrawButtonAsHighlighted;
@@ -152,12 +145,6 @@ namespace xplorer::app
             auto fillColour = hovered ? _ledColour.brighter(tokens::semantic::hoverBrighten) : _ledColour;
             g.setColour(fillColour.withMultipliedAlpha(disabledMul));
             g.fillEllipse(box.reduced(2.0F));
-        }
-
-        if (isEnabled && component.hasKeyboardFocus(true))
-        {
-            g.setColour(_ledColour);
-            g.drawEllipse(box.expanded(1.0F), tokens::semantic::strokeFocusRing);
         }
     }
 
@@ -200,13 +187,12 @@ namespace xplorer::app
         // Verbatim reproduction of LookAndFeel_V4::drawComboBox with tokens for
         // every colour/stroke (outline 1px == strokeBorder, arrow 2px ==
         // strokeLine, corner unified to the shared control radius) plus the
-        // three interaction states: hover brightens the recessed fill, disabled
-        // mutes the whole control at disabledAlpha, keyboard focus adds an accent
-        // ring. The arrow zone is the design-system value that
-        // positionComboBoxText also reads, so text and arrow stay consistent;
-        // it is narrower than LookAndFeel_V4's 30 px, which is sized for far
-        // taller combo boxes. [RQ-GUI-041..043, ADR-JUC-017,
-        // RQ-GUI-047, ADR-JUC-022 (DEC-JUC-047)]
+        // two interaction states: hover brightens the recessed fill, disabled
+        // mutes the whole control at disabledAlpha. The arrow zone is the
+        // design-system value that positionComboBoxText also reads, so text
+        // and arrow stay consistent; it is narrower than LookAndFeel_V4's
+        // 30 px, which is sized for far taller combo boxes. [RQ-GUI-041,
+        // RQ-GUI-043, ADR-JUC-017, RQ-GUI-047, ADR-JUC-022 (DEC-JUC-047)]
         constexpr int ARROW_ZONE_X = tokens::semantic::comboArrowZone; // right inset of the arrow zone
         constexpr int ARROW_ZONE_W = tokens::semantic::comboArrowZone - 4; // arrow glyph zone
         constexpr float ARROW_INSET = 3.0F;
@@ -287,20 +273,6 @@ namespace xplorer::app
         g.setColour(box.findColour(juce::ComboBox::arrowColourId)
                         .withMultipliedAlpha(ARROW_ENABLED_ALPHA * disabledMul));
         g.strokePath(path, juce::PathStrokeType(tokens::semantic::strokeLine));
-
-        // The focus ring is drawn JUST INSIDE the frame, not over it: RQ-GUI-042
-        // specifies "an added outline", and at the same geometry a thicker ring
-        // replaced the frame rather than adding to it — which hid the block
-        // identity the frame now carries. Inset by half of each stroke so the
-        // two sit edge to edge without overlapping.
-        // [RQ-GUI-042, RQ-DSN-033, ADR-JUC-028 (DEC-JUC-083)]
-        if (enabled && box.hasKeyboardFocus(true))
-        {
-            const auto ring = focusRingInside(frameBounds, corner, frameWidth);
-            g.setColour(_ledColour);
-            g.drawRoundedRectangle(ring.bounds, ring.cornerRadius,
-                                   tokens::semantic::strokeFocusRing);
-        }
     }
 
     juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox&)

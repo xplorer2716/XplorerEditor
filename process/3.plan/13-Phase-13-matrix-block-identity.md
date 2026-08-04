@@ -41,7 +41,7 @@ third consumer of the block family invents nothing.
 | TASK-MTX-002 | `ModMatrixComboBox` carrying tint + highlight state | M | RQ-GUI-052, DEC-JUC-080 |
 | TASK-MTX-003 | Render tint and frame highlight in `drawComboBox` | M | RQ-GUI-052, RQ-DSN-100, DEC-JUC-078/081 |
 | TASK-MTX-004 | Wire `ModMatrixPanel`, retire the background-repaint highlight | M | RQ-GUI-018, RQ-GUI-052, DEC-JUC-082 |
-| TASK-MTX-005 | Make the focus ring additive: own width token, nested inside the border | M | RQ-GUI-042, RQ-DSN-033, DEC-JUC-083/084 |
+| TASK-MTX-005 | Make the focus ring additive: own width token, nested inside the border — ***undone 2026-08-04 by PLAN-GFX-001: the focus indicator is removed entirely*** | M | RQ-GUI-042, RQ-DSN-033, DEC-JUC-083/084 |
 
 ---
 
@@ -163,7 +163,15 @@ third consumer of the block family invents nothing.
 
 ### TASK-MTX-005: Make the focus ring additive — own width token, nested inside the border
 - **Tier**: M
-- **Status**: **Done** — owner-reported after TASK-MTX-004 ("c'est pas génial"),
+- **Status**: **Done, then undone** — delivered as described below, and its whole
+  subject removed on 2026-08-04 by PLAN-GFX-001 (RQ-GUI-054, ADR-JUC-029): the
+  owner's verdict after this task was that the ring is still a graphic conflict,
+  so the indicator, `strokeFocusRing` and `focusRingInside()` are all deleted.
+  **What this task established that survives:** the frame rule of DEC-JUC-084 — a
+  stroked rectangle is inset by half its own stroke, not by a constant — which is
+  what keeps the matrix highlight from being clipped and is explicitly preserved
+  by TASK-GFX-003. Everything else here is historical.
+  Original status follows — owner-reported after TASK-MTX-004 ("c'est pas génial"),
   then a second owner report on the corners once the first fix landed.
   - **The proposal was to drop keyboard focus on the matrix combos; that was
     rejected**, and the reasoning matters more than the fix: it would have

@@ -3,6 +3,10 @@
 ## Status
 Accepted (mockup owner-validated; implemented in TASK-JUC-080)
 
+**Partially superseded 2026-08-04 by ADR-JUC-030 (DEC-JUC-092):** the splash-screen
+paragraph of this ADR's Consequences is withdrawn — there is no splash screen any
+more. The main-panel decision (bitmap → vector) is untouched. [RQ-GUI-055]
+
 ## Requirements
 RQ-GUI-037, RQ-GUI-001, RQ-GUI-005, RQ-GUI-007
 
@@ -95,9 +99,16 @@ recorded here for traceability:
    exactly; deriving them at paint time from the control table was not needed
    to hold that alignment.
 
-The splash screen (`Main.cpp`), which previously reused `main-background.jpg`,
+~~The splash screen (`Main.cpp`), which previously reused `main-background.jpg`,
 now renders `paintVectorBackground` once into an offscreen `juce::Image`, so
-the bitmap could be dropped from `BinaryData` entirely.
+the bitmap could be dropped from `BinaryData` entirely.~~
+**Superseded 2026-08-04 by ADR-JUC-030 (DEC-JUC-092): the splash screen is
+removed.** Making the splash render this painter kept it faithful to the façade,
+which was right while the façade was one fixed bitmap — but it also tied a
+startup image to a canvas that later became resizable (RQ-SCL-001/002) and
+user-themeable (RQ-GUI-046, RQ-DSN-095), so it could no longer match the window
+it preceded. **The JPEG stays dropped**: that outcome was achieved here and never
+depended on the splash. [RQ-GUI-055]
 
 Owner-review refinements (TASK-JUC-081..085): signal lines are stroked with
 rounded joints/caps so 90° junctions match the rounded block frames; the

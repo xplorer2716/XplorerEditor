@@ -1,9 +1,6 @@
 // Xplorer JUCE application entry point. [RQ-GUI-005..007, RQ-NFR-008]
-#include "BackgroundRenderer.hpp"
 #include "JuceEventDispatcher.hpp"
 #include "MainComponent.hpp"
-
-#include "xplorer/app/ControlTable.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -42,18 +39,11 @@ namespace xplorer::app
 
         void initialise(const juce::String&) override
         {
-            // Reference splash behavior: shown while the app builds, auto-dismissed.
-            // The splash reuses the vector background (rendered once to an image)
-            // so no bitmap asset is needed. [RQ-GUI-037, ADR-JUC-013]
-            juce::Image splash{juce::Image::RGB, LOGICAL_CANVAS_WIDTH, LOGICAL_CANVAS_HEIGHT, false};
-            {
-                juce::Graphics splashGraphics{splash};
-                // Defaults: the splash renders before the settings service (and
-                // thus any user palette override) exists. [ADR-JUC-020]
-                paintVectorBackground(splashGraphics, defaultBlockPalette());
-            }
-            (new juce::SplashScreen("Xplorer", splash, true))
-                ->deleteAfterDelay(juce::RelativeTime::seconds(2), false);
+            // No splash: it mirrored the main panel (paintVectorBackground),
+            // which is resizable (RQ-SCL-001/002) and user-themeable
+            // (RQ-GUI-046, RQ-DSN-095) -- a copy of it cannot match the window
+            // that follows at any size or delay. Removed rather than re-timed
+            // or realigned. [RQ-GUI-055, ADR-JUC-030 (DEC-JUC-092)]
             _window = std::make_unique<MainWindow>();
         }
 

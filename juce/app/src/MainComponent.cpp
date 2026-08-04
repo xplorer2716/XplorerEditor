@@ -351,12 +351,16 @@ namespace xplorer::app
             addAndMakeVisible(_display);
         }
 
-        // MIDI activity LED.
+        // MIDI activity LED. Bounds are the extracted spec expanded by the
+        // glow margin (DEC-JUC-097) -- same idiom as the VFD bezel above,
+        // applied here because the 8 px-tall panel has no room of its own
+        // for a lit lamp's glow. [RQ-GUI-056, ADR-JUC-031]
         for (const auto& spec : controlTable())
         {
             if (spec.kind == ControlKind::LedPanelControl)
             {
-                _midiLed.setBounds(spec.x, spec.y, spec.width, spec.height);
+                _midiLed.setBounds(juce::Rectangle<int>(spec.x, spec.y, spec.width, spec.height)
+                                       .expanded(ledGlowMarginPx()));
                 addAndMakeVisible(_midiLed);
             }
         }
@@ -484,26 +488,58 @@ namespace xplorer::app
 
     void MainComponent::LedPanelComponent::paint(juce::Graphics& g)
     {
+        // This component's bounds are the extracted _ledPanelControl rect
+        // expanded by ledGlowMarginPx() (DEC-JUC-097); `area` below undoes
+        // that inflation, so every lamp position is derived from the ORIGINAL
+        // panel rect and never moves when the margin retunes.
+        const auto area = getLocalBounds().reduced(ledGlowMarginPx());
+
         // Reference LedPanelControl: automation-in / synth-in / synth-out.
+        // Round lamp, glow, then rim -- a dedicated indicator treatment, not
+        // a control one (DEC-JUC-095): a check box/radio says "you may set
+        // this", an LED reports state the user cannot set.
+        // [RQ-GUI-056, ADR-JUC-031]
         static const std::array<juce::Colour, LED_COUNT> onColours = {
             tokens::semantic::indicatorAutomation, tokens::semantic::indicatorSynthIn,
             tokens::semantic::indicatorSynthOut};
         const auto offColour = tokens::semantic::indicatorOffFill;
         const auto borderColour = tokens::semantic::indicatorOffBorder;
 
+        const int size = tokens::component::indicatorSize;
         const auto now = juce::Time::currentTimeMillis();
-        const int horizontalSpace = (getWidth() - LED_COUNT * LED_SIZE) / (LED_COUNT + 1);
-        const int y = (getHeight() - LED_SIZE) / 2;
+        const int horizontalSpace = (area.getWidth() - LED_COUNT * size) / (LED_COUNT + 1);
+        const float y = static_cast<float>(area.getY() + (area.getHeight() - size) / 2);
+
         for (int i = 0; i < LED_COUNT; ++i)
         {
-            const juce::Rectangle<int> led(horizontalSpace * (i + 1) + i * LED_SIZE, y,
-                                           LED_SIZE, LED_SIZE);
-            g.setColour(_litUntil[static_cast<std::size_t>(i)] > now
-                            ? onColours[static_cast<std::size_t>(i)]
-                            : offColour);
-            g.fillRect(led);
+            const auto index = static_cast<std::size_t>(i);
+            const bool lit = _litUntil[index] > now;
+            const juce::Rectangle<float> lamp(
+                static_cast<float>(area.getX() + horizontalSpace * (i + 1) + i * size), y,
+                static_cast<float>(size), static_cast<float>(size));
+
+            if (lit)
+            {
+                // Glow beneath the body, only while lit, so a lit LED reads
+                // as emitting rather than as a colour swap. Radius is a
+                // MULTIPLE OF THE LAMP'S OWN RADIUS, verified clear of the
+                // VFD glass and the button row (ADR-JUC-031, DEC-JUC-095).
+                const auto centre = lamp.getCentre();
+                const float glowRadius =
+                    static_cast<float>(size) * 0.5F * tokens::component::indicatorGlowRadius;
+                const auto& onColour = onColours[index];
+                juce::ColourGradient glow(
+                    onColour.withAlpha(tokens::component::indicatorGlowAlpha), centre,
+                    onColour.withAlpha(0.0F), centre.translated(glowRadius, 0.0F), true);
+                g.setGradientFill(glow);
+                g.fillEllipse(juce::Rectangle<float>(glowRadius * 2.0F, glowRadius * 2.0F)
+                                  .withCentre(centre));
+            }
+
+            g.setColour(lit ? onColours[index] : offColour);
+            g.fillEllipse(lamp);
             g.setColour(borderColour);
-            g.drawRect(led, 1);
+            g.drawEllipse(lamp, tokens::semantic::strokeBorder);
         }
     }
 
@@ -549,6 +585,107 @@ namespace xplorer::app
         constexpr int VIEW_SCALE_FIRST_ID = 50;
         constexpr int VIEW_FULL_SCREEN_ID = 60;
 
+        // The three URLs the reference's Help menu opens, verbatim from its
+        // XplorerConstants. Opened in the system browser, no networking of our
+        // own -- same as the reference's OpenBrowserWithUrl.
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+        constexpr const char* USER_MANUAL_URL =
+            "https://github.com/xplorer2716/XplorerEditor/blob/main/Xplorer/xdata/manual/"
+            "XplorerUserManual.pdf";
+        constexpr const char* RELEASES_URL = "https://github.com/xplorer2716/XplorerEditor/releases";
+        constexpr const char* WEBSITE_URL = "https://xplorer2716.github.io/XplorerEditor.site/";
+
+        // The default patch File > New loads, copied beside the executable by
+        // the build (app/CMakeLists.txt). The reference resolves it the same
+        // way -- executable directory + this name -- and "New" there means
+        // "load this patch", not "blank the editor".
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+        constexpr const char* DEFAULT_TONE_FILENAME = "oberheim.syx";
+
+        [[nodiscard]] juce::File defaultToneFile()
+        {
+            return juce::File::getSpecialLocation(juce::File::currentExecutableFile)
+                .getSiblingFile(DEFAULT_TONE_FILENAME);
+        }
+
+        // The reference's sixteen menu shortcuts (MainForm.resx
+        // ToolStripMenuItem.ShortcutKeys -- NOT ShortcutKeyDisplayString, which
+        // is blank everywhere: WinForms derives the shown text from ShortcutKeys
+        // itself). ONE table feeds two independent JUCE mechanisms -- the item's
+        // displayed shortcut text and MainComponent::keyPressed's dispatch -- so
+        // pressing a key and clicking its item cannot drift apart.
+        //
+        // commandModifier, not ctrlModifier: Ctrl on Windows/Linux, Cmd on
+        // macOS, matching PageSelectorButton::keyPressed (RQ-GUI-027) so a
+        // future macOS build needs no revisit here.
+        //
+        // Items absent from this table have NO shortcut in the reference (Exit,
+        // About, the Single-patches/Backup-Restore submenus) and get none here.
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        struct MenuShortcut
+        {
+            int menuItemId;
+            int keyCode;
+            juce::ModifierKeys::Flags modifiers;
+            const char* displayText;
+        };
+
+        constexpr auto NO_MODIFIER = juce::ModifierKeys::noModifiers;
+        constexpr auto CMD = juce::ModifierKeys::commandModifier;
+        constexpr auto CMD_SHIFT =
+            static_cast<juce::ModifierKeys::Flags>(juce::ModifierKeys::commandModifier
+                                                   | juce::ModifierKeys::shiftModifier);
+
+        // `const`, not `constexpr`: JUCE's KeyPress::F*Key are `static const int`
+        // defined in a translation unit, so they are not constant expressions.
+        const std::array<MenuShortcut, 13> MENU_SHORTCUTS = {{
+            {1, 'n', CMD, "Ctrl+N"},                                   // New
+            {2, 'o', CMD, "Ctrl+O"},                                   // Open
+            {3, 's', CMD, "Ctrl+S"},                                   // Save
+            {11, juce::KeyPress::F5Key, NO_MODIFIER, "F5"},            // Previous
+            {10, juce::KeyPress::F6Key, NO_MODIFIER, "F6"},            // Next
+            {12, juce::KeyPress::F7Key, NO_MODIFIER, "F7"},            // Go to patch
+            {15, juce::KeyPress::F8Key, NO_MODIFIER, "F8"},            // Randomize
+            {14, juce::KeyPress::F9Key, NO_MODIFIER, "F9"},            // Rename
+            {13, juce::KeyPress::F10Key, NO_MODIFIER, "F10"},          // Store
+            {16, juce::KeyPress::F12Key, NO_MODIFIER, "F12"},          // Synchronize
+            {20, 'g', CMD, "Ctrl+G"},                                  // Settings
+            {21, juce::KeyPress::F4Key, NO_MODIFIER, "F4"},            // Tune Request
+            {31, juce::KeyPress::F1Key, NO_MODIFIER, "F1"},            // Xplorer help
+        }};
+
+        [[nodiscard]] const MenuShortcut* shortcutForItem(int menuItemId)
+        {
+            for (const auto& entry : MENU_SHORTCUTS)
+            {
+                if (entry.menuItemId == menuItemId)
+                {
+                    return &entry;
+                }
+            }
+            return nullptr;
+        }
+
+        /// Adds a menu item carrying the reference's shortcut text and, for the
+        /// three File items that have one, its reference icon. The explicit
+        /// PopupMenu::Item form is required: addItem(id, text) cannot express
+        /// either. [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-098, DEC-JUC-099)]
+        void addReferenceItem(juce::PopupMenu& menu, int itemId, const juce::String& text,
+                              const void* iconData = nullptr, int iconSize = 0)
+        {
+            juce::PopupMenu::Item item(text);
+            item.itemID = itemId;
+            if (const auto* shortcut = shortcutForItem(itemId))
+            {
+                item.shortcutKeyDescription = shortcut->displayText;
+            }
+            if (iconData != nullptr)
+            {
+                item.image = juce::Drawable::createFromImageData(iconData, static_cast<size_t>(iconSize));
+            }
+            menu.addItem(std::move(item));
+        }
+
         juce::String scaleItemName(float scale)
         {
             // "1x", "1.25x", ... — trailing zeros trimmed so 1.5 does not read
@@ -585,21 +722,34 @@ namespace xplorer::app
         juce::PopupMenu menu;
         switch (index)
         {
-            case 0: // File
-                menu.addItem(1, "New");
-                menu.addItem(2, "Open...");
-                menu.addItem(3, "Save...");
+            // Order, wording and grouping are the reference's own, read from
+            // MainForm.Designer.cs's DropDownItems.AddRange calls and the
+            // matching .resx strings -- not an approximation.
+            // [RQ-GUI-008, ADR-JUC-032]
+            case 0: // File — the only three icons in the whole reference
+                addReferenceItem(menu, 1, "New", BinaryData::menu_new_png,
+                                 BinaryData::menu_new_pngSize);
+                addReferenceItem(menu, 2, "Open", BinaryData::menu_open_png,
+                                 BinaryData::menu_open_pngSize);
                 menu.addSeparator();
-                menu.addItem(4, "Exit");
+                // The reference's "Save as" is deliberately absent: our Save
+                // already always prompts for a destination (no current-file
+                // path is tracked), so it IS the reference's Save as.
+                // [RQ-GUI-008, owner-confirmed deviation]
+                addReferenceItem(menu, 3, "Save", BinaryData::menu_save_png,
+                                 BinaryData::menu_save_pngSize);
+                menu.addSeparator();
+                addReferenceItem(menu, 4, "Exit"); // no shortcut in the reference
                 break;
             case 1: // Patch
-                menu.addItem(10, "Next");
-                menu.addItem(11, "Previous");
-                menu.addItem(12, "Go to...");
-                menu.addItem(13, "Store...");
+                addReferenceItem(menu, 11, "Previous");
+                addReferenceItem(menu, 10, "Next");
+                addReferenceItem(menu, 12, "Go to patch...");
                 menu.addSeparator();
-                menu.addItem(14, "Rename...");
-                menu.addItem(15, "Randomize");
+                addReferenceItem(menu, 15, "Randomize");
+                addReferenceItem(menu, 14, "Rename");
+                addReferenceItem(menu, 13, "Store");
+                addReferenceItem(menu, 16, "Synchronize");
                 break;
             case 2: // View [RQ-SCL-002, RQ-SCL-003]
             {
@@ -621,8 +771,12 @@ namespace xplorer::app
             }
             case 3: // Tools
             {
-                menu.addItem(20, "Settings...");
-                menu.addItem(21, "Tune request");
+                addReferenceItem(menu, 20, "Settings");
+                addReferenceItem(menu, 21, "Tune Request");
+                // No reference counterpart -- the second sanctioned JUCE-only
+                // item after the View menu, kept at the owner's decision. No
+                // shortcut, since the reference has none to match.
+                // [RQ-GUI-028, RQ-GUI-008]
                 menu.addItem(22, "Piano keyboard");
                 juce::PopupMenu singlePatches;
                 singlePatches.addItem(40, "Get all single patches from synth");
@@ -635,12 +789,33 @@ namespace xplorer::app
                 break;
             }
             case 4: // Help
-                menu.addItem(30, "About");
+                addReferenceItem(menu, 31, "Xplorer help");
+                menu.addSeparator();
+                addReferenceItem(menu, 32, "Check for new releases");
+                addReferenceItem(menu, 33, "Go to website");
+                addReferenceItem(menu, 30, "About...");
                 break;
             default:
                 break;
         }
         return menu;
+    }
+
+    bool MainComponent::keyPressed(const juce::KeyPress& key)
+    {
+        // Same dispatcher a menu click uses, so the two cannot diverge. Keys
+        // outside the table return false and keep travelling -- that is what
+        // leaves PageSelectorButton's Ctrl+C/Ctrl+V (RQ-GUI-027) and any
+        // focused editor's own keys working. [RQ-GUI-008, ADR-JUC-032]
+        for (const auto& entry : MENU_SHORTCUTS)
+        {
+            if (key == juce::KeyPress(entry.keyCode, entry.modifiers, 0))
+            {
+                menuItemSelected(entry.menuItemId, 0);
+                return true;
+            }
+        }
+        return juce::Component::keyPressed(key);
     }
 
     void MainComponent::menuItemSelected(int menuItemId, int)
@@ -669,6 +844,32 @@ namespace xplorer::app
 
         switch (menuItemId)
         {
+            case 1: // New — load the bundled default patch, like the reference's
+                    // FileOperationsManager.NewPatch(). Not a blank editor: the
+                    // program number comes from the file's own sysex data.
+                    // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+            {
+                const auto file = defaultToneFile();
+                if (!file.existsAsFile())
+                {
+                    juce::AlertWindow::showMessageBoxAsync(
+                        juce::MessageBoxIconType::WarningIcon, "New patch",
+                        "Unable to create a new patch: " + file.getFullPathName() + " is missing.");
+                    break;
+                }
+                try
+                {
+                    _controller->loadXplorerTone(file.getFullPathName().toStdString());
+                }
+                catch (const std::exception& e)
+                {
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
+                                                          "New patch",
+                                                          juce::String("Unable to create a new patch: ")
+                                                              + e.what());
+                }
+                break;
+            }
             case 2: // Open — reuse the load action
                 _shortcutActions["btPatchLoad"]();
                 break;
@@ -704,6 +905,12 @@ namespace xplorer::app
             case 15:
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
                 break;
+            case 16: // Synchronize — re-fetch the current patch from the synth,
+                     // the same call Go to / Store already make.
+                     // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+                _controller->sendProgramChangeAndGetSinglePatchFromSynth(
+                    _controller->currentProgramNumber());
+                break;
             case 20:
                 openSettingsDialog();
                 break;
@@ -723,6 +930,18 @@ namespace xplorer::app
                 break;
             case 30:
                 showAboutDialog("Xplorer 0.1.0");
+                break;
+            // The three Help URLs, opened in the system browser exactly as the
+            // reference's OpenBrowserWithUrl does — no update check of our own.
+            // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+            case 31:
+                juce::URL(USER_MANUAL_URL).launchInDefaultBrowser();
+                break;
+            case 32:
+                juce::URL(RELEASES_URL).launchInDefaultBrowser();
+                break;
+            case 33:
+                juce::URL(WEBSITE_URL).launchInDefaultBrowser();
                 break;
             case 40:
                 getAllSinglePatchesFromSynth();
@@ -954,6 +1173,9 @@ namespace xplorer::app
     {
         addAndMakeVisible(_menuBar);
         addAndMakeVisible(_canvas);
+        // So the menu shortcuts still arrive when no control holds focus --
+        // this is where an unfocused key event stops. [ADR-JUC-032 (DEC-JUC-099)]
+        setWantsKeyboardFocus(true);
         // No setSize here: the window states the size (windowSizeForScale) and
         // this component is laid out to it. Setting it here too would be a
         // second place declaring what the launch size is. [DEC-JUC-064]
@@ -982,6 +1204,14 @@ namespace xplorer::app
     void ScaledCanvasComponent::paint(juce::Graphics& g)
     {
         g.fillAll(juce::Colours::black); // letterbox bars when aspect differs
+    }
+
+    bool ScaledCanvasComponent::keyPressed(const juce::KeyPress& key)
+    {
+        // Forward DOWN to the menu owner: bubbling only goes up, so a key
+        // pressed with nothing focused would otherwise die here.
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        return _canvas.keyPressed(key);
     }
 
     bool ScaledCanvasComponent::isInterestedInFileDrag(const juce::StringArray& files)

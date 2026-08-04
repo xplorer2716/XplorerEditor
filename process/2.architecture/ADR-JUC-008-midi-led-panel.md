@@ -3,6 +3,14 @@
 ## Status
 Accepted (owner, 2026-07-13)
 
+**Rendering half superseded 2026-08-04 by ADR-JUC-031 (RQ-GUI-056):** decision 1's
+"painted as filled squares + border" is replaced by round lamps with a recessed
+rim and a radial glow when lit, at a token-driven 7 px. **Everything else here
+stands unchanged** — the three-LED split, the device→LED mapping (decision 2), the
+event-driven retriggerable hold and its self-stopping timer (decision 3), the
+message-thread marshalling (decision 4), and the ON/OFF colours, which keep both
+their values and their per-device meaning.
+
 ## Requirements
 RQ-GUI-022, RQ-CTL-027
 

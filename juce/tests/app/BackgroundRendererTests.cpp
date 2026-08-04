@@ -44,9 +44,9 @@ SCENARIO("The diagram stroke sits between the widget frame and the widget stroke
         THEN("the split left the control-widget stroke untouched")
         {
             // DEC-JUC-074: the whole point of adding a role rather than retuning
-            // the shared one is that no combo arrow, focus ring or selector
-            // outline moves. If this value ever changes, that promise is broken
-            // and the widgets need re-reviewing.
+            // the shared one is that no combo arrow or selector outline moves.
+            // If this value ever changes, that promise is broken and the
+            // widgets need re-reviewing.
             REQUIRE(tokens::semantic::strokeLine == 2.0F);
         }
     }

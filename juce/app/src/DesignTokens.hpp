@@ -63,9 +63,12 @@ namespace xplorer::app::tokens
         inline constexpr float stroke15 = 1.5F;  // every stroke of the background diagram — block frames, signal lines, control sub-panel frames. Thicker than the button/control frame (stroke10), thinner than the former uniform diagram width (stroke20), RQ-GUI-051
         inline constexpr float stroke20 = 2.0F;
         inline constexpr float stroke24 = 2.4F;
+        inline constexpr int indicatorSize = 7;  // MIDI LED lamp diameter. FIRST VERSION (owner, 2026-08-04, RQ-GUI-056): 7 px is provisional and expected to be retuned after visual review -- which is why it is a token and no longer a LED_SIZE constant. Three independent ceilings, all satisfied: <= 10 (twice the 5 px .NET reference, owner allowance), < 14 (the check-box indicator, so a read-only lamp can never be mistaken for a control), <= 8 (three lamps plus spacing must fit the extracted 32x8 _ledPanelControl bounds -- the binding limit). ADR-JUC-031 (DEC-JUC-096)
         inline constexpr float hoverBrightenFactor = 0.4F;  // knob ring hover brighten
         inline constexpr float tickBoxBorderAlpha = 0.6F;  // tick-box border vs accent
         inline constexpr int indicatorHoldMs = 100;  // MIDI LED retriggerable hold
+        inline constexpr float indicatorGlowAlpha = 0.55F;  // peak opacity of the radial glow at a lit MIDI LED's centre, fading to fully transparent at its outer edge. Below the accent hover brighten (0.4 is a colour delta, this is an alpha) and deliberately under 1.0: a glow that reaches full opacity reads as a second, larger lamp rather than as light around the first. ADR-JUC-031 (DEC-JUC-095)
+        inline constexpr float indicatorGlowRadius = 2.0F;  // glow outer radius as a MULTIPLE of the lamp's own radius (indicatorSize/2), not of its diameter -- at 2.0 the glow reaches exactly one lamp-radius past the visible dot's edge (3.5 px at the 7 px first version), so retuning indicatorSize scales the halo with it. Checked against the real clearance around _ledPanelControl (11 px to the VFD glass, 14+ px to the button row): a diameter-multiple reading would have reached 14 px and left only 0.5 px before touching the glass -- deliberately kept well inside instead. Also sets how far LedPanelComponent inflates its painting bounds past the extracted panel rect, since the 8 px-high panel has no room for a halo (DEC-JUC-097). ADR-JUC-031 (DEC-JUC-095)
         inline constexpr float knobTrackAlpha = 0.2F;  // owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash.
         inline constexpr float disabledAlpha = 0.5F;  // owner-confirmed 2026-07: shared Disabled treatment for check boxes/radios/combos (RQ-DSN-032, TASK-JUC-109/110, ADR-JUC-017)
         inline constexpr int space2 = 2;  // hairline inset — row.reduced(0,2), swatch.reduced(2)
@@ -175,8 +178,7 @@ namespace xplorer::app::tokens
         inline constexpr float radiusControlInner = global::radius15;  // tick box checked fill
         inline constexpr float strokeBorder = global::stroke10;  // tick box border
         inline constexpr float strokeDiagram = global::stroke15;  // EVERY stroke of the background diagram: labelled block frames, signal lines and neutral control sub-panel frames, deliberately one single width so the diagram reads as one drawing (owner decision, RQ-GUI-051)
-        inline constexpr float strokeFocusRing = global::stroke15;  // keyboard-focus ring, ALL controls — its own role so the single shared focus rule (RQ-DSN-033) keeps one width. Was strokeLine (2.0): at that weight the ring out-drew the control border it sits beside and, where it shared its geometry, hid it entirely (RQ-GUI-052 matrix combos, RQ-GUI-045 selector buttons). Coincides with strokeDiagram today; they are independent decisions and must not be aliased to each other
-        inline constexpr float strokeLine = global::stroke20;  // control-widget strokes: combo-box arrow, focus rings, page-family selector outline. No longer used by the background diagram — that moved to strokeDiagram (RQ-GUI-051)
+        inline constexpr float strokeLine = global::stroke20;  // control-widget strokes: combo-box arrow, page-family selector outline. No longer used by the background diagram — that moved to strokeDiagram (RQ-GUI-051). No longer used for a focus ring either — RQ-GUI-054 removed the keyboard-focus indicator (and the strokeFocusRing role it briefly had) on 2026-08-04
         inline constexpr float strokeKnobRing = global::stroke24;  // knob track + value arc
         inline constexpr float hoverBrighten = global::hoverBrightenFactor;
         inline constexpr int indicatorHoldMs = global::indicatorHoldMs;
@@ -212,6 +214,9 @@ namespace xplorer::app::tokens
         inline constexpr float sectionBarFadeEnd = global::sectionBarFadeEnd;  // block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092
         inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
         inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
+        inline constexpr int indicatorSize = global::indicatorSize;  // MIDI LED lamp diameter, RQ-GUI-056
+        inline constexpr float indicatorGlowAlpha = global::indicatorGlowAlpha;  // MIDI LED glow peak alpha, RQ-GUI-056
+        inline constexpr float indicatorGlowRadius = global::indicatorGlowRadius;  // MIDI LED glow radius multiplier, RQ-GUI-056
         inline const juce::Colour vfdPhosphor = global::vfdPhosphor;  // lit segment / halo colour
         inline constexpr float vfdSegLeft = global::vfdSegLeft;  // segment rails, fractions of cell width
         inline constexpr float vfdSegRight = global::vfdSegRight;

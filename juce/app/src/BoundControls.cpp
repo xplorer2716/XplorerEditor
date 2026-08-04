@@ -177,12 +177,15 @@ namespace xplorer::app
 
     void BoundRadioGroup::resized()
     {
-        // One even slot per option, but each button is only a control-row high
-        // (design-system token) and sits at the slot top -- so the radios land
-        // on the same rows as the sibling check boxes (placed at the extracted
-        // 17 px control height) instead of being stretched over the full
-        // half-panel, which pushed the lower radio a few px below its check box.
-        // [RQ-GUI-040, TASK-JUC-108, ADR-JUC-014]
+        // One even slot per option. How tall an option is depends on the
+        // orientation, because two GEOMETRY SOURCES meet here: the design system
+        // owns shared metrics, the control table owns extracted reference
+        // positions (out of the token system, RQ-DSN §2). Stacked, the panel
+        // spans several rows and the design-system row height governs; side by
+        // side, the panel is one row and its own extracted height governs. Each
+        // branch says which, below.
+        // [RQ-GUI-040, RQ-GUI-053, ADR-JUC-016 (DEC-JUC-086, DEC-JUC-094),
+        // ADR-JUC-014]
         auto area = getLocalBounds();
         if (_options.empty())
         {
@@ -195,19 +198,37 @@ namespace xplorer::app
         // designer laid the radios out. A panel too short to stack its options
         // at the shared control-row height was drawn side by side there --
         // ENV/RAMP SINGLE-MULTI (129x24, 126x22) -- while FM_DESTINATION (82x42)
-        // and LAG_TIMING (79x47) have the room and stay stacked. Both keep the
-        // control-row height, so radios stay on their sibling check boxes' row.
+        // and LAG_TIMING (79x47) have the room and stay stacked. This test is
+        // the one place the token legitimately answers a design-system question:
+        // "is there room for N standard rows?".
         // [RQ-GUI-053, RQ-GUI-040, ADR-JUC-016 (DEC-JUC-086), ADR-JUC-014]
         if (area.getHeight() < optionCount * tokens::semantic::controlRowHeight)
         {
+            // Side by side: the panel IS the row, and its height is EXTRACTED
+            // reference geometry (129x24, 126x22) -- not a design-system row.
+            // The reference drew it straddling the 17 px control row (ENV X:
+            // panel y=313 h=24 against check boxes y=316 h=17, so 3 px above and
+            // 4 px below), i.e. the centring is already encoded in these bounds.
+            // Imposing controlRowHeight here pinned the button to the panel top
+            // and threw that centring away, putting the radio indicator 3 px
+            // above its sibling check boxes. Taking the full height hands the
+            // centring back to drawToggleButton, which centres the indicator in
+            // whatever bounds it is given -- no arithmetic of our own, and no
+            // token applied to geometry the design system does not own
+            // (RQ-DSN §2). [RQ-GUI-053, ADR-JUC-016 (DEC-JUC-094)]
             const int slotWidth = area.getWidth() / optionCount;
             for (const auto& option : _options)
             {
-                option.button->setBounds(
-                    area.removeFromLeft(slotWidth).withHeight(tokens::semantic::controlRowHeight));
+                option.button->setBounds(area.removeFromLeft(slotWidth));
             }
             return;
         }
+
+        // Stacked: the panel spans SEVERAL control rows, so each option must be
+        // one design-system row at its slot top -- otherwise it stretches over
+        // its whole slot and drifts off the row of its sibling check boxes.
+        // This is the one orientation where controlRowHeight governs an option's
+        // height. [RQ-GUI-040, TASK-JUC-108, ADR-JUC-016 (DEC-JUC-086, DEC-JUC-094)]
 
         const int slotHeight = area.getHeight() / optionCount;
         for (const auto& option : _options)
