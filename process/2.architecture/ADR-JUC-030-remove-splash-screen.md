@@ -1,7 +1,9 @@
 # ADR-JUC-030: Removal of the Splash Screen
 
 ## Status
-Proposed
+Accepted — implemented and merged to `feature/GFX`: DEC-JUC-092/093
+(TASK-GFX-004, PLAN-GFX-002). Full build clean, app launches cleanly, all 6 test
+suites green (2982 assertions), 0 test modified.
 
 <!-- Motivated by RQ-GUI-055 (no splash screen), which supersedes the
 splash-screen item of RQ-GUI-025. Reverses the splash half of ADR-JUC-013

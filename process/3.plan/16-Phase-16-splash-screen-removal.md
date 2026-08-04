@@ -75,7 +75,14 @@ Single task: the change is confined to one function in one file.
 
 ### TASK-GFX-004: Remove the splash screen from `XplorerApplication::initialise()`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done** — commit 3d69077. Splash image, paint call and
+  `SplashScreen` deleted; `BackgroundRenderer.hpp` and
+  `xplorer/app/ControlTable.hpp` includes removed from `Main.cpp` (both had
+  become unused). App launched (Debug) and closed cleanly. Full rebuild clean;
+  all 6 suites green, 0 test modified: `xpl_tests_app_juce` 314/314,
+  `xpl_tests_app` 2014/2014, `xpl_tests_framework` 123/123, `xpl_tests_model`
+  333/333, `xpl_tests_midi` 68/68, `xpl_tests_settings` 31/31,
+  `xpl_tests_controller` 99/99.
 - **Description**: In `Main.cpp`'s `initialise()`, delete the splash `juce::Image`
   construction, its `paintVectorBackground(splashGraphics, defaultBlockPalette())`
   paint block, the `new juce::SplashScreen(...)->deleteAfterDelay(...)` call and
@@ -110,5 +117,6 @@ Single task: the change is confined to one function in one file.
 - [x] Task has a description, Gherkin acceptance criteria and a tier.
 - [x] Task references its requirement and ADR IDs.
 - [x] No visual literal introduced — this task only removes code.
-- [ ] **Owner approval — pending.** Requirements, ADR and plan are written; no
-      code has been touched.
+- [x] **Owner approval** — granted 2026-08-04, session GFX.
+- [x] Task Done; full test suite green; ADR-JUC-030 ready to move from Proposed
+      to Accepted.
