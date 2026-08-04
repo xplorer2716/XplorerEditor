@@ -7,7 +7,7 @@
 | Task | Deliverable | Tier | Requirements |
 |---|---|---|---|
 | TASK-JUC-060 | Asset & layout extraction: background PNG + button GIFs out of `MainForm.resx`; mechanical extraction of the 234-control table (id, type, bounds, tag) from `MainForm.Designer.cs` into a declarative C++ table | M | RQ-GUI-007, RQ-GUI-001 |
-| TASK-JUC-061 | App shell: JUCE app target (`XPL_BUILD_APP`), main window with logical-canvas scaling + background bitmap, `JuceEventDispatcher`, single-instance guard, splash, top-level exception dialog | L | RQ-GUI-005..007, RQ-GUI-035 |
+| TASK-JUC-061 | App shell: JUCE app target (`XPL_BUILD_APP`), main window with logical-canvas scaling + background bitmap, `JuceEventDispatcher`, single-instance guard, splash *(removed 2026-08-04, PLAN-GFX-002 / TASK-GFX-004, RQ-GUI-055, ADR-JUC-030)*, top-level exception dialog | L | RQ-GUI-005..007, RQ-GUI-035 |
 | TASK-JUC-062 | `ParameterBindingRegistry`: id→parameter wiring, anti-echo guard, automation-disable on edit, full-tone refresh — headless tests against mock backend | L | RQ-GUI-002..004 |
 | TASK-JUC-063 | Fixed blocks (VCO1, VCO2, FM, LAG, VCF/VCA): standard JUCE controls placed from the extracted table, bound via registry | L | RQ-GUI-001, RQ-GUI-030, RQ-GUI-032 |
 | TASK-JUC-064 | `PageFamilyBlock` ×4 (ENV/LFO/RAMP/TRACK): shared controls, selector buttons, digit substitution, synth page-change sync — logic headless-tested. **Milestone M1: owner Windows build** | L | RQ-GUI-010..012 |

@@ -117,8 +117,11 @@ separate **KNOB BEHAVIOUR** group.
   users can retune readability without a rebuild; a future design-system palette
   change propagates to every non-customised user automatically.
 - **Harder / constrained:** `paintVectorBackground`'s signature changes (one call
-  site, `MainComponent::paint`, plus the splash renderer in `Main.cpp` — both
-  must pass a palette); `PageSelectorButton` gains a `dynamic_cast` per paint
+  site, `MainComponent::paint`, ~~plus the splash renderer in `Main.cpp` — both
+  must pass a palette~~ *(the splash renderer is gone, superseded 2026-08-04 by
+  ADR-JUC-030/RQ-GUI-055; `MainComponent::paint` is this signature's only caller,
+  and the parameter is kept anyway — DEC-JUC-093 — as the headless-test seam this
+  ADR's DEC-JUC-036 established)*); `PageSelectorButton` gains a `dynamic_cast` per paint
   (negligible, and the same pattern the focus ring already uses); the settings
   page grows from 3 rows to a two-group layout, the largest UI change in the
   dialog since it was written.
