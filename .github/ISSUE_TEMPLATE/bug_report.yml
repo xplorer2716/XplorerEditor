@@ -1,0 +1,117 @@
+# RQ-GOV-004, RQ-GOV-008 / ADR-GOV-001 (DEC-GOV-001)
+name: "🐞 Bug Report"
+description: Report a problem you encountered while using Xplorer.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill in every
+        field below as precisely as you can. This structured form exists so
+        that a maintainer — or an AI assistant reading it — can understand
+        and act on your report accurately without needing to ask follow-up
+        questions, even if you are not a developer.
+
+  - type: input
+    id: version
+    attributes:
+      label: Xplorer version or build
+      description: >
+        The version shown in Help > About, or the build/commit identifier
+        if you compiled it yourself (e.g. an alpha tag such as
+        "alpha-123-abcdef", or a release tag such as "v2025.12.7.1"). If
+        you are not sure, say so rather than leaving a guess.
+      placeholder: "e.g. alpha-123-abcdef"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Operating system
+      description: The platform you ran Xplorer on when the problem occurred.
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Other / not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: synth
+    attributes:
+      label: Synthesizer
+      description: Which hardware were you connected to (if any) when the problem occurred?
+      options:
+        - Oberheim Xpander
+        - Oberheim Matrix-12
+        - None / not connected to hardware
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: >
+        Describe the problem in one or two plain-language sentences — what
+        did you expect, and what happened instead?
+      placeholder: "Example: when I click Save, the application closes instead of saving the patch."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: >
+        List the exact steps, in order, that lead to the problem. Be as
+        specific as possible — this is what lets someone else reproduce it.
+      placeholder: |
+        1. Open Xplorer
+        2. Load patch "xyz.syx"
+        3. Click Save
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: >
+        What actually happened instead? Include the exact wording of any
+        error message that was shown.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots or additional context
+      description: >
+        Optional — paste any relevant log output, or drag and drop
+        screenshots/screen recordings here.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: I have read and agree to follow the [Code of Conduct](../../CODE_OF_CONDUCT.md).
+          required: true

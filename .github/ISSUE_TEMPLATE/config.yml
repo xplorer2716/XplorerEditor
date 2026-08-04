@@ -1,0 +1,12 @@
+# RQ-GOV-004, RQ-GOV-005 / ADR-GOV-001 (DEC-GOV-005)
+# Blank issues are disabled: every bug report or feature request must go
+# through one of the structured forms in this folder, so intake is never
+# ambiguous or incomplete.
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing & AGNOS process
+    url: https://github.com/xplorer2716/XplorerEditor/blob/main/CONTRIBUTING.md
+    about: Read before contributing code — mandatory reading if you use an AI coding agent.
+  - name: Project website
+    url: http://xplorer.programmer.free.fr
+    about: General information about Xplorer (not for bug reports or feature requests).
