@@ -13,6 +13,12 @@ widget this ADR introduced reaches the page-family blocks (ENV X / RAMP X
 `SINGLE`/`MULTI`), and its layout stops assuming a vertical stack. See
 [Decision](#decision) and [PLAN-TRG-001](../3.plan/14-Phase-14-page-family-radio-panels.md).
 
+**Corrected 2026-08-04 (session GFX) — DEC-JUC-094 Accepted:** DEC-JUC-086's
+orientation rule shipped with the wrong option *height* in the horizontal case,
+placing the ENV X / RAMP X radios 3 px above the check boxes on their row
+(owner-reported). A side-by-side option now fills its panel. See
+[PLAN-GFX-003](../3.plan/17-Phase-17-radio-row-alignment.md).
+
 <!-- Motivated by RQ-GUI-038 (FM destination two-way radio) and RQ-GUI-039
 (active FM signal-path highlight); extended by RQ-GUI-053 (ENV X / RAMP X
 SINGLE/MULTI trigger radio panels, issue #31). UI-affecting ADR: references the
@@ -131,12 +137,56 @@ whole control class can be declared and dropped with nothing failing.
   semantic.controlRowHeight` — and vertically otherwise. The reference geometry
   already encodes the designer's intent (129×24 cannot hold two 17 px rows;
   82×42 can), so re-declaring it as a metadata field would duplicate a fact the
-  control table already carries and let the two copies drift. Buttons keep the
+  control table already carries and let the two copies drift. ~~Buttons keep the
   `controlRowHeight` height they have today in both orientations, so radios stay
-  on the row of their sibling check boxes ([RQ-GUI-040], TASK-JUC-108); the
+  on the row of their sibling check boxes ([RQ-GUI-040], TASK-JUC-108)~~
+  *(the height clause is **corrected by DEC-JUC-094**, 2026-08-04: keeping
+  `controlRowHeight` in the horizontal case is what pushed the radios 3 px above
+  their sibling check boxes. The orientation rule itself — the subject of this
+  decision — is unchanged.)*; the
   horizontal case splits the width evenly, which reproduces the reference's two
   near-equal halves without introducing a gap literal. No new token.
   ([RQ-GUI-053], [ADR-JUC-014])
+
+- **DEC-JUC-094 — A side-by-side option fills its panel; only a stacked one is a
+  design-system row.** *(Added 2026-08-04, owner-reported: the ENV X and RAMP X
+  radios sit slightly above the check boxes on their row.)* In the **horizontal**
+  branch the option button takes the **full height of the panel**; the
+  `controlRowHeight` height stays in the **vertical** branch alone.
+
+  *Why it was wrong.* Two sources of geometry coexist here by design: the design
+  system owns shared metrics, and the control table owns extracted reference
+  positions — which RQ-DSN §2 puts explicitly out of the token system
+  ("control-table coordinates mechanically extracted from the .NET reference, out
+  of scope"). `resized()` used `semantic.controlRowHeight` three times, and only
+  two of them ask a design-system question:
+
+  | Use | Verdict |
+  |---|---|
+  | `height < optionCount × controlRowHeight` — the orientation test | Correct: it asks whether there is room for N standard rows |
+  | Vertical branch: each option is one `controlRowHeight` | Correct: the panel spans several rows, each option must land on one |
+  | Horizontal branch: the option is one `controlRowHeight` | **Wrong**: the panel *is* the row |
+
+  In the horizontal case the panel is a single row whose height is *extracted*
+  reference geometry (129×24, 126×22), and the reference drew it deliberately
+  taller than the 17 px row, straddling it — ENV X: panel at y=313 h=24 against
+  check boxes at y=316 h=17, so 3 px above and 4 px below. Imposing
+  `controlRowHeight` pinned the button to the panel's top edge and **discarded the
+  centring the reference had encoded in the panel's own bounds**. Measured on the
+  drawn glyph (`drawToggleButton` centres a 14 px indicator in whatever bounds it
+  is given): check boxes centre at y=324.5 (ENV) / 730.5 (RAMP), radios at 321.5 /
+  727.5 — exactly 3 px high in both, which is what the owner saw.
+
+  *Why full height rather than a centring calculation.* Full panel height restores
+  the reference's own centring through the glyph-centring already in
+  `drawToggleButton`: the radios then centre at 325 / 730 against 324.5 / 730.5 —
+  0.5 px, and **no new arithmetic**. The obvious alternative, centring a
+  `controlRowHeight`-tall button in the panel (`y = (height − rowHeight) / 2`),
+  cannot be exact: both gaps are odd (24−17 = 7, 22−17 = 5), so integer division
+  is off by 1 px on one panel whichever way it rounds — and it would keep mixing a
+  token into extracted geometry, which is the actual defect. After this decision
+  the horizontal branch consumes extracted geometry only.
+  ([RQ-GUI-053], [RQ-GUI-040], [RQ-DSN-052], [ADR-JUC-014])
 
 - **DEC-JUC-087 — The metadata gap is closed by an invariant, not by vigilance.**
   The two missing entries are added to `radioPanels()`, and a headless test

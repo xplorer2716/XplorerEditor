@@ -47,7 +47,7 @@ full artefact + execution sequence, 2026-08-04.**
 |------|-------------|:-:|---|
 | TASK-TRG-001 | Add the two panels to `radioPanels()`; pin the table↔metadata invariant | M | RQ-GUI-053, DEC-JUC-087 |
 | TASK-TRG-002 | `RadioButtonPanel` case in `PageFamilyBlock::makeControl` | M | RQ-GUI-053, DEC-JUC-085 |
-| TASK-TRG-003 | Geometry-derived orientation in `BoundRadioGroup::resized()` + layout test | M | RQ-GUI-053, DEC-JUC-086 |
+| TASK-TRG-003 | Geometry-derived orientation in `BoundRadioGroup::resized()` + layout test — ***option height corrected 2026-08-04 by PLAN-GFX-003 / TASK-GFX-005: the side-by-side branch kept `controlRowHeight`, putting the radios 3 px above their row (DEC-JUC-094)*** | M | RQ-GUI-053, DEC-JUC-086 |
 
 Sequential: 002 is inert without 001 (empty options), and 003 only becomes
 observable once 002 places the controls.
