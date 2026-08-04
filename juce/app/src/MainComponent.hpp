@@ -51,6 +51,14 @@ namespace xplorer::app
         juce::PopupMenu getMenuForIndex(int index, const juce::String& name) override;
         void menuItemSelected(int menuItemId, int topLevelMenuIndex) override;
 
+        /// The reference's menu shortcuts, dispatched to the very same
+        /// `menuItemSelected` a click goes through, so a key and a click can
+        /// never diverge in what they do. Returns false for anything not in
+        /// the table, leaving child components (e.g. PageSelectorButton's own
+        /// Ctrl+C/Ctrl+V, RQ-GUI-027) to handle their own keys.
+        /// [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        bool keyPressed(const juce::KeyPress& key) override;
+
         /// Loads a .syx file, dispatching by detected type (single tone ->
         /// load & transmit; all-data dump -> confirm then restore with
         /// progress; unknown -> warning). Shared by the File menu and the
@@ -180,6 +188,13 @@ namespace xplorer::app
 
         void resized() override;
         void paint(juce::Graphics& g) override;
+
+        /// Menu shortcuts must work whatever has focus, including nothing.
+        /// JUCE routes a key to the focused component and bubbles it UP the
+        /// parent chain, so with no focus it stops at this content component
+        /// and never reaches `_canvas` below it — hence this forward.
+        /// [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        bool keyPressed(const juce::KeyPress& key) override;
 
         bool isInterestedInFileDrag(const juce::StringArray& files) override;
         void filesDropped(const juce::StringArray& files, int x, int y) override;

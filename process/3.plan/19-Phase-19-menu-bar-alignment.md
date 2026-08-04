@@ -160,7 +160,29 @@ final item ids to build its table against.
 
 ### TASK-GFX-010: Shortcut table, `keyPressed` override, icon and shortcut display
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: **Done**. One `MENU_SHORTCUTS` table (13 entries — the 16
+  reference shortcuts minus the three that belong to items this port does not
+  have: "Save as", dropped by owner decision, and the page context menu's
+  Ctrl+C/Ctrl+V, already ported separately as `PageSelectorButton::keyPressed`
+  under RQ-GUI-027) feeds both the displayed `shortcutKeyDescription` and
+  `MainComponent::keyPressed`'s dispatch, which routes to the same
+  `menuItemSelected` a click uses. Items are built via the explicit
+  `PopupMenu::Item` form (`addReferenceItem` helper) so icon and shortcut text
+  can be set; the three File icons come from `BinaryData::menu_*_png`.
+  **Two implementation findings, both recorded at the site:**
+  1. `MainComponent` is not the root component and JUCE bubbles keys *upward*,
+     so with nothing focused the shortcuts would never have reached it —
+     `ScaledCanvasComponent` (the content component, where an unfocused key
+     event stops) now sets `setWantsKeyboardFocus(true)` and forwards down to
+     `_canvas.keyPressed`.
+  2. The table is `const`, not `constexpr`: JUCE's `KeyPress::F*Key` are
+     `static const int` defined in a translation unit, so they are not
+     constant expressions (caught as MSVC C2131).
+  **Owner-verified**: icons, displayed shortcuts, functional shortcuts and the
+  RQ-GUI-027 Ctrl+C/Ctrl+V non-regression all confirmed working. Full rebuild
+  clean; all 6 suites green (`xpl_tests_app_juce` 331/331, `xpl_tests_app`
+  2014/2014, framework 123, model 333, midi 68, settings 31, controller 99),
+  0 test modified.
 - **Description**: Add a file-local `constexpr` array of
   `{menuItemId, juce::KeyPress, const char* displayText}` for the sixteen
   reference shortcuts (New/Open/Save/Previous/Next/Goto/Randomize/Rename/Store/

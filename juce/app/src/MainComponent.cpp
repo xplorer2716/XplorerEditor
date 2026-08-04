@@ -608,6 +608,84 @@ namespace xplorer::app
                 .getSiblingFile(DEFAULT_TONE_FILENAME);
         }
 
+        // The reference's sixteen menu shortcuts (MainForm.resx
+        // ToolStripMenuItem.ShortcutKeys -- NOT ShortcutKeyDisplayString, which
+        // is blank everywhere: WinForms derives the shown text from ShortcutKeys
+        // itself). ONE table feeds two independent JUCE mechanisms -- the item's
+        // displayed shortcut text and MainComponent::keyPressed's dispatch -- so
+        // pressing a key and clicking its item cannot drift apart.
+        //
+        // commandModifier, not ctrlModifier: Ctrl on Windows/Linux, Cmd on
+        // macOS, matching PageSelectorButton::keyPressed (RQ-GUI-027) so a
+        // future macOS build needs no revisit here.
+        //
+        // Items absent from this table have NO shortcut in the reference (Exit,
+        // About, the Single-patches/Backup-Restore submenus) and get none here.
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        struct MenuShortcut
+        {
+            int menuItemId;
+            int keyCode;
+            juce::ModifierKeys::Flags modifiers;
+            const char* displayText;
+        };
+
+        constexpr auto NO_MODIFIER = juce::ModifierKeys::noModifiers;
+        constexpr auto CMD = juce::ModifierKeys::commandModifier;
+        constexpr auto CMD_SHIFT =
+            static_cast<juce::ModifierKeys::Flags>(juce::ModifierKeys::commandModifier
+                                                   | juce::ModifierKeys::shiftModifier);
+
+        // `const`, not `constexpr`: JUCE's KeyPress::F*Key are `static const int`
+        // defined in a translation unit, so they are not constant expressions.
+        const std::array<MenuShortcut, 13> MENU_SHORTCUTS = {{
+            {1, 'n', CMD, "Ctrl+N"},                                   // New
+            {2, 'o', CMD, "Ctrl+O"},                                   // Open
+            {3, 's', CMD, "Ctrl+S"},                                   // Save
+            {11, juce::KeyPress::F5Key, NO_MODIFIER, "F5"},            // Previous
+            {10, juce::KeyPress::F6Key, NO_MODIFIER, "F6"},            // Next
+            {12, juce::KeyPress::F7Key, NO_MODIFIER, "F7"},            // Go to patch
+            {15, juce::KeyPress::F8Key, NO_MODIFIER, "F8"},            // Randomize
+            {14, juce::KeyPress::F9Key, NO_MODIFIER, "F9"},            // Rename
+            {13, juce::KeyPress::F10Key, NO_MODIFIER, "F10"},          // Store
+            {16, juce::KeyPress::F12Key, NO_MODIFIER, "F12"},          // Synchronize
+            {20, 'g', CMD, "Ctrl+G"},                                  // Settings
+            {21, juce::KeyPress::F4Key, NO_MODIFIER, "F4"},            // Tune Request
+            {31, juce::KeyPress::F1Key, NO_MODIFIER, "F1"},            // Xplorer help
+        }};
+
+        [[nodiscard]] const MenuShortcut* shortcutForItem(int menuItemId)
+        {
+            for (const auto& entry : MENU_SHORTCUTS)
+            {
+                if (entry.menuItemId == menuItemId)
+                {
+                    return &entry;
+                }
+            }
+            return nullptr;
+        }
+
+        /// Adds a menu item carrying the reference's shortcut text and, for the
+        /// three File items that have one, its reference icon. The explicit
+        /// PopupMenu::Item form is required: addItem(id, text) cannot express
+        /// either. [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-098, DEC-JUC-099)]
+        void addReferenceItem(juce::PopupMenu& menu, int itemId, const juce::String& text,
+                              const void* iconData = nullptr, int iconSize = 0)
+        {
+            juce::PopupMenu::Item item(text);
+            item.itemID = itemId;
+            if (const auto* shortcut = shortcutForItem(itemId))
+            {
+                item.shortcutKeyDescription = shortcut->displayText;
+            }
+            if (iconData != nullptr)
+            {
+                item.image = juce::Drawable::createFromImageData(iconData, static_cast<size_t>(iconSize));
+            }
+            menu.addItem(std::move(item));
+        }
+
         juce::String scaleItemName(float scale)
         {
             // "1x", "1.25x", ... — trailing zeros trimmed so 1.5 does not read
@@ -648,27 +726,30 @@ namespace xplorer::app
             // MainForm.Designer.cs's DropDownItems.AddRange calls and the
             // matching .resx strings -- not an approximation.
             // [RQ-GUI-008, ADR-JUC-032]
-            case 0: // File
-                menu.addItem(1, "New");
-                menu.addItem(2, "Open");
+            case 0: // File — the only three icons in the whole reference
+                addReferenceItem(menu, 1, "New", BinaryData::menu_new_png,
+                                 BinaryData::menu_new_pngSize);
+                addReferenceItem(menu, 2, "Open", BinaryData::menu_open_png,
+                                 BinaryData::menu_open_pngSize);
                 menu.addSeparator();
                 // The reference's "Save as" is deliberately absent: our Save
                 // already always prompts for a destination (no current-file
                 // path is tracked), so it IS the reference's Save as.
                 // [RQ-GUI-008, owner-confirmed deviation]
-                menu.addItem(3, "Save");
+                addReferenceItem(menu, 3, "Save", BinaryData::menu_save_png,
+                                 BinaryData::menu_save_pngSize);
                 menu.addSeparator();
-                menu.addItem(4, "Exit");
+                addReferenceItem(menu, 4, "Exit"); // no shortcut in the reference
                 break;
             case 1: // Patch
-                menu.addItem(11, "Previous");
-                menu.addItem(10, "Next");
-                menu.addItem(12, "Go to patch...");
+                addReferenceItem(menu, 11, "Previous");
+                addReferenceItem(menu, 10, "Next");
+                addReferenceItem(menu, 12, "Go to patch...");
                 menu.addSeparator();
-                menu.addItem(15, "Randomize");
-                menu.addItem(14, "Rename");
-                menu.addItem(13, "Store");
-                menu.addItem(16, "Synchronize");
+                addReferenceItem(menu, 15, "Randomize");
+                addReferenceItem(menu, 14, "Rename");
+                addReferenceItem(menu, 13, "Store");
+                addReferenceItem(menu, 16, "Synchronize");
                 break;
             case 2: // View [RQ-SCL-002, RQ-SCL-003]
             {
@@ -690,10 +771,11 @@ namespace xplorer::app
             }
             case 3: // Tools
             {
-                menu.addItem(20, "Settings");
-                menu.addItem(21, "Tune Request");
+                addReferenceItem(menu, 20, "Settings");
+                addReferenceItem(menu, 21, "Tune Request");
                 // No reference counterpart -- the second sanctioned JUCE-only
-                // item after the View menu, kept at the owner's decision.
+                // item after the View menu, kept at the owner's decision. No
+                // shortcut, since the reference has none to match.
                 // [RQ-GUI-028, RQ-GUI-008]
                 menu.addItem(22, "Piano keyboard");
                 juce::PopupMenu singlePatches;
@@ -707,16 +789,33 @@ namespace xplorer::app
                 break;
             }
             case 4: // Help
-                menu.addItem(31, "Xplorer help");
+                addReferenceItem(menu, 31, "Xplorer help");
                 menu.addSeparator();
-                menu.addItem(32, "Check for new releases");
-                menu.addItem(33, "Go to website");
-                menu.addItem(30, "About...");
+                addReferenceItem(menu, 32, "Check for new releases");
+                addReferenceItem(menu, 33, "Go to website");
+                addReferenceItem(menu, 30, "About...");
                 break;
             default:
                 break;
         }
         return menu;
+    }
+
+    bool MainComponent::keyPressed(const juce::KeyPress& key)
+    {
+        // Same dispatcher a menu click uses, so the two cannot diverge. Keys
+        // outside the table return false and keep travelling -- that is what
+        // leaves PageSelectorButton's Ctrl+C/Ctrl+V (RQ-GUI-027) and any
+        // focused editor's own keys working. [RQ-GUI-008, ADR-JUC-032]
+        for (const auto& entry : MENU_SHORTCUTS)
+        {
+            if (key == juce::KeyPress(entry.keyCode, entry.modifiers, 0))
+            {
+                menuItemSelected(entry.menuItemId, 0);
+                return true;
+            }
+        }
+        return juce::Component::keyPressed(key);
     }
 
     void MainComponent::menuItemSelected(int menuItemId, int)
@@ -1074,6 +1173,9 @@ namespace xplorer::app
     {
         addAndMakeVisible(_menuBar);
         addAndMakeVisible(_canvas);
+        // So the menu shortcuts still arrive when no control holds focus --
+        // this is where an unfocused key event stops. [ADR-JUC-032 (DEC-JUC-099)]
+        setWantsKeyboardFocus(true);
         // No setSize here: the window states the size (windowSizeForScale) and
         // this component is laid out to it. Setting it here too would be a
         // second place declaring what the launch size is. [DEC-JUC-064]
@@ -1102,6 +1204,14 @@ namespace xplorer::app
     void ScaledCanvasComponent::paint(juce::Graphics& g)
     {
         g.fillAll(juce::Colours::black); // letterbox bars when aspect differs
+    }
+
+    bool ScaledCanvasComponent::keyPressed(const juce::KeyPress& key)
+    {
+        // Forward DOWN to the menu owner: bubbling only goes up, so a key
+        // pressed with nothing focused would otherwise die here.
+        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        return _canvas.keyPressed(key);
     }
 
     bool ScaledCanvasComponent::isInterestedInFileDrag(const juce::StringArray& files)
