@@ -26,21 +26,27 @@ the CMake project version nor any published release tag) is *not* fixed here —
 it gets its own requirement covering end-to-end alignment with the GitHub
 Actions release tagging.
 
-**Finding recorded during specification, with a consequence outside this plan:**
-JUCE 8.0.9's open-source option is **AGPLv3**, not GPLv3 (vendored `LICENSE.md`
-of the pinned tag). RQ-BLD-006 states "JUCE shall be used under its GPL option",
-which was true of JUCE 6/7 and is not of 8. The disclosure built here states
-AGPL v3, because it must be accurate; **RQ-BLD-006's wording is left untouched
-and raised to the owner separately** — it is a licensing-position question, not
-a UI one.
+**Finding recorded during specification, acted on later in this same plan
+(TASK-ABT-005):** JUCE 8.0.9's open-source option is **AGPLv3**, not GPLv3
+(vendored `LICENSE.md` of the pinned tag). RQ-BLD-006 stated "JUCE shall be
+used under its GPL option", which was true of JUCE 6/7 and is not of 8. The
+disclosure built by TASK-ABT-001..004 states AGPL v3 from the start, because it
+must be accurate. Raised to the owner as a question rather than acted on
+silently — a licensing-position decision is theirs, not the agent's — the
+owner's answer (2026-08-05: *"move to AGPL v3. update everything
+accordingly"*) is what TASK-ABT-005 implements: see ADR-ABT-002.
 
 ## References
 
 - **Requirements**: RQ-GUI-057 *(new — this plan implements it)*, RQ-BLD-014
   *(new — this plan implements it)*, RQ-GUI-025 *(amended — this plan implements
-  the amendment)*, RQ-BLD-006, RQ-DSN-021, RQ-DSN-031, RQ-DSN-061
+  the amendment)*, RQ-BLD-006 *(amended — TASK-ABT-005 implements the
+  amendment)*, RQ-NFR-005 *(amended — TASK-ABT-005 implements the amendment)*,
+  RQ-DSN-021, RQ-DSN-031, RQ-DSN-061
 - **ADRs**: ADR-ABT-001 *(new — this plan implements DEC-ABT-001…007)*,
-  ADR-JUC-014 *(design-token compliance)*, ADR-JUC-002 *(layering)*
+  ADR-ABT-002 *(new — TASK-ABT-005 implements DEC-ABT-008…011)*,
+  ADR-JUC-001 *(amended by ADR-ABT-002)*, ADR-JUC-014 *(design-token
+  compliance)*, ADR-JUC-002 *(layering)*
 
 Session state: `unit_tests = true`, `platform = windows`, `chat_mode = normal`.
 Branch: `feature/GUI` *(owner decision — this session does **not** open a
@@ -67,6 +73,12 @@ per-session branch rule, agreed at session start).*
 | TASK-ABT-002 | `SbomReader`: SPDX 2.3 parse, field mapping, sentinel/describes filtering, sort, error results + tests | M | RQ-GUI-057; DEC-ABT-003/004/005/006 |
 | TASK-ABT-003 | Dependencies window rendering the reader's output; wire the About button | M | RQ-GUI-057; DEC-ABT-005 |
 | TASK-ABT-004 | Ship `xplorer.sbom.spdx.json` beside the executable | M | RQ-BLD-014; DEC-ABT-002/007 |
+| TASK-ABT-005 | Relicense the project GPLv3 → AGPLv3: `LICENSE`, 39 source headers, CMake SPDX id, About dialog notice/link, SBOM's own Xplorer entry, README/CONTRIBUTING, RQ-BLD-006/RQ-NFR-005/ADR-JUC-001 amendments | M | RQ-BLD-006, RQ-NFR-005; ADR-ABT-002 |
+
+TASK-ABT-005 is independent of 001-004 in implementation, but depends on
+ADR-ABT-001's finding to exist as its trigger, and lands last so the About
+dialog's licence text (already rewritten once in TASK-ABT-001 for typography)
+is only rewritten a second time, not three.
 
 Sequencing: 001 is independent. 002 before 003 (the window renders the reader's
 result type). 004 before end-to-end verification (the window has nothing to read
@@ -86,6 +98,17 @@ until the build ships a file), but independent of 002/003 at compile time.
   lightgrey/blue`), promoted to the new document-surface token roles rather than
   left inline, since the DoD forbids raw visual literals in UI code this task
   touches.
+  - *Follow-up (2026-08-05, owner visual review): two corrections, both since
+    superseded further by TASK-ABT-005 below.* (1) The derived-height approach
+    above squashed the licence notice horizontally instead of clipping it
+    (`juce::Label` paints via `drawFittedText`, which shrinks overflowing text
+    rather than clipping it) — fixed with `setMinimumHorizontalScale(1.0)` plus
+    a **fixed** `TEXT_WIDTH` (474→580px dialog), dynamic content-sizing
+    rejected as unneeded machinery per owner instruction. (2) The Dependencies
+    button inherited the app's dark `LookAndFeel` and rendered black on the
+    white dialog — given an explicit light-surface colour. **The `TEXT_WIDTH`
+    value from this follow-up (425) was widened again by TASK-ABT-005 to 470**,
+    since the AGPL notice text is longer than the GPL wording measured here.
 - **Description**: In `AboutContent` (`juce/app/src/Dialogs.cpp`), give every
   body row — version, copyright, licence notice and both `HyperlinkButton`s — one
   single explicit font derived from a design-system token, replacing the two
@@ -95,9 +118,10 @@ until the build ships a file), but independent of 002/003 at compile time.
   `setFont(font, /*resizeToMatchComponentHeight*/ false, Justification::centredLeft)`
   so it cannot be re-shrunk by row geometry. Replace the inline third-party rows
   attempted earlier with a single **Dependencies** button opening the RQ-GUI-057
-  window; the licence section keeps only the project's own GPL v3 notice and
-  link. Grow `HEIGHT` if the unified size needs the room. The button must not
-  trigger the dialog's click-to-dismiss.
+  window; the licence section keeps only the project's own licence notice and
+  link (**AGPL v3** — corrected by TASK-ABT-005, ADR-ABT-002; GPL v3 as
+  originally written here). Grow `HEIGHT` if the unified size needs the room.
+  The button must not trigger the dialog's click-to-dismiss.
 - **Requirement refs**: RQ-GUI-025 *(2026-08-05 amendment)*
 - **ADR refs**: ADR-JUC-014 *(token compliance)*, ADR-ABT-001 *(the window it opens)*
 - **Acceptance Criteria** (Gherkin):
@@ -106,7 +130,8 @@ until the build ships a file), but independent of 002/003 at compile time.
   - *Given* the unified size, *When* the dialog is displayed, *Then* no row is
     clipped and no text overlaps the image column.
   - *Given* the licence section, *When* it is read, *Then* it names the project's
-    GPL v3 licence with a working link and enumerates no third-party licence.
+    AGPL v3 licence *(TASK-ABT-005)* with a working link and enumerates no
+    third-party licence.
   - *Given* the Dependencies button, *When* it is clicked, *Then* the
     dependencies window opens and the About dialog stays open.
   - *Given* the dialog background, *When* it is clicked outside any control,
@@ -247,6 +272,64 @@ until the build ships a file), but independent of 002/003 at compile time.
   - *Given* the repository, *When* it is searched for a committed test SBOM,
     *Then* there is none.
 - **Dependencies**: None
+- **Assignee**: AI
+
+---
+
+### TASK-ABT-005: Relicense the project from GPLv3 to AGPLv3
+- **Tier**: M
+- **Status**: **Done** — build clean, suite green (123/123, 0 test modified).
+  39 files carried the exact GPL header block (verified: each had precisely 3
+  occurrences of "GNU General Public License", no SPDX identifiers, no other
+  GPL text) — mechanical text substitution, then spot-checked for line-ending
+  contamination. `LICENSE` replaced with the canonical text fetched from
+  `gnu.org` (661 lines, "END OF TERMS AND CONDITIONS" present). **The AGPL
+  notice string in the About dialog was re-measured, not assumed**: "Affero "
+  adds ~38px at `BODY_TEXT_SIZE`, leaving only 2.5px of the previous 425px
+  `TEXT_WIDTH`'s margin — widened to 470px to restore the ~11% headroom
+  TASK-ABT-001's follow-up established, so this task does not quietly
+  reintroduce the squash defect it inherits code from.
+- **Description**: Owner decision after being asked directly ("est-ce que cela
+  pose un problème d'avoir Xplorer en GPL s'il est basé sur JUCE en AGPL ?"),
+  answered *"move to AGPL v3. update everything accordingly."* Per ADR-ABT-002:
+  replace the root `LICENSE` with the canonical AGPLv3 text (gnu.org); in the 39
+  source files carrying the project's boilerplate header, replace `GNU General
+  Public License` with `GNU Affero General Public License` (the FSF's own
+  recommended header wording — no other line changes); update
+  `juce/CMakeLists.txt`'s `SPDX-License-Identifier` to `AGPL-3.0-or-later`;
+  update the About dialog's licence notice text and link URL
+  (`Dialogs.cpp`) to AGPL v3, re-measuring the notice's rendered width (it is
+  longer than the GPL wording it replaces) so TASK-ABT-001's squash fix is not
+  silently reintroduced; update the SBOM's own `SPDXRef-Package-Xplorer` entry
+  to `AGPL-3.0-or-later`; update the licence mentions in `README.md` and
+  `CONTRIBUTING.md`. Amend `RQ-BLD-006`, `RQ-NFR-005` and `ADR-JUC-001` with
+  amendment notes (not rewrites, per this repository's convention); correct the
+  licence name in the `RQ-DSN-design-system.md` and `ADR-JUC-023` compatibility
+  notes. Historical plan/task log entries recording already-shipped GPLv3-era
+  work are left untouched.
+- **Requirement refs**: RQ-BLD-006 *(2026-08-05 amendment)*, RQ-NFR-005
+  *(2026-08-05 amendment)*
+- **ADR refs**: ADR-ABT-002 (DEC-ABT-008…011), ADR-JUC-001 *(amended)*
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the repository root, *When* `LICENSE` is read, *Then* it is the
+    canonical GNU Affero General Public License v3 text.
+  - *Given* the 39 files that carried the GPLv3 header before this task, *When*
+    each is read, *Then* it names the GNU Affero General Public License and no
+    other line of the header changed.
+  - *Given* `juce/CMakeLists.txt`, *When* its SPDX identifier is read, *Then*
+    it is `AGPL-3.0-or-later`.
+  - *Given* the About dialog, *When* its licence row is rendered, *Then* it
+    reads "GNU Affero General Public License v3.0", links to
+    `agpl-3.0.html`, and is not horizontally squashed.
+  - *Given* `xplorer.sbom.spdx.json`'s own package entry for Xplorer, *When* it
+    is read, *Then* its licence is `AGPL-3.0-or-later`.
+  - *Given* the repository, *When* it is searched for `GNU General Public
+    License` (the GPL wording, not AGPL) outside historical plan-log entries
+    describing already-shipped past states, *Then* there is no match.
+  - *Given* the build, *When* it runs, *Then* it compiles warning-clean and the
+    suite passes with no test modified.
+- **Dependencies**: None (ADR-ABT-001's finding is its trigger, not a build
+  dependency)
 - **Assignee**: AI
 
 ---

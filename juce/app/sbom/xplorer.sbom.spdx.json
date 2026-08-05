@@ -23,8 +23,8 @@
       "downloadLocation": "https://github.com/xplorer2716/XplorerEditor",
       "homepage": "https://github.com/xplorer2716/XplorerEditor",
       "filesAnalyzed": false,
-      "licenseConcluded": "GPL-3.0-or-later",
-      "licenseDeclared": "GPL-3.0-or-later",
+      "licenseConcluded": "AGPL-3.0-or-later",
+      "licenseDeclared": "AGPL-3.0-or-later",
       "copyrightText": "Copyright (c) 2012-2026 Pascal Schmitt",
       "comment": "The subject of this document, not a dependency: listed in documentDescribes and therefore filtered out of the disclosure window (ADR-ABT-001 DEC-ABT-004)."
     },

@@ -238,7 +238,7 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
   another. The application SHALL therefore ship a typeface as a binary asset and
   use it for combo-box text, making the widths deterministic on every platform.
   - The embedded face is **Roboto Condensed Regular** (Apache 2.0, compatible
-    with this project's GPLv3), owner-selected: condensed metrics let every
+    with this project's AGPLv3 *(was GPLv3 — RQ-BLD-006, ADR-ABT-002)*), owner-selected: condensed metrics let every
     label fit the reference geometry unchanged, which no system face allowed.
     Its licence text SHALL ship alongside the font file.
   - Scope is **combo boxes only** (owner decision). Every other piece of text —

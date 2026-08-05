@@ -18,7 +18,12 @@ namespace xplorer::app
     namespace
     {
         constexpr const char* PROJECT_REPO_URL = "https://github.com/xplorer2716/XplorerEditor";
-        constexpr const char* GPL_LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html";
+        // AGPLv3, not GPLv3: JUCE 8's open-source option is AGPL (ADR-ABT-001),
+        // and the combined work is bound by the stricter of the two once linked
+        // against it (GPLv3 itself permits the combination, §13, but the AGPL
+        // network-source obligation travels with it) -- so the project as a
+        // whole is AGPLv3. [RQ-BLD-006, ADR-ABT-002]
+        constexpr const char* AGPL_LICENSE_URL = "https://www.gnu.org/licenses/agpl-3.0.html";
 
         // Port of the reference AboutForm (Xplorer/View/AboutForm.Designer.cs):
         // a fixed-size white dialog, the `About.jpg` VFD close-up docked on
@@ -36,7 +41,7 @@ namespace xplorer::app
         public:
             explicit AboutContent(const juce::String& productNameAndVersion)
                 : _link(PROJECT_REPO_URL, juce::URL(PROJECT_REPO_URL)),
-                  _licenseLink(GPL_LICENSE_URL, juce::URL(GPL_LICENSE_URL))
+                  _licenseLink(AGPL_LICENSE_URL, juce::URL(AGPL_LICENSE_URL))
             {
                 _image = juce::ImageCache::getFromMemory(BinaryData::about_jpg, BinaryData::about_jpgSize);
 
@@ -48,7 +53,7 @@ namespace xplorer::app
                 _version.setText(productNameAndVersion, juce::dontSendNotification);
                 _copyright.setText("Copyright (c) 2012-2026 by Pascal Schmitt", juce::dontSendNotification);
 
-                _notice.setText("This software is released under GNU General Public License v3.0",
+                _notice.setText("This software is released under GNU Affero General Public License v3.0",
                                 juce::dontSendNotification);
 
                 // One explicit, token-derived size for every body row. Before
@@ -150,19 +155,20 @@ namespace xplorer::app
             static constexpr int IMAGE_WIDTH = 140;
             static constexpr int TEXT_X = 146;
             // Widened from the reference AboutForm's 320px column (dialog 474px)
-            // so the GPL notice -- the longest row, and the only one that
+            // so the licence notice -- the longest row, and the only one that
             // overran -- is drawn at full size. It was never clipped, it was
             // SQUASHED (see the minimum-horizontal-scale note above), which is
             // why the defect read as "compressed text" rather than "missing
-            // text". Measured with GlyphArrangement at BODY_TEXT_SIZE: the
-            // notice needs 374px, against 310px usable in the old column
-            // (320 less the Label's own 5px borders) -- a 0.83 horizontal
-            // squash. 425 leaves 415px usable, ~11% of headroom for platforms
-            // whose metrics run wider than Windows'.
+            // text". Measured with GlyphArrangement at BODY_TEXT_SIZE against
+            // the AGPL notice text (ADR-ABT-002 — longer than the GPL wording
+            // it replaced, "Affero " adding ~38px): needs 413px, against 310px
+            // usable in the old column (320 less the Label's own 5px borders).
+            // 470 leaves 460px usable, ~11% of headroom for platforms whose
+            // metrics run wider than Windows', and for any future rewording.
             // A fixed value on purpose: sizing the dialog to its content was
             // tried and rejected as needless machinery for a static string.
             // [RQ-GUI-025 — owner: "allonge la fenêtre au besoin"]
-            static constexpr int TEXT_WIDTH = 425;
+            static constexpr int TEXT_WIDTH = 470;
             static constexpr int WIDTH = TEXT_X + TEXT_WIDTH + 9;
             static constexpr int ROW_HEIGHT = 18;
             static constexpr int MARGIN_RIGHT = 9;

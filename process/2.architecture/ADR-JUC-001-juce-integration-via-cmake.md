@@ -12,6 +12,15 @@ The port targets the JUCE framework (README roadmap). JUCE can be consumed via t
 ## Decision
 - Use **JUCE 8.x** (latest stable tag, pinned) consumed with **CMake `FetchContent`** — no Projucer, no committed JUCE sources, no extra submodule.
 - Use JUCE under its **GPL v3** option, matching the project license.
+  > **Amended 2026-08-05 (session ABT) — superseded by ADR-ABT-002.** The pinned
+  > 8.0.9 tag's own `LICENSE.md` states JUCE 8's open-source tier is **AGPLv3**,
+  > not GPLv3 as this line assumed (accurate for JUCE 6/7, which this project
+  > never pinned) — the assumption was never checked against the actual tag
+  > until TASK-ABT-004 read the vendored licence file while writing the
+  > dependency-disclosure SBOM. The project (RQ-BLD-006, RQ-NFR-005) and this
+  > decision now both read AGPL v3; see ADR-ABT-002 for the full analysis.
+  > Nothing else here changes: the FetchContent mechanism and module linkage are
+  > licence-independent.
 - Only link the JUCE modules needed per layer: `juce_audio_devices` (+ core/events deps) for MIDI; GUI modules only in the application target.
 
 ## Consequences

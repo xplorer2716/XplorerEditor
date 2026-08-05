@@ -1,6 +1,6 @@
 # Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
 # Copyright (C) 2012-2026 Pascal Schmitt
-# SPDX-License-Identifier: GPL-3.0-or-later
+# SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # Root build for the JUCE (C++) port. [RQ-BLD-001, RQ-BLD-003, RQ-BLD-005]
 cmake_minimum_required(VERSION 3.22)
