@@ -231,6 +231,7 @@ tiers:
     textOnDocument:      { alias: global.black,     note: "primary text on a document surface" }
     textOnDocumentMuted: { alias: global.grey,      note: "secondary text on a document surface (licence notice, column headers)" }
     documentSeparator:   { alias: global.lightGrey, note: "hairline rule on a document surface" }
+    surfaceDocumentControl: { alias: global.lightGrey, note: "control fill on a document surface (About > Dependencies button) — without it a TextButton inherits the dark application scheme and reads as a black slab on the white About form" }
     textLink:            { alias: global.linkBlue,  note: "hyperlink text on a document surface" }
 
     # ---- colour roles: indicators (RQ-GUI-022) ----

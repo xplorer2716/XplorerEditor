@@ -62,6 +62,17 @@ namespace xplorer::app
                 for (auto* label : {&_version, &_copyright, &_notice})
                 {
                     label->setFont(bodyFont);
+                    // juce::Label paints through Graphics::drawFittedText, which
+                    // SQUASHES text horizontally (to Label's 0.7 default minimum
+                    // scale) when it overruns its bounds. That is a silent
+                    // distortion rather than a visible clip, and it is exactly
+                    // what made the licence notice -- the one row wider than the
+                    // reference's 320px column -- render narrower than the rows
+                    // above it. Pinned to 1.0 so overflow can never again be
+                    // absorbed by deforming the glyphs; the measured width below
+                    // then makes sure there is no overflow to absorb.
+                    // [RQ-GUI-025]
+                    label->setMinimumHorizontalScale(1.0F);
                 }
                 for (auto* label : {&_title, &_version, &_copyright, &_notice})
                 {
@@ -85,6 +96,15 @@ namespace xplorer::app
                     addAndMakeVisible(link);
                 }
 
+                // A light control on a light dialog: without this the button
+                // inherits the application LookAndFeel's dark scheme and lands
+                // as a black slab in the middle of the white About form.
+                _dependenciesButton.setColour(juce::TextButton::buttonColourId,
+                                              tokens::semantic::surfaceDocumentControl);
+                _dependenciesButton.setColour(juce::TextButton::textColourOffId,
+                                              tokens::semantic::textOnDocument);
+                _dependenciesButton.setColour(juce::TextButton::textColourOnId,
+                                              tokens::semantic::textOnDocument);
                 _dependenciesButton.onClick = [] { showDependenciesWindow(); };
                 addAndMakeVisible(_dependenciesButton);
 
@@ -127,10 +147,23 @@ namespace xplorer::app
             }
 
         private:
-            static constexpr int WIDTH = 474;
             static constexpr int IMAGE_WIDTH = 140;
             static constexpr int TEXT_X = 146;
-            static constexpr int TEXT_WIDTH = 320;
+            // Widened from the reference AboutForm's 320px column (dialog 474px)
+            // so the GPL notice -- the longest row, and the only one that
+            // overran -- is drawn at full size. It was never clipped, it was
+            // SQUASHED (see the minimum-horizontal-scale note above), which is
+            // why the defect read as "compressed text" rather than "missing
+            // text". Measured with GlyphArrangement at BODY_TEXT_SIZE: the
+            // notice needs 374px, against 310px usable in the old column
+            // (320 less the Label's own 5px borders) -- a 0.83 horizontal
+            // squash. 425 leaves 415px usable, ~11% of headroom for platforms
+            // whose metrics run wider than Windows'.
+            // A fixed value on purpose: sizing the dialog to its content was
+            // tried and rejected as needless machinery for a static string.
+            // [RQ-GUI-025 — owner: "allonge la fenêtre au besoin"]
+            static constexpr int TEXT_WIDTH = 425;
+            static constexpr int WIDTH = TEXT_X + TEXT_WIDTH + 9;
             static constexpr int ROW_HEIGHT = 18;
             static constexpr int MARGIN_RIGHT = 9;
             static constexpr int MARGIN_BOTTOM = 11;

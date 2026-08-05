@@ -142,6 +142,7 @@ namespace xplorer::app::tokens
         inline const juce::Colour textOnDocument = global::black;  // primary text on a document surface
         inline const juce::Colour textOnDocumentMuted = global::grey;  // secondary text on a document surface (licence notice, column headers)
         inline const juce::Colour documentSeparator = global::lightGrey;  // hairline rule on a document surface
+        inline const juce::Colour surfaceDocumentControl = global::lightGrey;  // control fill on a document surface (About > Dependencies button) — without it a TextButton inherits the dark application scheme and reads as a black slab on the white About form
         inline const juce::Colour textLink = global::linkBlue;  // hyperlink text on a document surface
         inline const juce::Colour indicatorOffFill = global::slate400;
         inline const juce::Colour indicatorOffBorder = global::slate350;
