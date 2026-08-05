@@ -88,6 +88,7 @@ namespace xplorer::app::tokens
         inline constexpr int dialogBlockLabelWidth = 90;  // block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')
         inline constexpr int dialogResetWidth = 140;  // 'Reset to defaults' button width
         inline constexpr int dialogGroupHeaderHeight = 16;  // vertical clearance under a GroupComponent title before the first row
+        inline constexpr int midiCcColumnMinWidth = 240;  // minimum width of the automation table's 'MIDI CC' column; value-preserving from its pre-existing fixed width. The column stretches above this floor to fill the dialog (setStretchToFitActive), so the 'Parameter' column's dialogLabelWidth never grows -- there is no unconstrained/dead header area left over.
         inline constexpr int patchSpinnerWidth = 92;  // overall juce::Slider(IncDecButtons) width. 80 widened +15% (owner visual review 2026-08-05: narrow field hurt readability)
         inline constexpr int patchSpinnerTextBoxWidth = 69;  // text-entry portion width, scaled +15% with patchSpinnerWidth (60->69) to keep the button-zone proportion; the remaining 23px button zone is still narrower than dialogRowHeight so JUCE stacks +/- vertically (juce_Slider.cpp resizeIncDecButtons: sideBySide iff width > height)
         inline constexpr int patchSpinnerRowWidth = 300;  // width of the invisible row Component the spinner is centred inside. AlertWindow::updateLayout always places a custom component at proportionOfWidth(0.1f) and never resizes it, and sizes the whole dialog to at least componentWidth/0.8 (juce_AlertWindow.cpp) -- so a row wide enough to be that dominant term ends up spanning exactly the dialog's 10%..90% content column, which reads as centred. Owner visual review 2026-08-05: the bare 92px spinner sat flush-left instead.
@@ -207,6 +208,7 @@ namespace xplorer::app::tokens
         inline constexpr int dialogBlockLabelWidth = global::dialogBlockLabelWidth;  // block label width in the colour grid, RQ-GUI-046
         inline constexpr int dialogResetWidth = global::dialogResetWidth;  // Reset to defaults button width, RQ-GUI-046
         inline constexpr int dialogGroupHeaderHeight = global::dialogGroupHeaderHeight;  // group-title clearance, RQ-GUI-046
+        inline constexpr int midiCcColumnMinWidth = global::midiCcColumnMinWidth;  // automation table 'MIDI CC' column floor width, RQ-GUI-060
         inline constexpr int patchSpinnerWidth = global::patchSpinnerWidth;  // Go to patch / Store spinner width, RQ-GUI-058
         inline constexpr int patchSpinnerTextBoxWidth = global::patchSpinnerTextBoxWidth;  // Go to patch / Store spinner text-box width, RQ-GUI-058
         inline constexpr int patchSpinnerRowWidth = global::patchSpinnerRowWidth;  // Go to patch / Store spinner centring-row width, RQ-GUI-058

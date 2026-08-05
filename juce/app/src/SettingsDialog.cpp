@@ -27,6 +27,7 @@ namespace xplorer::app
         constexpr int LABEL_WIDTH = tokens::semantic::dialogLabelWidth;
         constexpr int ROW_HEIGHT = tokens::semantic::dialogRowHeight;
         constexpr int MARGIN = tokens::semantic::layoutMargin;
+        constexpr int MIDI_CC_COLUMN_MIN_WIDTH = tokens::semantic::midiCcColumnMinWidth;
 
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
@@ -221,8 +222,16 @@ namespace xplorer::app
                 _automationLabel.setJustificationType(juce::Justification::centredLeft);
                 addAndMakeVisible(_automationLabel);
                 _automationTable.setModel(&_automationModel);
-                _automationTable.getHeader().addColumn("Parameter", 1, LABEL_WIDTH);
-                _automationTable.getHeader().addColumn("MIDI CC", 2, 240);
+                // "Parameter" is pinned at LABEL_WIDTH (min==max); "MIDI CC" is
+                // the only flexible column, so stretch-to-fit hands it 100% of
+                // any width the dialog gains or loses on resize — leaving no
+                // unclaimed header area. TableListBox already fits columns to
+                // the viewport width (excluding the vertical scrollbar) when
+                // stretch-to-fit is active. [RQ-GUI-060, ADR-JUC-012 DEC-JUC-104]
+                _automationTable.getHeader().addColumn("Parameter", 1, LABEL_WIDTH, LABEL_WIDTH, LABEL_WIDTH);
+                _automationTable.getHeader().addColumn("MIDI CC", 2, MIDI_CC_COLUMN_MIN_WIDTH,
+                                                       MIDI_CC_COLUMN_MIN_WIDTH, -1);
+                _automationTable.getHeader().setStretchToFitActive(true);
                 _automationTable.setRowHeight(ROW_HEIGHT);
                 _automationTable.addMouseListener(&_tableHover, true); // nested = CC combos too [RQ-GUI-041]
                 addAndMakeVisible(_automationTable);

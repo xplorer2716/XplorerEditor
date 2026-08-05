@@ -121,6 +121,8 @@ tiers:
     dialogBlockLabelWidth: { kind: int, value: 90,  note: "block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')" }
     dialogResetWidth:      { kind: int, value: 140, note: "'Reset to defaults' button width" }
     dialogGroupHeaderHeight: { kind: int, value: 16, note: "vertical clearance under a GroupComponent title before the first row" }
+    # ---- MIDI automation table column layout (RQ-GUI-060, ADR-JUC-012 DEC-JUC-104) ----
+    midiCcColumnMinWidth: { kind: int, value: 240, note: "minimum width of the automation table's 'MIDI CC' column; value-preserving from its pre-existing fixed width. The column stretches above this floor to fill the dialog (setStretchToFitActive), so the 'Parameter' column's dialogLabelWidth never grows -- there is no unconstrained/dead header area left over." }
     # ---- Go to patch / Store spinner control (RQ-GUI-058) ----
     patchSpinnerWidth:        { kind: int, value: 92, note: "overall juce::Slider(IncDecButtons) width. 80 widened +15% (owner visual review 2026-08-05: narrow field hurt readability)" }
     patchSpinnerTextBoxWidth: { kind: int, value: 69, note: "text-entry portion width, scaled +15% with patchSpinnerWidth (60->69) to keep the button-zone proportion; the remaining 23px button zone is still narrower than dialogRowHeight so JUCE stacks +/- vertically (juce_Slider.cpp resizeIncDecButtons: sideBySide iff width > height)" }
@@ -315,6 +317,7 @@ tiers:
     dialogBlockLabelWidth: { alias: global.dialogBlockLabelWidth, note: "block label width in the colour grid, RQ-GUI-046" }
     dialogResetWidth:      { alias: global.dialogResetWidth,      note: "Reset to defaults button width, RQ-GUI-046" }
     dialogGroupHeaderHeight: { alias: global.dialogGroupHeaderHeight, note: "group-title clearance, RQ-GUI-046" }
+    midiCcColumnMinWidth: { alias: global.midiCcColumnMinWidth, note: "automation table 'MIDI CC' column floor width, RQ-GUI-060" }
     patchSpinnerWidth:        { alias: global.patchSpinnerWidth,        note: "Go to patch / Store spinner width, RQ-GUI-058" }
     patchSpinnerTextBoxWidth: { alias: global.patchSpinnerTextBoxWidth, note: "Go to patch / Store spinner text-box width, RQ-GUI-058" }
     patchSpinnerRowWidth:     { alias: global.patchSpinnerRowWidth,     note: "Go to patch / Store spinner centring-row width, RQ-GUI-058" }
