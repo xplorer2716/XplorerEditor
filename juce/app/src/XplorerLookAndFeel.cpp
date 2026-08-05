@@ -174,8 +174,14 @@ namespace xplorer::app
         {
             const float textAlpha = button.isEnabled() ? 1.0F : tokens::component::disabledAlpha;
             g.setColour(button.findColour(juce::ToggleButton::textColourId).withMultipliedAlpha(textAlpha));
-            g.setFont(juce::Font(juce::jmin(tokens::semantic::textCaption,
-                                            static_cast<float>(bounds.getHeight()) - 3.0F)));
+            // Settings-style dialogs match their checkbox/radio caption to the
+            // dialog's own row-label size instead of the compact main-panel
+            // caption — same context rule as getComboBoxFont above.
+            // [RQ-GUI-061, ADR-JUC-033 (DEC-JUC-105)]
+            const auto captionSize = button.findParentComponentOfClass<juce::DialogWindow>() != nullptr
+                                         ? tokens::semantic::textTitle
+                                         : tokens::semantic::textCaption;
+            g.setFont(juce::Font(juce::jmin(captionSize, static_cast<float>(bounds.getHeight()) - 3.0F)));
             const auto textArea = bounds.withTrimmedLeft(boxSize + 2);
             g.drawText(button.getButtonText(), textArea, juce::Justification::centredLeft, false);
         }
@@ -275,22 +281,32 @@ namespace xplorer::app
         g.strokePath(path, juce::PathStrokeType(tokens::semantic::strokeLine));
     }
 
-    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox&)
+    juce::Font XplorerLookAndFeel::getComboBoxFont(juce::ComboBox& box)
     {
         // ONE fixed size for every combo box. Sizing each box against its own
         // widest label (the mechanism this replaces) put up to seven different
         // sizes on screen at once; deriving one size from the whole inventory
         // was tried next and collapsed to the legibility floor, shrinking the
         // whole panel. The size is therefore a design decision expressed as a
-        // token, and the `juce::ComboBox&` parameter is intentionally unused —
-        // do NOT reintroduce a per-box computation here.
-        // [RQ-GUI-047, ADR-JUC-022 (DEC-JUC-046)]
+        // token — do NOT reintroduce a per-box (content-based) computation
+        // here. [RQ-GUI-047, ADR-JUC-022 (DEC-JUC-046)]
         //
         // The typeface is attached EXPLICITLY. Registering it through
         // setDefaultSansSerifTypeface and letting this Font resolve to it
         // implicitly renders text as unrelated characters on the pinned JUCE
         // version (a systematic glyph-index offset, reproduced with two
         // independent valid font files). [RQ-DSN-096, ADR-JUC-022 (DEC-JUC-049)]
+        //
+        // Settings-style dialogs (MIDI/UI/Randomizer pages) are a second,
+        // equally fixed context: their combos match the dialog's own row
+        // labels instead of the main panel's condensed size — still exactly
+        // ONE size per surface, chosen by context (main window vs. dialog),
+        // never by the box's own content, so RQ-GUI-047's rule above still
+        // holds. [RQ-GUI-061, ADR-JUC-033 (DEC-JUC-105)]
+        if (box.findParentComponentOfClass<juce::DialogWindow>() != nullptr)
+        {
+            return juce::Font{juce::FontOptions{tokens::semantic::textTitle}};
+        }
         return comboFont();
     }
 

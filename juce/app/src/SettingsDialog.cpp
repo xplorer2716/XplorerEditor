@@ -29,6 +29,17 @@ namespace xplorer::app
         constexpr int MARGIN = tokens::semantic::layoutMargin;
         constexpr int MIDI_CC_COLUMN_MIN_WIDTH = tokens::semantic::midiCcColumnMinWidth;
 
+        // Shared by every row-caption Label across the MIDI/UI/Randomizer
+        // pages; the matching combo-box and checkbox/radio-caption size is
+        // resolved by XplorerLookAndFeel's dialog-context branch instead, so
+        // a row's label and its control read as one family. Muted hint text
+        // (setupHint) deliberately keeps its own smaller size.
+        // [RQ-GUI-061, ADR-JUC-033 (DEC-JUC-105)]
+        juce::Font dialogControlFont()
+        {
+            return juce::Font{juce::FontOptions{tokens::semantic::textTitle}};
+        }
+
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
         // [RQ-GUI-036, ADR-JUC-012]
@@ -220,6 +231,7 @@ namespace xplorer::app
                 }
                 _automationLabel.setText("MIDI automation table", juce::dontSendNotification);
                 _automationLabel.setJustificationType(juce::Justification::centredLeft);
+                _automationLabel.setFont(dialogControlFont());
                 addAndMakeVisible(_automationLabel);
                 _automationTable.setModel(&_automationModel);
                 // "Parameter" is pinned at LABEL_WIDTH (min==max); "MIDI CC" is
@@ -342,6 +354,7 @@ namespace xplorer::app
                 label.setText(caption, juce::dontSendNotification);
                 label.attachToComponent(&combo, true);
                 label.setJustificationType(juce::Justification::centredRight);
+                label.setFont(dialogControlFont());
                 addAndMakeVisible(label);
                 addAndMakeVisible(combo);
             }
@@ -371,6 +384,7 @@ namespace xplorer::app
                 label.setText(caption, juce::dontSendNotification);
                 label.attachToComponent(&editor, true);
                 label.setJustificationType(juce::Justification::centredRight);
+                label.setFont(dialogControlFont());
                 editor.setText(value);
                 editor.setInputRestrictions(6, "0123456789");
                 addAndMakeVisible(label);
@@ -422,6 +436,7 @@ namespace xplorer::app
                           "header and instance-selector buttons.");
 
                 _ledLabel.setText("Knob LED colour", juce::dontSendNotification);
+                _ledLabel.setFont(dialogControlFont());
                 addAndMakeVisible(_ledLabel);
                 _ledSwatch.colour = _ledColour;
                 addAndMakeVisible(_ledSwatch);
@@ -434,6 +449,7 @@ namespace xplorer::app
                     const auto& descriptor = blockColourDescriptors()[i];
                     auto& row = _blockRows[i];
                     row.label.setText(descriptor.displayName, juce::dontSendNotification);
+                    row.label.setFont(dialogControlFont());
                     addAndMakeVisible(row.label);
                     row.swatch.colour = _palette.*(descriptor.member);
                     addAndMakeVisible(row.swatch);
@@ -639,6 +655,7 @@ namespace xplorer::app
                                 const juce::String& secondText, int group, bool firstSelected)
             {
                 label.setText(caption, juce::dontSendNotification);
+                label.setFont(dialogControlFont());
                 addAndMakeVisible(label);
                 first.setButtonText(firstText);
                 second.setButtonText(secondText);
@@ -698,6 +715,7 @@ namespace xplorer::app
                 _matrixLabel.setText("Matrix random", juce::dontSendNotification);
                 for (auto* label : {&_vco2Label, &_matrixLabel})
                 {
+                    label->setFont(dialogControlFont());
                     addAndMakeVisible(*label);
                 }
 
@@ -781,6 +799,7 @@ namespace xplorer::app
                           const juce::StringArray& items)
             {
                 label.setText(caption, juce::dontSendNotification);
+                label.setFont(dialogControlFont());
                 addAndMakeVisible(label);
                 for (int i = 0; i < items.size(); ++i)
                 {
