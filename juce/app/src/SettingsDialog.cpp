@@ -310,7 +310,7 @@ namespace xplorer::app
                 rows.reserve(_automationModel.rows.size());
                 for (const auto& row : _automationModel.rows)
                 {
-                    rows.emplace_back(row.friendly.toStdString(), controlChangeName(row.cc));
+                    rows.emplace_back(row.friendly.toStdString(), controlChangeDisplayLabel(row.cc));
                 }
                 const auto generatedOn =
                     juce::Time::getCurrentTime().toString(true, true).toStdString();

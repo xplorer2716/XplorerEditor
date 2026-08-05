@@ -91,8 +91,12 @@ Three coordinated parts.
      literal, since no other user-visible string in this codebase embeds a
      non-ASCII character directly (only comments do). The unassigned entry
      (index 128, or any out-of-range value) is the bare word "None", never
-     number-prefixed. This format applies **only** to this combo — RQ-GUI-047's
-     main-window combo-box rule and the RQ-GUI-036 HTML export are untouched.
+     number-prefixed. This format applies to this combo **and** the "Export as
+     HTML" action's "Control Change" column (`exportMappingAsHtml` now calls
+     `controlChangeDisplayLabel`, not `controlChangeName` — amended 2026-08-06,
+     owner report: the export originally kept the full reference name, a
+     deliberate exclusion that the owner reversed once the mismatch was
+     visible on export). RQ-GUI-047's main-window combo-box rule is untouched.
    - **DEC-JUC-103 — Curated short-name table, mechanically derived where
      possible, not hand-duplicated.** A new owner-authored array,
      `ControlChangeShortNames.inc` (96 entries: CC 0-31 and CC 64-127 — the two
@@ -166,8 +170,11 @@ Three coordinated parts.
   strings; the curated short-name table is a second small owner-maintained
   asset alongside the generated one, with the mechanical LSB/Undefined
   derivation keeping it from growing to a full 129 hand-typed duplicate set.
-  The HTML export and the main-window combo boxes are explicitly out of scope
-  and keep their prior text.
+  The main-window combo boxes are explicitly out of scope and keep their prior
+  text. **(Amended 2026-08-06)** The HTML export now uses the same label as
+  the on-screen table (`controlChangeDisplayLabel`), reversing this
+  requirement's original "export keeps the full reference name" exclusion —
+  the two surfaces can no longer disagree.
 - **(Amendment, RQ-GUI-060)** The automation table's two columns now always
   sum to exactly the table's own width — no more dead trailing strip — and
   widening or narrowing the settings dialog resizes the "MIDI CC" column
