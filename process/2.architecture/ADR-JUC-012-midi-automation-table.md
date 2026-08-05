@@ -6,8 +6,17 @@ parameter set and CC range mirror the reference exactly). Implemented: CC-name
 extraction, headless parser + load path in `applyMidiSettings`, and the
 `TableListBox` editor on the MIDI settings page.
 
+**Amended 2026-08-05 (session GUI, owner report)** — the "MIDI CC" column's
+reference names are long and unevenly sized; DEC-JUC-102/103 add a curated,
+number-first short-label display for that column only (RQ-GUI-059).
+
+**Amended 2026-08-05 (session GUI, owner report, second amendment)** — the
+table's two columns left a dead, unlabelled area after them and did not grow
+with the dialog; DEC-JUC-104 makes "MIDI CC" the sole flexible column
+(RQ-GUI-060).
+
 ## Requirements
-RQ-GUI-036, RQ-SET-002, RQ-FMW-032, RQ-FMW-050..052
+RQ-GUI-036, RQ-SET-002, RQ-FMW-032, RQ-FMW-050..052, RQ-GUI-059, RQ-GUI-060
 
 ## Context
 The reference lets the user map each tone parameter to a MIDI Continuous
@@ -71,6 +80,80 @@ Three coordinated parts.
    decorative whitespace — per the owner's preference over the reference's
    more spacious layout.
 
+5. **Concise CC labels, editor UI only (amendment 2026-08-05, RQ-GUI-059).**
+   The "MIDI CC" column's combo (both collapsed text and dropdown list) SHALL
+   display `<CC, zero-padded 3 digits> - <short name>` instead of the raw
+   reference string.
+   - **DEC-JUC-102 — Number-first, zero-padded display format, scoped to this
+     column.** `controlChangeDisplayLabel(int ccNumber)` (new, `xpl_app_core`)
+     formats the label; the ASCII hyphen `" - "` is used as the separator (not
+     an en dash) to avoid any source-encoding assumption on a runtime string
+     literal, since no other user-visible string in this codebase embeds a
+     non-ASCII character directly (only comments do). The unassigned entry
+     (index 128, or any out-of-range value) is the bare word "None", never
+     number-prefixed. This format applies **only** to this combo — RQ-GUI-047's
+     main-window combo-box rule and the RQ-GUI-036 HTML export are untouched.
+   - **DEC-JUC-103 — Curated short-name table, mechanically derived where
+     possible, not hand-duplicated.** A new owner-authored array,
+     `ControlChangeShortNames.inc` (96 entries: CC 0-31 and CC 64-127 — the two
+     ranges that are not mechanically derivable), sits beside the existing
+     generated `GeneratedControlChangeNames.inc` — it is **curated, not
+     extracted**, because the .NET reference has no short-name concept to
+     extract in the first place; ADR-JUC-012's "single generated source"
+     discipline governed the *reference* name list specifically and is
+     unaffected. `controlChangeShortName(int ccNumber)` resolves the final
+     short name at call time, not by pre-expanding all 129 entries:
+     - CC 32-63 (the reference's own "LSB for Control N (...)" mirror of CC
+       0-31) recurse into `controlChangeShortName(ccNumber - 32)` and append
+       `" (LSB)"` — so a change to a base short name never needs a matching
+       edit 32 slots away.
+     - Any entry whose curated base name is the literal word "Undefined"
+       (bare, matching the reference) has that CC's own number appended at
+       call time ("Undefined 3", "Undefined 85", "Undefined 3 (LSB)" for CC
+       35) — the curated array never spells out the number itself.
+     - CC 6/38/96/97 ("Data Entry" family) are curated explicitly as "Data
+       Entry", "Data Entry (LSB)", "Data Entry +1", "Data Entry -1" — the
+       owner rejected a bare "Data +1"/"Data -1" as meaningless standing
+       alone.
+
+6. **Column layout fills the dialog, editor UI only (amendment 2026-08-05,
+   RQ-GUI-060).** The table's two columns previously summed to a fixed width
+   with no relationship to the (resizable) settings dialog, leaving a blank,
+   unlabelled strip after "MIDI CC" that grew, not shrank, whenever the owner
+   widened the window.
+   - **DEC-JUC-104 — `TableHeaderComponent` stretch-to-fit, with only "MIDI CC"
+     flexible.** `SettingsDialog.cpp`'s `addColumn` calls now pin "Parameter"'s
+     minimum and maximum width to `dialogLabelWidth` (zero flexibility) and
+     give "MIDI CC" a minimum of `midiCcColumnMinWidth` (240, the column's
+     pre-existing fixed width, preserved as a floor) with no maximum;
+     `getHeader().setStretchToFitActive(true)` is then enabled once. JUCE's
+     `TableHeaderComponent::resizeColumnsToFit` (`juce_TableHeaderComponent.cpp`)
+     distributes any slack across columns in proportion to their min/max range
+     — pinning one column to zero range means the other absorbs the entire
+     slack, which is what makes "Parameter" immovable and "MIDI CC" the sole
+     column that grows or shrinks. This is a **narrower use** of the same
+     mechanism `ComboBoxSizing`/RQ-GUI-047 deliberately avoided for combo boxes
+     (where shrinking any label was rejected): here nothing is ever cut off by
+     the resize itself, since RQ-GUI-060's floor keeps "MIDI CC" no narrower
+     than it already was, and JUCE falls back to its own horizontal scrollbar,
+     never a hidden truncation, if the dialog is narrowed past both columns'
+     combined minimum.
+   - **Scrollbar accounted for by construction, not by new code.**
+     `TableListBox::resized()` (`juce_TableListBox.cpp`) already calls
+     `header->resizeAllColumnsToFit(getVisibleContentWidth())`, and
+     `getVisibleContentWidth()` (inherited from `ListBox`) already excludes the
+     vertical scrollbar's width whenever it is showing — confirmed by reading
+     the vendored JUCE source rather than assumed. No scrollbar-width
+     arithmetic was added on the application side; RQ-GUI-060's scrollbar
+     clause is satisfied by JUCE's existing behaviour once stretch-to-fit is
+     turned on.
+   - **New token, not a raw literal.** `midiCcColumnMinWidth` (`design-tokens.yaml`
+     global tier, value 240, aliased at the semantic tier) replaces the
+     previously unnamed `240` the column's initial width already used —
+     touched anyway by this change, so tokenised per the design-system rule
+     rather than left as a literal alongside new width-constraint arguments on
+     the same call.
+
 ## Consequences
 - CC automation actually functions (input CCs move parameters; VFD shows the
   mapped CC) — a latent functional gap closed, independent of the UI.
@@ -78,6 +161,18 @@ Three coordinated parts.
   both come from generated tables, so nothing drifts from the .NET source.
 - One new generated asset; the parse helper and CC-name accessor are
   headless-tested.
+- **(Amendment, RQ-GUI-059)** The automation table's "MIDI CC" column now reads
+  as a short, scannable, self-consistent list instead of the raw reference
+  strings; the curated short-name table is a second small owner-maintained
+  asset alongside the generated one, with the mechanical LSB/Undefined
+  derivation keeping it from growing to a full 129 hand-typed duplicate set.
+  The HTML export and the main-window combo boxes are explicitly out of scope
+  and keep their prior text.
+- **(Amendment, RQ-GUI-060)** The automation table's two columns now always
+  sum to exactly the table's own width — no more dead trailing strip — and
+  widening or narrowing the settings dialog resizes the "MIDI CC" column
+  alone, down to its pre-existing width as a floor; the "Parameter" column,
+  the row model, the CC picker and persistence are all unchanged.
 
 ## Open questions (owner)
 - **Scope of the editable parameter set**: the reference lists exactly the
