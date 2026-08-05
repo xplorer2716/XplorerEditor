@@ -35,6 +35,17 @@ tiers:
     slate350: { kind: colour, hex: "2C2C34", note: "fromRGB(44,44,52)" }
     white:    { kind: colour, hex: "FFFFFF", note: "juce::Colours::white" }
 
+    # ---- light "document" palette (About / Dependencies windows) ----
+    # These four are the literals the About dialog has carried inline since it
+    # was ported from the reference AboutForm, promoted to tokens unchanged
+    # (value-preserving) when the Dependencies window needed the same palette —
+    # a legal/attribution surface is white and light-themed, unlike every
+    # control surface in this application. RQ-GUI-025, RQ-GUI-057, ADR-ABT-001.
+    black:     { kind: colour, hex: "000000", note: "juce::Colours::black" }
+    grey:      { kind: colour, hex: "808080", note: "juce::Colours::grey" }
+    lightGrey: { kind: colour, hex: "D3D3D3", note: "juce::Colours::lightgrey" }
+    linkBlue:  { kind: colour, hex: "0000FF", note: "juce::Colours::blue — hyperlink text on a light surface" }
+
     # ---- MIDI-activity LED hues (MainComponent LedPanelComponent) ----
     ledGreen: { kind: colour, hex: "90FF90", note: "fromRGB(144,255,144) — automation in" }
     ledBlue:  { kind: colour, hex: "5CABFF", note: "fromRGB(92,171,255) — synth in" }
@@ -212,6 +223,15 @@ tiers:
     surfaceSelected: { alias: global.slate600, note: "selected list row" }
     controlTrack:    { alias: global.white, note: "knob unlit ring track base (with component.knobTrackAlpha)" }
     borderDefault:   { alias: global.slate500, note: "dialog list cell separator" }
+
+    # ---- colour roles: light "document" surfaces (About / Dependencies) ----
+    # The one family of windows that is light rather than slate: they present
+    # legal/attribution text, not controls. RQ-GUI-025, RQ-GUI-057, ADR-ABT-001.
+    surfaceDocument:     { alias: global.white,     note: "About / Dependencies window background (reference AboutForm.BackColor)" }
+    textOnDocument:      { alias: global.black,     note: "primary text on a document surface" }
+    textOnDocumentMuted: { alias: global.grey,      note: "secondary text on a document surface (licence notice, column headers)" }
+    documentSeparator:   { alias: global.lightGrey, note: "hairline rule on a document surface" }
+    textLink:            { alias: global.linkBlue,  note: "hyperlink text on a document surface" }
 
     # ---- colour roles: indicators (RQ-GUI-022) ----
     indicatorOffFill:    { alias: global.slate400 }

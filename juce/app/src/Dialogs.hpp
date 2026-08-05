@@ -45,4 +45,10 @@ namespace xplorer::app
     [[nodiscard]] bool isPatchNameValid(const std::string& name);
 
     void showAboutDialog(const std::string& productNameAndVersion);
+
+    /// Third-party dependency disclosure, opened from the About dialog. Reads
+    /// the SPDX SBOM shipped beside the executable at call time and lists what
+    /// it finds alphabetically -- or explains why it found nothing. No
+    /// dependency metadata is compiled in. [RQ-GUI-057, ADR-ABT-001]
+    void showDependenciesWindow();
 }

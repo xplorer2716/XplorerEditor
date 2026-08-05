@@ -28,6 +28,10 @@ namespace xplorer::app::tokens
         inline const juce::Colour slate400 = juce::Colour(0xFF36363E);  // fromRGB(54,54,62)
         inline const juce::Colour slate350 = juce::Colour(0xFF2C2C34);  // fromRGB(44,44,52)
         inline const juce::Colour white = juce::Colour(0xFFFFFFFF);  // juce::Colours::white
+        inline const juce::Colour black = juce::Colour(0xFF000000);  // juce::Colours::black
+        inline const juce::Colour grey = juce::Colour(0xFF808080);  // juce::Colours::grey
+        inline const juce::Colour lightGrey = juce::Colour(0xFFD3D3D3);  // juce::Colours::lightgrey
+        inline const juce::Colour linkBlue = juce::Colour(0xFF0000FF);  // juce::Colours::blue — hyperlink text on a light surface
         inline const juce::Colour ledGreen = juce::Colour(0xFF90FF90);  // fromRGB(144,255,144) — automation in
         inline const juce::Colour ledBlue = juce::Colour(0xFF5CABFF);  // fromRGB(92,171,255) — synth in
         inline const juce::Colour ledRed = juce::Colour(0xFFFF4020);  // fromRGB(255,64,32) — synth out
@@ -134,6 +138,11 @@ namespace xplorer::app::tokens
         inline const juce::Colour surfaceSelected = global::slate600;  // selected list row
         inline const juce::Colour controlTrack = global::white;  // knob unlit ring track base (with component.knobTrackAlpha)
         inline const juce::Colour borderDefault = global::slate500;  // dialog list cell separator
+        inline const juce::Colour surfaceDocument = global::white;  // About / Dependencies window background (reference AboutForm.BackColor)
+        inline const juce::Colour textOnDocument = global::black;  // primary text on a document surface
+        inline const juce::Colour textOnDocumentMuted = global::grey;  // secondary text on a document surface (licence notice, column headers)
+        inline const juce::Colour documentSeparator = global::lightGrey;  // hairline rule on a document surface
+        inline const juce::Colour textLink = global::linkBlue;  // hyperlink text on a document surface
         inline const juce::Colour indicatorOffFill = global::slate400;
         inline const juce::Colour indicatorOffBorder = global::slate350;
         inline const juce::Colour indicatorAutomation = global::ledGreen;
