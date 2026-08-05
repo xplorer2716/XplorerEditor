@@ -243,8 +243,9 @@ namespace xplorer::app
         _activeInstance = instance;
         if (notifySynth)
         {
-            // Reference RefreshPage: tell the synth to select this page. [RQ-GUI-011]
-            _controller.forceSendPageSubPage();
+            // Send the page-select for the instance just chosen (not
+            // whatever page was previously tracked). [RQ-GUI-011, RQ-CTL-028]
+            _controller.sendPageUpdate(pageForInstance(_descriptor, instance), 0);
         }
         rebindControlsToActiveInstance();
     }

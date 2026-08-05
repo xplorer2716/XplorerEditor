@@ -1,9 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "xplorer/app/PageFamilyModel.hpp"
+#include "xplorer/model/XpanderConstants.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
 using namespace xplorer::app;
+using xplorer::model::EnumPages;
 
 SCENARIO("Page families match the reference descriptors", "[RQ-GUI-010]")
 {
@@ -81,6 +83,41 @@ SCENARIO("Concrete parameter names map back to their family control tag", "[RQ-G
         {
             CHECK_FALSE(familyParameterFor("VCO1_FREQ").has_value());
             CHECK_FALSE(familyParameterFor("VCF_MODE").has_value());
+        }
+    }
+}
+
+SCENARIO("An instance resolves to its own concrete synth page", "[RQ-CTL-028]")
+{
+    GIVEN("the four families")
+    {
+        const auto& families = pageFamilies();
+
+        THEN("pageForInstance matches the reference page numbering, not just instance 1")
+        {
+            CHECK(pageForInstance(families[0], 1) == static_cast<int>(EnumPages::ENV_1));
+            CHECK(pageForInstance(families[0], 3) == static_cast<int>(EnumPages::ENV_3));
+            CHECK(pageForInstance(families[1], 5) == static_cast<int>(EnumPages::LFO_5));
+            CHECK(pageForInstance(families[3], 2) == static_cast<int>(EnumPages::TRACK_2));
+        }
+    }
+}
+
+SCENARIO("A concrete synth page maps back to its family and instance", "[RQ-GUI-012][RQ-CTL-028]")
+{
+    GIVEN("a page belonging to a family")
+    {
+        THEN("familyPageFor resolves the family prefix and 1-based instance")
+        {
+            const auto env = familyPageFor(static_cast<int>(EnumPages::ENV_3));
+            REQUIRE(env.has_value());
+            CHECK(env->familyPrefix == "ENV_X");
+            CHECK(env->instance == 3);
+        }
+
+        THEN("a page outside every family's range returns nothing")
+        {
+            CHECK_FALSE(familyPageFor(static_cast<int>(EnumPages::VCO_1_X)).has_value());
         }
     }
 }

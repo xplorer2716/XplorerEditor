@@ -5,6 +5,8 @@
 // shared "_X_" control tags to concrete parameter names for the active
 // instance, and back. Headless-testable. [RQ-GUI-010..012, ADR-JUC-006]
 
+#include "xplorer/model/XpanderConstants.hpp"
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -17,6 +19,7 @@ namespace xplorer::app
         std::string parameterNamePrefix; ///< e.g. "ENV_"
         int digitIndex;                 ///< index of the instance digit in a concrete name
         int count;                      ///< number of instances (ENV=5 … TRACK=3)
+        model::EnumPages basePage;      ///< synth page of instance 1 (e.g. ENV_1); instances are contiguous
         std::vector<std::string> controlTags; ///< the "_X_" tags to refresh, in reference order
     };
 
@@ -37,4 +40,17 @@ namespace xplorer::app
         int instance;           ///< 1-based
     };
     [[nodiscard]] std::optional<FamilyParameter> familyParameterFor(const std::string& parameterName);
+
+    /// The concrete synth page for a family's 1-based instance
+    /// (e.g. (ENV_X, 3) → EnumPages::ENV_3). [RQ-CTL-028]
+    [[nodiscard]] int pageForInstance(const PageFamilyDescriptor& family, int instance);
+
+    /// Reverse of pageForInstance: which family and instance a synth page
+    /// belongs to; nullopt if the page is outside every family's range.
+    struct FamilyPage
+    {
+        std::string familyPrefix; ///< controlTagPrefix, e.g. "ENV_X"
+        int instance;             ///< 1-based
+    };
+    [[nodiscard]] std::optional<FamilyPage> familyPageFor(int page);
 }

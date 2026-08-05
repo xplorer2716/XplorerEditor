@@ -23,6 +23,7 @@ Scope: C++ port of `Xplorer/Controller` (XpanderController and helpers). Extends
 - **RQ-CTL-025** — When the synth sends modulation-edit SysEx, the controller shall apply the command (change source, delete source, dial amount, set quantize, set sign, set unsigned value, toggle quantize) to the local matrix and raise a modulation-entry-change event.
 - **RQ-CTL-026** — When a multi-patch dump is detected, the controller shall ignore it without corrupting the edited tone (multi mode is out of scope, tracked as future work).
 - **RQ-CTL-027** — The controller shall raise a MIDI-activity event on message send/receive (drives the UI LED indicators).
+- **RQ-CTL-028** — When the user selects a page-family instance in the UI (e.g. clicking "ENV 2"), the controller shall send a page-select SysEx for that instance's own page — not the page/sub-page last tracked from an unrelated edit or synth echo — and update its tracked current page/sub-page to match.
 
 ## Modulation matrix operations
 

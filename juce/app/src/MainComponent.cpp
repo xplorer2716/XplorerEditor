@@ -290,28 +290,18 @@ namespace xplorer::app
 
     void MainComponent::onSynthPageChanged(const controller::PageChangeEvent& event)
     {
-        // Map the synth page to a family + instance and activate the selector. [RQ-GUI-012]
-        struct Range { model::EnumPages first; model::EnumPages last; const char* prefix; };
-        static const Range ranges[] = {
-            {model::EnumPages::ENV_1, model::EnumPages::ENV_5, "ENV_X"},
-            {model::EnumPages::LFO_1, model::EnumPages::LFO_5, "LFO_X"},
-            {model::EnumPages::RAMP_1, model::EnumPages::RAMP_4, "RAMP_X"},
-            {model::EnumPages::TRACK_1, model::EnumPages::TRACK_3, "TRACK_X"},
-        };
-        const int page = static_cast<int>(event.page);
-        for (const auto& range : ranges)
+        // Map the synth page to a family + instance and activate the selector,
+        // via the same family/page table selectInstance() uses to send. [RQ-GUI-012, RQ-CTL-028]
+        const auto familyPage = familyPageFor(static_cast<int>(event.page));
+        if (!familyPage)
         {
-            if (page >= static_cast<int>(range.first) && page <= static_cast<int>(range.last))
+            return;
+        }
+        for (auto& block : _familyBlocks)
+        {
+            if (block->familyPrefix() == familyPage->familyPrefix)
             {
-                const int instance = page - static_cast<int>(range.first) + 1;
-                for (auto& block : _familyBlocks)
-                {
-                    if (block->familyPrefix() == range.prefix)
-                    {
-                        block->setActiveInstanceFromSynth(instance);
-                    }
-                }
-                return;
+                block->setActiveInstanceFromSynth(familyPage->instance);
             }
         }
     }

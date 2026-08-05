@@ -562,14 +562,12 @@ namespace xplorer::controller
         }
     }
 
-    void XpanderController::sendPageUpdate(const std::string& pageName)
+    void XpanderController::sendPageUpdate(int page, int subPage)
     {
-        // Reference parses the page name and force-sends unless it is the
-        // (dummy) CASSETTE fallback; only the side effect matters here.
-        if (!pageName.empty() && pageName != "CASSETTE")
-        {
-            forceSendPageSubPage();
-        }
+        // Unlike forceSendPageSubPage() (which re-sends whatever page/sub-page
+        // is already tracked), this sends AND tracks the given page, so a
+        // direct UI page selection is not lost behind a stale cached page. [RQ-CTL-028]
+        sendPageSubPageAndUpdatePageSubPage(page, subPage);
     }
 
     void XpanderController::forceSendPageSubPage()

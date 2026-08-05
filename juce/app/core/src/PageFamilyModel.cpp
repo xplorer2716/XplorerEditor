@@ -7,15 +7,15 @@ namespace xplorer::app
     const std::vector<PageFamilyDescriptor>& pageFamilies()
     {
         static const std::vector<PageFamilyDescriptor> families = {
-            {"ENV_X", "ENV_", 4, 5,
+            {"ENV_X", "ENV_", 4, 5, model::EnumPages::ENV_1,
              {"ENV_X_ATTACK", "ENV_X_DECAY", "ENV_X_DELAY", "ENV_X_MODE_DADR", "ENV_X_MODE_FREERUN",
               "ENV_X_MODE_RESET", "ENV_X_RELEASE", "ENV_X_SUSTAIN", "ENV_X_TRIG_EXTRIG",
               "ENV_X_TRIG_GATED", "ENV_X_TRIG_LFOTRIG", "ENV_X_TRIG_LFO_SOURCE",
               "ENV_X_TRIG_SINGLE_MULTI", "ENV_X_VOLUME"}},
-            {"LFO_X", "LFO_", 4, 5,
+            {"LFO_X", "LFO_", 4, 5, model::EnumPages::LFO_1,
              {"LFO_X_AMP", "LFO_X_LAG", "LFO_X_RETRIG", "LFO_X_RETRIG_MODE", "LFO_X_SAMPLE_INPUT",
               "LFO_X_SPEED", "LFO_X_WAVESHAPE"}},
-            {"RAMP_X", "RAMP_", 5, 4,
+            {"RAMP_X", "RAMP_", 5, 4, model::EnumPages::RAMP_1,
              {"RAMP_X_RATE", "RAMP_X_TRIG_EXTRIG", "RAMP_X_TRIG_GATED", "RAMP_X_TRIG_LFO_SOURCE",
               "RAMP_X_TRIG_LFOTRIG", "RAMP_X_TRIG_SINGLE_MULTI"}},
             // NOTE: the reference PageRefreshManager._pageTags lists the TRACK
@@ -24,7 +24,7 @@ namespace xplorer::app
             // keyed by tag, so in the reference the track points are never
             // refreshed on a TRACK instance switch (latent bug). This port
             // uses the real tags so they refresh correctly. [architecture-analysis_juce §11]
-            {"TRACK_X", "TRACK_", 6, 3,
+            {"TRACK_X", "TRACK_", 6, 3, model::EnumPages::TRACK_1,
              {"TRACK_X_IN", "TRACK_X_POINT_1", "TRACK_X_POINT_2", "TRACK_X_POINT_3",
               "TRACK_X_POINT_4", "TRACK_X_POINT_5"}},
         };
@@ -66,6 +66,25 @@ namespace xplorer::app
             result.familyPrefix = family.controlTagPrefix;
             result.instance = digit - '0';
             return result;
+        }
+        return std::nullopt;
+    }
+
+    int pageForInstance(const PageFamilyDescriptor& family, int instance)
+    {
+        return static_cast<int>(family.basePage) + instance - 1;
+    }
+
+    std::optional<FamilyPage> familyPageFor(int page)
+    {
+        for (const auto& family : pageFamilies())
+        {
+            const int first = static_cast<int>(family.basePage);
+            const int last = first + family.count - 1;
+            if (page >= first && page <= last)
+            {
+                return FamilyPage{family.controlTagPrefix, page - first + 1};
+            }
         }
         return std::nullopt;
     }

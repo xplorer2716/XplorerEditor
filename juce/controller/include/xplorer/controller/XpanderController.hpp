@@ -114,7 +114,11 @@ namespace xplorer::controller
         // --- synth utilities [RQ-CTL-060..062] --------------------------------
         void sendAllNotesOffToSynthOutput();
         void sendTuneRequestToSynth();
-        void sendPageUpdate(const std::string& pageName);
+        /// Sends a page-select SysEx for the given page/sub-page and records it
+        /// as the current one — used when the UI selects a page directly (e.g.
+        /// a page-family instance button), as opposed to forceSendPageSubPage()
+        /// which just re-sends whatever page is already tracked. [RQ-CTL-028]
+        void sendPageUpdate(int page, int subPage);
         void forceSendPageSubPage();
         void sendGreetingsToSynth();
         void sendTypeWriterMessageToSynth(const std::string& message);

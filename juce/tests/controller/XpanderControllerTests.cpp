@@ -107,6 +107,46 @@ SCENARIO("The worker sends a page select before a parameter of another page", "[
     }
 }
 
+SCENARIO("Selecting a page directly sends and tracks that page, not a stale one", "[RQ-CTL-028]")
+{
+    GIVEN("a started controller (synchronized on VCO_1_X after first start)")
+    {
+        Fixture f;
+        f.controller.start();
+        f.backend.clearSentMessages();
+
+        WHEN("the UI selects ENV_3 directly, with no prior parameter edit")
+        {
+            f.controller.sendPageUpdate(static_cast<int>(model::EnumPages::ENV_3), 0);
+
+            THEN("the page-select frame targets ENV_3 (the selected page), not VCO_1_X")
+            {
+                REQUIRE(f.waitForSentCount(1));
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                CHECK(sent[0][3] == 0x0B); // page select opcode
+                CHECK(sent[0][4] == static_cast<int>(model::EnumPages::ENV_3));
+                CHECK(sent[0][5] == 0); // sub-page
+            }
+        }
+
+        WHEN("a page is selected and forceSendPageSubPage is called afterwards (e.g. a display resync)")
+        {
+            f.controller.sendPageUpdate(static_cast<int>(model::EnumPages::ENV_3), 0);
+            REQUIRE(f.waitForSentCount(1));
+            f.backend.clearSentMessages();
+
+            f.controller.forceSendPageSubPage();
+
+            THEN("it re-sends the newly selected page, proving the tracked page was updated")
+            {
+                REQUIRE(f.waitForSentCount(1));
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                CHECK(sent[0][4] == static_cast<int>(model::EnumPages::ENV_3));
+            }
+        }
+    }
+}
+
 SCENARIO("A single patch dump from the synth reloads the edited tone", "[RQ-CTL-021]")
 {
     GIVEN("a started controller and the OBERHEIM dump")
