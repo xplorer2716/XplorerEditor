@@ -3,8 +3,12 @@
 ## Status
 Accepted (owner, 2026-07-13)
 
+**Amended 2026-08-06 (owner report, session GUI)** — DEC-JUC-106 closes the
+"Not in scope / deferred" item below: the Standard/vintage knob-style switch,
+confirmed unwired to any rendering, is removed rather than left unaffected.
+
 ## Requirements
-RQ-GUI-030, RQ-GUI-031, RQ-GUI-034
+RQ-GUI-030, RQ-GUI-031, RQ-GUI-034, RQ-SET-003
 
 ## Context
 Owner review of the M2/M3 build flagged the rotary knobs (`BoundKnob` +
@@ -60,9 +64,34 @@ Owner review of the M2/M3 build flagged the rotary knobs (`BoundKnob` +
   which had only the VFD + keyboard-preset entry.
 - `drawRotarySlider` gains a branch on hover state; no new asset, no layout
   change.
+- **(Amendment, DEC-JUC-106)** The User interface settings page's "Knob
+  behaviour" group now has one row (movement) instead of two; the persisted
+  settings schema loses one field, tolerantly (old and .NET-imported files
+  keep loading). No user loses a working choice, since the removed choice
+  never did anything.
 
 ## Not in scope / deferred
 - The reference keyboard **preset-value** entry (number keys while hovering a
   knob) is a separate feature, not requested here.
-- The knob "Standard vs vintage" style switch (UiConfiguration) is unaffected;
-  only the pointer removal and hover brighten apply to the current default.
+- ~~The knob "Standard vs vintage" style switch (UiConfiguration) is unaffected;
+  only the pointer removal and hover brighten apply to the current default.~~
+  **Closed 2026-08-06 by DEC-JUC-106** — see Decision below.
+
+- **DEC-JUC-106 — Remove the Standard/vintage (Standard/Flat) knob-style
+  switch entirely; the ring-only rendering of decision 1 above is the sole,
+  unconditional style.** Re-reading every consumer of `knobStyleIsStandard`
+  before touching anything: `UiSettingsPage`'s "Knob style" radio pair
+  (`Standard`/`Flat`) read and wrote the field, `XmlSettingsService`
+  persisted it, and `SettingsServiceTests` round-tripped it — but no
+  `XplorerLookAndFeel` painter, nor any other rendering code, ever read the
+  field. It has been a user-facing choice with **zero observable effect**
+  since this ADR's decision 1 made the ring-only style unconditional in
+  2026-07. Removed: the `bool knobStyleIsStandard` field
+  (`AllUsersSettings::UiConfiguration`), its XML read/write
+  (`XmlSettingsService`), the radio pair and its layout row
+  (`UiSettingsPage`), and the corresponding round-trip assertions
+  (`SettingsServiceTests`). **Kept as-is:** the `.NET`-file-import test
+  fixture's `<KnobStyleIsStandard>` element (RQ-SET-006) — a real legacy file
+  contains it, and the point of that test is that such a file still imports
+  cleanly when the element is simply no longer read, which is exactly what
+  now happens.
