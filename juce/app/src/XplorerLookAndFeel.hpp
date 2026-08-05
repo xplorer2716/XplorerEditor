@@ -63,6 +63,14 @@ namespace xplorer::app
         void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX,
                           int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override;
 
+        // Digits-only text entry for the Go to patch / Store spinner: the
+        // stock Label the base class returns accepts arbitrary text (a typed
+        // "abc" is silently parsed to 0 by valueFromTextFunction, harmless
+        // but unpolished). No other Slider in the app uses a text box
+        // (knobs/matrix sliders are NoTextBox), so this only affects the
+        // spinner. [RQ-GUI-058]
+        juce::Label* createSliderTextBox(juce::Slider& slider) override;
+
     private:
         // Circular counterpart of drawTickBox for radio-group toggles (a
         // ToggleButton with a non-zero radio group id), so two-way choices

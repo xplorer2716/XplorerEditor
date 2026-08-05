@@ -605,32 +605,71 @@ namespace xplorer::app
         (new RestoreThread(controller, fileName))->launchThread();
     }
 
+    namespace
+    {
+        // AlertWindow::updateLayout (juce_AlertWindow.cpp) always positions a
+        // custom component at proportionOfWidth(0.1f) and never resizes it,
+        // so a component narrower than the dialog's content column shows
+        // flush-left rather than centred. Wrapping the spinner in a row this
+        // wide makes the row itself the dominant term in AlertWindow's own
+        // `w = jmax(w, rowWidth / 0.8)` sizing formula, so the row spans
+        // exactly the dialog's 10%..90% content column -- centring the
+        // spinner inside it by construction, not by fighting the layout
+        // afterwards. [RQ-GUI-058]
+        class CentredRow final : public juce::Component
+        {
+        public:
+            CentredRow(juce::Component& content, int rowWidth, int rowHeight)
+            {
+                setSize(rowWidth, rowHeight);
+                addAndMakeVisible(content);
+                content.setCentrePosition(rowWidth / 2, rowHeight / 2);
+            }
+        };
+    }
+
+    // Editable numeric field with stacked +/- buttons (native-equivalent
+    // "spinner"/"NumericUpDown" control, cross-platform via
+    // juce::Slider::IncDecButtons -- replaces the former 100-item combo
+    // box). Range clamps rather than wraps (owner decision, 2026-08-05);
+    // Up/Down-arrow stepping while focused is juce::Slider's own built-in
+    // behaviour, not bespoke code. [RQ-GUI-058]
     void showStoreOrGotoDialog(const std::string& title, int currentProgram,
                                std::function<void(int)> onAccept)
     {
         auto* window = new juce::AlertWindow(title, "Choose a program number", juce::MessageBoxIconType::NoIcon);
-        juce::StringArray items;
-        for (int i = model::XpanderTone::MIN_PROGRAM_NUMBER; i <= model::XpanderTone::MAX_PROGRAM_NUMBER; ++i)
-        {
-            items.add(juce::String(i));
-        }
-        window->addComboBox("Program", items);
-        window->getComboBoxComponent("Program")->setSelectedItemIndex(
-            juce::jlimit(0, items.size() - 1, currentProgram));
+
+        auto* spinner = new juce::Slider(juce::Slider::IncDecButtons, juce::Slider::TextBoxLeft);
+        spinner->setRange(model::XpanderTone::MIN_PROGRAM_NUMBER, model::XpanderTone::MAX_PROGRAM_NUMBER, 1.0);
+        spinner->textFromValueFunction = [](double value) { return juce::String(static_cast<int>(value)); };
+        spinner->valueFromTextFunction = [](const juce::String& text) { return static_cast<double>(text.getIntValue()); };
+        spinner->setValue(juce::jlimit(model::XpanderTone::MIN_PROGRAM_NUMBER,
+                                       model::XpanderTone::MAX_PROGRAM_NUMBER, currentProgram),
+                          juce::dontSendNotification);
+        spinner->setTextBoxStyle(juce::Slider::TextBoxLeft, false,
+                                 tokens::semantic::patchSpinnerTextBoxWidth, tokens::semantic::dialogRowHeight);
+        spinner->setSize(tokens::semantic::patchSpinnerWidth, tokens::semantic::dialogRowHeight);
+
+        auto* row = new CentredRow(*spinner, tokens::semantic::patchSpinnerRowWidth, tokens::semantic::dialogRowHeight);
+        window->addCustomComponent(row);
+
         window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
         window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
         window->enterModalState(true,
             juce::ModalCallbackFunction::create(
-                [window, onAccept = std::move(onAccept)](int result)
+                [window, row, spinner, onAccept = std::move(onAccept)](int result)
                 {
-                    std::unique_ptr<juce::AlertWindow> owner(window);
+                    std::unique_ptr<juce::AlertWindow> windowOwner(window);
+                    std::unique_ptr<juce::Component> rowOwner(row);
+                    std::unique_ptr<juce::Slider> spinnerOwner(spinner);
                     if (result != 0)
                     {
-                        onAccept(window->getComboBoxComponent("Program")->getText().getIntValue());
+                        onAccept(static_cast<int>(spinner->getValue()));
                     }
                 }),
             false);
+        spinner->grabKeyboardFocus();
     }
 
     namespace
