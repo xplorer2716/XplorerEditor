@@ -76,19 +76,46 @@ question).
   scheme to change: ADR-BLD-001's `alpha-<run_number>-<sha>` (DEC-BLD-002)
   cannot be used, because `github.run_number` is **per workflow** — the four
   publishers would each compute a different tag and produce four releases for
-  one commit. The tag becomes `alpha-<commit-count>-<short-sha>`, where
+  one commit. ~~The tag becomes `alpha-<commit-count>-<short-sha>`, where
   `git rev-list --count HEAD` is identical in all four runs while keeping the
   monotonic ordering DEC-BLD-002 wanted; the short sha keeps the exact
-  traceability. The derivation, the notes and the create/upload sequence live
-  in a single composite action (`.github/actions/alpha-prerelease`) rather
-  than being copy-pasted four times — with four publishers, "they all compute
-  the same tag" has to be a property of the code, not of review. Publication
-  is idempotent and race-tolerant: whichever workflow arrives first creates
-  the release, the others tolerate losing that race and upload with
-  `--clobber`; the upload itself is unguarded, so a genuinely failed creation
-  still fails the run. Assets are renamed on upload
-  (`Xplorer-<os>-<arch>-<config>.<ext>`) so the four coexist and each states
-  what it is. (RQ-BLD-009, RQ-BLD-011, RQ-BLD-013, ADR-BLD-001)
+  traceability.~~ *Tag format superseded by DEC-BLD-011 (2026-08-06) — the
+  "derived from the commit alone" requirement below still holds.* The
+  derivation, the notes and the create/upload sequence live in a single
+  composite action (`.github/actions/alpha-prerelease`) rather than being
+  copy-pasted four times — with four publishers, "they all compute the same
+  tag" has to be a property of the code, not of review. Publication is
+  idempotent and race-tolerant: whichever workflow arrives first creates the
+  release, the others tolerate losing that race and upload with `--clobber`;
+  the upload itself is unguarded, so a genuinely failed creation still fails
+  the run. Assets are renamed on upload (`Xplorer-<os>-<arch>-<config>.<ext>`)
+  so the four coexist and each states what it is. (RQ-BLD-009, RQ-BLD-011,
+  RQ-BLD-013, ADR-BLD-001)
+
+- **DEC-BLD-011 — Tag's per-commit component becomes HEAD's UTC committer
+  timestamp, `YYYYMMDD-HHmmSS`, not `<commit-count>-<short-sha>`.** Owner
+  report (2026-08-06): the hex short-sha reads as noise next to "alpha". The
+  replacement must still satisfy DEC-BLD-010's own hard constraint — all four
+  independently-run publishers compute the identical tag for one commit — so
+  it cannot be "now" (`date` at the moment each workflow happens to run):
+  the four jobs finish seconds to minutes apart and would each mint a
+  different tag, silently reintroducing the exact four-releases-per-commit
+  bug DEC-BLD-010 was written to fix. Reading the timestamp **off the commit
+  object itself**
+  (`TZ=UTC git log -1 --format=%cd --date=format-local:'%Y%m%d-%H%M%S' HEAD`)
+  keeps it a pure function of `HEAD`, identical everywhere `HEAD` is the same
+  commit — the same property `git rev-list --count HEAD` had. `TZ=UTC` is
+  forced explicitly rather than trusting each runner's own default, so
+  `windows-latest` and `macos-latest` cannot disagree even if their
+  images ever diverge on that default. Committer date, not author date: it
+  reflects when the object was actually written, not a possibly-stale
+  original authoring time carried through a rebase. **Traded off knowingly:**
+  the short-sha's exact-commit traceability is no longer in the tag text
+  itself (the release remains linked to its commit through GitHub's own
+  tag→commit association, so it is not lost, only no longer visible at a
+  glance); two commits within the same UTC second would collide — accepted
+  as negligible for this project's actual commit cadence rather than solved
+  with an additional disambiguator the owner did not ask for. (RQ-BLD-013)
 
 ## Consequences
 
@@ -106,6 +133,10 @@ question).
 - **Reversible:** both workflows are additive files; dropping either (or
   widening to a universal binary, or adding a release-publish step later) is
   a local, narrow change.
+- **(Amendment, DEC-BLD-011)** Alpha tags read as `alpha-YYYYMMDD-HHmmSS`
+  instead of `alpha-<count>-<sha>` — a tester can read the build date off the
+  tag itself; the exact commit is still one click away via the release, just
+  not spelled out in the tag text.
 
 ## Alternatives Considered
 

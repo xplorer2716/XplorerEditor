@@ -6,7 +6,7 @@
 # the SAME tag. Duplicating that derivation once per workflow is precisely the
 # kind of thing that drifts silently — one edit, four releases per commit.
 # Keeping it here makes "same tag" a property of the code rather than of
-# reviewer vigilance. [RQ-BLD-009, RQ-BLD-013, ADR-BLD-002 DEC-BLD-010]
+# reviewer vigilance. [RQ-BLD-009, RQ-BLD-013, ADR-BLD-002 DEC-BLD-010/011]
 name: 'Publish into the main-branch alpha pre-release'
 description: 'Uploads one binary into the shared alpha pre-release for this commit, creating it if needed.'
 
@@ -35,10 +35,16 @@ runs:
 
         # Derived from the commit alone, never from github.run_number: that
         # counter is per-workflow, so the four publishers would each compute a
-        # different tag and produce four releases for one commit. The commit
-        # count preserves the monotonic ordering the tag scheme was chosen for,
-        # and the short sha keeps the exact traceability. [DEC-BLD-010]
-        TAG="alpha-$(git rev-list --count HEAD)-$(git rev-parse --short HEAD)"
+        # different tag and produce four releases for one commit. The
+        # timestamp is HEAD's own committer date (TZ forced to UTC so all four
+        # runners -- windows-latest, macos-latest -- agree regardless of their
+        # own default timezone), never "now": reading the commit's stored time
+        # is what makes the value identical across four independently-run
+        # workflows, the same property the previous commit-count/short-sha
+        # scheme relied on. Owner-requested readability improvement over the
+        # opaque hex short-sha; monotonic for any realistic commit cadence
+        # (one-second resolution). [DEC-BLD-011, supersedes DEC-BLD-010]
+        TAG="alpha-$(TZ=UTC git log -1 --format=%cd --date=format-local:'%Y%m%d-%H%M%S' HEAD)"
         echo "Attaching $ASSET_NAME to $TAG"
 
         if ! gh release view "$TAG" >/dev/null 2>&1; then
