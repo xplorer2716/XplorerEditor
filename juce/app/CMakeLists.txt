@@ -19,6 +19,7 @@ target_sources(XplorerApp PRIVATE
     src/VfdSegmentRenderer.cpp
     src/VfdDisplayHelper.cpp
     src/Dialogs.cpp
+    src/SbomReader.cpp
     src/SettingsDialog.cpp
     src/ProgressWindow.cpp
     src/PianoWindow.cpp

@@ -88,6 +88,7 @@ if(XPL_BUILD_APP)
         app/BoundRadioGroupTests.cpp
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
+        app/SbomReaderTests.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
         ../app/src/BlockPalette.cpp
@@ -99,7 +100,11 @@ if(XPL_BUILD_APP)
         # isPatchNameValid needs the whole translation unit (AlertWindow-based
         # dialogs, controller/settings/midi includes) to compile alongside it.
         # [RQ-GUI-025]
-        ../app/src/Dialogs.cpp)
+        ../app/src/Dialogs.cpp
+        # The SPDX reader is pure data in / data out by design, precisely so its
+        # field mapping, filtering and failure results can be pinned without a
+        # display. [RQ-GUI-057, ADR-ABT-001 (DEC-ABT-006)]
+        ../app/src/SbomReader.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the
