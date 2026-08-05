@@ -54,7 +54,7 @@ optimum and a vector port buys no visible improvement.
   not from hand-authored artwork.** The port adopts the character map of
   `dmadison/LED-Segment-ASCII` (MIT, © 2017 David Madison), covering ASCII
   32–126 as one 16-bit mask per character, bit 0 = segment A through bit 15 =
-  segment U. MIT is compatible with this project's GPLv3; the upstream notice
+  segment U. MIT is compatible with this project's AGPLv3 *(was GPLv3 — RQ-BLD-006, ADR-ABT-002)*; the upstream notice
   SHALL be preserved in the generated header and the dependency declared as a
   third party. The bit→geometry mapping SHALL be verified by test, not assumed:
   decoding `0`, `1`, `8`, `A`, `E`, `H`, `M`, `W`, `X`, `+`, `-` and `T` pins it

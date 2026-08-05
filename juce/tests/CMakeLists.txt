@@ -87,6 +87,8 @@ if(XPL_BUILD_APP)
         app/BackgroundRendererTests.cpp
         app/BoundRadioGroupTests.cpp
         app/LedPanelGeometryTests.cpp
+        app/DialogsPatchNameTests.cpp
+        app/SbomReaderTests.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
         ../app/src/BlockPalette.cpp
@@ -94,7 +96,15 @@ if(XPL_BUILD_APP)
         # widget-geometry decision: it can only be pinned against real
         # juce::Component bounds. [RQ-GUI-053, ADR-JUC-016 (DEC-JUC-086)]
         ../app/src/BoundControls.cpp
-        ../app/src/BlockPalette.cpp)
+        ../app/src/BlockPalette.cpp
+        # isPatchNameValid needs the whole translation unit (AlertWindow-based
+        # dialogs, controller/settings/midi includes) to compile alongside it.
+        # [RQ-GUI-025]
+        ../app/src/Dialogs.cpp
+        # The SPDX reader is pure data in / data out by design, precisely so its
+        # field mapping, filtering and failure results can be pinned without a
+        # display. [RQ-GUI-057, ADR-ABT-001 (DEC-ABT-006)]
+        ../app/src/SbomReader.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the
@@ -108,7 +118,7 @@ if(XPL_BUILD_APP)
     # AllUsersSettings.hpp), so the paint-order test of RQ-GUI-051 can render the
     # real painter rather than a re-implementation of it. [ADR-JUC-027]
     target_link_libraries(xpl_tests_app_juce PRIVATE
-        xpl_app_core xpl_settings XplorerAssets
+        xpl_app_core xpl_settings xpl_midi XplorerAssets
         juce::juce_graphics juce::juce_gui_extra juce::juce_events
         xpl::warnings Catch2::Catch2WithMain)
     catch_discover_tests(xpl_tests_app_juce)

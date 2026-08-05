@@ -38,7 +38,7 @@ non-negotiable, for three reasons:
    is satisfied.
 
 All contributions are made under the project's license — see
-[LICENSE](LICENSE) (GPL v3).
+[LICENSE](LICENSE) (AGPL v3).
 
 ## Mandatory: using an AI coding agent
 

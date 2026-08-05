@@ -1,0 +1,68 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Xplorer",
+  "documentNamespace": "https://github.com/xplorer2716/XplorerEditor",
+  "creationInfo": {
+    "created": "2026-08-05T00:00:00Z",
+    "creators": [
+      "Tool: hand-maintained-interim-sbom",
+      "Organization: XplorerEditor"
+    ],
+    "comment": "INTERIM, HAND-MAINTAINED. This document is a placeholder for the SBOM GitHub's dependency-graph export generates for this repository, which is expected to replace it verbatim with no application change (RQ-BLD-014, ADR-ABT-001 DEC-ABT-007). Keep it accurate until that automation lands: the application discloses these licences to end users and has no other source for them."
+  },
+  "documentDescribes": [
+    "SPDXRef-Package-Xplorer"
+  ],
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-Xplorer",
+      "name": "Xplorer",
+      "versionInfo": "0.1.0",
+      "downloadLocation": "https://github.com/xplorer2716/XplorerEditor",
+      "homepage": "https://github.com/xplorer2716/XplorerEditor",
+      "filesAnalyzed": false,
+      "licenseConcluded": "AGPL-3.0-or-later",
+      "licenseDeclared": "AGPL-3.0-or-later",
+      "copyrightText": "Copyright (c) 2012-2026 Pascal Schmitt",
+      "comment": "The subject of this document, not a dependency: listed in documentDescribes and therefore filtered out of the disclosure window (ADR-ABT-001 DEC-ABT-004)."
+    },
+    {
+      "SPDXID": "SPDXRef-Package-JUCE",
+      "name": "JUCE",
+      "versionInfo": "8.0.9",
+      "downloadLocation": "https://github.com/juce-framework/JUCE",
+      "homepage": "https://juce.com",
+      "filesAnalyzed": false,
+      "licenseConcluded": "AGPL-3.0-only",
+      "licenseDeclared": "AGPL-3.0-only",
+      "copyrightText": "Copyright (c) Raw Material Software Limited",
+      "comment": "Dual-licensed AGPLv3 / commercial. This build uses the open-source option, which for JUCE 8 is the AGPL -- NOT the GPL that JUCE 6/7 offered. Verified against the pinned 8.0.9 tag's own LICENSE.md."
+    },
+    {
+      "SPDXID": "SPDXRef-Package-Catch2",
+      "name": "Catch2",
+      "versionInfo": "3.9.1",
+      "downloadLocation": "https://github.com/catchorg/Catch2",
+      "homepage": "https://github.com/catchorg/Catch2",
+      "filesAnalyzed": false,
+      "licenseConcluded": "BSL-1.0",
+      "licenseDeclared": "BSL-1.0",
+      "copyrightText": "Copyright Catch2 Authors",
+      "comment": "Test-only dependency: linked into the test executables, not into the shipped application binary."
+    },
+    {
+      "SPDXID": "SPDXRef-Package-RobotoCondensed",
+      "name": "Roboto Condensed",
+      "versionInfo": "3.008",
+      "downloadLocation": "https://fonts.google.com/specimen/Roboto+Condensed",
+      "homepage": "https://fonts.google.com/specimen/Roboto+Condensed",
+      "filesAnalyzed": false,
+      "licenseConcluded": "Apache-2.0",
+      "licenseDeclared": "Apache-2.0",
+      "copyrightText": "Copyright (c) Google LLC",
+      "comment": "Embedded in the binary as XplorerAssets binary data so combo-box label widths are a property of the build (RQ-DSN-096, ADR-JUC-022). Licence text ships at juce/app/assets/RobotoCondensed-LICENSE.txt."
+    }
+  ]
+}

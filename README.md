@@ -1,7 +1,7 @@
 # Xplorer
 
 ![Platform](https://img.shields.io/badge/platform-JUCE%20%2F%20C%2B%2B20-blue)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-green.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-green.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ![Xplorer UI](README.XplorerFullScreen.jpg)
 
@@ -75,7 +75,7 @@ This port also aims to demonstrate the integration of AI software development ag
 
 ## License
 
-This project is licensed under the GPL v3.
+This project is licensed under the AGPL v3.
 See [LICENSE](LICENSE).
 
 ## Links

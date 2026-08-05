@@ -59,6 +59,12 @@ namespace xplorer::app
         /// [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
         bool keyPressed(const juce::KeyPress& key) override;
 
+        /// Double-clicking the VFD opens the rename dialog, the same one the
+        /// Patch > Rename menu item opens. DisplayPanel passes clicks through
+        /// (setInterceptsMouseClicks(false, false)), so the double click lands
+        /// here rather than on the display itself. [RQ-GUI-025]
+        void mouseDoubleClick(const juce::MouseEvent& event) override;
+
         /// Loads a .syx file, dispatching by detected type (single tone ->
         /// load & transmit; all-data dump -> confirm then restore with
         /// progress; unknown -> warning). Shared by the File menu and the
@@ -85,6 +91,9 @@ namespace xplorer::app
         void restoreAllData();
         void getAllSinglePatchesFromSynth();
         void onControlHovered(juce::Component* component); // matrix highlight [RQ-GUI-018]
+        /// Shared by the Patch > Rename menu item and the VFD double-click so
+        /// the two triggers can never diverge in what they do. [RQ-GUI-025]
+        void showRenameDialogForCurrentTone();
 
         // Forwards knob/selector hover to the matrix highlight. A dedicated
         // MouseListener (not MainComponent itself) avoids clashing with the
