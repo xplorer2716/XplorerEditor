@@ -86,6 +86,20 @@ add_custom_command(TARGET XplorerApp POST_BUILD
             "$<TARGET_FILE_DIR:XplorerApp>/oberheim.syx"
     COMMENT "Copying oberheim.syx (default patch for File > New) next to the executable")
 
+# The Software Bill of Materials the About > Dependencies window reads at run
+# time. Shipped as a sibling of the executable rather than embedded, precisely
+# so it can be replaced -- by CI, with GitHub's own dependency-graph SPDX
+# export -- without rebuilding the application. The application never hard-codes
+# a dependency name, version or licence; this file is the only source.
+# The copy is deliberately NOT a build dependency of anything: a build whose
+# SBOM went missing must still produce a working binary, which then reports the
+# absence in its own UI. [RQ-BLD-014, RQ-GUI-057, ADR-ABT-001 (DEC-ABT-002, DEC-ABT-007)]
+add_custom_command(TARGET XplorerApp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/sbom/xplorer.sbom.spdx.json"
+            "$<TARGET_FILE_DIR:XplorerApp>/xplorer.sbom.spdx.json"
+    COMMENT "Copying xplorer.sbom.spdx.json (dependency disclosure) next to the executable")
+
 target_include_directories(XplorerApp PRIVATE src)
 target_compile_definitions(XplorerApp PRIVATE
     JUCE_USE_CURL=0
