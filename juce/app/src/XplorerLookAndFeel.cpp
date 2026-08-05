@@ -321,4 +321,46 @@ namespace xplorer::app
                         box.getHeight() - 2);
         label.setFont(getComboBoxFont(box));
     }
+
+    namespace
+    {
+        // TextEditor::setInputRestrictions rejects each keystroke and pasted
+        // character outside the allowed set as it happens, rather than
+        // parsing whatever was typed afterwards -- so the field can never
+        // show anything but digits, not even transiently. 2 characters caps
+        // it at the model's own 0..99 range (XpanderTone::MAX_PROGRAM_NUMBER).
+        // [RQ-GUI-058]
+        class DigitsOnlyLabel final : public juce::Label
+        {
+        public:
+            DigitsOnlyLabel() : juce::Label({}, {}) {}
+
+            juce::TextEditor* createEditorComponent() override
+            {
+                auto* editor = juce::Label::createEditorComponent();
+                editor->setInputRestrictions(2, "0123456789");
+                return editor;
+            }
+        };
+    }
+
+    juce::Label* XplorerLookAndFeel::createSliderTextBox(juce::Slider& slider)
+    {
+        // Reproduces LookAndFeel_V2::createSliderTextBox's colours/justification
+        // (the app inherits that implementation for every other Slider, since
+        // this is the only one that needs a text box at all -- knobs and the
+        // mod-matrix amount sliders are all NoTextBox) with a digits-only
+        // Label swapped in. [RQ-GUI-058]
+        auto* label = new DigitsOnlyLabel();
+        label->setJustificationType(juce::Justification::centred);
+        label->setKeyboardType(juce::TextInputTarget::decimalKeyboard);
+        label->setColour(juce::Label::textColourId, slider.findColour(juce::Slider::textBoxTextColourId));
+        label->setColour(juce::Label::backgroundColourId, slider.findColour(juce::Slider::textBoxBackgroundColourId));
+        label->setColour(juce::Label::outlineColourId, slider.findColour(juce::Slider::textBoxOutlineColourId));
+        label->setColour(juce::TextEditor::textColourId, slider.findColour(juce::Slider::textBoxTextColourId));
+        label->setColour(juce::TextEditor::backgroundColourId, slider.findColour(juce::Slider::textBoxBackgroundColourId));
+        label->setColour(juce::TextEditor::outlineColourId, slider.findColour(juce::Slider::textBoxOutlineColourId));
+        label->setColour(juce::TextEditor::highlightColourId, slider.findColour(juce::Slider::textBoxHighlightColourId));
+        return label;
+    }
 }
