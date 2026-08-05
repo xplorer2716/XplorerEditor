@@ -35,10 +35,13 @@ namespace xplorer::app
     void showStoreOrGotoDialog(const std::string& title, int currentProgram,
                                std::function<void(int)> onAccept);
 
-    /// Rename dialog with the reference character-set validation.
+    /// Rename dialog: the text field restricts keystrokes/paste to the
+    /// reference patch-name character set and length live, with
+    /// isPatchNameValid() re-checked on accept as a safety net.
     void showRenameDialog(const std::string& currentName, std::function<void(const std::string&)> onAccept);
 
-    /// True when every character is in the reference patch-name character set.
+    /// True when every character is in the reference patch-name character
+    /// set and the name is within the stored patch-name length.
     [[nodiscard]] bool isPatchNameValid(const std::string& name);
 
     void showAboutDialog(const std::string& productNameAndVersion);

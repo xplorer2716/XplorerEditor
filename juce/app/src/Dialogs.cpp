@@ -8,7 +8,9 @@
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
+#include <algorithm>
 #include <memory>
+#include <regex>
 
 namespace xplorer::app
 {
@@ -71,8 +73,8 @@ namespace xplorer::app
                 g.fillAll(juce::Colours::white);
                 if (_image.isValid())
                 {
-                    g.drawImage(_image, 0.0f, 0.0f, static_cast<float>(IMAGE_WIDTH),
-                               static_cast<float>(getHeight()), 0, 0, _image.getWidth(), _image.getHeight());
+                    g.drawImage(_image, 0, 0, IMAGE_WIDTH, getHeight(), 0, 0,
+                               _image.getWidth(), _image.getHeight());
                 }
                 g.setColour(juce::Colours::lightgrey);
                 g.drawLine(static_cast<float>(TEXT_X), SEPARATOR_Y,
@@ -328,25 +330,65 @@ namespace xplorer::app
             false);
     }
 
+    namespace
+    {
+        // Reference RenamePatchForm.Designer.cs (tbxPatchName.MaxLength = 8,
+        // CharacterCasing.Upper) and RenamePatchForm.IsPatchNameValid's
+        // validChars: the XPANDER display only understands this fixed glyph
+        // set in a stored patch name, so it is not a generic-ASCII rule.
+        // Single regex, matched one character at a time, so the live
+        // keystroke filter below and isPatchNameValid() can never drift
+        // apart. [RQ-GUI-025]
+        const std::regex PATCH_NAME_CHAR_PATTERN{"[A-Z0-9<>/+*$ -]"};
+
+        bool isAllowedPatchNameChar(char c)
+        {
+            return std::regex_match(&c, &c + 1, PATCH_NAME_CHAR_PATTERN);
+        }
+
+        /// Live filter for the rename dialog's TextEditor: uppercases and
+        /// strips characters outside PATCH_NAME_CHAR_PATTERN as the user
+        /// types or pastes, and caps the result at the stored patch-name
+        /// length -- mirrors the reference TextBox's CharacterCasing/
+        /// MaxLength instead of only rejecting on submit. [RQ-GUI-025]
+        class PatchNameInputFilter final : public juce::TextEditor::InputFilter
+        {
+        public:
+            juce::String filterNewText(juce::TextEditor& editor, const juce::String& newInput) override
+            {
+                juce::String kept;
+                for (const juce::juce_wchar c : newInput.toUpperCase())
+                {
+                    // Guard against truncating a non-ASCII code point down to
+                    // a byte that happens to collide with an allowed char.
+                    if (c >= 0 && c <= 0x7F && isAllowedPatchNameChar(static_cast<char>(c)))
+                    {
+                        kept += juce::String::charToString(c);
+                    }
+                }
+
+                const auto keptLength = editor.getTotalNumChars() - editor.getHighlightedRegion().getLength();
+                const auto room = juce::jmax(0, model::constants::TONE_NAME_LENGTH - keptLength);
+                return kept.substring(0, room);
+            }
+        };
+    }
+
     bool isPatchNameValid(const std::string& name)
     {
-        static const std::string valid = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789</>+-*$ ";
-        for (const char c : name)
-        {
-            if (valid.find(c) == std::string::npos)
-            {
-                return false;
-            }
-        }
-        return true;
+        return name.size() <= static_cast<std::size_t>(model::constants::TONE_NAME_LENGTH)
+            && std::all_of(name.begin(), name.end(), isAllowedPatchNameChar);
     }
 
     void showRenameDialog(const std::string& currentName, std::function<void(const std::string&)> onAccept)
     {
         auto* window = new juce::AlertWindow("Rename patch",
-                                             "Allowed: A-Z 0-9 < / > + - * $ and space",
+                                             "Allowed: A-Z 0-9 < / > + - * $ and space, max "
+                                                 + juce::String(model::constants::TONE_NAME_LENGTH)
+                                                 + " characters",
                                              juce::MessageBoxIconType::NoIcon);
         window->addTextEditor("Name", juce::String(currentName));
+        window->getTextEditor("Name")->setInputFilter(new PatchNameInputFilter(), true);
         window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
         window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
 
@@ -367,7 +409,7 @@ namespace xplorer::app
                     else
                     {
                         juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon,
-                                                              "Rename patch", "Invalid characters in name.");
+                                                              "Rename patch", "Invalid patch name.");
                     }
                 }),
             false);

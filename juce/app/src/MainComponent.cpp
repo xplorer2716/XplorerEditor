@@ -817,6 +817,27 @@ namespace xplorer::app
         return juce::Component::keyPressed(key);
     }
 
+    void MainComponent::mouseDoubleClick(const juce::MouseEvent& event)
+    {
+        // DisplayPanel opts out of hit-testing (setInterceptsMouseClicks(false,
+        // false)), so a double click over the VFD lands here; _display's
+        // bounds cover bezel and glass alike. [RQ-GUI-025]
+        if (_display.getBounds().contains(event.getPosition()))
+        {
+            showRenameDialogForCurrentTone();
+        }
+    }
+
+    void MainComponent::showRenameDialogForCurrentTone()
+    {
+        showRenameDialog(_controller->toneName(),
+                         [this](const std::string& name)
+                         {
+                             _controller->setToneName(name);
+                             _vfd->showToneInfo();
+                         });
+    }
+
     void MainComponent::menuItemSelected(int menuItemId, int)
     {
         // View menu, handled before the switch because its scale items are a
@@ -894,12 +915,7 @@ namespace xplorer::app
                                       [this](int program) { _controller->storeSinglePatchToSynth(program); });
                 break;
             case 14:
-                showRenameDialog(_controller->toneName(),
-                                 [this](const std::string& name)
-                                 {
-                                     _controller->setToneName(name);
-                                     _vfd->showToneInfo();
-                                 });
+                showRenameDialogForCurrentTone();
                 break;
             case 15:
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
