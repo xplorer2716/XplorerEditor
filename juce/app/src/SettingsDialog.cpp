@@ -29,6 +29,17 @@ namespace xplorer::app
         constexpr int MARGIN = tokens::semantic::layoutMargin;
         constexpr int MIDI_CC_COLUMN_MIN_WIDTH = tokens::semantic::midiCcColumnMinWidth;
 
+        // Shared by every row-caption Label across the MIDI/UI/Randomizer
+        // pages; the matching combo-box and checkbox/radio-caption size is
+        // resolved by XplorerLookAndFeel's dialog-context branch instead, so
+        // a row's label and its control read as one family. Muted hint text
+        // (setupHint) deliberately keeps its own smaller size.
+        // [RQ-GUI-061, ADR-JUC-033 (DEC-JUC-105)]
+        juce::Font dialogControlFont()
+        {
+            return juce::Font{juce::FontOptions{tokens::semantic::textTitle}};
+        }
+
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
         // [RQ-GUI-036, ADR-JUC-012]
@@ -220,6 +231,7 @@ namespace xplorer::app
                 }
                 _automationLabel.setText("MIDI automation table", juce::dontSendNotification);
                 _automationLabel.setJustificationType(juce::Justification::centredLeft);
+                _automationLabel.setFont(dialogControlFont());
                 addAndMakeVisible(_automationLabel);
                 _automationTable.setModel(&_automationModel);
                 // "Parameter" is pinned at LABEL_WIDTH (min==max); "MIDI CC" is
@@ -298,7 +310,7 @@ namespace xplorer::app
                 rows.reserve(_automationModel.rows.size());
                 for (const auto& row : _automationModel.rows)
                 {
-                    rows.emplace_back(row.friendly.toStdString(), controlChangeName(row.cc));
+                    rows.emplace_back(row.friendly.toStdString(), controlChangeDisplayLabel(row.cc));
                 }
                 const auto generatedOn =
                     juce::Time::getCurrentTime().toString(true, true).toStdString();
@@ -342,6 +354,7 @@ namespace xplorer::app
                 label.setText(caption, juce::dontSendNotification);
                 label.attachToComponent(&combo, true);
                 label.setJustificationType(juce::Justification::centredRight);
+                label.setFont(dialogControlFont());
                 addAndMakeVisible(label);
                 addAndMakeVisible(combo);
             }
@@ -371,6 +384,7 @@ namespace xplorer::app
                 label.setText(caption, juce::dontSendNotification);
                 label.attachToComponent(&editor, true);
                 label.setJustificationType(juce::Justification::centredRight);
+                label.setFont(dialogControlFont());
                 editor.setText(value);
                 editor.setInputRestrictions(6, "0123456789");
                 addAndMakeVisible(label);
@@ -422,6 +436,7 @@ namespace xplorer::app
                           "header and instance-selector buttons.");
 
                 _ledLabel.setText("Knob LED colour", juce::dontSendNotification);
+                _ledLabel.setFont(dialogControlFont());
                 addAndMakeVisible(_ledLabel);
                 _ledSwatch.colour = _ledColour;
                 addAndMakeVisible(_ledSwatch);
@@ -434,6 +449,7 @@ namespace xplorer::app
                     const auto& descriptor = blockColourDescriptors()[i];
                     auto& row = _blockRows[i];
                     row.label.setText(descriptor.displayName, juce::dontSendNotification);
+                    row.label.setFont(dialogControlFont());
                     addAndMakeVisible(row.label);
                     row.swatch.colour = _palette.*(descriptor.member);
                     addAndMakeVisible(row.swatch);
@@ -455,15 +471,12 @@ namespace xplorer::app
 
                 setupRadioPair(_movementLabel, "Knob movement", _linear, "Linear", _circular, "Circular",
                                MOVEMENT_GROUP, ui.knobMovementIsLinear);
-                setupRadioPair(_styleLabel, "Knob style", _standard, "Standard", _flat, "Flat", STYLE_GROUP,
-                               ui.knobStyleIsStandard);
             }
 
             void applyTo(settings::AllUsersSettings::UiConfiguration& ui) const
             {
                 ui.knobLedBorderColor = static_cast<int>(_ledColour.getARGB());
                 ui.knobMovementIsLinear = _linear.getToggleState();
-                ui.knobStyleIsStandard = _standard.getToggleState();
 
                 // A block equal to its default stores NO entry, so users who
                 // never customised (or who reset) keep following future palette
@@ -525,16 +538,14 @@ namespace xplorer::app
 
                 // ---- KNOB BEHAVIOUR group.
                 area.removeFromTop(gap);
-                auto knobArea = area.removeFromTop(header + 2 * ROW_HEIGHT + 2 * MARGIN);
+                auto knobArea = area.removeFromTop(header + 1 * ROW_HEIGHT + 2 * MARGIN);
                 _knobGroup.setBounds(knobArea);
                 auto knobInner = knobArea.reduced(MARGIN).withTrimmedTop(header);
                 layoutRadioRow(knobInner, _movementLabel, _linear, _circular);
-                layoutRadioRow(knobInner, _styleLabel, _standard, _flat);
             }
 
         private:
             static constexpr int MOVEMENT_GROUP = 4001;
-            static constexpr int STYLE_GROUP = 4002;
             static constexpr int GRID_COLUMNS = 2;    // block-colour grid, mockup 2x4
             static constexpr int LED_TARGET = -1;     // openColourSelector target: knob LED
             static constexpr int SELECTOR_SIZE = 300; // ColourSelector call-out edge
@@ -639,6 +650,7 @@ namespace xplorer::app
                                 const juce::String& secondText, int group, bool firstSelected)
             {
                 label.setText(caption, juce::dontSendNotification);
+                label.setFont(dialogControlFont());
                 addAndMakeVisible(label);
                 first.setButtonText(firstText);
                 second.setButtonText(secondText);
@@ -666,12 +678,12 @@ namespace xplorer::app
 
             juce::GroupComponent _coloursGroup, _knobGroup;
             juce::Label _unityHint, _blockHint;
-            juce::Label _ledLabel, _movementLabel, _styleLabel;
+            juce::Label _ledLabel, _movementLabel;
             Swatch _ledSwatch;
             juce::TextButton _ledChoose, _resetDefaults;
             std::array<BlockRow, BLOCK_COLOUR_COUNT> _blockRows;
             juce::Rectangle<int> _separator;
-            juce::ToggleButton _linear, _circular, _standard, _flat;
+            juce::ToggleButton _linear, _circular;
         };
 
         // ---- Randomizer page ----------------------------------------------
@@ -698,6 +710,7 @@ namespace xplorer::app
                 _matrixLabel.setText("Matrix random", juce::dontSendNotification);
                 for (auto* label : {&_vco2Label, &_matrixLabel})
                 {
+                    label->setFont(dialogControlFont());
                     addAndMakeVisible(*label);
                 }
 
@@ -781,6 +794,7 @@ namespace xplorer::app
                           const juce::StringArray& items)
             {
                 label.setText(caption, juce::dontSendNotification);
+                label.setFont(dialogControlFont());
                 addAndMakeVisible(label);
                 for (int i = 0; i < items.size(); ++i)
                 {

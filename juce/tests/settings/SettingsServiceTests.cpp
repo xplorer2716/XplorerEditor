@@ -93,7 +93,6 @@ SCENARIO("Settings round-trip through the XML file", "[RQ-SET-001][RQ-SET-002]")
             settings.midiConfig.sysexTransmitDelay = 55;
             settings.midiConfig.synthTypeIsMatrix12 = true;
             settings.midiConfig.automationTable = {"VCF_FREQ;74"};
-            settings.uiConfig.knobStyleIsStandard = true;
             settings.randomizerConfig.vca2Env = EnumRandomVCAEnv::Percusive;
             service.saveSettings(settings);
         }
@@ -109,7 +108,6 @@ SCENARIO("Settings round-trip through the XML file", "[RQ-SET-001][RQ-SET-002]")
                 CHECK(settings.midiConfig.sysexTransmitDelay == 55);
                 CHECK(settings.midiConfig.synthTypeIsMatrix12);
                 CHECK(settings.midiConfig.automationTable == std::vector<std::string>{"VCF_FREQ;74"});
-                CHECK(settings.uiConfig.knobStyleIsStandard);
                 CHECK(settings.randomizerConfig.vca2Env == EnumRandomVCAEnv::Percusive);
             }
         }
