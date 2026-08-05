@@ -82,9 +82,11 @@ namespace xplorer::app
                 int row = -1;
                 explicit CcCombo(AutomationTableModel& owner) : model(owner)
                 {
+                    // Number-first, owner-curated short label — RQ-GUI-059,
+                    // ADR-JUC-012 DEC-JUC-102/103.
                     for (int i = 0; i < controlChangeNameCount(); ++i)
                     {
-                        addItem(controlChangeName(i), i + 1);
+                        addItem(controlChangeDisplayLabel(i), i + 1);
                     }
                     onChange = [this]
                     {

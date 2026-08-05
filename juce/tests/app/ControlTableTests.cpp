@@ -366,3 +366,70 @@ SCENARIO("The MIDI CC automation table parses and names entries", "[RQ-GUI-036]"
         }
     }
 }
+
+SCENARIO("The MIDI automation table's CC column shows a concise, number-first label",
+         "[RQ-GUI-059]")
+{
+    GIVEN("a curated, named CC")
+    {
+        THEN("the short name and display label use the curated form, zero-padded")
+        {
+            CHECK(controlChangeShortName(0) == "Bank Select");
+            CHECK(controlChangeDisplayLabel(0) == "000 - Bank Select");
+            CHECK(controlChangeShortName(1) == "Mod Wheel");
+            CHECK(controlChangeDisplayLabel(1) == "001 - Mod Wheel");
+            CHECK(controlChangeShortName(10) == "Pan");
+            CHECK(controlChangeDisplayLabel(10) == "010 - Pan");
+            CHECK(controlChangeShortName(127) == "Poly On");
+            CHECK(controlChangeDisplayLabel(127) == "127 - Poly On");
+        }
+    }
+
+    GIVEN("a CC whose reference name is literally 'Undefined'")
+    {
+        THEN("its own CC number is appended so the short name is unique standing alone")
+        {
+            CHECK(controlChangeName(3) == "Undefined"); // reference name, unchanged
+            CHECK(controlChangeShortName(3) == "Undefined 3");
+            CHECK(controlChangeDisplayLabel(3) == "003 - Undefined 3");
+            CHECK(controlChangeShortName(20) == "Undefined 20");
+            CHECK(controlChangeShortName(119) == "Undefined 119");
+        }
+    }
+
+    GIVEN("a CC in the LSB mirror range (32-63)")
+    {
+        THEN("its label derives from its MSB counterpart's short name plus '(LSB)'")
+        {
+            CHECK(controlChangeShortName(32) == "Bank Select (LSB)");   // CC0's mirror
+            CHECK(controlChangeShortName(39) == "Volume (LSB)");        // CC7's mirror
+            CHECK(controlChangeDisplayLabel(39) == "039 - Volume (LSB)");
+            // An Undefined base carries its own (base) number, not the LSB index.
+            CHECK(controlChangeShortName(35) == "Undefined 3 (LSB)");
+            CHECK(controlChangeDisplayLabel(35) == "035 - Undefined 3 (LSB)");
+        }
+    }
+
+    GIVEN("the 'Data Entry' family (CC 6/38/96/97)")
+    {
+        THEN("the words 'Data Entry' are kept in full, never a bare '+1'/'-1'")
+        {
+            CHECK(controlChangeShortName(6) == "Data Entry");
+            CHECK(controlChangeShortName(38) == "Data Entry (LSB)");
+            CHECK(controlChangeShortName(96) == "Data Entry +1");
+            CHECK(controlChangeShortName(97) == "Data Entry -1");
+        }
+    }
+
+    GIVEN("the unassigned entry or an out-of-range CC")
+    {
+        THEN("it reads 'None' with no numeric prefix")
+        {
+            CHECK(controlChangeShortName(128) == "None");
+            CHECK(controlChangeDisplayLabel(128) == "None");
+            CHECK(controlChangeShortName(999) == "None");
+            CHECK(controlChangeDisplayLabel(999) == "None");
+            CHECK(controlChangeDisplayLabel(-1) == "None");
+        }
+    }
+}

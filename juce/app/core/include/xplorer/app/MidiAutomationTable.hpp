@@ -30,6 +30,19 @@ namespace xplorer::app
     /// CC number for the "None"/unassigned entry (last index).
     [[nodiscard]] int unassignedControlChange();
 
+    /// Owner-curated short label for a CC (distinct from the reference name):
+    /// CC 32-63 resolve to their MSB counterpart (CC-32) plus " (LSB)"; a
+    /// curated base name that is the literal "Undefined" gets its own CC
+    /// number appended. Out-of-range or unassigned (128) yields "None".
+    /// [RQ-GUI-059, ADR-JUC-012 DEC-JUC-103]
+    [[nodiscard]] std::string controlChangeShortName(int ccNumber);
+
+    /// Automation-table "MIDI CC" column display label: `"<CC, zero-padded 3
+    /// digits> - <short name>"`; the unassigned entry (128) or any
+    /// out-of-range value is the bare word "None", with no numeric prefix.
+    /// [RQ-GUI-059, ADR-JUC-012 DEC-JUC-102]
+    [[nodiscard]] std::string controlChangeDisplayLabel(int ccNumber);
+
     /// Parses a persisted "NAME;CC" entry (split on the last ';'), clamping the
     /// CC to 1..128 as the reference does. nullopt when malformed or CC is not
     /// an integer. [reference SettingsManager.LoadSettings]

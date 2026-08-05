@@ -33,6 +33,33 @@ namespace xplorer::app
             };
             return names;
         }
+
+        // Owner-curated short labels for CC 0-31 and CC 64-127 only; CC 32-63
+        // and any "Undefined" entry are derived mechanically by
+        // controlChangeShortName(). [RQ-GUI-059, ADR-JUC-012 DEC-JUC-103]
+        const std::array<std::string, 96>& ccShortNameBase()
+        {
+            static const std::array<std::string, 96> base = {
+#include "ControlChangeShortNames.inc"
+            };
+            return base;
+        }
+
+        // Index into ccShortNameBase() for CC 0-31 / 64-127; -1 for the
+        // mechanically-derived LSB range 32-63.
+        int shortNameBaseIndex(int ccNumber)
+        {
+            if (ccNumber >= 0 && ccNumber <= 31) { return ccNumber; }
+            if (ccNumber >= 64 && ccNumber <= 127) { return ccNumber - 32; }
+            return -1;
+        }
+
+        std::string zeroPadded3(int n)
+        {
+            std::string s = std::to_string(n);
+            while (s.size() < 3) { s.insert(s.begin(), '0'); }
+            return s;
+        }
     }
 
     int controlChangeNameCount() { return static_cast<int>(ccNames().size()); }
@@ -47,6 +74,33 @@ namespace xplorer::app
             return names.back(); // "None"
         }
         return names[static_cast<std::size_t>(ccNumber)];
+    }
+
+    std::string controlChangeShortName(int ccNumber)
+    {
+        if (ccNumber < 0 || ccNumber >= unassignedControlChange())
+        {
+            return "None";
+        }
+        if (ccNumber >= 32 && ccNumber <= 63)
+        {
+            return controlChangeShortName(ccNumber - 32) + " (LSB)";
+        }
+        const auto& base = ccShortNameBase()[static_cast<std::size_t>(shortNameBaseIndex(ccNumber))];
+        if (base == "Undefined")
+        {
+            return base + " " + std::to_string(ccNumber);
+        }
+        return base;
+    }
+
+    std::string controlChangeDisplayLabel(int ccNumber)
+    {
+        if (ccNumber < 0 || ccNumber >= unassignedControlChange())
+        {
+            return "None";
+        }
+        return zeroPadded3(ccNumber) + " - " + controlChangeShortName(ccNumber);
     }
 
     std::optional<std::pair<std::string, int>> parseAutomationEntry(const std::string& entry)

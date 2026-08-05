@@ -6,8 +6,12 @@ parameter set and CC range mirror the reference exactly). Implemented: CC-name
 extraction, headless parser + load path in `applyMidiSettings`, and the
 `TableListBox` editor on the MIDI settings page.
 
+**Amended 2026-08-05 (session GUI, owner report)** — the "MIDI CC" column's
+reference names are long and unevenly sized; DEC-JUC-102/103 add a curated,
+number-first short-label display for that column only (RQ-GUI-059).
+
 ## Requirements
-RQ-GUI-036, RQ-SET-002, RQ-FMW-032, RQ-FMW-050..052
+RQ-GUI-036, RQ-SET-002, RQ-FMW-032, RQ-FMW-050..052, RQ-GUI-059
 
 ## Context
 The reference lets the user map each tone parameter to a MIDI Continuous
@@ -71,6 +75,42 @@ Three coordinated parts.
    decorative whitespace — per the owner's preference over the reference's
    more spacious layout.
 
+5. **Concise CC labels, editor UI only (amendment 2026-08-05, RQ-GUI-059).**
+   The "MIDI CC" column's combo (both collapsed text and dropdown list) SHALL
+   display `<CC, zero-padded 3 digits> - <short name>` instead of the raw
+   reference string.
+   - **DEC-JUC-102 — Number-first, zero-padded display format, scoped to this
+     column.** `controlChangeDisplayLabel(int ccNumber)` (new, `xpl_app_core`)
+     formats the label; the ASCII hyphen `" - "` is used as the separator (not
+     an en dash) to avoid any source-encoding assumption on a runtime string
+     literal, since no other user-visible string in this codebase embeds a
+     non-ASCII character directly (only comments do). The unassigned entry
+     (index 128, or any out-of-range value) is the bare word "None", never
+     number-prefixed. This format applies **only** to this combo — RQ-GUI-047's
+     main-window combo-box rule and the RQ-GUI-036 HTML export are untouched.
+   - **DEC-JUC-103 — Curated short-name table, mechanically derived where
+     possible, not hand-duplicated.** A new owner-authored array,
+     `ControlChangeShortNames.inc` (96 entries: CC 0-31 and CC 64-127 — the two
+     ranges that are not mechanically derivable), sits beside the existing
+     generated `GeneratedControlChangeNames.inc` — it is **curated, not
+     extracted**, because the .NET reference has no short-name concept to
+     extract in the first place; ADR-JUC-012's "single generated source"
+     discipline governed the *reference* name list specifically and is
+     unaffected. `controlChangeShortName(int ccNumber)` resolves the final
+     short name at call time, not by pre-expanding all 129 entries:
+     - CC 32-63 (the reference's own "LSB for Control N (...)" mirror of CC
+       0-31) recurse into `controlChangeShortName(ccNumber - 32)` and append
+       `" (LSB)"` — so a change to a base short name never needs a matching
+       edit 32 slots away.
+     - Any entry whose curated base name is the literal word "Undefined"
+       (bare, matching the reference) has that CC's own number appended at
+       call time ("Undefined 3", "Undefined 85", "Undefined 3 (LSB)" for CC
+       35) — the curated array never spells out the number itself.
+     - CC 6/38/96/97 ("Data Entry" family) are curated explicitly as "Data
+       Entry", "Data Entry (LSB)", "Data Entry +1", "Data Entry -1" — the
+       owner rejected a bare "Data +1"/"Data -1" as meaningless standing
+       alone.
+
 ## Consequences
 - CC automation actually functions (input CCs move parameters; VFD shows the
   mapped CC) — a latent functional gap closed, independent of the UI.
@@ -78,6 +118,13 @@ Three coordinated parts.
   both come from generated tables, so nothing drifts from the .NET source.
 - One new generated asset; the parse helper and CC-name accessor are
   headless-tested.
+- **(Amendment, RQ-GUI-059)** The automation table's "MIDI CC" column now reads
+  as a short, scannable, self-consistent list instead of the raw reference
+  strings; the curated short-name table is a second small owner-maintained
+  asset alongside the generated one, with the mechanical LSB/Undefined
+  derivation keeping it from growing to a full 129 hand-typed duplicate set.
+  The HTML export and the main-window combo boxes are explicitly out of scope
+  and keep their prior text.
 
 ## Open questions (owner)
 - **Scope of the editable parameter set**: the reference lists exactly the
