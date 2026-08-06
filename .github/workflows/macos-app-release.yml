@@ -23,9 +23,9 @@ name: macos-app-release
 
 on:
   push:
-    paths: ['juce/**', '.github/workflows/macos-app-release.yml']
+    paths: ['juce/**', '.github/workflows/macos-app-release.yml', '.github/actions/alpha-prerelease/**']
   pull_request:
-    paths: ['juce/**', '.github/workflows/macos-app-release.yml']
+    paths: ['juce/**', '.github/workflows/macos-app-release.yml', '.github/actions/alpha-prerelease/**']
 
 permissions:
   contents: write   # required to publish into the main-branch alpha release [RQ-BLD-013]

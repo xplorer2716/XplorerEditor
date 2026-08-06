@@ -28,9 +28,9 @@ name: macos-app-debug
 
 on:
   push:
-    paths: ['juce/**', '.github/workflows/macos-app-debug.yml']
+    paths: ['juce/**', '.github/workflows/macos-app-debug.yml', '.github/actions/alpha-prerelease/**']
   pull_request:
-    paths: ['juce/**', '.github/workflows/macos-app-debug.yml']
+    paths: ['juce/**', '.github/workflows/macos-app-debug.yml', '.github/actions/alpha-prerelease/**']
 
 permissions:
   contents: write   # required to publish into the main-branch alpha release [RQ-BLD-013]
