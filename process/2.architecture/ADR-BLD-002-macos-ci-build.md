@@ -117,7 +117,23 @@ question).
   as negligible for this project's actual commit cadence rather than solved
   with an additional disambiguator the owner did not ask for. (RQ-BLD-013)
 
-## Consequences
+- **DEC-BLD-012 — Each build workflow's `paths:` trigger also watches the
+  shared `alpha-prerelease` action.** Found the hard way: DEC-BLD-011 merged
+  (commit `a540d04`) touching only `.github/actions/alpha-prerelease/action.yml`
+  and `process/**` — neither matches any of the four workflows' `paths:`
+  filter (`juce/**` plus each workflow's own `.yml`), so **none of the four
+  auto-triggered** on that commit. The owner then found windows-app-release
+  showing the new tag (via its `workflow_dispatch`, which builds whatever
+  `main` currently is) while macos-app-release still showed the old one — not
+  a platform-specific bug, but that `macos-app-release`/`macos-app-debug` have
+  no `workflow_dispatch` at all, so the only way to re-run them was GitHub's
+  "Re-run jobs" on the existing `push`-triggered run, which replays its
+  **original** commit (`9a676b6`, pre-fix) rather than building current
+  `main`. `.github/actions/alpha-prerelease/**` is added to all four
+  workflows' `push`/`pull_request` `paths:`, so a future change to the shared
+  publish logic is exercised by CI on every platform automatically, instead of
+  silently waiting for the next unrelated `juce/**` change to happen to carry
+  it along. (RQ-BLD-013)
 
 - **Easier:** a macOS-specific compile error or font-metric regression now
   fails a CI run instead of surfacing only on the owner's machine; the owner
@@ -137,6 +153,10 @@ question).
   instead of `alpha-<count>-<sha>` — a tester can read the build date off the
   tag itself; the exact commit is still one click away via the release, just
   not spelled out in the tag text.
+- **(Amendment, DEC-BLD-012)** A change to `.github/actions/alpha-prerelease/`
+  now builds and publishes on all four platforms in the same push, so the
+  four can no longer drift out of sync the way they did between DEC-BLD-011
+  merging and the owner's next `juce/**` change.
 
 ## Alternatives Considered
 

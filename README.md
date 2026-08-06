@@ -8,20 +8,25 @@
 Xplorer is a real-time and bi-directional software editor for the Oberheim Xpander and Matrix-12 synthesizers.
 
 Xplorer is not just another generic synthesizer editor with ranges of slider controls that are all the same and don't really tell you what you are doing.
-Xplorer was developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix — each functional block of the signal path (VCO, VCF, ENV, LFO, RAMP, LAG, TRACK, Modulation Matrix) is colour-coded so you can read the panel at a glance.
+Xplorer is developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix — each functional block of the signal path (VCO, VCF, ENV, LFO, RAMP, LAG, TRACK, Modulation Matrix) is colour-coded so you can read the panel at a glance.
 
 With Xplorer you can tweak the sound simultaneously using a computer mouse, a hardware MIDI controller, your DAW software, or directly on your Xpander or Matrix-12. Use the method you prefer to change the sound. Xplorer's display shows you in real-time which parameter is currently being modified.
 
 "Real-time and bi-directional" means that every change you make in Xplorer is reflected into the synthesizer memory with minimal latency, and vice-versa. Whether you change the sound parameters on the synthesizer, in Xplorer, or with a MIDI controller, the software and the synthesizer will simultaneously update the parameters of the sound, without needing to reload the patch into the synthesizer memory.
 
+The main goal of Xplorer is to explore the sound capabilities of these wonderful synths (hence the name). More to come in the next releases...
+
 ## Status
 
-Xplorer is being migrated from its original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation. The JUCE port is the active development effort and lives under [juce](juce). Most features are already available; if you want to test it before the official release, compile it from the `main` branch source code — on Windows, run [make-windows-local-release-no-tests](make-windows-local-release-no-tests) (CMake + MSVC), or configure the [juce](juce) CMake project directly on any platform.
+Xplorer is being migrated from its original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation. The JUCE port is the active development effort and lives under [juce](juce). Migration is almost complete. Current activities are related to polish the user interface details (yes, the Vacuum Fluorescent Display was digitally cleaned with a cloth and isopropyl alcohol)
 
 - **Alpha preview available**: the latest JUCE development version for Windows and macOS is available as an alpha preview in the releases stream: https://github.com/xplorer2716/XplorerEditor/releases
-- **Latest official (.NET) release**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/latest) — the next official release (JUCE-based) will be published in the same releases stream
 
-- **Legacy .NET source code**: archived at [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
+- **Compile from sources**: if you want to test the latest source code before the official release, compile it from the `main` branch source code — on Windows, run [make-windows-local-release-no-tests](make-windows-local-release-no-tests) (CMake + MSVC), or configure the [juce](juce) CMake project directly on any platform.
+
+- **Latest official legacy release (.NET)**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/latest) — the next official release (JUCE-based) will be published in the same releases stream
+
+- **Latest official legacy source code (.NET)**: archived at [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
 
 
 ## Main features
@@ -71,7 +76,7 @@ This port also aims to demonstrate the integration of AI software development ag
 
 ## Credits
 
-- C# MIDI Toolkit by Leslie Sanford (original source code: https://www.codeproject.com/Articles/6228/C-MIDI-Toolkit) — used by the archived .NET implementation
+- Segmented LED Display - ASCII Library https://github.com/dmadison/led-segment-ascii
 
 ## License
 
@@ -80,5 +85,5 @@ See [LICENSE](LICENSE).
 
 ## Links
 
-- website: http://xplorer.programmer.free.fr
-- former forum: http://xplorer.programmer.free.fr/bb/
+- website: https://xplorer2716.github.io/XplorerEditor.site/
+

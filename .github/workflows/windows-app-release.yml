@@ -22,9 +22,9 @@ name: windows-app-release
 
 on:
   push:
-    paths: ['juce/**', '.github/workflows/windows-app-release.yml']
+    paths: ['juce/**', '.github/workflows/windows-app-release.yml', '.github/actions/alpha-prerelease/**']
   pull_request:
-    paths: ['juce/**', '.github/workflows/windows-app-release.yml']
+    paths: ['juce/**', '.github/workflows/windows-app-release.yml', '.github/actions/alpha-prerelease/**']
   workflow_dispatch:
     inputs:
       run_tests:
