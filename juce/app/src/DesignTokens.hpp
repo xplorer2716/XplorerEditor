@@ -104,6 +104,9 @@ namespace xplorer::app::tokens
         inline const juce::Colour blockRamp = juce::Colour(0xFF37A9A3);  // RAMP (v2)
         inline const juce::Colour blockMatrix = juce::Colour(0xFF6579EE);  // modulation matrix — Oberheim-signature blue (v2, L0.62/C0.175/H273)
         inline constexpr float sectionBarFadeEnd = 0.35F;  // section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)
+        inline constexpr float sectionBarHeight = 4.5F;  // section separator bar thickness. Was a bare constant in BackgroundRenderer.cpp and a literal in the mockup generator; promoted to a token by RQ-GUI-062, which made it load-bearing for the header's vertical layout (the label baseline now sits on the bar's bottom edge, so this value positions the text as well as sizing the bar)
+        inline constexpr int sectionLabelGap = 8;  // blank plate on EACH side of a section label, separating it from the lead-in stub before it and the rule after it. RQ-GUI-062
+        inline constexpr int sectionLeadStub = 16;  // short rule drawn BEFORE a section label, so the separator reads as running into the label the way the Xpander's silkscreen does rather than starting after it (owner request). ~1.5 average cap advances at textTitle (0.70em x 15 + 0.5 letter-spacing = 11px). ONE fixed length for every section, not 1.5 of each label's own characters: a per-label stub would leave each section starting at a different x and break the column's left alignment. RQ-GUI-062
         inline constexpr float blockFillAlpha = 0.3F;  // tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule.
         inline constexpr float blockFrameRelief = 0.2F;  // block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094
         inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
@@ -230,6 +233,9 @@ namespace xplorer::app::tokens
         inline constexpr float knobTrackAlpha = global::knobTrackAlpha;  // controlTrack.withAlpha(a)
         inline constexpr float disabledAlpha = global::disabledAlpha;  // shared control disabled treatment, ADR-JUC-017
         inline constexpr float sectionBarFadeEnd = global::sectionBarFadeEnd;  // block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092
+        inline constexpr float sectionBarHeight = global::sectionBarHeight;  // section separator bar thickness AND the label's baseline offset below the bar's top edge — the two are the same number because label and bar are bottom-aligned, RQ-GUI-062
+        inline constexpr int sectionLabelGap = global::sectionLabelGap;  // gap on each side of a section label, RQ-GUI-062
+        inline constexpr int sectionLeadStub = global::sectionLeadStub;  // lead-in rule drawn before a section label (silkscreen treatment), RQ-GUI-062
         inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
         inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
         inline constexpr int indicatorSize = global::indicatorSize;  // MIDI LED lamp diameter, RQ-GUI-056

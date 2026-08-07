@@ -383,6 +383,43 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     it. *Given* any non-combo text, *When* it renders, *Then* it uses the host
     font, unchanged.
 
+- **RQ-DSN-101** — **The section-separator header SHALL have its own geometry
+  token group.** RQ-GUI-062 turns the section header from "label above a rule"
+  into "one rule interrupted by its label", which introduces three geometry
+  values the design system did not name. All three SHALL be tokens, consumed by
+  the painter **and** by the mockup generator (RQ-DSN-063, ADR-JUC-013), so the
+  prototype and the shipped panel cannot diverge on one:
+  - `sectionBarHeight` — the label's **baseline offset below the rule's top
+    edge**. This value already existed as a bare constant in the painter and a
+    literal in the generator; RQ-GUI-062 makes it load-bearing (it positions the
+    text, not only the rule), which is what earns it a token. *It is no longer
+    the rule's thickness* — see the next clause.
+  - `sectionLabelGap` — the blank plate on **each** side of the label,
+    separating it from the lead-in stub before it and the run after it.
+  - `sectionLeadStub` — the length of the lead-in stub. One fixed length for
+    every section, so all eight rules start at their section's x.
+  - **The rule's thickness is deliberately NOT a token.** It is the cap height of
+    the section typeface, and it SHALL be *measured from that typeface at paint
+    time* rather than stored: a stored number is a second source of truth that a
+    font or size change silently invalidates, and the failure mode is a rule that
+    no longer matches its label. This is the same reasoning that keeps combo-box
+    label widths measured rather than tabulated (RQ-DSN-096). A published-metric
+    ratio MAY stand in where no font engine is available — the SVG mockup — and
+    that substitution SHALL be noted at the site.
+  **Dependencies:** RQ-GUI-062, RQ-GUI-037, RQ-GUI-044; RQ-DSN-021, RQ-DSN-060,
+  RQ-DSN-061, RQ-DSN-063, RQ-DSN-092, RQ-DSN-096; ADR-JUC-013, ADR-JUC-014,
+  ADR-JUC-015, ADR-JUC-034.
+  - **Acceptance (Gherkin):** *Given* `design-tokens.yaml`, *When* the generator
+    runs, *Then* `sectionBarHeight`, `sectionLabelGap` and `sectionLeadStub` all
+    resolve in both the `global` and `component` tiers and `--check` reports the
+    generated header in sync. *Given* the painter and the mockup generator,
+    *When* both are read, *Then* each of the three values is read from the token
+    module and appears as a literal in neither. *Given* the painter, *When* it is
+    searched for a stored rule thickness, *Then* there is none and the thickness
+    comes from a font measurement. *Given* the section text size is changed in
+    the tokens, *When* the panel repaints, *Then* the rule thickness follows it
+    with no other edit.
+
 ### 2.2 Typography
 
 Nine distinct, independently-chosen sizes exist today, all in

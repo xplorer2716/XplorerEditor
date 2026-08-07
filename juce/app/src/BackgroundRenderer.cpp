@@ -71,14 +71,44 @@ namespace xplorer::app
         constexpr float FS_SMALL = tokens::semantic::textDense;      // DESTINATION / TRIGGER IN / NOISE
 
         constexpr int SECTION_BAR_WIDTH = 370;
-        constexpr float SECTION_BAR_HEIGHT = 4.5F;
-        constexpr int SECTION_TITLE_RISE = 7;    // title baseline above the bar
+        // MOD MATRIX only: its rule ends on the quantize check-box column's right
+        // edge (control-table MOD_QUANTIZE_n x=1206 + width=12 = 1218, less the
+        // section's x=958) instead of overrunning it.
+        // [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-110)]
+        constexpr int MATRIX_SECTION_BAR_WIDTH = 260;
+        // The label's baseline offset below the rule's top edge: label and rule
+        // are bottom-aligned. NOT the rule's thickness — that is the measured
+        // cap height, see capHeight(). No SECTION_TITLE_RISE any more: the label
+        // no longer sits above the rule. [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-107)]
+        constexpr float SECTION_BAR_HEIGHT = tokens::component::sectionBarHeight;
+        constexpr int SECTION_LABEL_GAP = tokens::component::sectionLabelGap;
+        constexpr int SECTION_LEAD_STUB = tokens::component::sectionLeadStub;
 
         juce::Font makeFont(float size, bool bold)
         {
             juce::Font f{juce::FontOptions{size}};
             f.setBold(bold);
             return f;
+        }
+
+        // Cap height of a font, from the OUTLINE bounds of a reference capital.
+        // juce::Font exposes no cap-height metric, and a GlyphArrangement's
+        // bounding box is no substitute: PositionedGlyph::getBounds() reports
+        // the font's full line box (`font.getHeight()`, ascent + descent), which
+        // is what first made the section rule visibly taller than the label in
+        // front of it. 'H' is flat-topped at the cap height and sits on the
+        // baseline, so its outline height IS the cap height. Measuring one fixed
+        // reference glyph — rather than each label's own ink — also keeps every
+        // section rule the same height, instead of varying with whether a label
+        // happens to contain a '/' or a digit.
+        // [RQ-GUI-062, RQ-DSN-101, ADR-JUC-034 (DEC-JUC-109)]
+        float capHeight(const juce::Font& f)
+        {
+            juce::GlyphArrangement reference;
+            reference.addLineOfText(f, "H", 0.0F, 0.0F);
+            juce::Path outline;
+            reference.createPath(outline);
+            return outline.getBounds().getHeight();
         }
     }
 
@@ -239,22 +269,56 @@ namespace xplorer::app
         {
             text(x, y, s, FS_CAPTION, false, CAPTION, juce::Justification::horizontallyCentred);
         };
-        // Section header: label + underline bar, both in the owning block's hue —
+        // Section header: label + separator bar, both in the owning block's hue —
         // replacing the single blue gradient formerly shared by every section.
         // Flat bar with a left-to-right fade (bright at the label end), no
         // vertical shading. [RQ-GUI-037, RQ-GUI-044, ADR-JUC-018 (DEC-JUC-027)]
+        //
+        // The label sits ON the rule, not above it: the rule keeps its right end
+        // but is INTERRUPTED by the label instead of running under it, and the
+        // two are aligned on their BOTTOM edges (the labels are all caps, so the
+        // baseline is the bottom of the letters). That frees ~11 px of header
+        // height per section without moving anything else, and is why the label
+        // must be measured — the stacked layout never needed its width.
+        //
+        // Left to right: a short lead-in stub, a gap, the label, a gap, then the
+        // rest of the rule out to its unchanged right end — the Xpander's own
+        // silkscreen treatment, where the rule runs into the section name rather
+        // than starting after it. The rule is as tall as the label's capitals,
+        // so it reads as a band level with the letters, not an underline.
+        // [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-107)]
         const auto section = [&](int x, int y, const juce::String& s, const juce::Colour& block,
                                  int barWidth = SECTION_BAR_WIDTH)
         {
-            text(x, y - SECTION_TITLE_RISE, s, FS_SECTION, true, block, juce::Justification::left);
-            textLayer.push_back([&g, x, y, barWidth, block]
+            const auto baselineY = y + static_cast<int>(SECTION_BAR_HEIGHT);
+            const auto labelFont = makeFont(FS_SECTION, true);
+            // Width: GlyphArrangement, not the deprecated Font::getStringWidthFloat.
+            // Height: capHeight(), NOT this arrangement's bounding box — see capHeight().
+            const auto labelX = static_cast<float>(x + SECTION_LEAD_STUB + SECTION_LABEL_GAP);
+            const auto barX = labelX + juce::GlyphArrangement::getStringWidth(labelFont, s)
+                              + SECTION_LABEL_GAP;
+            const auto barEnd = static_cast<float>(x + barWidth);
+            const auto barHeight = capHeight(labelFont);
+            const auto barY = static_cast<float>(baselineY) - barHeight;
+
+            text(static_cast<int>(labelX), baselineY, s, FS_SECTION, true, block,
+                 juce::Justification::left);
+            textLayer.push_back([&g, x, barX, barEnd, barY, barHeight, block]
             {
-                juce::ColourGradient bar{block, static_cast<float>(x), static_cast<float>(y),
+                // Lead-in stub: flat block hue at full opacity, the same colour as
+                // the label and as the first pixel of the run after it, so the
+                // three read as one interrupted rule. Only the run AFTER the
+                // label carries the fade.
+                // [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108)]
+                g.setColour(block);
+                g.fillRect(static_cast<float>(x), barY,
+                           static_cast<float>(SECTION_LEAD_STUB), barHeight);
+
+                juce::ColourGradient bar{block, barX, barY,
                                          block.withAlpha(tokens::component::sectionBarFadeEnd),
-                                         static_cast<float>(x + barWidth), static_cast<float>(y), false};
+                                         barEnd, barY, false};
                 g.setGradientFill(bar);
-                g.fillRect(static_cast<float>(x), static_cast<float>(y),
-                           static_cast<float>(barWidth), SECTION_BAR_HEIGHT);
+                g.fillRect(barX, barY, barEnd - barX, barHeight);
             });
         };
         const auto outLabel = [&](int x, int y, const juce::String& l1, const juce::String& l2)
@@ -516,7 +580,11 @@ namespace xplorer::app
         section(527, 799, "RAMP X", BLK_RAMP);
 
         // ================================================= RIGHT =============
-        section(958, 799, "MODULATION MATRIX", BLK_MATRIX, 268);
+        // "MOD MATRIX", not "MODULATION MATRIX": at 17 characters the full name
+        // was twice the length of every other section label, and with the bar
+        // now starting after the label it left this section almost no bar at
+        // all. [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108)]
+        section(958, 799, "MOD MATRIX", BLK_MATRIX, MATRIX_SECTION_BAR_WIDTH);
 
         // Nothing above has painted yet: replay the layers in paint order, so a
         // signal line can never land on the block it runs into.

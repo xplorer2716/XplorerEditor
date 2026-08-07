@@ -153,6 +153,9 @@ tiers:
     blockRamp:   { kind: colour, hex: "37A9A3", note: "RAMP (v2)" }
     blockMatrix: { kind: colour, hex: "6579EE", note: "modulation matrix — Oberheim-signature blue (v2, L0.62/C0.175/H273)" }
     sectionBarFadeEnd: { kind: float, value: 0.35, note: "section-bar opacity at the far end; 1.0 at the label end (RQ-GUI-037 'bright at the label end' preserved with the block hue)" }
+    sectionBarHeight:  { kind: float, value: 4.5,  note: "section separator bar thickness. Was a bare constant in BackgroundRenderer.cpp and a literal in the mockup generator; promoted to a token by RQ-GUI-062, which made it load-bearing for the header's vertical layout (the label baseline now sits on the bar's bottom edge, so this value positions the text as well as sizing the bar)" }
+    sectionLabelGap:   { kind: int,   value: 8,    note: "blank plate on EACH side of a section label, separating it from the lead-in stub before it and the rule after it. RQ-GUI-062" }
+    sectionLeadStub:   { kind: int,   value: 16,   note: "short rule drawn BEFORE a section label, so the separator reads as running into the label the way the Xpander's silkscreen does rather than starting after it (owner request). ~1.5 average cap advances at textTitle (0.70em x 15 + 0.5 letter-spacing = 11px). ONE fixed length for every section, not 1.5 of each label's own characters: a per-label stub would leave each section starting at a different x and break the column's left alignment. RQ-GUI-062" }
     blockFillAlpha:    { kind: float, value: 0.30, note: "tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule." }
     blockFrameRelief:  { kind: float, value: 0.2,  note: "block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094" }
 
@@ -340,6 +343,9 @@ tiers:
     knobTrackAlpha:        { alias: global.knobTrackAlpha,     note: "controlTrack.withAlpha(a)" }
     disabledAlpha:         { alias: global.disabledAlpha,      note: "shared control disabled treatment, ADR-JUC-017" }
     sectionBarFadeEnd:     { alias: global.sectionBarFadeEnd,  note: "block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092" }
+    sectionBarHeight:      { alias: global.sectionBarHeight,   note: "section separator bar thickness AND the label's baseline offset below the bar's top edge — the two are the same number because label and bar are bottom-aligned, RQ-GUI-062" }
+    sectionLabelGap:       { alias: global.sectionLabelGap,    note: "gap on each side of a section label, RQ-GUI-062" }
+    sectionLeadStub:       { alias: global.sectionLeadStub,    note: "lead-in rule drawn before a section label (silkscreen treatment), RQ-GUI-062" }
     blockFillAlpha:        { alias: global.blockFillAlpha,     note: "blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094" }
     blockFrameRelief:      { alias: global.blockFrameRelief,   note: "blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094" }
 
