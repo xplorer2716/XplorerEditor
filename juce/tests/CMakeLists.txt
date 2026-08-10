@@ -85,6 +85,11 @@ if(XPL_BUILD_APP)
         app/ComboBoxRealMetricsTests.cpp
         app/VfdSegmentRendererTests.cpp
         app/BackgroundRendererTests.cpp
+        # Section vertical rhythm. Reads DesignTokens.hpp (hence this
+        # JUCE-linked target rather than the headless one) but instantiates no
+        # juce::Graphics: it asserts layout constants against the control table.
+        # [RQ-CLR-010, ADR-CLR-001 (DEC-CLR-001-D)]
+        app/SectionRhythmTests.cpp
         app/BoundRadioGroupTests.cpp
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp

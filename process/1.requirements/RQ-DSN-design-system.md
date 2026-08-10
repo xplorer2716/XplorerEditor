@@ -477,6 +477,16 @@ silently merged — owner confirms before migration):
   ButtonGap/Margin`). Two content-driven sizes (`dialogRowHeight`=28,
   `dialogLabelWidth`=150) stay outside the spacing scale — they size to
   content/comfort, not a grid step. Owner-approved base unit and scale.
+- **Canvas section rhythm** *(added RQ-CLR-001..002 / ADR-CLR-001, 2026-08-10)*:
+  the audit above deliberately left the main-canvas layout out of scope, because
+  `BackgroundRenderer`/control-table coordinates were mechanically derived from
+  the .NET reference and were not ours to retune. That premise no longer holds —
+  `GeneratedControlTable.inc` is now an autonomous hand-maintained source — so
+  the section separator's vertical rhythm enters the token set as
+  `sectionGapAbove` = 16 and `sectionGapBelowMin` = 20, both on the 4px base
+  unit. Absolute element positions in the two layout files remain literals; only
+  these two *relations* are tokens. This is the exception that narrows
+  `DEC-JUC-014-C`.
 
 ### 2.4 Geometry
 

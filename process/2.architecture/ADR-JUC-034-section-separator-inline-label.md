@@ -4,6 +4,14 @@
 Accepted (owner, session GUI, 2026-08-08). Implemented: DEC-JUC-107, DEC-JUC-108,
 DEC-JUC-109, DEC-JUC-110.
 
+**Extended (not superseded) 2026-08-10 by ADR-CLR-001.** This ADR decides what a
+separator *looks like* and how its parts align to each other. It does not decide
+*where the separator sits vertically* relative to the blocks around it —
+ADR-CLR-001 does, via `tokens::component::sectionGapAbove`. The two are
+complementary: DEC-JUC-107's "the label names the section that just ended" is
+precisely the premise RQ-CLR-001 turns into a measurable placement rule. Nothing
+in DEC-JUC-107..110 changes.
+
 <!-- Motivated by RQ-GUI-062 (section separator drawn as an interrupted rule) and
 RQ-DSN-101 (its token group). Builds on ADR-JUC-013 (mockup-first vector
 background pipeline), ADR-JUC-014 (token module) and ADR-JUC-018 (block-identity
