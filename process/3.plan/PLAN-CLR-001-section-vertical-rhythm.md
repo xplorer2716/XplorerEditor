@@ -152,7 +152,8 @@ frame is canvas coordinates; `BackgroundRenderer.cpp` is offset by
 ---
 
 ## Out of scope
-The right column's button mockup (`CLR-mockup/boutons.jpg`,
-`CLR-mockup/boutons2.JPG`) — owner deferred it to a later session. The mockup's
+The right column's button mockup — owner deferred it to a later session (taken
+up under trigram GUI). Its images lived in `CLR-mockup/`, deleted at the owner's
+request as temporary working material. The layout mockup's
 flattened background is an artefact of the owner's image edit; the original
 gradient is kept (owner confirmation, 2026-08-10).

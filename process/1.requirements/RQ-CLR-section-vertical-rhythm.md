@@ -10,10 +10,18 @@ already specified by RQ-GUI-062 and decided by ADR-JUC-034. This file
 specifies only **where it sits vertically**, and how the surrounding blocks are
 distributed to make that placement possible.
 
-Origin: owner-supplied mockup `CLR-mockup/xplorer-clear.jpg`, measured against
-`CLR-mockup/xplorer-feature-gui.JPG` (the state before this change). Both
-screenshots were calibrated to canvas coordinates via the 20 modulation-matrix
-source combos, whose positions are fixed and known; residual 0.33 canvas px.
+Origin: an owner-supplied mockup, measured against a screenshot of the state
+before this change. Both were calibrated to canvas coordinates via the 20
+modulation-matrix source combos, whose positions are fixed and known; residual
+0.33 canvas px.
+
+The two images lived in `CLR-mockup/` and were **deleted at the owner's request
+(2026-08-10) as temporary working material**, with the loss of provenance
+accepted. What they established is preserved in the measurements recorded
+throughout this file and in ADR-CLR-001's Context: the pre-change gaps
+(17–43 px above each bar against 9–11 below), the mockup's own normalised
+above-gap (17–25, median 20), and the budget calculation that set
+`sectionGapAbove` to 16. Those numbers, not the images, are the audit trail.
 
 ---
 
