@@ -63,6 +63,13 @@ namespace xplorer::app
         /// Draw calls below are authored in the REFERENCE frame; SectionLayout.hpp
         /// states the section-bottom references in the CANVAS frame (that is the
         /// frame the control table and the rhythm rule live in). [RQ-CLR-001]
+        ///
+        /// Feeding this to box(), whose parameters are float, needs an explicit
+        /// static_cast at the call site. Every other box() call passes int
+        /// LITERALS, which MSVC converts silently; an int-typed EXPRESSION does not
+        /// get that pass and raises C4244, which /WX turns into an error. Keep the
+        /// casts — GCC and Clang accept the call without them, so a "cleanup" that
+        /// drops them builds fine on Linux/macOS and breaks the Windows job.
         constexpr int refY(int canvasY) noexcept { return canvasY + layout::CANVAS_TOP_CROP; }
 
         // ---- font sizes: from the shared type scale (RQ-DSN-010). Every value
@@ -477,7 +484,7 @@ namespace xplorer::app
 
         // --- LAG   (whole group +13 canvas px, RQ-CLR-004: equalises this column's
         //            two below-separator gaps at 45 and 46 px)
-        box(81, refY(layout::LAG_FRAME_TOP_CANVAS_Y), 268, 36, &BLK_LAG);
+        box(81, static_cast<float>(refY(layout::LAG_FRAME_TOP_CANVAS_Y)), 268, 36, &BLK_LAG);
         blockTitle(215, 537, "LAG", FS_MIX);
         outLabel(349, 531, "LAG", "OUT");
         line(52, 531, 81, 531);
@@ -595,8 +602,8 @@ namespace xplorer::app
         smallLabel(508, 789, "IN");
         stub(657, 684);
         caption(657, 738, "RATE");
-        box(524, refY(layout::RAMP_TRIGGER_FRAME_TOP_CANVAS_Y), 374,
-            layout::RAMP_TRIGGER_FRAME_HEIGHT);
+        box(524, static_cast<float>(refY(layout::RAMP_TRIGGER_FRAME_TOP_CANVAS_Y)), 374,
+            static_cast<float>(layout::RAMP_TRIGGER_FRAME_HEIGHT));
         section(527, layout::SECTION_RAMP_Y, "RAMP X", BLK_RAMP);
 
         // ================================================= RIGHT =============
