@@ -46,9 +46,9 @@ namespace xplorer::app::layout
     inline constexpr int SECTION_VCO_Y = 465;    // VCO1/VCO2/FM  [TASK-CLR-001]
     inline constexpr int SECTION_LAG_Y = 615;    // LAG           [TASK-CLR-001]
     inline constexpr int SECTION_TRACK_Y = 799;  // TRACK X       pinned, RQ-CLR-003
-    inline constexpr int SECTION_VCF_Y = 194;    // VCF/VCA       [TASK-CLR-002]
-    inline constexpr int SECTION_ENV_Y = 416;    // ENV X         [TASK-CLR-002]
-    inline constexpr int SECTION_LFO_Y = 597;    // LFO X         [TASK-CLR-002]
+    inline constexpr int SECTION_VCF_Y = 182;    // VCF/VCA       [TASK-CLR-002]
+    inline constexpr int SECTION_ENV_Y = 415;    // ENV X         [TASK-CLR-002]
+    inline constexpr int SECTION_LFO_Y = 599;    // LFO X         [TASK-CLR-002]
     inline constexpr int SECTION_RAMP_Y = 799;   // RAMP X        pinned, RQ-CLR-003
     inline constexpr int SECTION_MATRIX_Y = 799; // MOD MATRIX    pinned, RQ-CLR-003
 
@@ -73,7 +73,13 @@ namespace xplorer::app::layout
     /// TRACK's "PT n" caption baselines, likewise below the PT knobs.
     inline constexpr int TRACK_PT_CAPTION_BASELINE_CANVAS_Y = 760;
 
-    /// RAMP's TRIGGER frame bottom edge: box(524, 734, 374, 41) in reference
-    /// coords, so 734 - 27 + 41. Lower than any RAMP_X_TRIG_* control inside it.
-    inline constexpr int RAMP_TRIGGER_FRAME_BOTTOM_CANVAS_Y = 748;
+    /// RAMP's TRIGGER frame, which closes the RAMP section: lower than any
+    /// RAMP_X_TRIG_* control inside it. The block's "TRIGGER IN" label reaches
+    /// two px lower still (baseline 750 before TASK-CLR-002 moved the group) but
+    /// sits at x=508, in the gutter left of a bar that starts at x=527, so
+    /// RQ-CLR-001 excludes it — the rhythm is scoped to the bar's own span.
+    inline constexpr int RAMP_TRIGGER_FRAME_TOP_CANVAS_Y = 719;
+    inline constexpr int RAMP_TRIGGER_FRAME_HEIGHT = 41;
+    inline constexpr int RAMP_TRIGGER_FRAME_BOTTOM_CANVAS_Y =
+        RAMP_TRIGGER_FRAME_TOP_CANVAS_Y + RAMP_TRIGGER_FRAME_HEIGHT;
 }

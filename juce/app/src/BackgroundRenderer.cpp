@@ -564,38 +564,39 @@ namespace xplorer::app
         section(526, layout::SECTION_ENV_Y, "ENV X", BLK_ENV);
 
         // --- LFO
-        box(524, 467, 269, 26, &BLK_LFO);
-        blockTitle(658, 485, "LFO", FS_MIX);
-        box(804, 467, 63, 26, &BLK_LFO);
-        blockTitle(835, 485, "VCA", FS_VCA);
-        line(793, 480, 804, 480);
-        outLabel(867, 480, "LFO", "OUT");
+        box(524, 475, 269, 26, &BLK_LFO);
+        blockTitle(658, 493, "LFO", FS_MIX);
+        box(804, 475, 63, 26, &BLK_LFO);
+        blockTitle(835, 493, "VCA", FS_VCA);
+        line(793, 488, 804, 488);
+        outLabel(867, 488, "LFO", "OUT");
         {
             // SPEED/RETRIG/AMP knob centres (table); 657 = WAVESHAPE combo centre.
             const int centres[] = {546, 657, 759, 834};
             for (int cx : centres)
             {
-                stub(cx, 493);
+                stub(cx, 501);
             }
         }
-        caption(546, 546, "SPEED");
-        caption(657, 546, "WAVESHAPE");
-        caption(759, 546, "RETRIG");
-        caption(834, 546, "AMPLITUDE");
+        caption(546, 554, "SPEED");
+        caption(657, 554, "WAVESHAPE");
+        caption(759, 554, "RETRIG");
+        caption(834, 554, "AMPLITUDE");
         section(527, layout::SECTION_LFO_Y, "LFO X", BLK_LFO);
 
         // --- RAMP
-        box(524, 646, 266, 26, &BLK_RAMP);
-        blockTitle(656, 664, "RAMP", FS_MIX);
-        outLabel(790, 659, "RAMP", "OUT");
-        line(514, 659, 524, 659);
-        line(514, 659, 514, 758);
-        line(514, 758, 524, 758);
-        smallLabel(508, 767, "TRIGGER");
-        smallLabel(508, 777, "IN");
-        stub(657, 672);
-        caption(657, 726, "RATE");
-        box(524, 734, 374, 41);
+        box(524, 658, 266, 26, &BLK_RAMP);
+        blockTitle(656, 676, "RAMP", FS_MIX);
+        outLabel(790, 671, "RAMP", "OUT");
+        line(514, 671, 524, 671);
+        line(514, 671, 514, 770);
+        line(514, 770, 524, 770);
+        smallLabel(508, 779, "TRIGGER");
+        smallLabel(508, 789, "IN");
+        stub(657, 684);
+        caption(657, 738, "RATE");
+        box(524, refY(layout::RAMP_TRIGGER_FRAME_TOP_CANVAS_Y), 374,
+            layout::RAMP_TRIGGER_FRAME_HEIGHT);
         section(527, layout::SECTION_RAMP_Y, "RAMP X", BLK_RAMP);
 
         // ================================================= RIGHT =============

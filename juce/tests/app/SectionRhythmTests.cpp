@@ -225,16 +225,13 @@ SCENARIO("The canvas floor is fixed", "[RQ-CLR-003][TASK-CLR-001]")
     }
 }
 
-// ---------------------------------------------------------------------------
-// The centre column is TASK-CLR-002. Hidden (leading '.') so the suite stays
-// green between the two tasks: these assertions describe the column's target
-// state, and they fail today by construction — VCF/VCA still clears its MOD row
-// by 28 px, not 16. Run them on demand with `xpl_tests_app_juce "[TASK-CLR-002]"`
-// to watch the column converge; the tag is removed when the task lands.
-// ---------------------------------------------------------------------------
+// The centre column is the tight one: 633 px between the VCF group's bottom and
+// the RAMP X baseline, of which the ENV, LFO and RAMP groups take 508. That is
+// what fixed sectionGapAbove at 16 — see ADR-CLR-001 (DEC-CLR-001-B) — so these
+// four sections are where a later retune breaks first.
 
 SCENARIO("The centre column follows the same rhythm",
-         "[.][TASK-CLR-002][RQ-CLR-001][RQ-CLR-002]")
+         "[RQ-CLR-001][RQ-CLR-002][TASK-CLR-002]")
 {
     GIVEN("its four sections")
     {

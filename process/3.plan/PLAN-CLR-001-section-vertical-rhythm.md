@@ -68,17 +68,31 @@ frame is canvas coordinates; `BackgroundRenderer.cpp` is offset by
 
 ### TASK-CLR-002: Centre column
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-10)
 - **Description**: Apply the computed displacements to the centre column
   (VCF / ENV / LFO / RAMP) in both layout files, so the whole canvas satisfies
   the rhythm.
 - **Requirement refs**: RQ-CLR-001, RQ-CLR-002, RQ-CLR-003, RQ-CLR-004, RQ-CLR-005
 - **ADR refs**: ADR-CLR-001 (DEC-CLR-001-B, DEC-CLR-001-C)
 - **Design-system refs**: RQ-DSN-020, RQ-GUI-062, ADR-JUC-034
-- **Displacements** (canvas px):
-  - VCF group `0` · `VCF/VCA` bar `194 → 182` · ENV group `−1` · `ENV X` bar `416 → 414`
+- **Displacements** (canvas px, as built):
+  - VCF group `0` · `VCF/VCA` bar `194 → 182` · **ENV group `0`** · `ENV X` bar `416 → 415`
   - LFO group `+8` · `LFO X` bar `597 → 599` · RAMP group `+12` · `RAMP X` bar unchanged
-  - resulting below-gaps: 20 / 21 / 20
+  - resulting below-gaps: **21 / 20 / 20** (spread 1, inside RQ-CLR-004)
+- **Two corrections against this task's first draft**, both found while building it:
+  1. *ENV stays put.* The draft moved the group `−1` to land 20/21/20. Leaving it
+     alone gives 21/20/20 — equally inside RQ-CLR-004's one-px tolerance — so the
+     displacement bought nothing and was dropped. `ENV X`'s bar still moves by one
+     px, which RQ-CLR-001 requires and no group displacement can avoid.
+  2. *RAMP's section bottom is the TRIGGER frame at canvas 748, not its lowest
+     ink.* The block's `TRIGGER IN` label has its lower baseline at 750 —
+     `drawSingleLineText` anchors on the baseline — so a literal reading of
+     "lowest visible element" would have set the bottom two px lower and forced
+     RAMP to `+10`, which then cannot satisfy RQ-CLR-004 without also moving ENV.
+     The label sits at x=508, in the gutter left of a bar starting at x=527.
+     RQ-CLR-001 was amended to scope the measurement to the bar's horizontal
+     span, which is what the rhythm is optically about; the same qualification
+     covers `LAG IN` and `TRACK IN` at x=35.
 - **Acceptance Criteria**:
   - **Given** the centre column after the change
   - **When** `SectionRhythmTests` runs

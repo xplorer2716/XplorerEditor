@@ -26,7 +26,19 @@ source combos, whose positions are fixed and known; residual 0.33 canvas px.
 - **Statement**: The **gap between the bottom of the lowest visible element of
   a section and the label baseline of that section's separator bar SHALL equal
   `tokens::component::sectionGapAbove`**, for every section of the left and
-  centre columns.
+  centre columns. "Lowest visible element" SHALL be evaluated over the elements
+  that fall within the separator bar's own horizontal span; elements drawn in
+  the gutter to the left of the bar SHALL be excluded.
+- **Note on the horizontal qualification** *(added 2026-08-10, TASK-CLR-002)*:
+  the `TRIGGER IN` label of the RAMP block sits at x≈508 with its lower baseline
+  at canvas y 750, below the TRIGGER frame at 748 — so without this
+  qualification it, not the frame, would set the RAMP section's bottom. It is in
+  the gutter between columns, entirely left of the bar (which starts at x=527),
+  and so takes no part in the proximity relationship the bar establishes. The
+  same holds for `LAG IN` and `TRACK IN` at x=35 against bars starting at x=53.
+  The rule is horizontal-span-scoped rather than "everything semantically in the
+  section", because the rhythm is an optical property of what sits directly
+  above the bar.
 - **Rationale**: the separator is a *terminator* — its label names the section
   that just ended (ADR-JUC-034, Xpander silkscreen convention). Before this
   change the bar sat 17–43 px below its own section but only 9–11 px above the
