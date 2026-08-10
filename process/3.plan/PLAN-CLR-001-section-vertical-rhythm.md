@@ -104,6 +104,29 @@ frame is canvas coordinates; `BackgroundRenderer.cpp` is offset by
 - **Dependencies**: TASK-CLR-001
 - **Assignee**: AI
 
+### TASK-CLR-003: One left edge per column for the separator bars
+- **Tier**: S
+- **Status**: Done (2026-08-10)
+- **Description**: Give each column's separators a single named x, replacing the
+  per-call-site literals that had drifted apart.
+- **Requirement refs**: RQ-CLR-006
+- **ADR refs**: ADR-CLR-001; appearance stays with ADR-JUC-034
+- **Origin**: owner report on the TASK-CLR-002 build — `LFO X` and `RAMP X` read
+  as shifted right of `VCF/VCA` and `ENV X`. Confirmed in the source: the centre
+  column was transcribed at 526 / 526 / 527 / 527, and since all four take the
+  same 370 px width the odd pair was one px off at both ends. The left column
+  was already uniform at 53; the fix names all three column edges anyway, since
+  a literal per call site is what allowed the drift.
+- **Acceptance Criteria**:
+  - **Given** the four centre-column separators in the running application
+  - **When** their left edges are measured on the rendered pixels
+  - **Then** all four are identical
+- **Verification**: measured on the real render — before 527.0 / 527.0 / 527.8 /
+  527.8, after 527.0 for all four. (The constant offset from the code's 526 is
+  the screenshot calibration; what the check asserts is the equality.)
+- **Dependencies**: TASK-CLR-002
+- **Assignee**: AI
+
 ---
 
 ## Out of scope

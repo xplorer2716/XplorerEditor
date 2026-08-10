@@ -134,6 +134,28 @@ source combos, whose positions are fixed and known; residual 0.33 canvas px.
   - **Then** both changed by exactly `d`
 - **Dependencies**: RQ-CLR-001, ADR-JUC-013, ADR-CLR-001
 
+### RQ-CLR-006: A column's separators share one left edge and one length
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: All separator bars of a given column SHALL start at the same
+  canvas x and SHALL have the same width, so that both their left and right ends
+  align down the column. The modulation matrix keeps its own narrower width
+  (DEC-JUC-110) but is the only bar in its column.
+- **Rationale**: the centre column was transcribed from the mockup with
+  `VCF/VCA` and `ENV X` at x=526 and `LFO X` and `RAMP X` at x=527. Since all
+  four take the same 370 px width, the odd pair was one px off at *both* ends.
+  Invisible while the bars sat at irregular heights; plainly visible as a
+  stagger once RQ-CLR-001 gave the column a clean vertical rhythm to compare
+  against (owner report, 2026-08-10).
+- **Priority**: Must
+- **Acceptance Criteria**:
+  - **Given** the separator bars of one column
+  - **When** their left edges are compared
+  - **Then** all are equal
+  - **And** when their widths are compared, all are equal
+- **Dependencies**: RQ-GUI-062, ADR-JUC-034, ADR-CLR-001
+
 ---
 
 ## Non-Functional Requirements

@@ -38,6 +38,20 @@ namespace xplorer::app::layout
         return anchorReferenceY + SECTION_BASELINE_BELOW_ANCHOR;
     }
 
+    // --- Separator left edges, one per column ------------------------------
+    // A column's separators SHALL share one x and one width, so their two ends
+    // line up down the column. They did not: the centre column was transcribed
+    // from the mockup with VCF/VCA and ENV X at 526 and LFO X and RAMP X at 527,
+    // and since all four take the same 370 px width, the odd pair was one px off
+    // at BOTH ends. Visible as a stagger once the bars were re-placed and the eye
+    // had a clean vertical to compare against (owner report, 2026-08-10).
+    // Naming the edge per column is what stops it drifting again — a literal at
+    // each call site is what let it drift in the first place. [RQ-CLR-006]
+
+    inline constexpr int SECTION_X_LEFT = 53;    // VCO1/VCO2/FM, LAG, TRACK X
+    inline constexpr int SECTION_X_CENTRE = 526; // VCF/VCA, ENV X, LFO X, RAMP X
+    inline constexpr int SECTION_X_MATRIX = 958; // MOD MATRIX (own width, DEC-JUC-110)
+
     // --- Separator anchors, REFERENCE frame --------------------------------
     // Left and centre columns are placed by RQ-CLR-001: each anchor is derived
     // from the bottom of the section ABOVE it, never chosen. The three bottom

@@ -480,7 +480,7 @@ namespace xplorer::app
         // constant relating a section() anchor to its label baseline in canvas
         // space: -CANVAS_TOP_CROP (27) + int(SECTION_BAR_HEIGHT) (4).
         // [RQ-CLR-001, ADR-CLR-001 (DEC-CLR-001-C)]
-        section(53, layout::SECTION_VCO_Y, "VCO1/VCO2/FM", BLK_VCO);
+        section(layout::SECTION_X_LEFT, layout::SECTION_VCO_Y, "VCO1/VCO2/FM", BLK_VCO);
 
         // --- LAG   (whole group +13 canvas px, RQ-CLR-004: equalises this column's
         //            two below-separator gaps at 45 and 46 px)
@@ -495,7 +495,7 @@ namespace xplorer::app
         caption(215, refY(layout::LAG_RATE_CAPTION_BASELINE_CANVAS_Y), "RATE");
         // RATE's baseline (canvas 576) is this section's lowest visible element —
         // lower than the EXPO/LEGATO row at 572. [RQ-CLR-001]
-        section(53, layout::SECTION_LAG_Y, "LAG", BLK_LAG);
+        section(layout::SECTION_X_LEFT, layout::SECTION_LAG_Y, "LAG", BLK_LAG);
 
         // --- TRACKING GENERATOR   (whole group +21 canvas px: TRACK X is pinned by
         //                           RQ-CLR-003, so the group moves to meet it)
@@ -516,7 +516,7 @@ namespace xplorer::app
             }
         }
         // Unchanged: shares one baseline with RAMP X and MOD MATRIX. [RQ-CLR-003]
-        section(53, layout::SECTION_TRACK_Y, "TRACK X", BLK_TRACK);
+        section(layout::SECTION_X_LEFT, layout::SECTION_TRACK_Y, "TRACK X", BLK_TRACK);
 
         // ================================================= CENTER COLUMN =====
         // --- VCF/VCA chain
@@ -539,7 +539,7 @@ namespace xplorer::app
         caption(669, 137, "MODE (15)");
         caption(759, 137, "VOLUME");
         caption(834, 137, "VOLUME");
-        section(526, layout::SECTION_VCF_Y, "VCF/VCA", BLK_VCF);
+        section(layout::SECTION_X_CENTRE, layout::SECTION_VCF_Y, "VCF/VCA", BLK_VCF);
 
         // --- ENV
         box(525, 242, 267, 26, &BLK_ENV);
@@ -568,7 +568,7 @@ namespace xplorer::app
         caption(750, 320, "RELEASE");
         caption(835, 320, "VOLUME");
         box(524, 329, 373, 42);
-        section(526, layout::SECTION_ENV_Y, "ENV X", BLK_ENV);
+        section(layout::SECTION_X_CENTRE, layout::SECTION_ENV_Y, "ENV X", BLK_ENV);
 
         // --- LFO
         box(524, 475, 269, 26, &BLK_LFO);
@@ -589,7 +589,7 @@ namespace xplorer::app
         caption(657, 554, "WAVESHAPE");
         caption(759, 554, "RETRIG");
         caption(834, 554, "AMPLITUDE");
-        section(527, layout::SECTION_LFO_Y, "LFO X", BLK_LFO);
+        section(layout::SECTION_X_CENTRE, layout::SECTION_LFO_Y, "LFO X", BLK_LFO);
 
         // --- RAMP
         box(524, 658, 266, 26, &BLK_RAMP);
@@ -604,14 +604,14 @@ namespace xplorer::app
         caption(657, 738, "RATE");
         box(524, static_cast<float>(refY(layout::RAMP_TRIGGER_FRAME_TOP_CANVAS_Y)), 374,
             static_cast<float>(layout::RAMP_TRIGGER_FRAME_HEIGHT));
-        section(527, layout::SECTION_RAMP_Y, "RAMP X", BLK_RAMP);
+        section(layout::SECTION_X_CENTRE, layout::SECTION_RAMP_Y, "RAMP X", BLK_RAMP);
 
         // ================================================= RIGHT =============
         // "MOD MATRIX", not "MODULATION MATRIX": at 17 characters the full name
         // was twice the length of every other section label, and with the bar
         // now starting after the label it left this section almost no bar at
         // all. [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108)]
-        section(958, layout::SECTION_MATRIX_Y, "MOD MATRIX", BLK_MATRIX, MATRIX_SECTION_BAR_WIDTH);
+        section(layout::SECTION_X_MATRIX, layout::SECTION_MATRIX_Y, "MOD MATRIX", BLK_MATRIX, MATRIX_SECTION_BAR_WIDTH);
 
         // Nothing above has painted yet: replay the layers in paint order, so a
         // signal line can never land on the block it runs into.
