@@ -127,6 +127,28 @@ frame is canvas coordinates; `BackgroundRenderer.cpp` is offset by
 - **Dependencies**: TASK-CLR-002
 - **Assignee**: AI
 
+### TASK-CLR-004: Define the MOD MATRIX separator by its control grid
+- **Tier**: S
+- **Status**: Done (2026-08-10)
+- **Description**: Move the matrix bar's left edge onto the SOURCE combo column
+  and derive its width from the QUANTIZE column, with both ends stated once in
+  `SectionLayout.hpp` and asserted against the control table.
+- **Requirement refs**: RQ-CLR-007
+- **ADR refs**: ADR-CLR-001; right end already decided by ADR-JUC-034 (DEC-JUC-110)
+- **Origin**: owner report — the bar sits a few px left of the SOURCE combos.
+  Confirmed: bar at x=958 width 260 (958→1218) against a grid running 960→1218.
+  The right end was already correct, so only the left end was wrong; the two had
+  been authored as independent literals, which is why one drifted alone.
+- **Change**: `SECTION_X_MATRIX` 958 → 960, `SECTION_MATRIX_BAR_WIDTH` 260 → 258,
+  both moved out of `BackgroundRenderer.cpp` into `SectionLayout.hpp`.
+- **Acceptance Criteria**:
+  - **Given** the control table
+  - **When** the bar's ends are compared with the grid
+  - **Then** left == `MOD_SRC_n.x` (960) and right == `MOD_QUANTIZE_n` right edge (1218)
+  - **And** all twenty `MOD_SRC_n` rows share that left edge
+- **Dependencies**: TASK-CLR-003
+- **Assignee**: AI
+
 ---
 
 ## Out of scope

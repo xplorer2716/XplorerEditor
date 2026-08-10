@@ -50,7 +50,21 @@ namespace xplorer::app::layout
 
     inline constexpr int SECTION_X_LEFT = 53;    // VCO1/VCO2/FM, LAG, TRACK X
     inline constexpr int SECTION_X_CENTRE = 526; // VCF/VCA, ENV X, LFO X, RAMP X
-    inline constexpr int SECTION_X_MATRIX = 958; // MOD MATRIX (own width, DEC-JUC-110)
+
+    /// MOD MATRIX is the one section whose bar runs alongside a control grid, so
+    /// both its ends are DEFINED by that grid rather than chosen: it starts on the
+    /// left edge of the SOURCE combo column and stops on the right edge of the
+    /// QUANTIZE tick-box column. DEC-JUC-110 already fixed the right end; the left
+    /// end was a separate literal at 958 and sat two px outside the grid, which
+    /// reads as the bar overhanging the matrix (owner report, 2026-08-10).
+    ///
+    /// The values are stated here rather than computed, because the painter must
+    /// not do a control-table lookup on every repaint — but SectionRhythmTests
+    /// asserts both against the real table, so a control-column move that leaves
+    /// these behind fails the build instead of quietly misaligning the bar.
+    /// [RQ-CLR-007, ADR-JUC-034 (DEC-JUC-110)]
+    inline constexpr int SECTION_X_MATRIX = 960;          // == MOD_SRC_n.x
+    inline constexpr int SECTION_MATRIX_BAR_WIDTH = 258;  // ends at MOD_QUANTIZE_n right edge (1218)
 
     // --- Separator anchors, REFERENCE frame --------------------------------
     // Left and centre columns are placed by RQ-CLR-001: each anchor is derived

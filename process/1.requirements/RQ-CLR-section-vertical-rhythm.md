@@ -156,6 +156,33 @@ source combos, whose positions are fixed and known; residual 0.33 canvas px.
   - **And** when their widths are compared, all are equal
 - **Dependencies**: RQ-GUI-062, ADR-JUC-034, ADR-CLR-001
 
+### RQ-CLR-007: The MOD MATRIX separator spans exactly its control grid
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: The `MOD MATRIX` separator bar SHALL start on the left edge of
+  the `MOD_SRC_n` combo column and SHALL end on the right edge of the
+  `MOD_QUANTIZE_n` tick-box column. Both edges SHALL be stated once and verified
+  against the control table, not restated per call site.
+- **Rationale**: this is the only separator that runs alongside a control grid,
+  so its extent is *defined* by that grid rather than chosen. DEC-JUC-110
+  already fixed the right end; the left end was a separate literal (x=958) two
+  px outside the grid, which reads as the bar overhanging the matrix (owner
+  report, 2026-08-10). Stating both ends without tying them to the table is what
+  let one drift while the other stayed correct.
+- **Priority**: Must
+- **Acceptance Criteria**:
+  - **Given** the control table
+  - **When** the matrix bar's two ends are compared with the grid
+  - **Then** its left edge equals `MOD_SRC_n.x`
+  - **And** its right edge equals `MOD_QUANTIZE_n.x + MOD_QUANTIZE_n.width`
+  - **And** every `MOD_SRC_n` row shares that same left edge
+- **Dependencies**: RQ-CLR-006, RQ-GUI-062, ADR-JUC-034 (DEC-JUC-110)
+- **Note**: the left and centre columns are deliberately NOT aligned to their
+  control columns — their bars sit in the column margin, left of the blocks
+  (x=53 against blocks at 81; x=526 against blocks at 524/525). Only the matrix
+  bar borders a grid, so only it has a grid to be defined by.
+
 ---
 
 ## Non-Functional Requirements

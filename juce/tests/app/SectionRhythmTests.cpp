@@ -201,6 +201,39 @@ SCENARIO("A column's leftover space is shared evenly between its section boundar
     }
 }
 
+SCENARIO("The MOD MATRIX bar spans exactly its control grid",
+         "[RQ-CLR-007][TASK-CLR-004]")
+{
+    GIVEN("the matrix's outermost control columns")
+    {
+        // This bar is the only one defined by something other than taste: it runs
+        // alongside a grid, so it starts and stops with that grid. Both ends are
+        // constants in SectionLayout.hpp — the painter cannot afford a table
+        // lookup per repaint — and these two assertions are what keep those
+        // constants honest when a column moves. [RQ-CLR-007, DEC-JUC-110]
+        THEN("it starts on the left edge of the SOURCE combo column")
+        {
+            REQUIRE(layout::SECTION_X_MATRIX == control("MOD_SRC_1").x);
+        }
+
+        THEN("and stops on the right edge of the QUANTIZE tick-box column")
+        {
+            const auto& quantize = control("MOD_QUANTIZE_1");
+            REQUIRE(layout::SECTION_X_MATRIX + layout::SECTION_MATRIX_BAR_WIDTH
+                    == quantize.x + quantize.width);
+        }
+
+        THEN("every SOURCE row shares that left edge, so the bar cannot align to an outlier")
+        {
+            for (const auto& spec : controlTable())
+            {
+                if (std::string_view{spec.id}.starts_with("MOD_SRC_"))
+                    REQUIRE(spec.x == layout::SECTION_X_MATRIX);
+            }
+        }
+    }
+}
+
 SCENARIO("The canvas floor is fixed", "[RQ-CLR-003][TASK-CLR-001]")
 {
     GIVEN("the three bottom separators")

@@ -86,11 +86,10 @@ namespace xplorer::app
         constexpr float FS_SMALL = tokens::semantic::textDense;      // DESTINATION / TRIGGER IN / NOISE
 
         constexpr int SECTION_BAR_WIDTH = 370;
-        // MOD MATRIX only: its rule ends on the quantize check-box column's right
-        // edge (control-table MOD_QUANTIZE_n x=1206 + width=12 = 1218, less the
-        // section's x=958) instead of overrunning it.
-        // [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-110)]
-        constexpr int MATRIX_SECTION_BAR_WIDTH = 260;
+        // MOD MATRIX is the one section whose bar runs alongside a control grid,
+        // so BOTH its ends come from that grid — see SectionLayout.hpp, which
+        // holds them and which SectionRhythmTests checks against the real control
+        // table. [RQ-GUI-062, RQ-CLR-007, ADR-JUC-034 (DEC-JUC-110)]
         // The label's baseline offset below the rule's top edge: label and rule
         // are bottom-aligned. NOT the rule's thickness — that is the measured
         // cap height, see capHeight(). No SECTION_TITLE_RISE any more: the label
@@ -611,7 +610,8 @@ namespace xplorer::app
         // was twice the length of every other section label, and with the bar
         // now starting after the label it left this section almost no bar at
         // all. [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108)]
-        section(layout::SECTION_X_MATRIX, layout::SECTION_MATRIX_Y, "MOD MATRIX", BLK_MATRIX, MATRIX_SECTION_BAR_WIDTH);
+        section(layout::SECTION_X_MATRIX, layout::SECTION_MATRIX_Y, "MOD MATRIX", BLK_MATRIX,
+                layout::SECTION_MATRIX_BAR_WIDTH);
 
         // Nothing above has painted yet: replay the layers in paint order, so a
         // signal line can never land on the block it runs into.
