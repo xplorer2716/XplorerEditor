@@ -26,7 +26,7 @@ frame is canvas coordinates; `BackgroundRenderer.cpp` is offset by
 
 ### TASK-CLR-001: Rhythm tokens, headless test harness, and the left column
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: Done (2026-08-10)
 - **Description**: Add `sectionGapAbove` (16) and `sectionGapBelowMin` (20) to
   `tokens::component`, create `SectionRhythmTests.cpp` asserting RQ-CLR-001..004
   for every section of both columns, and apply the computed displacements to the
@@ -49,6 +49,22 @@ frame is canvas coordinates; `BackgroundRenderer.cpp` is offset by
   - **And** the centre column's assertions still pass unchanged (it has not moved yet)
 - **Dependencies**: None
 - **Assignee**: AI
+- **Verification note**: `xpl_tests_app_juce` only builds under `XPL_BUILD_APP=ON`,
+  which Linux CI never sets (`linux-headless-release.yml` runs the default OFF);
+  the app target is exercised on macOS/AppleClang and Windows/MSVC. Forcing it
+  under this container's GCC 13 surfaces two failures that predate this task and
+  belong to neither of its files — `-Wdangling-reference` in
+  `BoundRadioGroupTests.cpp:154` (a GCC 13 diagnostic) and `-Wmaybe-uninitialized`
+  in JUCE's vendored SheenBidi C source. Left untouched: modifying them to green
+  a build is exactly what the DoD forbids. `SectionRhythmTests.cpp` itself
+  compiles clean under `-Werror`, the 101-test headless suite passes, and the
+  rhythm arithmetic was re-checked against the real control table.
+- **Defect found and fixed during verification**: measuring a section's bottom
+  from control *bounds* put LAG's bar 13 px above its section instead of 16.
+  `LAG_TIMING_LINEAR_EXPO` declares 79x47 but `BoundRadioGroup::resized` paints
+  its last row at `y + (N-1)*(h/N) + controlRowHeight`, so seven of those px are
+  never drawn. RQ-CLR-001 measures *visible* elements, so the test now mirrors
+  that rule (`paintedBottom`). The layout was right; the measurement was wrong.
 
 ### TASK-CLR-002: Centre column
 - **Tier**: M

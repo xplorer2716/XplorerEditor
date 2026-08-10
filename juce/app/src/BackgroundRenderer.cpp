@@ -1,6 +1,7 @@
 #include "BackgroundRenderer.hpp"
 
 #include "DesignTokens.hpp"
+#include "SectionLayout.hpp"
 #include "xplorer/app/ControlTable.hpp"
 
 #include <functional>
@@ -56,6 +57,13 @@ namespace xplorer::app
         // (extract_control_table.py CANVAS_TOP_CROP). [ADR-JUC-013]
         constexpr float MENUSTRIP_BAND = 32.0F;
         constexpr float CANVAS_TOP_CROP = MENUSTRIP_BAND - CANVAS_PADDING; // 27
+        static_assert(static_cast<int>(CANVAS_TOP_CROP) == layout::CANVAS_TOP_CROP,
+                      "SectionLayout.hpp mirrors this crop for the rhythm tests");
+
+        /// Draw calls below are authored in the REFERENCE frame; SectionLayout.hpp
+        /// states the section-bottom references in the CANVAS frame (that is the
+        /// frame the control table and the rhythm rule live in). [RQ-CLR-001]
+        constexpr int refY(int canvasY) noexcept { return canvasY + layout::CANVAS_TOP_CROP; }
 
         // ---- font sizes: from the shared type scale (RQ-DSN-010). Every value
         //      is preserved exactly; consolidation (e.g. 13.5 vs 13) deferred. --
@@ -460,37 +468,48 @@ namespace xplorer::app
         line(40, 229, 51, 229);
         line(40, 305, 204, 305);
         line(204, 305, 204, 320);
-        section(53, 487, "VCO1/VCO2/FM", BLK_VCO);
+        // Terminator for the VCO group: sectionGapAbove below the VCO2 MOD tick-box
+        // row (canvas y 426), i.e. baseline 442 -> anchor 442 + 23. The +23 is the
+        // constant relating a section() anchor to its label baseline in canvas
+        // space: -CANVAS_TOP_CROP (27) + int(SECTION_BAR_HEIGHT) (4).
+        // [RQ-CLR-001, ADR-CLR-001 (DEC-CLR-001-C)]
+        section(53, layout::SECTION_VCO_Y, "VCO1/VCO2/FM", BLK_VCO);
 
-        // --- LAG
-        box(81, 501, 268, 36, &BLK_LAG);
-        blockTitle(215, 524, "LAG", FS_MIX);
-        outLabel(349, 518, "LAG", "OUT");
-        line(52, 518, 81, 518);
-        line(52, 518, 52, 563);
+        // --- LAG   (whole group +13 canvas px, RQ-CLR-004: equalises this column's
+        //            two below-separator gaps at 45 and 46 px)
+        box(81, refY(layout::LAG_FRAME_TOP_CANVAS_Y), 268, 36, &BLK_LAG);
+        blockTitle(215, 537, "LAG", FS_MIX);
+        outLabel(349, 531, "LAG", "OUT");
+        line(52, 531, 81, 531);
+        line(52, 531, 52, 576);
         // Left-aligned with the LAG_IN combo (x=35), 9 px below it. [RQ-GUI-037]
-        smallLabel(35, 576, "LAG IN", juce::Justification::left);
-        stub(215, 537);
-        caption(215, 590, "RATE");
-        section(53, 629, "LAG", BLK_LAG);
+        smallLabel(35, 589, "LAG IN", juce::Justification::left);
+        stub(215, 550);
+        caption(215, refY(layout::LAG_RATE_CAPTION_BASELINE_CANVAS_Y), "RATE");
+        // RATE's baseline (canvas 576) is this section's lowest visible element —
+        // lower than the EXPO/LEGATO row at 572. [RQ-CLR-001]
+        section(53, layout::SECTION_LAG_Y, "LAG", BLK_LAG);
 
-        // --- TRACKING GENERATOR
-        box(81, 679, 268, 36, &BLK_TRACK);
-        blockTitle(215, 702, "TRACKING GENERATOR", FS_BLOCK);
-        outLabel(349, 696, "TRACK", "OUT");
-        line(52, 696, 81, 696);
-        line(52, 696, 52, 741);
+        // --- TRACKING GENERATOR   (whole group +21 canvas px: TRACK X is pinned by
+        //                           RQ-CLR-003, so the group moves to meet it)
+        box(81, 700, 268, 36, &BLK_TRACK);
+        blockTitle(215, 723, "TRACKING GENERATOR", FS_BLOCK);
+        outLabel(349, 717, "TRACK", "OUT");
+        line(52, 717, 81, 717);
+        line(52, 717, 52, 762);
         // Left-aligned with the TRACK_X_IN combo (x=35), same 9 px offset as LAG IN.
-        smallLabel(35, 754, "TRACK IN", juce::Justification::left);
+        smallLabel(35, 775, "TRACK IN", juce::Justification::left);
         {
             const int centres[] = {126, 170, 214, 258, 302}; // PT knob centres (table)
             for (int i = 0; i < 5; ++i)
             {
-                stub(centres[i], 715);
-                caption(centres[i], 766, "PT " + juce::String(i + 1));
+                stub(centres[i], 736);
+                caption(centres[i], refY(layout::TRACK_PT_CAPTION_BASELINE_CANVAS_Y),
+                        "PT " + juce::String(i + 1));
             }
         }
-        section(53, 799, "TRACK X", BLK_TRACK);
+        // Unchanged: shares one baseline with RAMP X and MOD MATRIX. [RQ-CLR-003]
+        section(53, layout::SECTION_TRACK_Y, "TRACK X", BLK_TRACK);
 
         // ================================================= CENTER COLUMN =====
         // --- VCF/VCA chain
@@ -513,7 +532,7 @@ namespace xplorer::app
         caption(669, 137, "MODE (15)");
         caption(759, 137, "VOLUME");
         caption(834, 137, "VOLUME");
-        section(526, 194, "VCF/VCA", BLK_VCF);
+        section(526, layout::SECTION_VCF_Y, "VCF/VCA", BLK_VCF);
 
         // --- ENV
         box(525, 242, 267, 26, &BLK_ENV);
@@ -542,7 +561,7 @@ namespace xplorer::app
         caption(750, 320, "RELEASE");
         caption(835, 320, "VOLUME");
         box(524, 329, 373, 42);
-        section(526, 416, "ENV X", BLK_ENV);
+        section(526, layout::SECTION_ENV_Y, "ENV X", BLK_ENV);
 
         // --- LFO
         box(524, 467, 269, 26, &BLK_LFO);
@@ -563,7 +582,7 @@ namespace xplorer::app
         caption(657, 546, "WAVESHAPE");
         caption(759, 546, "RETRIG");
         caption(834, 546, "AMPLITUDE");
-        section(527, 597, "LFO X", BLK_LFO);
+        section(527, layout::SECTION_LFO_Y, "LFO X", BLK_LFO);
 
         // --- RAMP
         box(524, 646, 266, 26, &BLK_RAMP);
@@ -577,14 +596,14 @@ namespace xplorer::app
         stub(657, 672);
         caption(657, 726, "RATE");
         box(524, 734, 374, 41);
-        section(527, 799, "RAMP X", BLK_RAMP);
+        section(527, layout::SECTION_RAMP_Y, "RAMP X", BLK_RAMP);
 
         // ================================================= RIGHT =============
         // "MOD MATRIX", not "MODULATION MATRIX": at 17 characters the full name
         // was twice the length of every other section label, and with the bar
         // now starting after the label it left this section almost no bar at
         // all. [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108)]
-        section(958, 799, "MOD MATRIX", BLK_MATRIX, MATRIX_SECTION_BAR_WIDTH);
+        section(958, layout::SECTION_MATRIX_Y, "MOD MATRIX", BLK_MATRIX, MATRIX_SECTION_BAR_WIDTH);
 
         // Nothing above has painted yet: replay the layers in paint order, so a
         // signal line can never land on the block it runs into.

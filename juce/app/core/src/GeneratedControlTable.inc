@@ -16,6 +16,18 @@
 // were shifted +10 px to align every column with VCO1's, SYNC included.
 // [RQ-GUI-001]
 //
+// Deviation (owner request, 2026-08-10, TASK-CLR-001): the LEFT column's LAG
+// group (+13) and TRACK group (+21) are displaced downwards so each section
+// separator sits tokens::component::sectionGapAbove below the section it
+// terminates, instead of hugging the section below it. The displacements are
+// COMPUTED, not authored: sectionGapAbove fixes each bar under its own group,
+// TRACK X is pinned by RQ-CLR-003, and the leftover space is split evenly
+// between the two below-separator gaps (45 and 46 px, RQ-CLR-004). Every moved
+// control keeps its position relative to its own group, and BackgroundRenderer
+// moves the matching diagram elements by the same amount — the two files hold
+// one layout in two frames and RQ-CLR-005 is what keeps them in step.
+// [RQ-CLR-001, RQ-CLR-004, RQ-CLR-005, ADR-CLR-001 (DEC-CLR-001-C)]
+//
 // Deviation (owner request, 2026-07-31, TASK-DSP-002): the display group —
 // _vfdDisplay, _ledPanelControl and the eight btPatch*/btSettings buttons —
 // is lifted so the display can be framed by a recessed bezel (RQ-GUI-050).
@@ -51,13 +63,13 @@
     {"ENV_X_TRIG_LFO_SOURCE", ControlKind::ComboBoxValuedControl, 625, 314, 65, 21, "ENV_X_TRIG_LFO_SOURCE", ""},
     {"ENV_X_TRIG_SINGLE_MULTI", ControlKind::RadioButtonPanel, 764, 313, 129, 24, "ENV_X_TRIG_SINGLE_MULTI", ""},
     {"ENV_X_VOLUME", ControlKind::KnobControl, 819, 251, 32, 32, "ENV_X_VOLUME", ""},
-    {"FMLAG_RATE", ControlKind::KnobControl, 199, 519, 32, 32, "FMLAG_RATE", ""},
+    {"FMLAG_RATE", ControlKind::KnobControl, 199, 532, 32, 32, "FMLAG_RATE", ""},
     {"FM_AMP", ControlKind::KnobControl, 90, 229, 32, 32, "FM_AMP", ""},
     {"FM_DESTINATION", ControlKind::RadioButtonPanel, 191, 189, 82, 42, "FM_DESTINATION", ""},
-    {"LAG_IN", ControlKind::ComboBoxValuedControl, 35, 519, 67, 21, "LAG_IN", ""},
-    {"LAG_LINEAR_EQUAL_TIME", ControlKind::CheckBoxValuedControl, 352, 520, 88, 17, "LAG_LINEAR_EQUAL_TIME", "EQUAL TIME"},
-    {"LAG_MODE_LEGATO", ControlKind::CheckBoxValuedControl, 352, 542, 66, 17, "LAG_MODE_LEGATO", "LEGATO"},
-    {"LAG_TIMING_LINEAR_EXPO", ControlKind::RadioButtonPanel, 270, 519, 79, 47, "LAG_TIMING_LINEAR_EXPO", ""},
+    {"LAG_IN", ControlKind::ComboBoxValuedControl, 35, 532, 67, 21, "LAG_IN", ""},
+    {"LAG_LINEAR_EQUAL_TIME", ControlKind::CheckBoxValuedControl, 352, 533, 88, 17, "LAG_LINEAR_EQUAL_TIME", "EQUAL TIME"},
+    {"LAG_MODE_LEGATO", ControlKind::CheckBoxValuedControl, 352, 555, 66, 17, "LAG_MODE_LEGATO", "LEGATO"},
+    {"LAG_TIMING_LINEAR_EXPO", ControlKind::RadioButtonPanel, 270, 532, 79, 47, "LAG_TIMING_LINEAR_EXPO", ""},
     {"LFO_1", ControlKind::RadioButton, 525, 404, 48, 26, "LFO_1", "LFO 1"},
     {"LFO_2", ControlKind::RadioButton, 578, 404, 48, 26, "LFO_2", "LFO 2"},
     {"LFO_3", ControlKind::RadioButton, 631, 404, 48, 26, "LFO_3", "LFO 3"},
@@ -155,7 +167,7 @@
     {"PanelENV", ControlKind::FakePanel, 505, 176, 290, 32, "", ""},
     {"PanelLFO", ControlKind::FakePanel, 505, 402, 290, 32, "", ""},
     {"PanelRAMP", ControlKind::FakePanel, 505, 582, 270, 32, "", ""},
-    {"PanelTRACK", ControlKind::FakePanel, 80, 616, 269, 32, "", ""},
+    {"PanelTRACK", ControlKind::FakePanel, 80, 637, 269, 32, "", ""},
     {"Panel_ENV_X_TRIGGER", ControlKind::FakePanel, 531, 309, 231, 32, "", ""},
     {"RAMP_1", ControlKind::RadioButton, 525, 584, 57, 26, "RAMP_1", "RAMP 1"},
     {"RAMP_2", ControlKind::RadioButton, 586, 584, 57, 26, "RAMP_2", "RAMP 2"},
@@ -167,15 +179,15 @@
     {"RAMP_X_TRIG_LFOTRIG", ControlKind::CheckBoxValuedControl, 580, 722, 43, 17, "RAMP_X_TRIG_LFOTRIG", "LFO"},
     {"RAMP_X_TRIG_LFO_SOURCE", ControlKind::ComboBoxValuedControl, 629, 720, 65, 21, "RAMP_X_TRIG_LFO_SOURCE", ""},
     {"RAMP_X_TRIG_SINGLE_MULTI", ControlKind::RadioButtonPanel, 767, 719, 126, 22, "RAMP_X_TRIG_SINGLE_MULTI", ""},
-    {"TRACK_1", ControlKind::RadioButton, 83, 617, 63, 26, "TRACK_1", "TRACK 1"},
-    {"TRACK_2", ControlKind::RadioButton, 150, 617, 63, 26, "TRACK_2", "TRACK 2"},
-    {"TRACK_3", ControlKind::RadioButton, 217, 617, 63, 26, "TRACK_3", "TRACK 3"},
-    {"TRACK_X_IN", ControlKind::ComboBoxValuedControl, 35, 697, 67, 21, "TRACK_X_IN", ""},
-    {"TRACK_X_PT1", ControlKind::KnobControl, 110, 697, 32, 32, "TRACK_X_POINT_1", ""},
-    {"TRACK_X_PT2", ControlKind::KnobControl, 154, 697, 32, 32, "TRACK_X_POINT_2", ""},
-    {"TRACK_X_PT3", ControlKind::KnobControl, 198, 697, 32, 32, "TRACK_X_POINT_3", ""},
-    {"TRACK_X_PT4", ControlKind::KnobControl, 242, 697, 32, 32, "TRACK_X_POINT_4", ""},
-    {"TRACK_X_PT5", ControlKind::KnobControl, 286, 697, 32, 32, "TRACK_X_POINT_5", ""},
+    {"TRACK_1", ControlKind::RadioButton, 83, 638, 63, 26, "TRACK_1", "TRACK 1"},
+    {"TRACK_2", ControlKind::RadioButton, 150, 638, 63, 26, "TRACK_2", "TRACK 2"},
+    {"TRACK_3", ControlKind::RadioButton, 217, 638, 63, 26, "TRACK_3", "TRACK 3"},
+    {"TRACK_X_IN", ControlKind::ComboBoxValuedControl, 35, 718, 67, 21, "TRACK_X_IN", ""},
+    {"TRACK_X_PT1", ControlKind::KnobControl, 110, 718, 32, 32, "TRACK_X_POINT_1", ""},
+    {"TRACK_X_PT2", ControlKind::KnobControl, 154, 718, 32, 32, "TRACK_X_POINT_2", ""},
+    {"TRACK_X_PT3", ControlKind::KnobControl, 198, 718, 32, 32, "TRACK_X_POINT_3", ""},
+    {"TRACK_X_PT4", ControlKind::KnobControl, 242, 718, 32, 32, "TRACK_X_POINT_4", ""},
+    {"TRACK_X_PT5", ControlKind::KnobControl, 286, 718, 32, 32, "TRACK_X_POINT_5", ""},
     {"VCF_FREQ", ControlKind::KnobControl, 525, 67, 32, 32, "VCF_FREQ", ""},
     {"VCF_MODE", ControlKind::ComboBoxValuedControl, 612, 68, 127, 21, "VCF_MODE", ""},
     {"VCF_MOD_KEYB", ControlKind::CheckBoxValuedControl, 605, 126, 51, 17, "VCF_MOD_KEYB", "KEYB"},
@@ -232,10 +244,10 @@
     {"lbModQuantize", ControlKind::Label, 1195, 158, 29, 13, "", "QTZ"},
     {"lbSOURCE", ControlKind::Label, 985, 158, 52, 13, "", "SOURCE"},
     {"lbSampleInput", ControlKind::Label, 583, 535, 86, 13, "", "SAMPLE INPUT"},
-    {"rdExpo", ControlKind::BackgroundImageRadioButton, 274, 542, 53, 17, "1", "EXPO"},
+    {"rdExpo", ControlKind::BackgroundImageRadioButton, 274, 555, 53, 17, "1", "EXPO"},
     {"rdFMDestVCF", ControlKind::BackgroundImageRadioButton, 225, 210, 44, 17, "1", "VCF"},
     {"rdFMDestVCO1", ControlKind::BackgroundImageRadioButton, 225, 192, 52, 17, "0", "VCO1"},
-    {"rdLinear", ControlKind::BackgroundImageRadioButton, 274, 522, 63, 17, "0", "LINEAR"},
+    {"rdLinear", ControlKind::BackgroundImageRadioButton, 274, 535, 63, 17, "0", "LINEAR"},
     {"rdMULTI", ControlKind::BackgroundImageRadioButton, 833, 316, 57, 17, "1", "MULTI"},
     {"rdRampXMulti", ControlKind::BackgroundImageRadioButton, 836, 722, 57, 17, "1", "MULTI"},
     {"rdRampXSingle", ControlKind::BackgroundImageRadioButton, 770, 722, 63, 17, "0", "SINGLE"},
