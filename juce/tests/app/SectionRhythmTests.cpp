@@ -234,6 +234,92 @@ SCENARIO("The MOD MATRIX bar spans exactly its control grid",
     }
 }
 
+SCENARIO("The modulation matrix obeys the same rhythm as every other section",
+         "[RQ-GUI-066][RQ-CLR-001][TASK-GUI-003]")
+{
+    GIVEN("the matrix column")
+    {
+        // This column was missed twice: TASK-CLR-001 and TASK-CLR-002 placed the
+        // left and centre columns and this suite asserted only those, so a 43 px
+        // gap survived where the rule says 16 — invisible precisely because
+        // nothing checked it. That is the hole these assertions close.
+        const auto bottom = [] {
+            int b = std::numeric_limits<int>::min();
+            for (const auto& spec : controlTable())
+            {
+                if (std::string_view{spec.id}.starts_with("MOD_"))
+                    b = std::max(b, paintedBottom(spec));
+            }
+            return b;
+        }();
+
+        THEN("its separator clears the lowest matrix control by sectionGapAbove")
+        {
+            REQUIRE(layout::sectionBaselineCanvasY(layout::SECTION_MATRIX_Y) - bottom
+                    == tokens::component::sectionGapAbove);
+        }
+
+        THEN("and the separator itself has not moved off the shared floor")
+        {
+            REQUIRE(layout::sectionBaselineCanvasY(layout::SECTION_MATRIX_Y)
+                    == layout::BOTTOM_SECTION_BASELINE_CANVAS_Y);
+        }
+    }
+}
+
+SCENARIO("The shortcut button row spans the display exactly",
+         "[RQ-GUI-065][TASK-GUI-002]")
+{
+    GIVEN("the eight keys and the VFD above them")
+    {
+        const auto& vfd = control("_vfdDisplay");
+        const auto& led = control("_ledPanelControl");
+        const std::array<const char*, 8> keys{"btPatchMinus", "btPatchPlus",
+                                              "btPatchGoto",  "btPatchRandom",
+                                              "btPatchLoad",  "btPatchSave",
+                                              "btPatchStore", "btSettings"};
+
+        THEN("every key is square, at the design-system size")
+        {
+            for (const auto* id : keys)
+            {
+                const auto& key = control(id);
+                REQUIRE(key.width == tokens::component::shortcutButtonSize);
+                REQUIRE(key.height == tokens::component::shortcutButtonSize);
+            }
+        }
+
+        THEN("the row starts on the display's left edge and ends on its right")
+        {
+            const auto& first = control(keys.front());
+            const auto& last = control(keys.back());
+            REQUIRE(first.x == vfd.x);
+            REQUIRE(last.x + last.width == vfd.x + vfd.width);
+        }
+
+        THEN("the keys are evenly spaced by shortcutButtonGap")
+        {
+            for (std::size_t i = 1; i < keys.size(); ++i)
+            {
+                const auto& previous = control(keys[i - 1]);
+                REQUIRE(control(keys[i]).x - (previous.x + previous.width)
+                        == tokens::component::shortcutButtonGap);
+            }
+        }
+
+        THEN("and the row clears the MIDI LED strip it now reaches under")
+        {
+            // The row only overlaps the strip in x since it grew to the display's
+            // full width; what keeps them apart is vertical, so that is what is
+            // asserted. [RQ-GUI-022, RQ-GUI-065]
+            const auto& first = control(keys.front());
+            REQUIRE(first.y >= led.y + led.height);
+            REQUIRE(first.y - (led.y + led.height)
+                    == tokens::component::shortcutButtonGapAbove);
+        }
+    }
+}
+
 SCENARIO("The canvas floor is fixed", "[RQ-CLR-003][TASK-CLR-001]")
 {
     GIVEN("the three bottom separators")

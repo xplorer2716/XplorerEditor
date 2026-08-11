@@ -27,7 +27,7 @@ modulation matrix column into the section rhythm it had escaped.
 
 ### TASK-GUI-001: Icon library and flat key, behind the existing buttons
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: Done (2026-08-10)
 - **Description**: Add the button tokens, create `ShortcutIcons` (eight
   `juce::Path` builders) and the flat key painting, and unit-test the icon
   geometry. The buttons are not yet swapped — this task delivers the parts.
@@ -44,7 +44,7 @@ modulation matrix column into the section rhythm it had escaped.
 
 ### TASK-GUI-002: Swap the buttons, delete the GIFs
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-10)
 - **Description**: Replace the eight `juce::ImageButton`s with vector buttons
   driving the same actions, resize and reposition them per RQ-GUI-065, and
   remove the 24 GIF resources from the assets and the binary data.
@@ -62,7 +62,7 @@ modulation matrix column into the section rhythm it had escaped.
 
 ### TASK-GUI-003: Matrix descent and the missing rhythm assertions
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-10)
 - **Description**: Displace the modulation matrix block by +27 px and extend
   `SectionRhythmTests` to cover the matrix column, which it never asserted.
 - **Requirement refs**: RQ-GUI-066, RQ-CLR-001, RQ-CLR-003
