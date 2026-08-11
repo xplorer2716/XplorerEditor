@@ -85,17 +85,31 @@ labels. The asymmetry is deliberate and is RQ-CLR-001's proximity principle: the
 buttons belong to the display group (ADR-JUC-024), so they bind upward to it, not
 downward to the matrix.
 
-### DEC-GUI-001-F — Hover borrows the display assembly's LED blue
-A hovered key draws its icon and outline in `indicatorSynthIn`, aliased as
-`shortcutButtonHoverInk`. The row lives between the VFD and the MIDI lamps
-(ADR-JUC-024), so it signals with the colour that assembly already uses for
-"active" rather than adding a hover colour to the palette.
+### DEC-GUI-001-F — Hover uses the control accent, passed in, never a token
+A hovered key draws its icon and outline in `XplorerLookAndFeel::ledColour()`
+brightened by `hoverBrighten` — the same call a knob ring, a tick box border and
+a radio already make. `paintShortcutButton` takes the colour as a PARAMETER and
+`ShortcutButton` reads it from the LookAndFeel at paint time.
 
-`btPatchStore` is exempt and brightens in its own `indicatorSynthOut` red. It is
-the only key that writes to the synth, and a hover that recolours it blue would
-spend the destructive-action signal to buy a hover signal — the wrong trade. The
-pressed state is untouched and stays inverted, so press and hover remain
-distinguishable rather than being two intensities of the same thing.
+That the accent is a parameter rather than a token is the substance of this
+decision. `ledColour` is the single runtime source of truth for the control
+accent (ADR-JUC-011) and the user can retheme it live (ADR-JUC-020, which mutates
+the LookAndFeel in place and repaints). A token would have frozen these eight
+keys on one colour while every control around them followed the user — the row
+would drift out of the palette on the first retheme, silently.
+
+A first implementation did exactly that, lighting the keys in `indicatorSynthIn`
+after reading the owner's "LED colour" as the MIDI lamp's blue. The owner
+clarified they meant the interaction highlight of the knobs and tick boxes. The
+two happen to be neighbouring blues today, which is precisely why the mistake was
+invisible on screen and only the retheme case distinguishes them.
+
+`btPatchStore`'s icon is exempt and brightens in its own `indicatorSynthOut` red:
+it is the only key that writes to the synth, and a hover that recolours it would
+spend the destructive-action signal to buy a hover signal. Its outline still
+takes the accent, so the hover is never ambiguous. The pressed state is untouched
+and stays inverted, so press and hover remain distinguishable rather than two
+intensities of the same thing.
 
 ### DEC-GUI-001-E — The matrix descends 27 px, derived not chosen
 The whole matrix block moves down 27 px so the `MOD MATRIX` separator clears it

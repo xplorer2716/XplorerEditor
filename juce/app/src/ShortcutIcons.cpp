@@ -166,7 +166,8 @@ namespace xplorer::app
     }
 
     void paintShortcutButton(juce::Graphics& g, juce::Rectangle<float> bounds,
-                             ShortcutIcon icon, bool isHovered, bool isDown)
+                             ShortcutIcon icon, juce::Colour accent,
+                             bool isHovered, bool isDown)
     {
         const float radius = tokens::semantic::radiusControl;
         const auto border = tokens::semantic::diagramFrame
@@ -178,12 +179,19 @@ namespace xplorer::app
         const auto fill = isDown ? border.withAlpha(1.0F)
                                  : tokens::semantic::surfaceRecessed;
 
-        // Hover lights the key in the panel's LED blue — the colour of the
-        // synth-input lamp two rows above — so the row signals with the display
-        // assembly's own vocabulary instead of a hover colour of its own.
-        // StoreToSynth keeps its red: it is the one key that writes to the
-        // hardware, and swapping that signal for a hover signal would lose the
-        // more important of the two. [RQ-GUI-067, ADR-GUI-001 (DEC-GUI-001-F)]
+        // Hover lights the key in the SAME accent every other control uses — the
+        // LookAndFeel's ledColour, brightened by hoverBrighten, exactly as a knob
+        // ring, a tick box border and a radio do. It comes in as a parameter, not
+        // a token: the accent is user-themeable (ADR-JUC-020), and a frozen
+        // colour would leave these eight keys behind when everything around them
+        // followed the user's choice.
+        //
+        // StoreToSynth keeps its own red ink: it is the one key that writes to
+        // the hardware, and recolouring it on hover would spend the
+        // destructive-action signal to buy a hover signal. Its OUTLINE still
+        // lights like every other key, so the hover is never ambiguous.
+        // [RQ-GUI-067, ADR-JUC-011, ADR-JUC-017, ADR-GUI-001 (DEC-GUI-001-F)]
+        const auto highlight = accent.brighter(tokens::semantic::hoverBrighten);
         const bool isDestructive = icon == ShortcutIcon::StoreToSynth;
         auto ink = isDestructive ? tokens::semantic::indicatorSynthOut
                                  : tokens::semantic::diagramCaption;
@@ -193,13 +201,12 @@ namespace xplorer::app
         }
         else if (isHovered)
         {
-            ink = isDestructive ? ink.brighter(tokens::semantic::hoverBrighten)
-                                : tokens::component::shortcutButtonHoverInk;
+            ink = isDestructive ? ink.brighter(tokens::semantic::hoverBrighten) : highlight;
         }
 
         g.setColour(fill);
         g.fillRoundedRectangle(bounds, radius);
-        g.setColour(isHovered ? tokens::component::shortcutButtonHoverInk : border);
+        g.setColour(isHovered ? highlight : border);
         g.drawRoundedRectangle(bounds.reduced(tokens::semantic::strokeBorder * 0.5F), radius,
                                tokens::semantic::strokeBorder);
 

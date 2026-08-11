@@ -34,7 +34,12 @@ namespace xplorer::app
 
             void paintButton(juce::Graphics& g, bool isHovered, bool isDown) override
             {
-                paintShortcutButton(g, getLocalBounds().toFloat(), _icon, isHovered, isDown);
+                // Read at paint time, not cached: the accent is user-themeable and
+                // a live preview mutates the LookAndFeel in place. [ADR-JUC-020]
+                const auto* lookAndFeel = dynamic_cast<XplorerLookAndFeel*>(&getLookAndFeel());
+                const auto accent = lookAndFeel != nullptr ? lookAndFeel->ledColour()
+                                                           : tokens::semantic::indicatorSynthIn;
+                paintShortcutButton(g, getLocalBounds().toFloat(), _icon, accent, isHovered, isDown);
             }
 
         private:

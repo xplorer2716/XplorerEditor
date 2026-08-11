@@ -167,13 +167,19 @@ SCENARIO("A hovered key lights in the panel LED blue", "[RQ-GUI-067][TASK-GUI-00
     // reads the pixels back rather than re-deriving the decision in the test.
     const int box = tokens::component::shortcutButtonSize;
 
-    const auto render = [box](ShortcutIcon icon, bool hovered, bool down)
+    // A deliberately off-palette accent: if the paint path ever went back to a
+    // hard-coded colour, this magenta would not appear and the test would fail.
+    // That is the property under test — the highlight FOLLOWS the LookAndFeel's
+    // ledColour, which the user can retheme. [RQ-GUI-067, ADR-JUC-011]
+    const juce::Colour accent{juce::Colour::fromRGB(220, 40, 200)};
+
+    const auto render = [box, accent](ShortcutIcon icon, bool hovered, bool down)
     {
         juce::Image image{juce::Image::ARGB, box, box, true};
         juce::Graphics g{image};
         paintShortcutButton(g, juce::Rectangle<float>{0.0F, 0.0F, static_cast<float>(box),
                                                       static_cast<float>(box)},
-                            icon, hovered, down);
+                            icon, accent, hovered, down);
         return image;
     };
     // Mid-height on the left edge: always on the key's outline, never on an icon.
@@ -181,20 +187,20 @@ SCENARIO("A hovered key lights in the panel LED blue", "[RQ-GUI-067][TASK-GUI-00
 
     GIVEN("a key that is not the destructive one")
     {
-        THEN("hovering turns its outline to the hover ink")
+        THEN("hovering lights its outline in the accent it was given")
         {
             const auto hovered = outlineOf(render(ShortcutIcon::Randomise, true, false));
             const auto resting = outlineOf(render(ShortcutIcon::Randomise, false, false));
             REQUIRE(hovered != resting);
             REQUIRE(hovered.getHue()
-                    == Catch::Approx(tokens::component::shortcutButtonHoverInk.getHue())
+                    == Catch::Approx(accent.brighter(tokens::semantic::hoverBrighten).getHue())
                            .margin(0.02));
         }
     }
 
     GIVEN("the store key, which writes to the synth")
     {
-        THEN("hovering keeps it in the red family, not the hover blue")
+        THEN("hovering keeps its ink in the red family, whatever the accent is")
         {
             const auto hovered = render(ShortcutIcon::StoreToSynth, true, false);
             // Sample the icon itself: the outline is the shared hover colour on

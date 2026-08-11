@@ -47,8 +47,16 @@ namespace xplorer::app
     /// 2026-08-10). [RQ-GUI-064, ADR-GUI-001 (DEC-GUI-001-C)]
     [[nodiscard]] juce::PathStrokeType shortcutIconStroke(float boxSize);
 
-    /// Paint one key: flat fill, 1 px outline, then its icon. States follow
-    /// ADR-JUC-017 — hover brightens, down inverts fill and outline.
+    /// Paint one key: flat fill, 1 px outline, then its icon.
+    ///
+    /// `accent` is the LookAndFeel's `ledColour()` — the runtime source of truth
+    /// every other control derives its highlight from (ADR-JUC-011), and which
+    /// the user can retheme. It is a PARAMETER rather than a token because a
+    /// token would freeze the buttons on one colour while the knobs, tick boxes
+    /// and radios around them followed the user's choice.
+    /// States follow ADR-JUC-017 — hover lights in the accent, down inverts.
+    /// [RQ-GUI-067, ADR-JUC-011, ADR-JUC-020]
     void paintShortcutButton(juce::Graphics& g, juce::Rectangle<float> bounds,
-                             ShortcutIcon icon, bool isHovered, bool isDown);
+                             ShortcutIcon icon, juce::Colour accent,
+                             bool isHovered, bool isDown);
 }

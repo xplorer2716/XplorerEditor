@@ -250,7 +250,6 @@ namespace xplorer::app::tokens
         inline constexpr int shortcutButtonGapAbove = global::shortcutButtonGapAbove;  // MIDI LED strip bottom -> key row top, RQ-GUI-065
         inline constexpr float shortcutIconStroke = global::shortcutIconStroke;  // shortcut icon outline width, RQ-GUI-064
         inline constexpr float shortcutButtonBorderAlpha = global::shortcutButtonBorderAlpha;  // diagramFrame.withAlpha(a) for a key outline, RQ-GUI-063
-        inline const juce::Colour shortcutButtonHoverInk = semantic::indicatorSynthIn;  // a hovered shortcut key lights up in the panel LED blue, the same colour the synth-input lamp uses two rows above it — the row reads as part of the display assembly, so it borrows the assembly signal for feedback rather than inventing one. StoreToSynth is the exception: it already carries indicatorSynthOut because it writes to the hardware, and turning it blue on hover would trade a destructive-action signal for a hover signal, so it brightens in its own red instead. RQ-GUI-067, ADR-GUI-001 (DEC-GUI-001-F)
         inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
         inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
         inline constexpr int indicatorSize = global::indicatorSize;  // MIDI LED lamp diameter, RQ-GUI-056
