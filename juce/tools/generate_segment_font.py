@@ -114,7 +114,7 @@ def main() -> int:
         print(f"{INC_PATH.name} is up to date ({GLYPH_COUNT} glyphs)")
         return 0
 
-    INC_PATH.write_text(text, encoding="utf-8")
+    INC_PATH.write_text(text, encoding="utf-8", newline="\n")
     print(f"wrote {INC_PATH} ({GLYPH_COUNT} glyphs)")
     return 0
 

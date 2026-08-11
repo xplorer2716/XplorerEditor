@@ -81,7 +81,7 @@ def main() -> int:
         count += 1
 
     out.append(f"static_assert(true); // {count} fixed parameters extracted")
-    open(OUT_PATH, "w", encoding="utf-8").write("\n".join(out) + "\n")
+    open(OUT_PATH, "w", encoding="utf-8", newline="\n").write("\n".join(out) + "\n")
     print(f"{count} fixed parameters -> {OUT_PATH}")
     return 0
 
