@@ -66,18 +66,36 @@ the shape; the owner flagged it on the first mockup. This is recorded as a
 decision because the JUCE default is the wrong one here and a later refactor that
 drops the stroke type will silently reintroduce the artefact.
 
-### DEC-GUI-001-D — The row is defined by the display, both ends
-The row starts on the VFD's left edge and ends on its right. Given a 267 px
-display there is exactly one integer solution for eight square keys with equal
-gaps — 29 px keys, 5 px gaps — so the alignment fixes the metrics rather than the
-other way round. Both live in `SectionLayout.hpp` beside the matrix bar's ends,
-and a test asserts them against the VFD's control-table entry, the same way
-RQ-CLR-007's bar is asserted against its grid.
+### DEC-GUI-001-D — The row is defined by the modulation grid, both ends
+The row starts on the `MOD_SRC_n` column's left edge and ends on the
+`MOD_QUANTIZE_n` column's right edge — 960 to 1218, the span RQ-CLR-007 already
+gives the `MOD MATRIX` separator. Across those 258 px, 27 px keys with 6 px gaps
+is the solution, so the alignment fixes the metrics rather than the other way
+round.
+
+A first pass aligned the row to the VFD instead (951→1218, 29 px keys). Both
+alignments are defensible on their own, but the owner observed that this is the
+same calculation as the separator's, and it is: hanging the row off the grid
+leaves the right column with ONE reference rather than two nearly-identical ones,
+and a reader no longer has to ask why the row and the bar start nine px apart.
+The keys lose two px, which is the price.
 
 Vertically the row sits 8 px below the LED strip and 24 px above the matrix
 labels. The asymmetry is deliberate and is RQ-CLR-001's proximity principle: the
 buttons belong to the display group (ADR-JUC-024), so they bind upward to it, not
 downward to the matrix.
+
+### DEC-GUI-001-F — Hover borrows the display assembly's LED blue
+A hovered key draws its icon and outline in `indicatorSynthIn`, aliased as
+`shortcutButtonHoverInk`. The row lives between the VFD and the MIDI lamps
+(ADR-JUC-024), so it signals with the colour that assembly already uses for
+"active" rather than adding a hover colour to the palette.
+
+`btPatchStore` is exempt and brightens in its own `indicatorSynthOut` red. It is
+the only key that writes to the synth, and a hover that recolours it blue would
+spend the destructive-action signal to buy a hover signal — the wrong trade. The
+pressed state is untouched and stays inverted, so press and hover remain
+distinguishable rather than being two intensities of the same thing.
 
 ### DEC-GUI-001-E — The matrix descends 27 px, derived not chosen
 The whole matrix block moves down 27 px so the `MOD MATRIX` separator clears it

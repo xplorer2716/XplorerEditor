@@ -178,14 +178,28 @@ namespace xplorer::app
         const auto fill = isDown ? border.withAlpha(1.0F)
                                  : tokens::semantic::surfaceRecessed;
 
-        auto ink = icon == ShortcutIcon::StoreToSynth ? tokens::semantic::indicatorSynthOut
-                                                      : tokens::semantic::diagramCaption;
-        if (isDown)   { ink = tokens::semantic::surfaceRecessed; }
-        else if (isHovered) { ink = ink.brighter(tokens::semantic::hoverBrighten); }
+        // Hover lights the key in the panel's LED blue — the colour of the
+        // synth-input lamp two rows above — so the row signals with the display
+        // assembly's own vocabulary instead of a hover colour of its own.
+        // StoreToSynth keeps its red: it is the one key that writes to the
+        // hardware, and swapping that signal for a hover signal would lose the
+        // more important of the two. [RQ-GUI-067, ADR-GUI-001 (DEC-GUI-001-F)]
+        const bool isDestructive = icon == ShortcutIcon::StoreToSynth;
+        auto ink = isDestructive ? tokens::semantic::indicatorSynthOut
+                                 : tokens::semantic::diagramCaption;
+        if (isDown)
+        {
+            ink = tokens::semantic::surfaceRecessed;
+        }
+        else if (isHovered)
+        {
+            ink = isDestructive ? ink.brighter(tokens::semantic::hoverBrighten)
+                                : tokens::component::shortcutButtonHoverInk;
+        }
 
         g.setColour(fill);
         g.fillRoundedRectangle(bounds, radius);
-        g.setColour(isHovered ? border.withMultipliedAlpha(1.4F) : border);
+        g.setColour(isHovered ? tokens::component::shortcutButtonHoverInk : border);
         g.drawRoundedRectangle(bounds.reduced(tokens::semantic::strokeBorder * 0.5F), radius,
                                tokens::semantic::strokeBorder);
 

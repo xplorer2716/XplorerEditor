@@ -160,3 +160,59 @@ SCENARIO("Icon strokes are round-capped and curve-jointed", "[RQ-GUI-064][TASK-G
         }
     }
 }
+
+SCENARIO("A hovered key lights in the panel LED blue", "[RQ-GUI-067][TASK-GUI-004]")
+{
+    // Colour choice is the whole requirement here, so this renders the key and
+    // reads the pixels back rather than re-deriving the decision in the test.
+    const int box = tokens::component::shortcutButtonSize;
+
+    const auto render = [box](ShortcutIcon icon, bool hovered, bool down)
+    {
+        juce::Image image{juce::Image::ARGB, box, box, true};
+        juce::Graphics g{image};
+        paintShortcutButton(g, juce::Rectangle<float>{0.0F, 0.0F, static_cast<float>(box),
+                                                      static_cast<float>(box)},
+                            icon, hovered, down);
+        return image;
+    };
+    // Mid-height on the left edge: always on the key's outline, never on an icon.
+    const auto outlineOf = [box](const juce::Image& i) { return i.getPixelAt(0, box / 2); };
+
+    GIVEN("a key that is not the destructive one")
+    {
+        THEN("hovering turns its outline to the hover ink")
+        {
+            const auto hovered = outlineOf(render(ShortcutIcon::Randomise, true, false));
+            const auto resting = outlineOf(render(ShortcutIcon::Randomise, false, false));
+            REQUIRE(hovered != resting);
+            REQUIRE(hovered.getHue()
+                    == Catch::Approx(tokens::component::shortcutButtonHoverInk.getHue())
+                           .margin(0.02));
+        }
+    }
+
+    GIVEN("the store key, which writes to the synth")
+    {
+        THEN("hovering keeps it in the red family, not the hover blue")
+        {
+            const auto hovered = render(ShortcutIcon::StoreToSynth, true, false);
+            // Sample the icon itself: the outline is the shared hover colour on
+            // every key, but the INK is what must stay red here. [RQ-GUI-067]
+            bool foundRedInk = false;
+            for (int y = 0; y < box && !foundRedInk; ++y)
+            {
+                for (int x = 0; x < box; ++x)
+                {
+                    const auto p = hovered.getPixelAt(x, y);
+                    if (p.getSaturation() > 0.5F && p.getHue() < 0.08F)
+                    {
+                        foundRedInk = true;
+                        break;
+                    }
+                }
+            }
+            REQUIRE(foundRedInk);
+        }
+    }
+}

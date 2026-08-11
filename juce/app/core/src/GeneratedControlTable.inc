@@ -37,12 +37,13 @@
 // [RQ-CLR-001, RQ-CLR-004, RQ-CLR-005, ADR-CLR-001 (DEC-CLR-001-C)]
 //
 // Deviation (owner request, 2026-08-10, TASK-GUI-002/003): the eight shortcut
-// buttons go from 19x15 bitmaps to 29x29 vector keys, and the row is re-laid out
-// to span the VFD exactly — 8*29 + 7*5 = 267 = the display width, the only
-// integer solution, so the row now starts on the VFD left edge (951) and ends on
-// its right (1218) instead of floating 194 px wide inside a 267 px column. It
-// moves from y=121 to y=132, which clears the MIDI LED strip it would otherwise
-// overlap now that it reaches x=1218.
+// buttons go from 19x15 bitmaps to 27x27 vector keys, and the row is re-laid out
+// to span the MODULATION GRID — from the MOD_SRC combo column's left edge (960)
+// to the MOD_QUANTIZE tick-box column's right edge (1218), which is exactly the
+// span the MOD MATRIX separator already takes (RQ-CLR-007). 8*27 + 7*6 = 258 is
+// the solution; the row and the separator now derive from ONE reference instead
+// of two. It moves from y=121 to y=132, which clears the MIDI LED strip it would
+// otherwise overlap now that it reaches x=1218.
 //
 // The whole modulation matrix — four column labels and twenty rows — follows by
 // +27 px. That figure is NOT chosen to make room: RQ-CLR-001 requires every
@@ -249,14 +250,14 @@
     {"VCO2_WAVE_SYNC", ControlKind::CheckBoxValuedControl, 371, 409, 52, 17, "VCO2_WAVE_SYNC", "SYNC"},
     {"_ledPanelControl", ControlKind::LedPanelControl, 1190, 116, 32, 8, "", ""},
     {"_vfdDisplay", ControlKind::VacuumFluoDisplayControl, 951, 30, 267, 75, "", ""},
-    {"btPatchGoto", ControlKind::BackgroundImageButton, 1019, 132, 29, 29, "", ""},
-    {"btPatchLoad", ControlKind::BackgroundImageButton, 1087, 132, 29, 29, "", ""},
-    {"btPatchMinus", ControlKind::BackgroundImageButton, 951, 132, 29, 29, "", ""},
-    {"btPatchPlus", ControlKind::BackgroundImageButton, 985, 132, 29, 29, "", ""},
-    {"btPatchRandom", ControlKind::BackgroundImageButton, 1053, 132, 29, 29, "", ""},
-    {"btPatchSave", ControlKind::BackgroundImageButton, 1121, 132, 29, 29, "", ""},
-    {"btPatchStore", ControlKind::BackgroundImageButton, 1155, 132, 29, 29, "", ""},
-    {"btSettings", ControlKind::BackgroundImageButton, 1189, 132, 29, 29, "", ""},
+    {"btPatchGoto", ControlKind::BackgroundImageButton, 1026, 132, 27, 27, "", ""},
+    {"btPatchLoad", ControlKind::BackgroundImageButton, 1092, 132, 27, 27, "", ""},
+    {"btPatchMinus", ControlKind::BackgroundImageButton, 960, 132, 27, 27, "", ""},
+    {"btPatchPlus", ControlKind::BackgroundImageButton, 993, 132, 27, 27, "", ""},
+    {"btPatchRandom", ControlKind::BackgroundImageButton, 1059, 132, 27, 27, "", ""},
+    {"btPatchSave", ControlKind::BackgroundImageButton, 1125, 132, 27, 27, "", ""},
+    {"btPatchStore", ControlKind::BackgroundImageButton, 1158, 132, 27, 27, "", ""},
+    {"btSettings", ControlKind::BackgroundImageButton, 1191, 132, 27, 27, "", ""},
     {"label1", ControlKind::Label, 67, 128, 72, 13, "", "VCO1 MOD ="},
     {"label2", ControlKind::Label, 67, 411, 72, 13, "", "VCO2 MOD ="},
     {"label3", ControlKind::Label, 531, 128, 64, 13, "", "VCF MOD ="},

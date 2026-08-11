@@ -270,9 +270,8 @@ SCENARIO("The modulation matrix obeys the same rhythm as every other section",
 SCENARIO("The shortcut button row spans the display exactly",
          "[RQ-GUI-065][TASK-GUI-002]")
 {
-    GIVEN("the eight keys and the VFD above them")
+    GIVEN("the eight keys and the modulation grid they hang from")
     {
-        const auto& vfd = control("_vfdDisplay");
         const auto& led = control("_ledPanelControl");
         const std::array<const char*, 8> keys{"btPatchMinus", "btPatchPlus",
                                               "btPatchGoto",  "btPatchRandom",
@@ -289,12 +288,17 @@ SCENARIO("The shortcut button row spans the display exactly",
             }
         }
 
-        THEN("the row starts on the display's left edge and ends on its right")
+        THEN("the row spans exactly what the MOD MATRIX separator spans")
         {
+            // One reference for the whole right column: the row, the separator
+            // and the twenty matrix rows share these two verticals. Asserting
+            // against the separator's constants rather than restating 960/1218
+            // is what keeps them from drifting apart. [RQ-GUI-065, RQ-CLR-007]
             const auto& first = control(keys.front());
             const auto& last = control(keys.back());
-            REQUIRE(first.x == vfd.x);
-            REQUIRE(last.x + last.width == vfd.x + vfd.width);
+            REQUIRE(first.x == layout::SECTION_X_MATRIX);
+            REQUIRE(last.x + last.width
+                    == layout::SECTION_X_MATRIX + layout::SECTION_MATRIX_BAR_WIDTH);
         }
 
         THEN("the keys are evenly spaced by shortcutButtonGap")

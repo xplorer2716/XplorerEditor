@@ -76,6 +76,29 @@ modulation matrix column into the section rhythm it had escaped.
 - **Dependencies**: TASK-GUI-002
 - **Assignee**: AI
 
+### TASK-GUI-004: Row on the modulation grid, and the LED hover
+- **Tier**: S
+- **Status**: Done (2026-08-10)
+- **Description**: Re-reference the row from the VFD to the modulation grid, and
+  add the LED-blue hover treatment.
+- **Requirement refs**: RQ-GUI-065 (amended), RQ-GUI-067, RQ-CLR-007
+- **ADR refs**: ADR-GUI-001 (DEC-GUI-001-D amended, DEC-GUI-001-F)
+- **Origin**: owner review of the TASK-GUI-002 build. Two points: the row should
+  span the modulation grid rather than the VFD — "the same calculation as the MOD
+  MATRIX separator", which it is — and a hovered key should light in the LED
+  colour.
+- **Change**: keys 29→27, gaps 5→6, row 951→960 at its left end; both ends now
+  equal the separator's, so the right column hangs off one reference instead of
+  two. Hover ink token added.
+- **Acceptance Criteria**:
+  - **Given** the control table, **When** the row's ends are compared with the
+    `MOD MATRIX` separator's, **Then** they coincide (960 and 1218)
+  - **And** the keys are 27×27 with 6 px gaps
+  - **Given** a hovered key other than store, **When** it is painted, **Then**
+    its ink is `shortcutButtonHoverInk`
+- **Dependencies**: TASK-GUI-003
+- **Assignee**: AI
+
 ---
 
 ## Verification note
