@@ -15,6 +15,14 @@ DEC-JUC-021, DEC-JUC-023, DEC-JUC-040) and disabled (DEC-JUC-020, DEC-JUC-024)
 remain in force exactly as written. This ADR therefore now covers **two** of the
 three states it was written for. [RQ-GUI-054 supersedes RQ-GUI-042]
 
+**Extended 2026-08-15 (owner report, session GUI): DEC-JUC-111 closes the popup
+gap DEC-JUC-021 left open.** DEC-JUC-021 tokenised the combo box's own fill but
+left its popup list untouched; the hovered item's highlight stayed
+`LookAndFeel_V4`'s stock colour and read as barely visible. DEC-JUC-111 gives
+`PopupMenu::highlightedBackgroundColourId`/`highlightedTextColourId` the same
+accent treatment. No prior decision is revised — this is an addition, not a
+supersession. [RQ-GUI-068]
+
 <!-- Motivated by RQ-GUI-041 (hover), RQ-GUI-042 (keyboard focus), RQ-GUI-043
 (disabled); closes the "States missing" rows of the design-system component
 catalogue (RQ-DSN §4). References the shared state-to-code mapping
@@ -23,7 +31,7 @@ disabled rule (RQ-DSN-032), the shared focus rule (RQ-DSN-033), the LED
 single-source-of-truth (ADR-JUC-011) and the token module (ADR-JUC-014). -->
 
 ## Requirements
-RQ-GUI-041, RQ-GUI-042, RQ-GUI-043, RQ-DSN-023, RQ-DSN-031, RQ-DSN-032, RQ-DSN-033, RQ-DSN-062
+RQ-GUI-041, RQ-GUI-042, RQ-GUI-043, RQ-GUI-068, RQ-DSN-023, RQ-DSN-031, RQ-DSN-032, RQ-DSN-033, RQ-DSN-062
 
 ## Context
 
@@ -164,6 +172,25 @@ without the two states reading as one.
   ADR's own single-sourcing intent for every other state in this document.
   (RQ-GUI-041, issue #21)
 
+- **DEC-JUC-111 — Popup-list hover is a `setColour` on the ctor, not a new
+  `drawPopupMenuItem` override.** `LookAndFeel_V4::drawPopupMenuItem` already
+  reads `findColour(PopupMenu::highlightedBackgroundColourId)` /
+  `highlightedTextColourId` for a highlighted row — the layout (icon, tick,
+  submenu arrow, text sizing) needs no change, only the two colour IDs were
+  never set, so they resolved to `LookAndFeel_V4`'s own generic defaults.
+  `XplorerLookAndFeel`'s constructor now sets both, next to its existing
+  `PopupMenu::backgroundColourId` line: the highlighted background is
+  `ledColour.withAlpha(component.popupHighlightAlpha)` (NEW token, 0.35 — an
+  active interaction cue, so tuned stronger than `blockFillAlpha`'s 0.30
+  passive identity tint), the highlighted text is `semantic.textPrimary`
+  (unchanged from the item's idle text colour, so only the background reads
+  as different). Read from the ctor parameter, not `_ledColour` mutated
+  later: `MainComponent::updateLedColour` already rebuilds the whole
+  `XplorerLookAndFeel` on a LED-colour change (DEC-JUC-036), so a
+  constructor-time `setColour` stays live by the same mechanism every other
+  `setColour` call in this constructor already relies on — no new staleness
+  risk. (RQ-GUI-068)
+
 ## Consequences
 
 - **Easier:** the panel stops feeling inert under the mouse; ~~keyboard users can
@@ -212,6 +239,12 @@ without the two states reading as one.
   with no framework hook to enforce it, so a future raw combo box would
   silently reintroduce the same bug; one reusable base makes the fix
   impossible to forget.
+- **New `drawPopupMenuItem` override for DEC-JUC-111** (reproducing
+  `LookAndFeel_V4`'s row layout by hand to draw the highlight): rejected —
+  the stock implementation already reads the two colour IDs this decision
+  needed; overriding the method would duplicate icon/tick/submenu-arrow
+  layout code for a one-colour change and create a second place that layout
+  could drift from stock JUCE.
 - **Give `ModMatrixPanel`'s row combos to `BoundComboBox`** (reuse the
   already-fixed class instead of unifying): rejected — `BoundComboBox` is
   coupled to `ParameterBindingRegistry`'s named-parameter model, which the
