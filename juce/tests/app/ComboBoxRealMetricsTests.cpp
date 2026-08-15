@@ -45,7 +45,11 @@ SCENARIO("Every combo-box label fits at the shipped size in the embedded face",
         // opinion. Migrating both to GlyphArrangement is a separate change.
         JUCE_BEGIN_IGNORE_DEPRECATION_WARNINGS
         const auto measure = [&font](std::string_view text, float)
-        { return font.getStringWidthFloat(juce::String(std::string(text))); };
+        {
+            // Must be the SAME measurement XplorerLookAndFeel makes, or this test
+            // certifies a fit the application does not actually get. [RQ-GUI-048]
+            return juce::GlyphArrangement::getStringWidth(font, juce::String(std::string(text)));
+        };
         JUCE_END_IGNORE_DEPRECATION_WARNINGS
 
         WHEN("every combo box of the control table is checked")

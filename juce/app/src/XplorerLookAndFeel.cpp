@@ -44,7 +44,13 @@ namespace xplorer::app
                 collectComboBoxSizingInputs(), tokens::semantic::comboTextSize,
                 tokens::semantic::comboArrowZone, tokens::semantic::comboLabelBorder,
                 [&font](std::string_view text, float)
-                { return font.getStringWidthFloat(juce::String(std::string(text))); });
+                {
+                    // GlyphArrangement, not the deprecated Font::getStringWidthFloat —
+                    // same call BackgroundRenderer uses to measure section labels, so
+                    // the two agree on what a string is wide. [ADR-JUC-022]
+                    return juce::GlyphArrangement::getStringWidth(
+                        font, juce::String(std::string(text)));
+                });
             for (const auto& id : overflowing)
             {
                 DBG("RQ-GUI-048: combo box '" << id << "' cannot show its widest label at "
@@ -181,7 +187,8 @@ namespace xplorer::app
             const auto captionSize = button.findParentComponentOfClass<juce::DialogWindow>() != nullptr
                                          ? tokens::semantic::textTitle
                                          : tokens::semantic::textCaption;
-            g.setFont(juce::Font(juce::jmin(captionSize, static_cast<float>(bounds.getHeight()) - 3.0F)));
+            g.setFont(juce::Font{juce::FontOptions{
+                juce::jmin(captionSize, static_cast<float>(bounds.getHeight()) - 3.0F)}});
             const auto textArea = bounds.withTrimmedLeft(boxSize + 2);
             g.drawText(button.getButtonText(), textArea, juce::Justification::centredLeft, false);
         }

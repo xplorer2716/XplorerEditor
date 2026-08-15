@@ -108,6 +108,32 @@ delivered state.
 - **Dependencies**: TASK-GUI-003
 - **Assignee**: AI
 
+### TASK-GUI-005: Clear the deprecated JUCE font calls
+- **Tier**: S
+- **Status**: Done (2026-08-10)
+- **Description**: Migrate the three remaining `Font::getStringWidthFloat` /
+  `juce::Font(float)` call sites to `GlyphArrangement::getStringWidth` and
+  `FontOptions`.
+- **Requirement refs**: RQ-BLD-003 (warning-clean at high warning levels),
+  RQ-GUI-048 (the combo-fit check these two of them implement)
+- **ADR refs**: None — this is maintenance, not a decision. Follows ADR-JUC-022's
+  existing choice of measurement.
+- **Origin**: surfaced in this PR's macOS log. They are warnings, not errors, and
+  predate the branch — `XplorerLookAndFeel.cpp:47` dates from 819e5f7 — but a
+  deprecation is an error with a delay: the build breaks the day JUCE removes
+  the symbol, and RQ-BLD-003 asks for warning-clean. `BackgroundRenderer` had
+  already migrated and even carries a comment warning against the deprecated
+  call; these files were simply missed.
+- **Change**: `XplorerLookAndFeel.cpp` ×2, `ComboBoxRealMetricsTests.cpp` ×1. The
+  test one matters beyond hygiene — it must measure text the same way the
+  LookAndFeel does, or it certifies a fit the application does not get.
+- **Acceptance Criteria**:
+  - **Given** the source tree, **When** it is searched for `getStringWidthFloat`
+    or `juce::Font(` without `FontOptions`, **Then** no call site remains
+  - **And** the macOS and Windows jobs build the app with no deprecation warning
+- **Dependencies**: None
+- **Assignee**: AI
+
 ---
 
 ## Verification note
