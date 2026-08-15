@@ -3,6 +3,7 @@
 #include "BinaryData.h"
 #include "DesignTokens.hpp"
 #include "ModMatrixComboBox.hpp"
+#include "SectionLayout.hpp"
 
 #include "xplorer/app/ComboBoxSizing.hpp"
 
@@ -77,7 +78,12 @@ namespace xplorer::app
                                               float sliderPos, float startAngle, float endAngle,
                                               juce::Slider& slider)
     {
-        const auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat().reduced(2.0F);
+        // The two insets come from SectionLayout.hpp, not from literals here: the
+        // background painter ends each control tick ON this ring, and a tick that
+        // reads one number while the ring is drawn from another is exactly the
+        // drift RQ-GUI-071 was raised for. [RQ-GUI-071, ADR-JUC-027 (DEC-JUC-112)]
+        const auto bounds =
+            juce::Rectangle<int>(x, y, width, height).toFloat().reduced(layout::KNOB_BOUNDS_INSET);
         const auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0F;
         const auto centre = bounds.getCentre();
         const auto angle = startAngle + sliderPos * (endAngle - startAngle);
@@ -87,7 +93,7 @@ namespace xplorer::app
         // drawn. [RQ-GUI-031, ADR-JUC-009]
 
         // Unlit ring track (full sweep), so the coloured arc reads against it.
-        const auto ringRadius = radius - 1.0F;
+        const auto ringRadius = radius - layout::KNOB_RING_INSET;
         juce::Path track;
         track.addCentredArc(centre.x, centre.y, ringRadius, ringRadius, 0.0F, startAngle, endAngle, true);
         // Near-invisible white wash (reference DEFAULT_KNOB_LED_BACKGROUND_COLOR,

@@ -131,6 +131,52 @@ CROP = MENUSTRIP_BAND - PADDING  # 27
 W, H = 1260, 813 - CROP
 random.seed(42)
 
+# ---- control ticks: where a tick STOPS -------------------------------------
+# Mirrors SectionLayout.hpp. A tick ends on the OUTER edge of the first pixel
+# its target paints — touching it, never crossing into it, never stopping short.
+# The RULE is derived from the same tokens the painter reads (strokeKnobRing,
+# strokeDiagram), so the two cannot diverge on a value; only the ROWS are
+# mirrored, exactly as every other coordinate in this file is.
+# [RQ-GUI-071, ADR-JUC-013, ADR-JUC-027 (DEC-JUC-112, DEC-JUC-076)]
+KNOB_BOUNDS_INSET = 2.0        # anti-aliasing margin inside the control bounds
+KNOB_RING_INSET = 1.0          # ring path radius, inside that margin
+KNOB_RING_TOP_CANVAS_INSET = (KNOB_BOUNDS_INSET + KNOB_RING_INSET
+                              - _num("strokeKnobRing") / 2.0)
+COMBO_TOP_CANVAS_INSET = 0.0   # a combo paints from its bounds; a Component clips to itself
+
+# The rows a tick aims at, CANVAS frame — GeneratedControlTable.inc.
+KNOB_ROW_TOP = 67          # VCO1 FREQ/DETUNE/PW/VOLUME + VCF FREQ/RES/VCA1/VCA2
+KNOB_ROW_FM = 229          # FM AMPLITUDE
+KNOB_ROW_VCO2_VCA = 245    # VCO2 VOLUME (on the FM row, not the VCO2 row)
+KNOB_ROW_ENV = 251
+KNOB_ROW_VCO2 = 347
+KNOB_ROW_LFO = 483
+KNOB_ROW_LAG = 532
+KNOB_ROW_RAMP = 667
+KNOB_ROW_TRACK = 718
+COMBO_VCF_MODE_Y, COMBO_VCF_MODE_CX = 68, 675.5   # VCF_MODE.x 612 + 127/2
+COMBO_LFO_WAVE_Y, COMBO_LFO_WAVE_CX = 486, 661.0  # LFO_X_WAVESHAPE.x 611 + 100/2
+
+# ---- section separators, REFERENCE frame — mirrors SectionLayout.hpp --------
+# A column's separators share one x and one width (RQ-CLR-006); the three bottom
+# anchors share one baseline (RQ-CLR-003); MOD MATRIX's two ends are defined by
+# the control grid it runs alongside (RQ-CLR-007). [ADR-CLR-001]
+SECTION_X_LEFT, SECTION_X_CENTRE = 53, 526
+SECTION_X_MATRIX, SECTION_MATRIX_BAR_WIDTH = 960, 258
+SECTION_VCO_Y, SECTION_LAG_Y, SECTION_TRACK_Y = 465, 615, 799
+SECTION_VCF_Y, SECTION_ENV_Y, SECTION_LFO_Y, SECTION_RAMP_Y = 182, 415, 599, 799
+SECTION_MATRIX_Y = 799
+# Section bottoms the painter DRAWS rather than reading off a control.
+LAG_FRAME_TOP_CANVAS_Y = 487
+LAG_RATE_CAPTION_BASELINE_CANVAS_Y = 576
+TRACK_PT_CAPTION_BASELINE_CANVAS_Y = 760
+RAMP_TRIGGER_FRAME_TOP_CANVAS_Y, RAMP_TRIGGER_FRAME_HEIGHT = 719, 41
+
+
+def refY(canvas_y):
+    """CANVAS frame -> REFERENCE frame, the frame this file's draw calls use."""
+    return canvas_y + CROP
+
 svg = []
 svg.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">')
 
@@ -234,8 +280,26 @@ def line(x1, y1, x2, y2):
     # round caps so perpendicular segments join with a soft rounded corner
     # matching the block frames (JUCE PathStrokeType curved/rounded)
     return _tag(_LINES, f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{FRAME}" stroke-width="{LW}" stroke-linecap="round"/>')
-def stub(cx, y, ln=12):
-    return line(cx, y, cx, y + ln)
+def _tick_end(first_painted_canvas_y):
+    """REFERENCE y a tick must END at. The tick is stroked at LW with ROUNDED end
+    caps, so its painted end reaches half a stroke past the endpoint — taking
+    that half off is what lands the cap ON the target instead of over it."""
+    return round(refY(first_painted_canvas_y) - LW / 2.0, 2)
+
+
+def knob_tick(cx, y, knob_canvas_top_y):
+    return line(cx, y, cx, _tick_end(knob_canvas_top_y + KNOB_RING_TOP_CANVAS_INSET))
+
+
+def combo_tick(cx, y, combo_canvas_top_y):
+    return line(cx, y, cx, _tick_end(combo_canvas_top_y + COMBO_TOP_CANVAS_INSET))
+
+
+def caption_centre_x(cx):
+    """A caption's integer x for a control centre — round, do not truncate: an
+    odd-width combo (VCF_MODE is 127) would otherwise sit half a pixel left of
+    the tick above it."""
+    return int(cx + 0.5)
 def T(x, y, s, size=FS_SECTION, w="bold", fill=TITLE, anchor="start", ls="0.5"):
     return _tag(_TEXT,
                 f'<text x="{x}" y="{y}" font-family="Arial, Helvetica, sans-serif" font-size="{size}" '
@@ -291,11 +355,11 @@ for i, (wave, y) in enumerate([("TRIANGLE", 45), ("SAWTOOTH", 57), ("PULSE", 70)
     svg.append(T(193, y + 4, wave, FS_WAVE, "bold", TITLE, "end"))
 svg.append(line(198, 45, 330, 45) + line(198, 57, 330, 57))          # tri, saw
 svg.append(line(198, 70, 234, 70) + line(286, 70, 330, 70))          # pulse via PWM
-svg.append(box(234, 60, 52, 23, "vco") + T(260, 76, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(259, 83))
+svg.append(box(234, 60, 52, 23, "vco") + T(260, 76, "PWM", FS_PWM, "bold", TITLE, "middle") + knob_tick(259, 83, KNOB_ROW_TOP))
 svg.append(box(330, 32, 53, 52, "vco") + T(356, 63, "MIX", FS_MIX, "bold", TITLE, "middle"))
 svg.append(line(383, 58, 405, 58))
-svg.append(box(405, 45, 53, 26, "vco") + T(431, 63, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(432, 71, 23))
-svg.append(stub(82, 84) + stub(170, 84))
+svg.append(box(405, 45, 53, 26, "vco") + T(431, 63, "VCA", FS_VCA, "bold", TITLE, "middle") + knob_tick(432, 71, KNOB_ROW_TOP))
+svg.append(knob_tick(82, 84, KNOB_ROW_TOP) + knob_tick(170, 84, KNOB_ROW_TOP))
 svg.append(caption(82, 137, "FREQUENCY") + caption(170, 137, "DETUNE") + caption(259, 137, "PULSE WIDTH") + caption(432, 137, "VOLUME"))
 # VCO1 VCA out -> straight into the VCF left edge
 svg.append(line(458, 58, 525, 58))
@@ -317,10 +381,10 @@ svg.append(box(51, 210, 102, 36, "vco") + T(102, 233, "FM VCA", FS_BLOCK, "bold"
 svg.append(box(184, 210, 90, 52))
 svg.append(T(229, 274, "DESTINATION", FS_SMALL, "bold", CAPTION, "middle", "0.3"))
 svg.append(line(153, 228, 184, 228))
-svg.append(stub(106, 246) + caption(106, 300, "FM AMPLITUDE"))
+svg.append(knob_tick(106, 246, KNOB_ROW_FM) + caption(106, 300, "FM AMPLITUDE"))
 svg.append(box(329, 210, 52, 52, "vco") + T(355, 241, "MIX", FS_MIX, "bold", TITLE, "middle"))
 svg.append(line(381, 232, 405, 232))
-svg.append(box(405, 220, 53, 26, "vco") + T(431, 238, "VCA", FS_VCA, "bold", TITLE, "middle") + stub(430, 246, 24))
+svg.append(box(405, 220, 53, 26, "vco") + T(431, 238, "VCA", FS_VCA, "bold", TITLE, "middle") + knob_tick(430, 246, KNOB_ROW_VCO2_VCA))
 # VCO2-row VCA out -> right, then up at x=499 into the VCF  [owner point 2]
 svg.append(line(458, 232, 499, 232) + line(499, 232, 499, 70))
 svg.append(_tag(_LINES, f'<path d="M499 70 Q499 58 509 58" fill="none" stroke="{FRAME}" stroke-width="{LW}"/>'))
@@ -331,33 +395,37 @@ for wave, y in [("TRIANGLE", 320), ("SAWTOOTH", 334), ("PULSE", 348)]:
 # vco2 waves route up into MIX
 svg.append(line(198, 320, 297, 320) + line(297, 320, 297, 228) + line(297, 228, 329, 228))
 svg.append(line(198, 334, 303, 334) + line(303, 334, 303, 237) + line(303, 237, 329, 237))
-svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23, "vco") + T(259, 356, "PWM", FS_PWM, "bold", TITLE, "middle") + stub(260, 363))
+svg.append(line(198, 348, 233, 348) + box(233, 340, 52, 23, "vco") + T(259, 356, "PWM", FS_PWM, "bold", TITLE, "middle") + knob_tick(260, 363, KNOB_ROW_VCO2))
 svg.append(line(285, 348, 309, 348) + line(309, 348, 309, 246) + line(309, 246, 329, 246))
 svg.append(_tag(_TEXT, f'<text x="318" y="300" font-family="Arial" font-size="{FS_SMALL}" font-weight="bold" fill="{CAPTION}" transform="rotate(-90 318 300)" letter-spacing="0.3">NOISE</text>'))
 svg.append(line(317, 255, 329, 255) + line(317, 255, 317, 270))
-svg.append(stub(82, 362) + stub(169, 362))
+svg.append(knob_tick(82, 362, KNOB_ROW_VCO2) + knob_tick(169, 362, KNOB_ROW_VCO2))
 svg.append(caption(82, 418, "FREQUENCY") + caption(169, 418, "DETUNE") + caption(260, 418, "PULSE WIDTH"))
 # FM carrier path: VCO2 TRIANGLE line taps up at x=204 to the y=305 run,
 # which feeds the left bus into the FM VCA input  [owner point 3]
 svg.append(line(40, 229, 40, 305) + line(40, 229, 51, 229) + line(40, 305, 204, 305))
 svg.append(line(204, 305, 204, 320))
-svg.append(section(53, 487, "VCO1/VCO2/FM", 370, "vco"))
+svg.append(section(SECTION_X_LEFT, SECTION_VCO_Y, "VCO1/VCO2/FM", 370, "vco"))
 
-# --- LAG
-svg.append(box(81, 501, 268, 36, "lag") + T(215, 524, "LAG", FS_MIX, "bold", TITLE, "middle"))
-svg.append(outlab(349, 518, "LAG", "OUT"))
-svg.append(line(52, 518, 81, 518) + line(52, 518, 52, 563) + smalllab(35, 576, "LAG IN", "start"))
-svg.append(stub(215, 537) + caption(215, 590, "RATE"))
-svg.append(section(53, 629, "LAG", 370, "lag"))
+# --- LAG   (whole group +13 canvas px, RQ-CLR-004: equalises this column's
+#            two below-separator gaps at 45 and 46 px)
+svg.append(box(81, refY(LAG_FRAME_TOP_CANVAS_Y), 268, 36, "lag") + T(215, 537, "LAG", FS_MIX, "bold", TITLE, "middle"))
+svg.append(outlab(349, 531, "LAG", "OUT"))
+svg.append(line(52, 531, 81, 531) + line(52, 531, 52, 576) + smalllab(35, 589, "LAG IN", "start"))
+svg.append(knob_tick(215, 550, KNOB_ROW_LAG)
+           + caption(215, refY(LAG_RATE_CAPTION_BASELINE_CANVAS_Y), "RATE"))
+svg.append(section(SECTION_X_LEFT, SECTION_LAG_Y, "LAG", 370, "lag"))
 
 # --- TRACKING GENERATOR
-svg.append(box(81, 679, 268, 36, "track") + T(215, 702, "TRACKING GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
-svg.append(outlab(349, 696, "TRACK", "OUT"))
-svg.append(line(52, 696, 81, 696) + line(52, 696, 52, 741) + smalllab(35, 754, "TRACK IN", "start"))
+# (whole group +21 canvas px: TRACK X is pinned by RQ-CLR-003, so the group
+#  moves to meet it)
+svg.append(box(81, 700, 268, 36, "track") + T(215, 723, "TRACKING GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
+svg.append(outlab(349, 717, "TRACK", "OUT"))
+svg.append(line(52, 717, 81, 717) + line(52, 717, 52, 762) + smalllab(35, 775, "TRACK IN", "start"))
 for i, cx in enumerate([126, 170, 214, 258, 302]):   # PT knob centres (table)
-    svg.append(stub(cx, 715))
-    svg.append(caption(cx, 766, f"PT {i+1}"))
-svg.append(section(53, 799, "TRACK X", 370, "track"))
+    svg.append(knob_tick(cx, 736, KNOB_ROW_TRACK))
+    svg.append(caption(cx, refY(TRACK_PT_CAPTION_BASELINE_CANVAS_Y), f"PT {i+1}"))
+svg.append(section(SECTION_X_LEFT, SECTION_TRACK_Y, "TRACK X", 370, "track"))
 
 # ================================================================ CENTER COLUMN
 # --- VCF/VCA chain
@@ -366,10 +434,15 @@ svg.append(box(729, 45, 62, 26, "vcf") + T(760, 63, "VCA1", FS_VCA, "bold", TITL
 svg.append(box(804, 45, 62, 26, "vcf") + T(835, 63, "VCA", FS_VCA, "bold", TITLE, "middle"))
 svg.append(line(711, 58, 729, 58) + line(791, 58, 804, 58))
 svg.append(outlab(866, 58, "VOICE", "OUT"))
-for cx, ln in [(541, 24), (591, 24), (669, 24), (759, 24), (834, 24)]:
-    svg.append(stub(cx, 71, ln))
-svg.append(caption(541, 137, "FREQ") + caption(591, 137, "RES") + caption(669, 137, "MODE (15)") + caption(759, 137, "VOLUME") + caption(834, 137, "VOLUME"))
-svg.append(section(526, 194, "VCF/VCA", 370, "vcf"))
+for cx in (541, 591, 759, 834):   # FREQ / RES / VCA1 VOLUME / VCA VOLUME
+    svg.append(knob_tick(cx, 71, KNOB_ROW_TOP))
+svg.append(combo_tick(COMBO_VCF_MODE_CX, 71, COMBO_VCF_MODE_Y))
+# The MODE caption moves with its tick: both used to sit at 669, 6.5 px left of
+# the combo they belong to. [RQ-GUI-071]
+svg.append(caption(541, 137, "FREQ") + caption(591, 137, "RES")
+           + caption(caption_centre_x(COMBO_VCF_MODE_CX), 137, "MODE (15)")
+           + caption(759, 137, "VOLUME") + caption(834, 137, "VOLUME"))
+svg.append(section(SECTION_X_CENTRE, SECTION_VCF_Y, "VCF/VCA", 370, "vcf"))
 
 # --- ENV
 svg.append(box(525, 242, 267, 26, "env") + T(658, 260, "ENVELOPE GENERATOR", FS_BLOCK, "bold", TITLE, "middle"))
@@ -381,38 +454,42 @@ svg.append(outlab(867, 255, "ENV", "OUT"))
 svg.append(line(514, 255, 525, 255) + line(514, 255, 514, 351) + line(514, 351, 524, 351)
            + smalllab(508, 363, "TRIGGER", "end") + smalllab(508, 373, "IN", "end"))
 for cx in [541, 591, 641, 691, 750, 835]:   # knob centres (table)
-    svg.append(stub(cx, 268))
+    svg.append(knob_tick(cx, 268, KNOB_ROW_ENV))
 svg.append(caption(541, 320, "DELAY") + caption(591, 320, "ATTACK") + caption(641, 320, "DECAY") + caption(691, 320, "SUSTAIN") + caption(750, 320, "RELEASE") + caption(835, 320, "VOLUME"))
 svg.append(box(524, 329, 373, 42))
-svg.append(section(526, 416, "ENV X", 370, "env"))
+svg.append(section(SECTION_X_CENTRE, SECTION_ENV_Y, "ENV X", 370, "env"))
 
 # --- LFO
-svg.append(box(524, 467, 269, 26, "lfo") + T(658, 485, "LFO", FS_MIX, "bold", TITLE, "middle"))
-svg.append(box(804, 467, 63, 26, "lfo") + T(835, 485, "VCA", FS_VCA, "bold", TITLE, "middle"))
-svg.append(line(793, 480, 804, 480))
-svg.append(outlab(867, 480, "LFO", "OUT"))
-for cx in [546, 657, 759, 834]:   # SPEED/RETRIG/AMP centres (table); 657 = WAVESHAPE combo
-    svg.append(stub(cx, 493))
-svg.append(caption(546, 546, "SPEED") + caption(657, 546, "WAVESHAPE") + caption(759, 546, "RETRIG") + caption(834, 546, "AMPLITUDE"))
-svg.append(section(527, 597, "LFO X", 370, "lfo"))
+svg.append(box(524, 475, 269, 26, "lfo") + T(658, 493, "LFO", FS_MIX, "bold", TITLE, "middle"))
+svg.append(box(804, 475, 63, 26, "lfo") + T(835, 493, "VCA", FS_VCA, "bold", TITLE, "middle"))
+svg.append(line(793, 488, 804, 488))
+svg.append(outlab(867, 488, "LFO", "OUT"))
+for cx in [546, 759, 834]:   # SPEED/RETRIG/AMPLITUDE knob centres (table)
+    svg.append(knob_tick(cx, 501, KNOB_ROW_LFO))
+# WAVESHAPE is a combo, not a knob: different top inset, and its centre is 661 —
+# the loop used to carry it at 657 and call that the combo centre. [RQ-GUI-071]
+svg.append(combo_tick(COMBO_LFO_WAVE_CX, 501, COMBO_LFO_WAVE_Y))
+svg.append(caption(546, 554, "SPEED")
+           + caption(caption_centre_x(COMBO_LFO_WAVE_CX), 554, "WAVESHAPE")
+           + caption(759, 554, "RETRIG") + caption(834, 554, "AMPLITUDE"))
+svg.append(section(SECTION_X_CENTRE, SECTION_LFO_Y, "LFO X", 370, "lfo"))
 
 # --- RAMP
-svg.append(box(524, 646, 266, 26, "ramp") + T(656, 664, "RAMP", FS_MIX, "bold", TITLE, "middle"))
-svg.append(outlab(790, 659, "RAMP", "OUT"))
-svg.append(line(514, 659, 524, 659) + line(514, 659, 514, 758) + line(514, 758, 524, 758)
-           + smalllab(508, 767, "TRIGGER", "end") + smalllab(508, 777, "IN", "end"))
-svg.append(stub(657, 672))
-svg.append(caption(657, 726, "RATE"))
-svg.append(box(524, 734, 374, 41))
-svg.append(section(527, 799, "RAMP X", 370, "ramp"))
+svg.append(box(524, 658, 266, 26, "ramp") + T(656, 676, "RAMP", FS_MIX, "bold", TITLE, "middle"))
+svg.append(outlab(790, 671, "RAMP", "OUT"))
+svg.append(line(514, 671, 524, 671) + line(514, 671, 514, 770) + line(514, 770, 524, 770)
+           + smalllab(508, 779, "TRIGGER", "end") + smalllab(508, 789, "IN", "end"))
+svg.append(knob_tick(657, 684, KNOB_ROW_RAMP))
+svg.append(caption(657, 738, "RATE"))
+svg.append(box(524, refY(RAMP_TRIGGER_FRAME_TOP_CANVAS_Y), 374, RAMP_TRIGGER_FRAME_HEIGHT))
+svg.append(section(SECTION_X_CENTRE, SECTION_RAMP_Y, "RAMP X", 370, "ramp"))
 
 # ================================================================ RIGHT
-# Bar width 260, not 268: it ends flush with the right edge of the quantize
-# check-box column (control-table MOD_QUANTIZE_n x=1206 + width=12 = 1218, less
-# this section's x=958) instead of overrunning it. The matrix is the only
-# section whose rule has a control column to align with.
-# [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-110)]
-svg.append(section(958, 799, "MOD MATRIX", 260, "matrix"))
+# MOD MATRIX is the one section whose bar runs alongside a control grid, so BOTH
+# its ends come from that grid: it starts on MOD_SRC_n's left edge (960) and
+# stops on MOD_QUANTIZE_n's right edge (1206 + 12 = 1218), a width of 258.
+# [RQ-GUI-062, RQ-CLR-007, ADR-JUC-034 (DEC-JUC-110)]
+svg.append(section(SECTION_X_MATRIX, SECTION_MATRIX_Y, "MOD MATRIX", SECTION_MATRIX_BAR_WIDTH, "matrix"))
 
 # ---------------------------------------------------------------- z-order
 # Re-order the diagram out of code order into paint order (see "layering"

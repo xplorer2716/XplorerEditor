@@ -3,6 +3,8 @@
 #include "DesignTokens.hpp"
 #include "DialogIcons.hpp"
 
+#include <cmath>
+
 // The OS title bar for Settings/About/Dependencies used to show a generic
 // icon: useNativeTitleBar is native chrome, and nothing ever called
 // DocumentWindow::setIcon(). A rendered icon has one failure mode a build log
@@ -72,17 +74,35 @@ SCENARIO("The badge is the design-system icon accent, not an arbitrary colour",
 {
     GIVEN("either dialog icon")
     {
-        THEN("a corner of its circular badge is the exact accent colour")
+        THEN("the ring between the glyph and the badge edge is the exact accent colour")
         {
             const int size = tokens::component::dialogIconSize;
+            const auto centre = static_cast<float>(size) * 0.5F;
+
+            // The badge is a CIRCLE inscribed in the square image, so the square's
+            // corners are transparent — an earlier version of this scenario
+            // sampled (2, 2) and asserted the accent there, which is the one place
+            // it can never be. (That assertion shipped in TASK-GUI-026 unrun: the
+            // target did not link in the development container at the time, so it
+            // was verified by compilation only. It ran for the first time under
+            // TASK-GUI-027 and failed immediately. Corrected here rather than
+            // relaxed — the circular badge is the intended shape.)
+            //
+            // Sampled instead in the annulus between the glyph's outer radius
+            // (0.42 of the side) and the badge's (0.5), on the 22.5 deg bearing —
+            // the gear's teeth are centred every 45 deg, so this is a gap between
+            // two of them and the sample clears both edges by over a pixel.
+            const float glyphR = static_cast<float>(size) * 0.42F;
+            const float sampleR = (glyphR + centre) * 0.5F;
+            constexpr float TOOTH_GAP_BEARING = juce::MathConstants<float>::pi / 8.0F;
+            const int sampleX = static_cast<int>(centre + sampleR * std::sin(TOOTH_GAP_BEARING));
+            const int sampleY = static_cast<int>(centre - sampleR * std::cos(TOOTH_GAP_BEARING));
+
             for (const auto icon : {DialogIcon::Settings, DialogIcon::About})
             {
                 const auto image = dialogTitleBarIcon(icon, size);
-                // A corner of the square sits inside the circular badge fill
-                // but outside both icons' glyph geometry (gear teeth and the
-                // "i" are both centred, well clear of the corners).
-                const auto corner = image.getPixelAt(2, 2);
-                REQUIRE(corner.getARGB() == tokens::component::dialogIconAccent.getARGB());
+                const auto sampled = image.getPixelAt(sampleX, sampleY);
+                REQUIRE(sampled.getARGB() == tokens::component::dialogIconAccent.getARGB());
             }
         }
     }

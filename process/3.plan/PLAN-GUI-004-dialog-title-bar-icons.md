@@ -52,6 +52,17 @@ review, since this container has no window manager and a native title bar
 never renders under bare Xvfb, unlike the on-canvas icons verified in earlier
 GUI-session tasks by screenshotting the running app.
 
+**Correction, 2026-08-15 (TASK-GUI-028, PLAN-GUI-005).** "Compiled clean" was not
+enough, and the gap showed the same day. `DialogIconTests` ran for the first time
+during TASK-GUI-027 — which had reason to exclude the unrelated
+`BoundRadioGroupTests.cpp` and so got the target to link — and one assertion
+failed immediately: it sampled pixel (2, 2), a CORNER of the square image, and
+required the badge accent there. The badge is a circle inscribed in that square,
+so the corner is the one place that colour can never be. The icon was right and
+the test was wrong; the test is corrected, not relaxed. Recorded here rather than
+edited into the note above, because the note's claim — that compilation was the
+only verification available at the time — was true, and this is what it cost.
+
 ## Out of scope
 Every other window's icon (there are none — the main window and every other
 dialog already inherit whatever the OS resolves, unreported by the owner).

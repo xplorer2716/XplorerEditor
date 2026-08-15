@@ -43,7 +43,6 @@ namespace xplorer::app
         // [RQ-GUI-051, RQ-DSN-099, ADR-JUC-027 (DEC-JUC-074)]
         constexpr float LINE_WIDTH = tokens::semantic::strokeDiagram;
         constexpr float CORNER = tokens::semantic::radiusControl;    // block corner radius
-        constexpr int STUB_LENGTH = 12;          // default control-tick length
         constexpr int RAIL_WIDTH = 28;           // wood side rail
         // Cosmetic top gap (≈ the section-bar height) kept as panel material
         // (metal + wood), so the diagram does not butt against the menu bar
@@ -264,10 +263,19 @@ namespace xplorer::app
                 g.strokePath(segment, frameStroke);
             });
         };
-        const auto stub = [&](int cx, int y, int len = STUB_LENGTH)
+        // A control tick: drops from a block's bottom edge onto the control it
+        // feeds, and STOPS on the first pixel that control paints. Both helpers
+        // take the target's own canvas-frame top rather than a length, because a
+        // length is what let the two drift apart — SectionLayout.hpp derives the
+        // end, and BackgroundRendererTests pins every row against the real
+        // control table. [RQ-GUI-071, ADR-JUC-027 (DEC-JUC-112)]
+        const auto knobTick = [&](float cx, int fromY, int knobCanvasTopY)
         {
-            line(static_cast<float>(cx), static_cast<float>(y),
-                 static_cast<float>(cx), static_cast<float>(y + len));
+            line(cx, static_cast<float>(fromY), cx, layout::knobTickEndReferenceY(knobCanvasTopY));
+        };
+        const auto comboTick = [&](float cx, int fromY, int comboCanvasTopY)
+        {
+            line(cx, static_cast<float>(fromY), cx, layout::comboTickEndReferenceY(comboCanvasTopY));
         };
         const auto text = [&](int x, int y, const juce::String& s, float size, bool bold,
                               juce::Colour colour, juce::Justification just)
@@ -365,15 +373,15 @@ namespace xplorer::app
         line(286, 70, 330, 70);
         box(234, 60, 52, 23, &BLK_VCO);
         blockTitle(260, 76, "PWM", FS_PWM);
-        stub(259, 83);
+        knobTick(259, 83, layout::KNOB_ROW_TOP_CANVAS_Y); // VCO1_PW
         box(330, 32, 53, 52, &BLK_VCO);
         blockTitle(356, 63, "MIX", FS_MIX);
         line(383, 58, 405, 58);
         box(405, 45, 53, 26, &BLK_VCO);
         blockTitle(431, 63, "VCA", FS_VCA);
-        stub(432, 71, 23); // VCO1_VOLUME centre
-        stub(82, 84);
-        stub(170, 84);
+        knobTick(432, 71, layout::KNOB_ROW_TOP_CANVAS_Y); // VCO1_VOLUME
+        knobTick(82, 84, layout::KNOB_ROW_TOP_CANVAS_Y);  // VCO1_FREQ
+        knobTick(170, 84, layout::KNOB_ROW_TOP_CANVAS_Y); // VCO1_DETUNE
         caption(82, 137, "FREQUENCY");
         caption(170, 137, "DETUNE");
         caption(259, 137, "PULSE WIDTH");
@@ -410,14 +418,14 @@ namespace xplorer::app
         box(184, 210, 90, 52);
         text(229, 274, "DESTINATION", FS_SMALL, true, CAPTION, juce::Justification::horizontallyCentred);
         line(153, 228, 184, 228);
-        stub(106, 246);
+        knobTick(106, 246, layout::KNOB_ROW_FM_CANVAS_Y); // FM_AMP
         caption(106, 300, "FM AMPLITUDE");
         box(329, 210, 52, 52, &BLK_VCO);
         blockTitle(355, 241, "MIX", FS_MIX);
         line(381, 232, 405, 232);
         box(405, 220, 53, 26, &BLK_VCO);
         blockTitle(431, 238, "VCA", FS_VCA);
-        stub(430, 246, 24); // VCO2_VOLUME centre
+        knobTick(430, 246, layout::KNOB_ROW_VCO2_VCA_CANVAS_Y); // VCO2_VOLUME
         // VCO2-row VCA out -> right, then up at x=499 into the VCF
         line(458, 232, 499, 232);
         line(499, 232, 499, 70);
@@ -445,7 +453,7 @@ namespace xplorer::app
         line(198, 348, 233, 348);
         box(233, 340, 52, 23, &BLK_VCO);
         blockTitle(259, 356, "PWM", FS_PWM);
-        stub(260, 363); // VCO2_PW centre
+        knobTick(260, 363, layout::KNOB_ROW_VCO2_CANVAS_Y); // VCO2_PW
         line(285, 348, 309, 348);
         line(309, 348, 309, 246);
         line(309, 246, 329, 246);
@@ -464,8 +472,8 @@ namespace xplorer::app
         });
         line(317, 255, 329, 255);
         line(317, 255, 317, 270);
-        stub(82, 362);
-        stub(169, 362); // VCO2_DETUNE centre
+        knobTick(82, 362, layout::KNOB_ROW_VCO2_CANVAS_Y);  // VCO2_FREQ
+        knobTick(169, 362, layout::KNOB_ROW_VCO2_CANVAS_Y); // VCO2_DETUNE
         caption(82, 418, "FREQUENCY");
         caption(169, 418, "DETUNE");
         caption(260, 418, "PULSE WIDTH");
@@ -490,7 +498,7 @@ namespace xplorer::app
         line(52, 531, 52, 576);
         // Left-aligned with the LAG_IN combo (x=35), 9 px below it. [RQ-GUI-037]
         smallLabel(35, 589, "LAG IN", juce::Justification::left);
-        stub(215, 550);
+        knobTick(215, 550, layout::KNOB_ROW_LAG_CANVAS_Y); // FMLAG_RATE
         caption(215, refY(layout::LAG_RATE_CAPTION_BASELINE_CANVAS_Y), "RATE");
         // RATE's baseline (canvas 576) is this section's lowest visible element —
         // lower than the EXPO/LEGATO row at 572. [RQ-CLR-001]
@@ -509,7 +517,7 @@ namespace xplorer::app
             const int centres[] = {126, 170, 214, 258, 302}; // PT knob centres (table)
             for (int i = 0; i < 5; ++i)
             {
-                stub(centres[i], 736);
+                knobTick(static_cast<float>(centres[i]), 736, layout::KNOB_ROW_TRACK_CANVAS_Y);
                 caption(centres[i], refY(layout::TRACK_PT_CAPTION_BASELINE_CANVAS_Y),
                         "PT " + juce::String(i + 1));
             }
@@ -528,14 +536,17 @@ namespace xplorer::app
         line(711, 58, 729, 58);
         line(791, 58, 804, 58);
         outLabel(866, 58, "VOICE", "OUT");
-        stub(541, 71, 24);
-        stub(591, 71, 24);
-        stub(669, 71, 24);
-        stub(759, 71, 24);
-        stub(834, 71, 24);
+        knobTick(541, 71, layout::KNOB_ROW_TOP_CANVAS_Y); // VCF_FREQ
+        knobTick(591, 71, layout::KNOB_ROW_TOP_CANVAS_Y); // VCF_RES
+        comboTick(layout::COMBO_VCF_MODE_CENTRE_X, 71, layout::COMBO_VCF_MODE_CANVAS_Y);
+        knobTick(759, 71, layout::KNOB_ROW_TOP_CANVAS_Y); // VCF_VCA1_VOLUME
+        knobTick(834, 71, layout::KNOB_ROW_TOP_CANVAS_Y); // VCF_VCA2_VOLUME
         caption(541, 137, "FREQ");
         caption(591, 137, "RES");
-        caption(669, 137, "MODE (15)");
+        // Moves with its tick: leaving the caption on the old x would trade one
+        // misalignment for another, this time between the tick and the words
+        // under it. [RQ-GUI-071]
+        caption(layout::captionCentreX(layout::COMBO_VCF_MODE_CENTRE_X), 137, "MODE (15)");
         caption(759, 137, "VOLUME");
         caption(834, 137, "VOLUME");
         section(layout::SECTION_X_CENTRE, layout::SECTION_VCF_Y, "VCF/VCA", BLK_VCF);
@@ -557,7 +568,7 @@ namespace xplorer::app
             const int centres[] = {541, 591, 641, 691, 750, 835}; // knob centres (table)
             for (int cx : centres)
             {
-                stub(cx, 268);
+                knobTick(static_cast<float>(cx), 268, layout::KNOB_ROW_ENV_CANVAS_Y);
             }
         }
         caption(541, 320, "DELAY");
@@ -577,15 +588,19 @@ namespace xplorer::app
         line(793, 488, 804, 488);
         outLabel(867, 488, "LFO", "OUT");
         {
-            // SPEED/RETRIG/AMP knob centres (table); 657 = WAVESHAPE combo centre.
-            const int centres[] = {546, 657, 759, 834};
+            const int centres[] = {546, 759, 834}; // SPEED/RETRIG/AMPLITUDE knob centres (table)
             for (int cx : centres)
             {
-                stub(cx, 501);
+                knobTick(static_cast<float>(cx), 501, layout::KNOB_ROW_LFO_CANVAS_Y);
             }
         }
+        // WAVESHAPE is a combo, not a knob, so it leaves the loop: different top
+        // inset, and a different centre. The loop used to carry it at 657 and
+        // call that "the combo centre" in its own comment — the combo is
+        // (611, 100) wide, so its centre is 661. [RQ-GUI-071]
+        comboTick(layout::COMBO_LFO_WAVE_CENTRE_X, 501, layout::COMBO_LFO_WAVE_CANVAS_Y);
         caption(546, 554, "SPEED");
-        caption(657, 554, "WAVESHAPE");
+        caption(layout::captionCentreX(layout::COMBO_LFO_WAVE_CENTRE_X), 554, "WAVESHAPE");
         caption(759, 554, "RETRIG");
         caption(834, 554, "AMPLITUDE");
         section(layout::SECTION_X_CENTRE, layout::SECTION_LFO_Y, "LFO X", BLK_LFO);
@@ -599,7 +614,7 @@ namespace xplorer::app
         line(514, 770, 524, 770);
         smallLabel(508, 779, "TRIGGER");
         smallLabel(508, 789, "IN");
-        stub(657, 684);
+        knobTick(657, 684, layout::KNOB_ROW_RAMP_CANVAS_Y); // RAMP_X_RATE
         caption(657, 738, "RATE");
         box(524, static_cast<float>(refY(layout::RAMP_TRIGGER_FRAME_TOP_CANVAS_Y)), 374,
             static_cast<float>(layout::RAMP_TRIGGER_FRAME_HEIGHT));
