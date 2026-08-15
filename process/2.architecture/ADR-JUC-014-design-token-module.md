@@ -6,6 +6,12 @@ Accepted (2026-07-19) — implemented and merged: the three-tier
 truth consumed by `BackgroundRenderer`, `XplorerLookAndFeel`,
 `PageFamilyBlock`, `ModMatrixPanel`, `SettingsDialog` and `BlockPalette`.
 
+**Partially superseded (2026-08-10) by ADR-CLR-001 (DEC-CLR-001-A):** the
+spacing exclusion of `DEC-JUC-014-C` no longer covers the section separator's
+vertical rhythm. Two spacing values — `sectionGapAbove`, `sectionGapBelowMin` —
+are now `tokens::component` members. Everything else `DEC-JUC-014-C` excludes is
+unaffected. See DEC-JUC-014-C below for the narrowed wording.
+
 ## Requirements
 RQ-DSN-001..006, RQ-DSN-010..011, RQ-DSN-020..024, RQ-DSN-060..063,
 RQ-DSN-080..083, RQ-DSN-090..091 (implements the token *structure* and the
@@ -66,13 +72,23 @@ stays owned at runtime by `XplorerLookAndFeel::ledColour()`; the token module
 supplies only the *default*, and no consumer caches a copy.
 
 ### DEC-JUC-014-C — Scope boundary of the token set
+> **Narrowed 2026-08-10 by ADR-CLR-001 (DEC-CLR-001-A).** The spacing exclusion
+> below no longer applies to the **section separator's vertical rhythm**: the
+> gap above a separator and the minimum gap below it are now
+> `tokens::component::sectionGapAbove` / `sectionGapBelowMin`, because
+> RQ-CLR-001..002 made them design decisions with measured evidence (the owner
+> mockup) rather than deferred ones. The rest of the exclusion stands. Do not
+> read the paragraph below as authority for keeping section spacing out of the
+> token set.
+
 This pass tokenises **appearance** values: colour, font size, corner radius,
 stroke width, and motion/timing (hover-brighten factor, LED hold duration),
 plus the named alpha transforms. It deliberately **excludes**:
 - **Spacing / layout geometry** (dialog margins, control insets, canvas
   crop/padding, rail width, section-bar dimensions, box sizes) — `RQ-DSN-020`
   explicitly defers the spacing scale ("not yet derived from evidence"); these
-  stay as file-local named constants for now.
+  stay as file-local named constants for now. *(Exception since 2026-08-10:
+  section vertical rhythm — ADR-CLR-001.)*
 - **Procedural texture parameters** (wood-grain RNG ranges, hairline counts,
   fixed seed) — algorithm inputs of `BackgroundRenderer`, not shared design
   tokens.

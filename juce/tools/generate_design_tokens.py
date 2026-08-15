@@ -160,7 +160,7 @@ def main() -> int:
         print("OK: DesignTokens.hpp is in sync with design-tokens.yaml.")
         return 0
 
-    HPP_PATH.write_text(generated, encoding="utf-8")
+    HPP_PATH.write_text(generated, encoding="utf-8", newline="\n")
     print(f"Wrote {HPP_PATH} ({len(generated.splitlines())} lines) from {YAML_PATH.name}.")
     return 0
 

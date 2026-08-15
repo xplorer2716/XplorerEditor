@@ -85,12 +85,19 @@ if(XPL_BUILD_APP)
         app/ComboBoxRealMetricsTests.cpp
         app/VfdSegmentRendererTests.cpp
         app/BackgroundRendererTests.cpp
+        # Section vertical rhythm. Reads DesignTokens.hpp (hence this
+        # JUCE-linked target rather than the headless one) but instantiates no
+        # juce::Graphics: it asserts layout constants against the control table.
+        # [RQ-CLR-010, ADR-CLR-001 (DEC-CLR-001-D)]
+        app/SectionRhythmTests.cpp
+        app/ShortcutIconTests.cpp
         app/BoundRadioGroupTests.cpp
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
         app/SbomReaderTests.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
+        ../app/src/ShortcutIcons.cpp
         ../app/src/BlockPalette.cpp
         # BoundControls carries the RQ-GUI-053 orientation rule, which is a
         # widget-geometry decision: it can only be pinned against real

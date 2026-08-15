@@ -83,6 +83,38 @@ FS_WAVE = _num("textWave")         # 11.5 — TRIANGLE / SAWTOOTH / PULSE
 FS_OUT = _num("textSmall")         # 11 — IN/OUT labels
 FS_SMALL = _num("textDense")       # 9 — DESTINATION / TRIGGER IN / NOISE
 
+# ---- section header geometry (label inline with the separator bar) ---------
+# Tokens, not local literals: the bar thickness doubles as the label's baseline
+# offset (label and bar are bottom-aligned), so it drives appearance and not
+# just this script's coordinates. [RQ-GUI-062, RQ-DSN-101, RQ-DSN-060..063]
+SECTION_BAR_HEIGHT = _T["component"]["sectionBarHeight"]["value"]
+SECTION_LABEL_GAP = _T["component"]["sectionLabelGap"]["value"]
+SECTION_LEAD_STUB = _T["component"]["sectionLeadStub"]["value"]
+# Helvetica/Arial Bold advance widths, in em. Needed because the bar now starts
+# where the label ends, so the label has to be *measured* — the stacked layout
+# never had to know its width. JUCE measures the real glyphs
+# (juce::Font::getStringWidthFloat); these are the published metrics of the same
+# typeface, so the mockup lands within a pixel of the painter.
+# Cap height (published Helvetica/Arial Bold metric, 716/1000 em). The rule is
+# as tall as the label's capitals, so it reads as a solid band level with the
+# letters rather than as an underline. The painter measures the real 'H'
+# outline instead of using this ratio -- juce::Font exposes no cap-height
+# metric and its glyph bounding box reports the full line box (ascent +
+# descent), which would make the rule visibly taller than the label.
+_CAP_HEIGHT = 0.716
+_CHAR_W = {"A": .722, "B": .722, "C": .722, "D": .722, "E": .667, "F": .611,
+           "G": .778, "H": .722, "I": .278, "J": .556, "K": .722, "L": .611,
+           "M": .833, "N": .722, "O": .778, "P": .667, "Q": .778, "R": .722,
+           "S": .667, "T": .611, "U": .722, "V": .667, "W": .944, "X": .667,
+           "Y": .667, "Z": .611, " ": .278, "/": .278}
+_CHAR_W.update(dict.fromkeys("0123456789", .556))
+_LETTER_SPACING = 0.5          # the ls default of T(), applied between glyphs
+
+
+def _text_width(s: str, size: float) -> float:
+    """Rendered width of a bold section label, in px."""
+    return sum(_CHAR_W[c] for c in s) * size + _LETTER_SPACING * (len(s) - 1)
+
 # Reference client area was 1260x813 with a 32 px band at the top reserved
 # for the WinForms menustrip (14 px dark strip + 18 px empty plate; the first
 # content row, the VCO1 frame, sits at reference y=32). The JUCE port hosts
@@ -211,10 +243,41 @@ def T(x, y, s, size=FS_SECTION, w="bold", fill=TITLE, anchor="start", ls="0.5"):
 def caption(x, y, s):
     return T(x, y, s, FS_CAPTION, "normal", CAPTION, "middle", "0.5")
 def section(x, y, s, barw, blk):
-    """Section header: label text + underline bar, both in the block's identity
-    colour (replaces the former shared blue gradient). [RQ-GUI-044]"""
-    return (T(x, y - 7, s, FS_SECTION, "bold", BLOCK[blk]) +
-            _tag(_TEXT, f'<rect x="{x}" y="{y}" width="{barw}" height="4.5" fill="url(#bar-{blk})"/>'))
+    """Section header: label text + separator bar, both in the block's identity
+    colour (replaces the former shared blue gradient). [RQ-GUI-044]
+
+    The label sits *on* the rule rather than above it: the rule keeps its
+    position and its right end, and is INTERRUPTED by the label instead of
+    running under it, so the ~11 px the stacked layout spent above the bar is
+    freed without any other element moving.
+
+    Left to right: a short lead-in stub, a gap, the label, a gap, then the rest
+    of the rule out to its unchanged right end — the Xpander's own silkscreen
+    treatment, where the rule runs into the section name rather than starting
+    after it (owner request).
+
+    Only the run AFTER the label carries the fade, exactly as before. The
+    lead-in stub is flat block hue at full opacity — the same colour as the
+    label and as the first pixel of the run after it, so the three read as one
+    interrupted rule and not as three elements (owner decision).
+
+    Label and rule are aligned on their BOTTOM edges — the text baseline (these
+    labels are all caps, so nothing descends below it) is the rule's bottom
+    edge, not its centre. Centring was tried first and rejected on review: the
+    rule then reads as crossing the text, and the letters hang 3 px below the
+    line they are supposed to rest on.
+    [RQ-GUI-062, RQ-DSN-101, ADR-JUC-034 (DEC-JUC-107, DEC-JUC-108, DEC-JUC-109)]"""
+    label_w = _text_width(s, FS_SECTION)
+    label_x = x + SECTION_LEAD_STUB + SECTION_LABEL_GAP
+    bar_x = label_x + label_w + SECTION_LABEL_GAP
+    baseline_y = y + SECTION_BAR_HEIGHT
+    bar_h = FS_SECTION * _CAP_HEIGHT
+    bar_y = baseline_y - bar_h
+    return (_tag(_TEXT, f'<rect x="{x}" y="{bar_y:.2f}" width="{SECTION_LEAD_STUB}" '
+                        f'height="{bar_h:.2f}" fill="{BLOCK[blk]}"/>') +
+            T(label_x, baseline_y, s, FS_SECTION, "bold", BLOCK[blk]) +
+            _tag(_TEXT, f'<rect x="{bar_x:.1f}" y="{bar_y:.2f}" width="{x + barw - bar_x:.1f}" '
+                        f'height="{bar_h:.2f}" fill="url(#bar-{blk})"/>'))
 def outlab(x, y, s1, s2):
     return (line(x, y, x + 14, y) +
             T(x + 19, y - 2, s1, FS_OUT, "bold") + T(x + 19, y + 10, s2, FS_OUT, "bold"))
@@ -344,7 +407,12 @@ svg.append(box(524, 734, 374, 41))
 svg.append(section(527, 799, "RAMP X", 370, "ramp"))
 
 # ================================================================ RIGHT
-svg.append(section(958, 799, "MODULATION MATRIX", 268, "matrix"))
+# Bar width 260, not 268: it ends flush with the right edge of the quantize
+# check-box column (control-table MOD_QUANTIZE_n x=1206 + width=12 = 1218, less
+# this section's x=958) instead of overrunning it. The matrix is the only
+# section whose rule has a control column to align with.
+# [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-110)]
+svg.append(section(958, 799, "MOD MATRIX", 260, "matrix"))
 
 # ---------------------------------------------------------------- z-order
 # Re-order the diagram out of code order into paint order (see "layering"
@@ -365,6 +433,6 @@ for _layer in (_LINES, _BOXES, _TEXT):
 
 svg.append('</g>')
 svg.append('</svg>')
-OUT_PATH.write_text("\n".join(svg), encoding="utf-8")
+OUT_PATH.write_text("\n".join(svg), encoding="utf-8", newline="\n")
 print(f"SVG written to {OUT_PATH}: "
       f"{len(_layered[_LINES])} lines, {len(_layered[_BOXES])} boxes, {len(_layered[_TEXT])} text elements.")

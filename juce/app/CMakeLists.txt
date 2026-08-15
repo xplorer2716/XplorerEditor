@@ -10,6 +10,7 @@ target_sources(XplorerApp PRIVATE
     src/DesignTokens.hpp
     src/MainComponent.cpp
     src/BackgroundRenderer.cpp
+    src/ShortcutIcons.cpp
     src/BlockPalette.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
@@ -44,35 +45,13 @@ juce_add_binary_data(XplorerAssets SOURCES
     # The reference's THREE menu icons -- New, Open, Save -- decoded from the
     # base64 System.Drawing.Bitmap resources in MainForm.resx. No other menu
     # item in the whole reference application has one. Reused verbatim rather
-    # than redrawn, same rule as the shortcut-button GIFs below and the About
-    # image above. [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-098)]
+    # than redrawn, same rule as the About image above.
+    # (The 24 shortcut-button GIFs that used to follow were replaced by vector
+    #  icons in TASK-GUI-002 — RQ-GUI-063, ADR-GUI-001.)
+    # [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-098)]
     assets/menu_new.png
     assets/menu_open.png
-    assets/menu_save.png
-    assets/gotodown.gif
-    assets/gotohover.gif
-    assets/gotopatch.gif
-    assets/load.gif
-    assets/loaddown.gif
-    assets/loadhover.gif
-    assets/minus.gif
-    assets/minusdown.gif
-    assets/minushover.gif
-    assets/plus.gif
-    assets/plusdown.gif
-    assets/plushover.gif
-    assets/random.gif
-    assets/randomdown.gif
-    assets/randomhover.gif
-    assets/save.gif
-    assets/savedown.gif
-    assets/savehover.gif
-    assets/settings.gif
-    assets/settingsdown.gif
-    assets/settingshover.gif
-    assets/store.gif
-    assets/storedown.gif
-    assets/storehover.gif)
+    assets/menu_save.png)
 
 # The default patch "New" loads. Copied beside the executable rather than
 # embedded in XplorerAssets: the controller's load path takes a filesystem

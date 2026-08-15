@@ -1,5 +1,7 @@
 #include "MainComponent.hpp"
 
+#include "ShortcutIcons.hpp"
+
 #include "BackgroundRenderer.hpp"
 #include "BinaryData.h"
 #include "DesignTokens.hpp"
@@ -15,6 +17,36 @@
 
 namespace xplorer::app
 {
+    namespace
+    {
+        /// A shortcut key. juce::Button already owns the hit testing, the
+        /// keyboard handling and the hover/down state machine, so the vector
+        /// treatment is exactly one overridden paint — nothing else about the
+        /// eight buttons changes when they stop being bitmaps.
+        /// [RQ-GUI-063, ADR-GUI-001 (DEC-GUI-001-A, DEC-GUI-001-B)]
+        class ShortcutButton final : public juce::Button
+        {
+        public:
+            ShortcutButton(const juce::String& name, ShortcutIcon icon)
+                : juce::Button(name), _icon(icon)
+            {
+            }
+
+            void paintButton(juce::Graphics& g, bool isHovered, bool isDown) override
+            {
+                // Read at paint time, not cached: the accent is user-themeable and
+                // a live preview mutates the LookAndFeel in place. [ADR-JUC-020]
+                const auto* lookAndFeel = dynamic_cast<XplorerLookAndFeel*>(&getLookAndFeel());
+                const auto accent = lookAndFeel != nullptr ? lookAndFeel->ledColour()
+                                                           : tokens::semantic::indicatorSynthIn;
+                paintShortcutButton(g, getLocalBounds().toFloat(), _icon, accent, isHovered, isDown);
+            }
+
+        private:
+            ShortcutIcon _icon;
+        };
+    }
+
     namespace
     {
         // Fixed (non page-family) blocks handled in TASK-JUC-063.
@@ -402,22 +434,21 @@ namespace xplorer::app
         };
         _shortcutActions["btSettings"] = [this] { openSettingsDialog(); };
 
-        // GIF base names (goto's "normal" image is gotopatch.gif in the assets).
-        const std::map<std::string, std::string> gifBase = {
-            {"btPatchMinus", "minus"}, {"btPatchPlus", "plus"},   {"btPatchGoto", "goto"},
-            {"btPatchRandom", "random"}, {"btPatchLoad", "load"}, {"btPatchSave", "save"},
-            {"btPatchStore", "store"},   {"btSettings", "settings"}};
+        // Vector keys, replacing the eight .NET ImageButtons and their 24 GIFs.
+        // The icon is chosen per control id, the geometry comes from the control
+        // table, and the action is the one RQ-GUI-021 already assigned.
+        // [RQ-GUI-063, RQ-GUI-065, ADR-GUI-001 (DEC-GUI-001-A)]
+        const std::array<std::pair<const char*, ShortcutIcon>, 8> shortcutIcons{{
+            {"btPatchMinus", ShortcutIcon::PreviousProgram},
+            {"btPatchPlus", ShortcutIcon::NextProgram},
+            {"btPatchGoto", ShortcutIcon::GoToProgram},
+            {"btPatchRandom", ShortcutIcon::Randomise},
+            {"btPatchLoad", ShortcutIcon::LoadFile},
+            {"btPatchSave", ShortcutIcon::SaveFile},
+            {"btPatchStore", ShortcutIcon::StoreToSynth},
+            {"btSettings", ShortcutIcon::MidiSettings}}};
 
-        auto loadGif = [](const std::string& fileName) -> juce::Image
-        {
-            int size = 0;
-            const std::string resource = fileName + "_gif";
-            const auto* data = BinaryData::getNamedResource(resource.c_str(), size);
-            return data != nullptr ? juce::ImageFileFormat::loadFrom(data, static_cast<std::size_t>(size))
-                                   : juce::Image();
-        };
-
-        for (const auto& [id, base] : gifBase)
+        for (const auto& [id, icon] : shortcutIcons)
         {
             for (const auto& spec : controlTable())
             {
@@ -425,12 +456,7 @@ namespace xplorer::app
                 {
                     continue;
                 }
-                const std::string normalName = (base == "goto") ? "gotopatch" : base;
-                const auto normal = loadGif(normalName);
-                const auto hover = loadGif(base + "hover");
-                const auto down = loadGif(base + "down");
-                auto button = std::make_unique<juce::ImageButton>(id);
-                button->setImages(true, true, true, normal, 1.0F, {}, hover, 1.0F, {}, down, 1.0F, {});
+                auto button = std::make_unique<ShortcutButton>(id, icon);
                 button->setBounds(spec.x, spec.y, spec.width, spec.height);
                 button->onClick = _shortcutActions[id];
                 addAndMakeVisible(*button);
