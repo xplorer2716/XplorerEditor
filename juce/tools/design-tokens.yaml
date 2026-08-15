@@ -115,6 +115,14 @@ tiers:
     # ---- dialog component sizes (content-driven, not on the spacing scale) ----
     dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
     dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
+    # ---- Randomizer page: VCO2/Matrix checkbox columns, shared across both
+    #      rows so a checkbox aligns with its counterpart on the row below.
+    #      Owner report 2026-08-15: FM/Amount aligned by accident (same start
+    #      x), Noise/Quantize and Sync/source & dest. did not, because each
+    #      row picked its own per-checkbox width. RQ-GUI-069, ADR-JUC-033. ----
+    dialogRandomizerCol1Width: { kind: int, value: 90,  note: "FM / Amount column — sized to 'Amount', the wider of the pair" }
+    dialogRandomizerCol2Width: { kind: int, value: 100, note: "Noise / Quantize column — sized to 'Quantize', the wider of the pair" }
+    dialogRandomizerCol3Width: { kind: int, value: 130, note: "Sync / source & dest. column — sized to 'source & dest.' (shortened from 'Sources & destinations' in the same change, RQ-GUI-069), the wider of the pair" }
     # ---- settings COLOURS/KNOB BEHAVIOUR groups (owner-validated mockup,
     #      2026-07-26). RQ-GUI-046, ADR-JUC-020. ----
     dialogSwatchWidth:     { kind: int, value: 40,  note: "colour swatch cell width (value-preserving: the pre-existing knob-LED swatch literal)" }
@@ -329,6 +337,9 @@ tiers:
     dialogResetWidth:      { alias: global.dialogResetWidth,      note: "Reset to defaults button width, RQ-GUI-046" }
     dialogGroupHeaderHeight: { alias: global.dialogGroupHeaderHeight, note: "group-title clearance, RQ-GUI-046" }
     midiCcColumnMinWidth: { alias: global.midiCcColumnMinWidth, note: "automation table 'MIDI CC' column floor width, RQ-GUI-060" }
+    dialogRandomizerCol1Width: { alias: global.dialogRandomizerCol1Width, note: "FM / Amount column, RQ-GUI-069" }
+    dialogRandomizerCol2Width: { alias: global.dialogRandomizerCol2Width, note: "Noise / Quantize column, RQ-GUI-069" }
+    dialogRandomizerCol3Width: { alias: global.dialogRandomizerCol3Width, note: "Sync / source & dest. column, RQ-GUI-069" }
     patchSpinnerWidth:        { alias: global.patchSpinnerWidth,        note: "Go to patch / Store spinner width, RQ-GUI-058" }
     patchSpinnerTextBoxWidth: { alias: global.patchSpinnerTextBoxWidth, note: "Go to patch / Store spinner text-box width, RQ-GUI-058" }
     patchSpinnerRowWidth:     { alias: global.patchSpinnerRowWidth,     note: "Go to patch / Store spinner centring-row width, RQ-GUI-058" }

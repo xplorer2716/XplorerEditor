@@ -704,7 +704,7 @@ namespace xplorer::app
                 _sync.setButtonText("Sync");
                 _amount.setButtonText("Amount");
                 _quantize.setButtonText("Quantize");
-                _srcDest.setButtonText("Sources & destinations");
+                _srcDest.setButtonText("source & dest.");
 
                 _vco2Label.setText("VCO2 random", juce::dontSendNotification);
                 _matrixLabel.setText("Matrix random", juce::dontSendNotification);
@@ -752,18 +752,24 @@ namespace xplorer::app
                     _labelFor(*combo).setBounds(row.removeFromLeft(LABEL_WIDTH));
                     combo->setBounds(row.removeFromLeft(200));
                 }
+                // Shared column widths across the two rows -- not each row's own
+                // widest label -- so a checkbox aligns with its counterpart below
+                // it (FM/Amount, Noise/Quantize, Sync/source & dest.). Owner
+                // report 2026-08-15: only column 1 aligned before this, by
+                // accident of both rows starting at the same x.
+                // [RQ-GUI-069, ADR-JUC-033]
                 area.removeFromTop(tokens::semantic::layoutSectionGap);
                 auto vco2Row = rowBounds(area);
                 _vco2Label.setBounds(vco2Row.removeFromLeft(LABEL_WIDTH));
-                _fm.setBounds(vco2Row.removeFromLeft(70));
-                _noise.setBounds(vco2Row.removeFromLeft(80));
-                _sync.setBounds(vco2Row.removeFromLeft(80));
+                _fm.setBounds(vco2Row.removeFromLeft(tokens::semantic::dialogRandomizerCol1Width));
+                _noise.setBounds(vco2Row.removeFromLeft(tokens::semantic::dialogRandomizerCol2Width));
+                _sync.setBounds(vco2Row.removeFromLeft(tokens::semantic::dialogRandomizerCol3Width));
 
                 auto matrixRow = rowBounds(area);
                 _matrixLabel.setBounds(matrixRow.removeFromLeft(LABEL_WIDTH));
-                _amount.setBounds(matrixRow.removeFromLeft(90));
-                _quantize.setBounds(matrixRow.removeFromLeft(100));
-                _srcDest.setBounds(matrixRow.removeFromLeft(180));
+                _amount.setBounds(matrixRow.removeFromLeft(tokens::semantic::dialogRandomizerCol1Width));
+                _quantize.setBounds(matrixRow.removeFromLeft(tokens::semantic::dialogRandomizerCol2Width));
+                _srcDest.setBounds(matrixRow.removeFromLeft(tokens::semantic::dialogRandomizerCol3Width));
 
                 area.removeFromTop(tokens::semantic::layoutSectionGap);
                 _randomizeAll.setBounds(rowBounds(area).removeFromLeft(140).withTrimmedLeft(0));

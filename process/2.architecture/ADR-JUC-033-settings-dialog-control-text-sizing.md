@@ -5,7 +5,13 @@ Accepted (owner, session GUI, 2026-08-06). Implemented: DEC-JUC-105.
 
 ## Requirements
 RQ-GUI-061, RQ-GUI-047, RQ-GUI-036, RQ-GUI-058, RQ-GUI-059, RQ-GUI-060,
-RQ-DSN-011, RQ-DSN-061
+RQ-GUI-069, RQ-DSN-011, RQ-DSN-061
+
+**Referenced (not amended) by RQ-GUI-069** (2026-08-15, session GUI, Tier S,
+no new decision): the Randomizer page's VCO2-random/Matrix-random checkbox
+columns now share a width per column instead of each row sizing its own —
+a layout fix on the same page this ADR's font-sizing decision covers, not a
+revision of DEC-JUC-105.
 
 ## Context
 

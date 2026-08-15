@@ -84,6 +84,9 @@ namespace xplorer::app::tokens
         inline constexpr int space24 = 24;  // xl gap — progress bar height
         inline constexpr int dialogRowHeight = 28;  // SettingsDialog/ProgressWindow row height
         inline constexpr int dialogLabelWidth = 150;  // SettingsDialog label column width, sized to the longest existing label
+        inline constexpr int dialogRandomizerCol1Width = 90;  // FM / Amount column — sized to 'Amount', the wider of the pair
+        inline constexpr int dialogRandomizerCol2Width = 100;  // Noise / Quantize column — sized to 'Quantize', the wider of the pair
+        inline constexpr int dialogRandomizerCol3Width = 130;  // Sync / source & dest. column — sized to 'source & dest.' (shortened from 'Sources & destinations' in the same change, RQ-GUI-069), the wider of the pair
         inline constexpr int dialogSwatchWidth = 40;  // colour swatch cell width (value-preserving: the pre-existing knob-LED swatch literal)
         inline constexpr int dialogChooseWidth = 100;  // uniform 'Choose...' button width (mockup: all colour buttons identical)
         inline constexpr int dialogBlockLabelWidth = 90;  // block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')
@@ -220,6 +223,9 @@ namespace xplorer::app::tokens
         inline constexpr int dialogResetWidth = global::dialogResetWidth;  // Reset to defaults button width, RQ-GUI-046
         inline constexpr int dialogGroupHeaderHeight = global::dialogGroupHeaderHeight;  // group-title clearance, RQ-GUI-046
         inline constexpr int midiCcColumnMinWidth = global::midiCcColumnMinWidth;  // automation table 'MIDI CC' column floor width, RQ-GUI-060
+        inline constexpr int dialogRandomizerCol1Width = global::dialogRandomizerCol1Width;  // FM / Amount column, RQ-GUI-069
+        inline constexpr int dialogRandomizerCol2Width = global::dialogRandomizerCol2Width;  // Noise / Quantize column, RQ-GUI-069
+        inline constexpr int dialogRandomizerCol3Width = global::dialogRandomizerCol3Width;  // Sync / source & dest. column, RQ-GUI-069
         inline constexpr int patchSpinnerWidth = global::patchSpinnerWidth;  // Go to patch / Store spinner width, RQ-GUI-058
         inline constexpr int patchSpinnerTextBoxWidth = global::patchSpinnerTextBoxWidth;  // Go to patch / Store spinner text-box width, RQ-GUI-058
         inline constexpr int patchSpinnerRowWidth = global::patchSpinnerRowWidth;  // Go to patch / Store spinner centring-row width, RQ-GUI-058
