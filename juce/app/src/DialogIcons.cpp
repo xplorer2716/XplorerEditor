@@ -86,4 +86,25 @@ namespace xplorer::app
 
         return image;
     }
+
+    void applyDialogTitleBarIcon(juce::DocumentWindow& window, DialogIcon icon)
+    {
+        const auto image = dialogTitleBarIcon(icon, tokens::component::dialogIconSize);
+
+        // The JUCE-drawn title bar. Inert while useNativeTitleBar is on, kept so
+        // the glyph follows if that ever changes. See the header for why this
+        // call alone was not enough. [RQ-GUI-072]
+        window.setIcon(image);
+
+        // The OS chrome — this is the one that shows. The window is on the
+        // desktop by now (launchAsync() has made it visible) so the peer exists;
+        // asserted rather than quietly skipped, because an icon that silently
+        // fails to appear is exactly the defect being fixed here.
+        auto* peer = window.getPeer();
+        jassert(peer != nullptr);
+        if (peer != nullptr)
+        {
+            peer->setIcon(image);
+        }
+    }
 }

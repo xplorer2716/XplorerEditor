@@ -970,9 +970,8 @@ namespace xplorer::app
         options.useNativeTitleBar = true;
         options.resizable = true; // the automation table benefits from more height
         // The window is native OS chrome (useNativeTitleBar above): its icon is
-        // set once here via setIcon(), not painted by XplorerLookAndFeel each
-        // frame like everything else in the app. [RQ-GUI-070, ADR-GUI-001]
-        options.launchAsync()->setIcon(
-            dialogTitleBarIcon(DialogIcon::Settings, tokens::component::dialogIconSize));
+        // set once here, on the ComponentPeer, not painted by XplorerLookAndFeel
+        // each frame like everything else in the app. [RQ-GUI-070, RQ-GUI-072]
+        applyDialogTitleBarIcon(*options.launchAsync(), DialogIcon::Settings);
     }
 }

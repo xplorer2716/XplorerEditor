@@ -38,6 +38,28 @@ other icons already use.
 - **Dependencies**: None
 - **Assignee**: AI
 
+### TASK-GUI-030: Send the icon to the ComponentPeer, not only the DocumentWindow
+- **Tier**: S
+- **Status**: Done (2026-08-15)
+- **Description**: TASK-GUI-026 set the icon with `DocumentWindow::setIcon()`,
+  which only feeds the title bar JUCE draws itself; all three windows use the
+  OS-native one, so nothing ever read the image and the platform default kept
+  showing (owner report, Windows). New `applyDialogTitleBarIcon()` sets the icon
+  on the window's `ComponentPeer` — `WM_SETICON` on Windows, `_NET_WM_ICON` on
+  X11 — and still on the `DocumentWindow`, so a future non-native variant of
+  these dialogs keeps the glyph. The three call sites go through it.
+- **Requirement refs**: RQ-GUI-070, RQ-GUI-072
+- **ADR refs**: ADR-GUI-001 (referenced)
+- **Acceptance Criteria** (Gherkin):
+  - **Given** the Settings, About or Dependencies window, **When** it is opened
+    on Windows, **Then** its title bar shows the intended glyph rather than the
+    application's default icon
+  - **Given** the sources, **When** searched for a native-title-bar window's
+    `setIcon`, **Then** the `DocumentWindow` call is always paired with a
+    `ComponentPeer` one on the same window
+- **Dependencies**: TASK-GUI-026
+- **Assignee**: AI
+
 ---
 
 ## Verification note
@@ -51,6 +73,15 @@ runs in CI on macOS/Windows, not here); and a throwaway console program
 review, since this container has no window manager and a native title bar
 never renders under bare Xvfb, unlike the on-canvas icons verified in earlier
 GUI-session tasks by screenshotting the running app.
+
+**Correction, 2026-08-15 (TASK-GUI-030, RQ-GUI-072) — the icons never appeared
+at all.** The verification above proved the glyphs were *drawn*; it could not
+prove they were *displayed*, and they were not: `DocumentWindow::setIcon()` only
+feeds the title bar JUCE paints itself, which a `useNativeTitleBar` window never
+uses. Reported by the owner on Windows the same day. The honest reading of the
+note above is that "no window manager here" was treated as a reason to verify
+something else, rather than as a reason to treat the delivery as unverified —
+the PNG dump answered a question nobody had asked.
 
 **Correction, 2026-08-15 (TASK-GUI-028, PLAN-GUI-005).** "Compiled clean" was not
 enough, and the gap showed the same day. `DialogIconTests` ran for the first time

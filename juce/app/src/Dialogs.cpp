@@ -767,10 +767,9 @@ namespace xplorer::app
         options.escapeKeyTriggersCloseButton = true;
         options.useNativeTitleBar = true;
         options.resizable = false;
-        // Native OS chrome: icon set once via setIcon(), not painted per frame.
-        // [RQ-GUI-070, ADR-GUI-001]
-        options.launchAsync()->setIcon(
-            dialogTitleBarIcon(DialogIcon::About, tokens::component::dialogIconSize));
+        // Native OS chrome: icon set once on the peer, not painted per frame.
+        // [RQ-GUI-070, RQ-GUI-072]
+        applyDialogTitleBarIcon(*options.launchAsync(), DialogIcon::About);
     }
 
     void showDependenciesWindow()
@@ -786,8 +785,7 @@ namespace xplorer::app
         options.resizable = true;
         // Reuses the Settings glyph rather than a third one (owner decision,
         // 2026-08-15) — this window is a sub-page of About, not a distinct
-        // destination worth its own icon. [RQ-GUI-070, ADR-GUI-001]
-        options.launchAsync()->setIcon(
-            dialogTitleBarIcon(DialogIcon::Settings, tokens::component::dialogIconSize));
+        // destination worth its own icon. [RQ-GUI-070, RQ-GUI-072]
+        applyDialogTitleBarIcon(*options.launchAsync(), DialogIcon::Settings);
     }
 }
