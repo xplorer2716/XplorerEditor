@@ -75,7 +75,6 @@ namespace xplorer::app::tokens
         inline constexpr float indicatorGlowRadius = 2.0F;  // glow outer radius as a MULTIPLE of the lamp's own radius (indicatorSize/2), not of its diameter -- at 2.0 the glow reaches exactly one lamp-radius past the visible dot's edge (3.5 px at the 7 px first version), so retuning indicatorSize scales the halo with it. Checked against the real clearance around _ledPanelControl (11 px to the VFD glass, 14+ px to the button row): a diameter-multiple reading would have reached 14 px and left only 0.5 px before touching the glass -- deliberately kept well inside instead. Also sets how far LedPanelComponent inflates its painting bounds past the extracted panel rect, since the 8 px-high panel has no room for a halo (DEC-JUC-097). ADR-JUC-031 (DEC-JUC-095)
         inline constexpr float knobTrackAlpha = 0.2F;  // owner review 2026-07: reference's literal 5/255 read as invisible once combined with our transparent knob body (ADR-JUC-009) -- at minimum value the knob had no visible shape at all. Raised to a clearly-visible-but-subtle wash.
         inline constexpr float disabledAlpha = 0.5F;  // owner-confirmed 2026-07: shared Disabled treatment for check boxes/radios/combos (RQ-DSN-032, TASK-JUC-109/110, ADR-JUC-017)
-        inline constexpr float popupHighlightAlpha = 0.35F;  // accent.withAlpha(a) fill of the hovered row in an open combo-box popup list, over the popup's own surfaceRecessed background. Owner report: the stock LookAndFeel_V4 highlight (an untokenised default) was barely visible. Stronger than blockFillAlpha (0.30, a passive identity tint) because this is an active interaction cue, same family as tickBoxBorderAlpha's restraint. RQ-GUI-068, ADR-JUC-017 (DEC-JUC-111)
         inline constexpr int space2 = 2;  // hairline inset — row.reduced(0,2), swatch.reduced(2)
         inline constexpr int space4 = 4;  // xs gap — pre-automation-table gap
         inline constexpr int space6 = 6;  // sm gap — inter-section gaps, label/bar gap
@@ -246,7 +245,6 @@ namespace xplorer::app::tokens
         inline constexpr float tickBoxBorderAlpha = global::tickBoxBorderAlpha;  // accent.withAlpha(a) border
         inline constexpr float knobTrackAlpha = global::knobTrackAlpha;  // controlTrack.withAlpha(a)
         inline constexpr float disabledAlpha = global::disabledAlpha;  // shared control disabled treatment, ADR-JUC-017
-        inline constexpr float popupHighlightAlpha = global::popupHighlightAlpha;  // ledColour().withAlpha(a) fill of a hovered popup-list row, RQ-GUI-068, ADR-JUC-017 (DEC-JUC-111)
         inline constexpr float sectionBarFadeEnd = global::sectionBarFadeEnd;  // block-colour section bar: opacity at the far end (bright at the label end), RQ-DSN-092
         inline constexpr float sectionBarHeight = global::sectionBarHeight;  // section separator bar thickness AND the label's baseline offset below the bar's top edge — the two are the same number because label and bar are bottom-aligned, RQ-GUI-062
         inline constexpr int sectionLabelGap = global::sectionLabelGap;  // gap on each side of a section label, RQ-GUI-062

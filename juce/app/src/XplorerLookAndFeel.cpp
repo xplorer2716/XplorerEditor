@@ -20,12 +20,15 @@ namespace xplorer::app
         setColour(juce::PopupMenu::backgroundColourId, tokens::semantic::surfaceRecessed);
         // The hovered item of an open combo-box popup list previously fell back
         // to LookAndFeel_V4's own untokenised default highlight — barely visible
-        // against surfaceRecessed. Reads live from the ctor's ledColour, so a
+        // against surfaceRecessed. Opaque ledColour, matching the ticked
+        // checkbox/radio fill (drawTickBox/drawRadioBox) exactly rather than a
+        // tint of it — owner correction 2026-08-15: an alpha-blended first pass
+        // read as a different, darker colour, not "the same colour" the knob
+        // LED swatch shows. Reads live from the ctor's ledColour, so a
         // LookAndFeel rebuild (MainComponent::updateLedColour) keeps it in sync
         // with every other accent-coloured control, no cached copy.
         // [RQ-GUI-068, ADR-JUC-011, ADR-JUC-017 (DEC-JUC-111)]
-        setColour(juce::PopupMenu::highlightedBackgroundColourId,
-                  ledColour.withAlpha(tokens::component::popupHighlightAlpha));
+        setColour(juce::PopupMenu::highlightedBackgroundColourId, ledColour);
         setColour(juce::PopupMenu::highlightedTextColourId, tokens::semantic::textPrimary);
         setColour(juce::ToggleButton::textColourId, tokens::semantic::textPrimary);
         setColour(juce::Label::textColourId, tokens::semantic::textPrimary);

@@ -179,17 +179,34 @@ without the two states reading as one.
   submenu arrow, text sizing) needs no change, only the two colour IDs were
   never set, so they resolved to `LookAndFeel_V4`'s own generic defaults.
   `XplorerLookAndFeel`'s constructor now sets both, next to its existing
-  `PopupMenu::backgroundColourId` line: the highlighted background is
-  `ledColour.withAlpha(component.popupHighlightAlpha)` (NEW token, 0.35 — an
-  active interaction cue, so tuned stronger than `blockFillAlpha`'s 0.30
-  passive identity tint), the highlighted text is `semantic.textPrimary`
-  (unchanged from the item's idle text colour, so only the background reads
-  as different). Read from the ctor parameter, not `_ledColour` mutated
-  later: `MainComponent::updateLedColour` already rebuilds the whole
-  `XplorerLookAndFeel` on a LED-colour change (DEC-JUC-036), so a
-  constructor-time `setColour` stays live by the same mechanism every other
-  `setColour` call in this constructor already relies on — no new staleness
-  risk. (RQ-GUI-068)
+  `PopupMenu::backgroundColourId` line: the highlighted background is the
+  **opaque `ledColour`** — the same undiluted value `drawTickBox`/
+  `drawRadioBox` use for a ticked fill — and the highlighted text is
+  `semantic.textPrimary` (unchanged from the item's idle text colour, so
+  only the background reads as different). Read from the ctor parameter,
+  not `_ledColour` mutated later: `MainComponent::updateLedColour` already
+  rebuilds the whole `XplorerLookAndFeel` on a LED-colour change
+  (DEC-JUC-036), so a constructor-time `setColour` stays live by the same
+  mechanism every other `setColour` call in this constructor already relies
+  on — no new staleness risk, confirmed by a live re-theme test (owner
+  report suspected otherwise; traced to testing a stale binary, not a code
+  defect). (RQ-GUI-068)
+  - *Correction, same day.* The first pass filled with
+    `ledColour.withAlpha(component.popupHighlightAlpha)` (0.35) instead of
+    the opaque colour above, reasoning that a translucent tint over
+    `surfaceRecessed` would guarantee text contrast regardless of the
+    chosen accent. The owner's report on the built app: "ce n'est pas la
+    même couleur, tu as mal codé" — an alpha-blended tint reads as a
+    different, darker colour, not "the same colour" the knob-LED swatch
+    shows, which is what RQ-GUI-068 and the owner's original request both
+    actually asked for. Switched to opaque `ledColour`, matching the
+    tick-box/radio precedent exactly instead of inventing a new treatment;
+    `component.popupHighlightAlpha` is removed from the token set (its one
+    call site is gone). Contrast is not reintroduced as a risk: no other
+    accent-opaque-fill element in this app carries overlaid text either, so
+    this is the first case, not a regression of a previously-solved one,
+    and `textPrimary` (white) read cleanly in the rendered app at the
+    default and at a re-themed accent alike.
 
 ## Consequences
 
