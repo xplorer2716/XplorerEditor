@@ -174,6 +174,10 @@ tiers:
     blockFillAlpha:    { kind: float, value: 0.30, note: "tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule." }
     blockFrameRelief:  { kind: float, value: 0.2,  note: "block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094" }
 
+    # ---- dialog title-bar icons (Settings/About/Dependencies, RQ-GUI-070) ----
+    dialogIconAccent: { kind: colour, hex: "66B5E3", note: "static badge colour for OS-native title-bar icons — these cannot live-retheme (set once at DialogWindow::setIcon() time, the window is native chrome outside the app's own LookAndFeel), so this deliberately mirrors DEFAULT_KNOB_COLOR (juce/settings/src/AllUsersSettingsDefaults.cpp) rather than the live, user-customisable ledColour(): the app's own shipped-default identity colour, not a runtime value. A future change to DEFAULT_KNOB_COLOR does not have to update this token, and vice versa — the two are independently owned, deliberately duplicated values, not a shared source of truth." }
+    dialogIconSize:   { kind: int, value: 32, note: "pixel size of the rendered title-bar icon image; the OS scales down for taskbar/alt-tab as needed. RQ-GUI-070" }
+
     # ---- main-panel control-row height (MainForm-extracted; shared by check
     #      boxes / radios / in-panel stacked rows so paired rows align) ----
     controlRowHeight: { kind: int, value: 17, note: "reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040" }
@@ -373,6 +377,8 @@ tiers:
     shortcutButtonBorderAlpha: { alias: global.shortcutButtonBorderAlpha, note: "diagramFrame.withAlpha(a) for a key outline, RQ-GUI-063" }
     blockFillAlpha:        { alias: global.blockFillAlpha,     note: "blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094" }
     blockFrameRelief:      { alias: global.blockFrameRelief,   note: "blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094" }
+    dialogIconAccent: { alias: global.dialogIconAccent, note: "title-bar icon badge colour, RQ-GUI-070" }
+    dialogIconSize:   { alias: global.dialogIconSize,   note: "title-bar icon render size, RQ-GUI-070" }
 
     # ---- MIDI activity LED (RQ-GUI-056, ADR-JUC-031) ----
     # No semantic tier for these, same reasoning as the VFD group below: one

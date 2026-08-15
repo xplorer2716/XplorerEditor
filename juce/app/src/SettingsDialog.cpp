@@ -2,6 +2,7 @@
 
 #include "BlockPalette.hpp"
 #include "DesignTokens.hpp"
+#include "DialogIcons.hpp"
 #include "Dialogs.hpp"
 
 #include "xplorer/app/ControlMetadata.hpp"
@@ -968,6 +969,10 @@ namespace xplorer::app
         options.escapeKeyTriggersCloseButton = true;
         options.useNativeTitleBar = true;
         options.resizable = true; // the automation table benefits from more height
-        options.launchAsync();
+        // The window is native OS chrome (useNativeTitleBar above): its icon is
+        // set once here via setIcon(), not painted by XplorerLookAndFeel each
+        // frame like everything else in the app. [RQ-GUI-070, ADR-GUI-001]
+        options.launchAsync()->setIcon(
+            dialogTitleBarIcon(DialogIcon::Settings, tokens::component::dialogIconSize));
     }
 }

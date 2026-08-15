@@ -91,6 +91,7 @@ if(XPL_BUILD_APP)
         # [RQ-CLR-010, ADR-CLR-001 (DEC-CLR-001-D)]
         app/SectionRhythmTests.cpp
         app/ShortcutIconTests.cpp
+        app/DialogIconTests.cpp
         app/BoundRadioGroupTests.cpp
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
@@ -98,6 +99,7 @@ if(XPL_BUILD_APP)
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
         ../app/src/ShortcutIcons.cpp
+        ../app/src/DialogIcons.cpp
         ../app/src/BlockPalette.cpp
         # BoundControls carries the RQ-GUI-053 orientation rule, which is a
         # widget-geometry decision: it can only be pinned against real
