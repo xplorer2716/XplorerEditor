@@ -78,10 +78,34 @@ GUI-session tasks by screenshotting the running app.
 at all.** The verification above proved the glyphs were *drawn*; it could not
 prove they were *displayed*, and they were not: `DocumentWindow::setIcon()` only
 feeds the title bar JUCE paints itself, which a `useNativeTitleBar` window never
-uses. Reported by the owner on Windows the same day. The honest reading of the
-note above is that "no window manager here" was treated as a reason to verify
-something else, rather than as a reason to treat the delivery as unverified —
-the PNG dump answered a question nobody had asked.
+uses. Reported by the owner on Windows the same day.
+
+**And the note above was wrong on its own terms, which is the part worth
+keeping.** It claimed the container could not verify this. It could. Missing a
+window manager stops the title bar being *rendered*; it does not stop the icon
+being *delivered* — on X11 `ComponentPeer::setIcon()` sets the `_NET_WM_ICON`
+property, and an X property exists whether or not anything draws it. One
+`xprop -id <win> _NET_WM_ICON` under the same bare Xvfb already used elsewhere
+in this session would have shown the property absent and caught the defect
+before delivery. "I cannot see it" was mistaken for "I cannot test it", and the
+PNG dump answered a question nobody had asked (owner observation, 2026-08-15).
+
+**Verification actually performed for TASK-GUI-030.** The app was run under
+Xvfb, `Tools > Settings` opened by `xdotool`, and every visible window's
+`_NET_WM_ICON` read — an A/B control inside one run, since the main window never
+sets an icon:
+
+| window | `_NET_WM_ICON` |
+|---|---|
+| `Xplorer` (main, no `setIcon` call) | `not found.` |
+| `Settings` (via `applyDialogTitleBarIcon`) | `(CARDINAL) = Icon (32 x 32)` |
+
+`xprop`'s own ASCII preview of the property shows the circular badge. About and
+Dependencies are not separately probed: all three call sites now go through the
+one function verified here (`Dialogs.cpp`, `SettingsDialog.cpp`). This is the
+same `ComponentPeer::setIcon()` that sends `WM_SETICON` on Windows, so it
+establishes the delivery path, not the Windows rendering — the owner confirms
+the visible result there.
 
 **Correction, 2026-08-15 (TASK-GUI-028, PLAN-GUI-005).** "Compiled clean" was not
 enough, and the gap showed the same day. `DialogIconTests` ran for the first time
