@@ -7,6 +7,8 @@
 #include "xplorer/app/ControlTable.hpp"
 
 #include <algorithm>
+#include <array>
+#include <cstdlib>
 #include <initializer_list>
 #include <limits>
 #include <string_view>

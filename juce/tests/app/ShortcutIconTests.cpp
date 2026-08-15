@@ -161,11 +161,13 @@ SCENARIO("Icon strokes are round-capped and curve-jointed", "[RQ-GUI-064][TASK-G
     }
 }
 
-SCENARIO("A hovered key lights in the panel LED blue", "[RQ-GUI-067][TASK-GUI-004]")
+SCENARIO("A hovered key lights in the control accent", "[RQ-GUI-067][TASK-GUI-004]")
 {
     // Colour choice is the whole requirement here, so this renders the key and
     // reads the pixels back rather than re-deriving the decision in the test.
-    const int box = tokens::component::shortcutButtonSize;
+    // `box` is constant-initialised, so the lambdas below use it without
+    // capturing it — Clang rejects a redundant capture under -Werror.
+    static constexpr int box = tokens::component::shortcutButtonSize;
 
     // A deliberately off-palette accent: if the paint path ever went back to a
     // hard-coded colour, this magenta would not appear and the test would fail.
@@ -173,7 +175,7 @@ SCENARIO("A hovered key lights in the panel LED blue", "[RQ-GUI-067][TASK-GUI-00
     // ledColour, which the user can retheme. [RQ-GUI-067, ADR-JUC-011]
     const juce::Colour accent{juce::Colour::fromRGB(220, 40, 200)};
 
-    const auto render = [box, accent](ShortcutIcon icon, bool hovered, bool down)
+    const auto render = [accent](ShortcutIcon icon, bool hovered, bool down)
     {
         juce::Image image{juce::Image::ARGB, box, box, true};
         juce::Graphics g{image};
@@ -183,7 +185,7 @@ SCENARIO("A hovered key lights in the panel LED blue", "[RQ-GUI-067][TASK-GUI-00
         return image;
     };
     // Mid-height on the left edge: always on the key's outline, never on an icon.
-    const auto outlineOf = [box](const juce::Image& i) { return i.getPixelAt(0, box / 2); };
+    const auto outlineOf = [](const juce::Image& i) { return i.getPixelAt(0, box / 2); };
 
     GIVEN("a key that is not the destructive one")
     {

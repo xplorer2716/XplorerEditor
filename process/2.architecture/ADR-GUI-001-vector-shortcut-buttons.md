@@ -4,10 +4,11 @@
 Accepted (owner, session GUI, 2026-08-10).
 
 ## Requirements
-RQ-GUI-063, RQ-GUI-064, RQ-GUI-065, RQ-GUI-066. Depends on RQ-GUI-021 (what the
+RQ-GUI-063, RQ-GUI-064, RQ-GUI-065, RQ-GUI-066, RQ-GUI-067. Depends on RQ-GUI-021 (what the
 eight buttons do), RQ-GUI-022 (the LED strip beside them), RQ-CLR-001/003/007
 (section rhythm and grid alignment), RQ-SCL-001 (the 1x scale), ADR-JUC-014
-(token module), ADR-JUC-017 (interaction states), ADR-JUC-024 (display group).
+(token module), ADR-JUC-011 (the control accent), ADR-JUC-017 (interaction
+states), ADR-JUC-020 (user-themeable palette), ADR-JUC-024 (display group).
 
 ## Context
 
@@ -128,14 +129,15 @@ outside it.
 
 **Harder.** Icon geometry now lives in code, so changing an icon means editing
 paths rather than swapping a file — a real cost for anyone who would rather work
-in a drawing tool. The 29/5 metrics are load-bearing: they are the only integer
-pair that spans the display, so a change to the VFD's width forces a rethink of
-the row rather than a tweak.
+in a drawing tool. The 27/6 metrics are load-bearing: they are the pair that
+spans the modulation grid, so moving the `MOD_SRC` or `MOD_QUANTIZE` columns
+forces a rethink of the row rather than a tweak — and `SectionRhythmTests` will
+say so.
 
-**Constrained.** The keys cannot grow beyond 29 px without breaking the
-display-width alignment, and the icons are drawn for that size — the DIN's five
-pins in particular are at their legibility floor. A future request for larger
-keys is a request to re-lay-out the right column, not to change a constant.
+**Constrained.** The keys cannot grow beyond 27 px without breaking the grid
+alignment, and the icons are drawn for that size — the DIN's five pins in
+particular are at their legibility floor. A future request for larger keys is a
+request to re-lay-out the right column, not to change a constant.
 
 **Unchanged.** What the buttons *do* (RQ-GUI-021), the LED strip's position and
 behaviour (RQ-GUI-022), the VFD, and the `MOD MATRIX` separator's own position.

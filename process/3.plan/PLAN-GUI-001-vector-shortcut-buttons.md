@@ -2,24 +2,28 @@
 
 ## Overview
 Replace the eight bitmap shortcut buttons with vector keys and a hand-authored
-icon library, resize the row so it spans the VFD exactly, and bring the
+icon library, size the row so it spans the modulation grid exactly, and bring the
 modulation matrix column into the section rhythm it had escaped.
 
 ## References
-- **Requirements**: RQ-GUI-063, RQ-GUI-064, RQ-GUI-065, RQ-GUI-066; carries RQ-GUI-021, RQ-GUI-022
-- **ADRs**: ADR-GUI-001 (DEC-GUI-001-A..E); depends on ADR-JUC-014, ADR-JUC-017, ADR-JUC-024, ADR-CLR-001
+- **Requirements**: RQ-GUI-063, RQ-GUI-064, RQ-GUI-065, RQ-GUI-066, RQ-GUI-067; carries RQ-GUI-021, RQ-GUI-022
+- **ADRs**: ADR-GUI-001 (DEC-GUI-001-A..F); depends on ADR-JUC-014, ADR-JUC-017, ADR-JUC-024, ADR-CLR-001
 - **Design system**: RQ-DSN-010 (type/colour scale), RQ-DSN-020 (4 px spacing scale)
 
 ## Geometry, as decided
 
 | | Value | Source |
 |---|--:|---|
-| Key size | 29 px | only integer solution spanning the VFD |
-| Gap between keys | 5 px | idem — 8×29 + 7×5 = 267 |
-| Row x | 951 → 1218 | VFD's own edges |
-| Row y | 132 → 161 | 8 px below the LED strip |
-| Gap to matrix labels | 24 px | remainder, falls below (RQ-CLR-001 proximity) |
+| Key size | 27 px | 8×27 + 7×6 = 258, the modulation grid's span |
+| Gap between keys | 6 px | idem |
+| Row x | 960 → 1218 | `MOD_SRC` left edge to `MOD_QUANTIZE` right edge — the `MOD MATRIX` separator's own span (RQ-CLR-007) |
+| Row y | 132 → 159 | 8 px below the LED strip |
+| Gap to matrix labels | 26 px | remainder, falls below (RQ-CLR-001 proximity) |
 | Matrix displacement | +27 px | derived from RQ-CLR-001, not chosen |
+
+TASK-GUI-002 first sized the row against the VFD (29 px keys spanning 951→1218);
+TASK-GUI-004 re-referenced it to the grid on owner review. The table above is the
+delivered state.
 
 ---
 
@@ -76,11 +80,11 @@ modulation matrix column into the section rhythm it had escaped.
 - **Dependencies**: TASK-GUI-002
 - **Assignee**: AI
 
-### TASK-GUI-004: Row on the modulation grid, and the LED hover
+### TASK-GUI-004: Row on the modulation grid, and the accent hover
 - **Tier**: S
 - **Status**: Done (2026-08-10)
 - **Description**: Re-reference the row from the VFD to the modulation grid, and
-  add the LED-blue hover treatment.
+  add the hover highlight in the control accent.
 - **Requirement refs**: RQ-GUI-065 (amended), RQ-GUI-067, RQ-CLR-007
 - **ADR refs**: ADR-GUI-001 (DEC-GUI-001-D amended, DEC-GUI-001-F)
 - **Origin**: owner review of the TASK-GUI-002 build. Two points: the row should
@@ -91,7 +95,8 @@ modulation matrix column into the section rhythm it had escaped.
   which unlike the lamp colours is user-themeable.
 - **Change**: keys 29→27, gaps 5→6, row 951→960 at its left end; both ends now
   equal the separator's, so the right column hangs off one reference instead of
-  two. Hover ink token added.
+  two. Hover reads the accent from the LookAndFeel at paint time — a token was
+  tried first and removed, see DEC-GUI-001-F.
 - **Acceptance Criteria**:
   - **Given** the control table, **When** the row's ends are compared with the
     `MOD MATRIX` separator's, **Then** they coincide (960 and 1218)
