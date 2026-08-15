@@ -121,7 +121,13 @@ SCENARIO("No two shortcut icons are the same drawing", "[RQ-GUI-064][TASK-GUI-00
             const auto prev = shortcutIconPaths(ShortcutIcon::PreviousProgram, box).stroked;
             const auto next = shortcutIconPaths(ShortcutIcon::NextProgram, box).stroked;
             REQUIRE(prev.toString() != next.toString());
-            REQUIRE(prev.getBounds().getWidth() == next.getBounds().getWidth());
+            // Approx, not ==: the two are built from different expressions
+            // (-0.80r..+0.72r against -0.72r..+0.80r) that are equal in exact
+            // arithmetic but need not round identically. MSVC produced a 1-ULP
+            // difference where GCC and Clang did not. The property under test is
+            // "the mirror has the same width", never bitwise equality.
+            REQUIRE(prev.getBounds().getWidth()
+                    == Catch::Approx(next.getBounds().getWidth()).margin(0.001));
         }
     }
 }
