@@ -8,8 +8,8 @@
 #
 # The derivation itself lives in resolve-version.sh rather than inline here, so
 # it can be run and asserted outside GitHub Actions — see tests/. It is the one
-# piece of logic fifteen workflows agree through, which is the argument for
-# testing it rather than observing it.
+# piece of logic every deployment workflow agrees through, which is the argument
+# for testing it rather than observing it.
 name: 'Resolve the product version'
 description: 'Derives the numeric, display and full product-version forms from the commit being built.'
 

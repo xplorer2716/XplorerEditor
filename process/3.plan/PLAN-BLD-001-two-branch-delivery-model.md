@@ -62,8 +62,9 @@ from the commit and deployments that actually contain what a user needs to run t
   - **Given** a build triggered by the production tag (`refs/tags/…`), **When** the action runs,
     **Then** the stage is production, **not** canary, and the derived display form equals the tag
 - **Verification**: a shell test fixture builds a throwaway git repository with fixed committer
-  dates in several timezones and asserts every output — this logic is what fifteen workflows agree
-  through, so it is tested rather than observed. 18 assertions, all passing.
+  dates in several timezones and asserts every output — this logic is what ten workflows agree
+  through today, rising to fifteen once `linux-x64` lands (TASK-BLD-006), so it is tested rather
+  than observed. 18 assertions, all passing.
 - **Defect found by that fixture, before any workflow existed:** RQ-BLD-020's stage rule read
   "`main` → none, `dev` → `-preprod`, **any other ref** → `-canary`", and a production build never
   runs on `refs/heads/main` — it runs on the tag `cut-deployment` pushes. **Every production binary
@@ -257,26 +258,45 @@ from the commit and deployments that actually contain what a user needs to run t
 - **Dependencies**: TASK-BLD-002, TASK-BLD-008
 - **Assignee**: AI
 
-### TASK-BLD-010: The fifteen workflows, the cut action, and retiring the old four
+### TASK-BLD-010: The ten workflows, the cut action, and retiring the old four
 - **Tier**: L
-- **Status**: Done (2026-08-16)
+- **Status**: Done (2026-08-16); **trigger scheme reworked 2026-08-16, same session**, after PR #49
+  (`feature/BLD` → `dev`) exercised the pipeline for the first time and surfaced a duplicate-run
+  defect (`push` and `pull_request` both firing on one commit) — see DEC-BLD-024
 - **Description**: `<os>-<arch>-<config>-<stage>`, one job each, delegating to the composite
   actions; `cut-deployment` (`workflow_dispatch` on `main`) derives the version and pushes the tag;
   the four `*-app-*` workflows are removed and `linux-headless-release` kept as-is with a note
   saying why it is outside the scheme. **Ten workflows now** (Windows x64 and macOS arm64 across
   the three streams); the five Linux ones arrive with TASK-BLD-006, so no inert workflow is
-  committed ahead of the build it would run.
-- **Requirement refs**: RQ-BLD-023, RQ-BLD-028, RQ-BLD-019
-- **ADR refs**: ADR-BLD-003 (DEC-BLD-016, DEC-BLD-017)
+  committed ahead of the build it would run. **Trigger scheme (DEC-BLD-024):** canary fires on
+  `push` alone (`branches-ignore: [main, dev]`) — no pull request needed for a feature branch's own
+  feedback; preprod fires on both `push: branches: [dev]` and `pull_request: branches: [dev]`, but
+  only the `push` one publishes — a PR targeting `dev` builds and tests the merge result first,
+  without creating a pre-release for a commit that was never merged; `linux-headless-release` was
+  changed to `workflow_dispatch` only, trading its automatic Linux coverage for a pipeline whose
+  triggers are legible at a glance, until TASK-BLD-006 gives Linux a real place in the matrix.
+- **Requirement refs**: RQ-BLD-023, RQ-BLD-028, RQ-BLD-019, RQ-BLD-007
+- **ADR refs**: ADR-BLD-003 (DEC-BLD-016, DEC-BLD-017, DEC-BLD-024)
 - **Acceptance Criteria** (Gherkin):
   - **Given** any deployment workflow, **When** it is read, **Then** its file stem, `name:` and job
     key are the same `<os>-<arch>-<config>-<stage>` string
   - **Given** a push to `main` with no tag, **When** its workflows complete, **Then** no deployment
     was published
   - **Given** `cut-deployment` run on `main`, **When** it completes, **Then** a tag equal to the
-    display version exists and the three production workflows have run
+    display version exists and the two production workflows have run (rising to three once
+    `linux-x64` is added by TASK-BLD-006)
   - **Given** a push to a `feature/*` branch, **When** its workflows complete, **Then** no release
     and no tag exist and the binaries are downloadable only from the run
+  - **Given** a pull request that targets `dev`, **When** its preprod verification workflows
+    complete, **Then** they build and test the merge result and upload it as a run artifact, but
+    publish no release
+  - **Given** the same pull request merged into `dev`, **When** the resulting push's preprod
+    workflows complete, **Then** exactly one pre-release exists for that merge commit
+  - **Given** any push or pull request, **When** the triggered workflows are listed, **Then** at
+    most one stream's workflows ran for that specific event — no workflow file fires twice for the
+    same commit
+  - **Given** `linux-headless-release`, **When** a push or pull request lands, **Then** it does not
+    run — it runs only when triggered by hand
   - **Given** the deployment workflow files, **When** their build steps are compared, **Then** the
     shared logic appears once, in composite actions
   - **Given** a commit already deployed, **When** `cut-deployment` is run again on it, **Then** the

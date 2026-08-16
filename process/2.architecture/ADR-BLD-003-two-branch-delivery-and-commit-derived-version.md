@@ -73,7 +73,7 @@ proposed again:
 - Six workflows build one `dev` commit concurrently. A counter must hand all six the same value,
   which means an atomic reservation — GitHub has no such primitive.
 - The default `GITHUB_TOKEN` cannot write repository variables; a counter kept there needs a
-  stored PAT and a global `concurrency` lock, serialising all fifteen workflows behind one gate.
+  stored PAT and a global `concurrency` lock, serialising all ten workflows behind one gate.
 - Canary builds consume numbers while publishing nothing, so the counter cannot be reconstructed
   by counting releases — it must be persisted somewhere that is written even when nothing ships.
 - Re-running a failed workflow would burn a fresh number, giving one commit two versions.
@@ -127,7 +127,7 @@ own title. `run-name:` is evaluated before the run starts and can only read the 
 and `vars` contexts — never a job output — so the version reaches the run through its **summary**
 and through every artifact name, not through the title in the Actions list.
 
-### DEC-BLD-016 — Fifteen thin workflows over composite actions
+### DEC-BLD-016 — Ten thin workflows over composite actions
 
 `<os>-<arch>-<config>-<stage>`, file name = `name:` = job key, one job per file — RQ-BLD-010's
 property, extended to a matrix that now also has an architecture and a stream. Every step
@@ -150,7 +150,8 @@ nothing; giving it a deployment-shaped name would state something false about it
 ### DEC-BLD-017 — Production is cut by an explicit action, which computes and pushes the tag
 
 A push to `main` publishes nothing. A `workflow_dispatch` on `main` derives the version, pushes it
-as a tag, and the three production workflows trigger on that tag.
+as a tag, and every production workflow triggers on that tag (two today, rising to three once
+`linux-x64` is added by TASK-BLD-006).
 
 **The human never types a version.** This resolves a contradiction the owner's requirement carried:
 a tag was to trigger production, while the version was to be assigned by the build — so the tag
@@ -199,8 +200,24 @@ is actually for:
   Linux regression coverage for a pipeline whose triggers are legible at a glance; the trade is
   temporary in principle, closed once `TASK-BLD-006` adds Linux to the generated matrix.
 
-Each stream now has exactly one event that can put a commit through it — no stream fires twice on
-the same commit, and no commit reaches two streams' worth of triggers at once.
+Each stream now has exactly one event that can put a commit through it — no single generated
+workflow file fires twice on the same commit anymore, which was the defect PR #49 exposed. What
+this decision does **not** remove is two *different* streams both building the same commit: a push
+to a feature branch that already has an open PR into `dev` fires canary (its own `push`) **and**
+preprod's verification build (`pull_request`, base `dev`) at once — eight runs, not four, for that
+one push. That is accepted, not overlooked: the two builds test different things (the branch tip,
+and what `dev` would become if the PR merged), so it is overlap between two purposes, not the same
+check running twice.
+
+| Event | canary (×4) | preprod (×4) | prod (×2) | `linux-headless-release` |
+|---|:-:|:-:|:-:|:-:|
+| `push` to `feature/*`, no open PR | ✅ | — | — | — (manual only) |
+| `push` to `feature/*` **with** an open PR into `dev` | ✅ (`push`) | ✅ (`pull_request`, build+test only) | — | — |
+| PR opened/updated, base `dev` | — | ✅ (`pull_request`, build+test only) | — | — |
+| that PR **merged** into `dev` (= a `push` lands on `dev`) | — | ✅ (`push`, publishes) | — | — |
+| PR **closed without merging** | — | — (`closed` is not in `pull_request`'s default types) | — | — |
+| `push` directly to `main` (ruleset blocks only delete + force-push) | — | — | — | — |
+| `cut-deployment` (`workflow_dispatch` on `main`) → pushes a version tag | — | — | ✅ (tag `push`) | — |
 
 *Rejected: canary and preprod both on `pull_request` only.* Matches the "verification happens
 through review" philosophy uniformly, but the owner wants canary's feedback available before a PR
@@ -220,7 +237,7 @@ Linux a real place in the generated matrix instead.
 at. A version now identifies an artefact everywhere it is stated, so a bug report names one build
 rather than "the latest alpha". Re-running a failed workflow reproduces the same version.
 
-**Harder.** Fifteen workflow files instead of five, and the build logic moves one level of
+**Harder.** Ten workflow files instead of five, and the build logic moves one level of
 indirection away into composite actions — the same trade DEC-JUC-075 made for the background
 painter, for the same reason and with the same cost. Cutting production is now a deliberate act
 rather than a side effect of merging.

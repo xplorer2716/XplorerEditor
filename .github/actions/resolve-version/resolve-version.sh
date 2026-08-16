@@ -23,7 +23,7 @@ set -euo pipefail
 ref="${XPL_REF:-${GITHUB_REF:-}}"
 
 # Production is reached through a TAG, not through refs/heads/main: DEC-BLD-017
-# has cut-deployment push the tag, and the three production workflows trigger on
+# has cut-deployment push the tag, and every production workflow triggers on
 # it. Tags are minted by that action alone, so a tag ref IS the production
 # stream. A pull_request build arrives as refs/pull/N/merge and is canary, which
 # is what it is.
