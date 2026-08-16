@@ -98,7 +98,14 @@ runs:
             fi
             cp "${ARTEFACT_DIR}/oberheim.syx" "${staging}/"
             cp "${ARTEFACT_DIR}/xplorer.sbom.spdx.json" "${staging}/"
-            (cd "${staging}" && zip -qr "${out}" .)
+            # zip itself is not on the windows-2022 runner's PATH (Git Bash
+            # ships neither zip nor unzip); 7-Zip is preinstalled there instead.
+            # Linux keeps zip, which IS preinstalled on ubuntu-latest.
+            if [ "$OS" = windows ]; then
+              (cd "${staging}" && 7z a -tzip "${out}" . >/dev/null)
+            else
+              (cd "${staging}" && zip -qr "${out}" .)
+            fi
             ;;
           *)
             echo "::error::unsupported os '${OS}'"; exit 1 ;;
