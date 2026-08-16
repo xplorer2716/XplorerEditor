@@ -16,21 +16,31 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ## Tasks
 
-### TASK-BLD-001: Create `dev`, make it the default, protect `main`, teach the process
+### TASK-BLD-001: Create `dev`, make it the default, protect `main`
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Not Started — owner-only (repository settings)
 - **Description**: Create `dev` from `main`; set it as the repository default; add an explicit
-  protection rule on `main`; update the `agnos-git-workflow` skill and `ADR-GOV-001`'s RQ-GIT rules
-  so session branches are cut from and merged into `dev`.
+  protection rule on `main`. Repository settings only — no file in this repository changes.
 - **Requirement refs**: RQ-BLD-019
 - **ADR refs**: ADR-BLD-003 (DEC-BLD-013); ADR-GOV-001 (amended)
 - **Acceptance Criteria** (Gherkin):
   - **Given** the repository settings, **When** the default branch is read, **Then** it is `dev`
   - **Given** the protection rules, **When** they are read, **Then** one names `main` explicitly
-  - **Given** the `agnos-git-workflow` skill, **When** `start-session` is read, **Then** it cuts
-    `feature/<TRI>` from `dev`, and its "never commit to the default branch" rule now protects both
+  - **Given** a pull request opened with no base selected, **When** its target is read, **Then**
+    it is `dev`
+- **This task is the owner's alone.** Creating `dev`, setting it as the default and protecting
+  `main` are repository settings, unreachable from CI.
+- **The AGNOS skill and instruction files are NOT modified by this task** (owner instruction,
+  2026-08-16). An attempt to do so was made and reverted: the process is to be *respected*, not
+  edited, and adapting the branching rules it states is the owner's call, not a side effect of a
+  delivery task. If the two-branch model needs those files to change, that is a separate decision
+  taken deliberately.
+- **Observation, for the owner to do with as they wish** — not acted on: `RQ-GIT-001`,
+  `RQ-GIT-002`, `RQ-PRT-004`, `RQ-PRT-006`, `RQ-PRT-007` and `ADR-PRT-001` are cited by the git
+  skill and by `ADR-GOV-001` and are defined in no requirements file, so grepping any of them
+  returns the citation and no statement.
 - **Dependencies**: None
-- **Assignee**: Human (repository settings) + AI (skill and process files)
+- **Assignee**: Human (repository settings only)
 
 ### TASK-BLD-002: `resolve-version` composite action
 - **Tier**: M
@@ -158,7 +168,7 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-007: Generate the SBOM at build time
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: Replace the committed `juce/app/sbom/xplorer.sbom.spdx.json` with a build step
   that emits it, carrying the full version and the pinned dependency versions CMake already knows.
 - **Requirement refs**: RQ-BLD-022, RQ-BLD-014
@@ -172,6 +182,18 @@ from the commit and deployments that actually contain what a user needs to run t
     reads the file with no code change
   - **Given** the repository, **When** searched for a committed SBOM used as a build input,
     **Then** there is none
+- **Verification**: built with `2026.08.19-1740-preprod`, the emitted document carries that string
+  as the describing package's `versionInfo` and in its `documentNamespace`, `created` is the
+  commit's own timestamp, and JUCE/Catch2 report the pinned tags. `xpl_tests_app_juce` passes in
+  full (668 assertions), `SbomReaderTests` included, so the reader's contract (RQ-GUI-057) is
+  unaffected — only the values changed, not the schema.
+- **The pins are hoisted to `XPL_JUCE_VERSION` / `XPL_CATCH2_VERSION`**, read by both
+  `FetchContent_Declare` and the SBOM template. A dependency pin is a declaration we *want*
+  literal, unlike the product version — but it was literal in two places, and a hand-maintained
+  disclosure cannot announce that it stopped matching the pin it describes.
+- **`created` comes from the commit, not the build clock** (a fourth `resolve-version` output).
+  Otherwise two builds of one commit would differ in exactly one field, and a byte-comparison
+  could never be used to check that a rebuild reproduces a deployment.
 - **Dependencies**: TASK-BLD-003
 - **Assignee**: AI
 

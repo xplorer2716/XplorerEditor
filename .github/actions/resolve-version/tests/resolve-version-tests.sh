@@ -49,6 +49,11 @@ run() { # <repo> <ref> -> "numeric|display|full|stage"
         "$(sed -n 's/^stage=//p'   <<<"$out")"
 }
 
+field() { # <repo> <ref> <output name>
+    (cd "$1" && XPL_REF="$2" GITHUB_OUTPUT= bash "$SCRIPT" 2>/dev/null) \
+        | sed -n "s/^$3=//p"
+}
+
 echo "resolve-version.sh"
 
 # --- the three forms, and the stage per branch -----------------------------
@@ -117,6 +122,23 @@ R="$(make_repo '2026-01-01T00:00:00+00:00')"
 assert_eq "WHEN the numeric form is built THEN the minute field is 0, not empty" \
     "2026.1.1.0" \
     "$(cut -d'|' -f1 <<<"$(run "$R" refs/heads/main)")"
+rm -rf "$R"
+
+# --- the SBOM timestamp ----------------------------------------------------
+# SPDX requires a `created` field. Taking it from the clock would make two
+# builds of one commit differ in nothing but that field — so it comes from the
+# commit, like everything else here, and a rebuild is byte-identical.
+echo "GIVEN the SBOM's mandatory created field"
+R="$(make_repo '2026-08-19T17:40:07+00:00')"
+assert_eq "WHEN it is derived THEN it is the commit's own time, in UTC, ISO 8601" \
+    "2026-08-19T17:40:07Z" "$(field "$R" refs/heads/dev timestamp)"
+assert_eq "WHEN the same commit is rebuilt THEN the field is unchanged" \
+    "$(field "$R" refs/heads/dev timestamp)" "$(field "$R" refs/heads/main timestamp)"
+rm -rf "$R"
+
+R="$(make_repo '2026-08-19T19:40:07+02:00')"
+assert_eq "WHEN the committer was in another timezone THEN it is still the UTC instant" \
+    "2026-08-19T17:40:07Z" "$(field "$R" refs/heads/dev timestamp)"
 rm -rf "$R"
 
 # --- determinism -----------------------------------------------------------

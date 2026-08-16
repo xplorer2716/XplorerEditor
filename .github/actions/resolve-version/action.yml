@@ -26,6 +26,9 @@ outputs:
   stage:
     description: 'Empty for production, "preprod" on dev, "canary" everywhere else.'
     value: ${{ steps.resolve.outputs.stage }}
+  timestamp:
+    description: 'The commit''s own committer time in UTC, ISO 8601 — the SBOM''s `created` field. From the commit, not the clock, so a rebuild produces a byte-identical document.'
+    value: ${{ steps.resolve.outputs.timestamp }}
 
 runs:
   using: composite

@@ -40,6 +40,11 @@ esac
 stamp="$(TZ=UTC git log -1 --format=%cd --date=format-local:'%Y %m %d %H%M' HEAD)"
 read -r year month day hhmm <<<"$stamp"
 
+# ISO 8601, for the SBOM's mandatory `created` field. Taken from the same commit
+# as everything else rather than from the clock, so rebuilding a commit produces
+# a byte-identical document instead of one that differs only in its timestamp.
+timestamp="$(TZ=UTC git log -1 --format=%cd --date=format-local:'%Y-%m-%dT%H:%M:%SZ' HEAD)"
+
 # 10# forces base ten: 08 is not a valid octal literal, and a version derived in
 # August would otherwise fail arithmetic expansion outright.
 numeric="${year}.$((10#$month)).$((10#$day)).$((10#$hhmm))"
@@ -51,6 +56,7 @@ full="${display}${stage}"
     echo "display=${display}"
     echo "full=${full}"
     echo "stage=${stage#-}"
+    echo "timestamp=${timestamp}"
 } >> "${GITHUB_OUTPUT:-/dev/stdout}"
 
 echo "Resolved version: ${full} (numeric ${numeric})" >&2

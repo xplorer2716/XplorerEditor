@@ -28,6 +28,12 @@ set(XPL_VERSION_FULL "" CACHE STRING
 if(XPL_VERSION_FULL STREQUAL "")
     set(XPL_VERSION_FULL "${XPL_VERSION_NUMERIC}-local")
 endif()
+# The SBOM's mandatory SPDX `created` field. Supplied by resolve-version from the
+# commit rather than read off the build clock, so rebuilding a commit produces a
+# byte-identical document instead of one differing only here. The local default
+# is the epoch: unmistakably not a deployment, like 0.0.0.0 above. [RQ-BLD-022]
+set(XPL_VERSION_TIMESTAMP "1970-01-01T00:00:00Z" CACHE STRING
+    "Commit timestamp (ISO 8601 UTC) stamped into the generated SBOM.")
 message(STATUS "Xplorer product version: ${XPL_VERSION_FULL} (numeric ${XPL_VERSION_NUMERIC})")
 
 project(XplorerJuce
@@ -74,16 +80,24 @@ if(NOT XPL_BUILD_APP)
     # for the headless layer/test builds. [RQ-BLD-002]
     set(JUCE_MODULES_ONLY ON CACHE BOOL "" FORCE)
 endif()
+# Pinned dependency versions, named ONCE. The generated SBOM (RQ-BLD-022) states
+# these same values, and a pin that moved without the disclosure following it is
+# the kind of drift a hand-maintained SBOM cannot announce. Unlike the PRODUCT
+# version (derived, RQ-BLD-020), a dependency pin is a declaration we want
+# literal -- it is the thing being declared.
+set(XPL_JUCE_VERSION 8.0.9)
+set(XPL_CATCH2_VERSION 3.9.1)
+
 FetchContent_Declare(JUCE
     GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-    GIT_TAG 8.0.9
+    GIT_TAG ${XPL_JUCE_VERSION}
     GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(JUCE)
 
 if(XPL_BUILD_TESTS)
     FetchContent_Declare(Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-        GIT_TAG v3.9.1
+        GIT_TAG v${XPL_CATCH2_VERSION}
         GIT_SHALLOW TRUE)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extras")
