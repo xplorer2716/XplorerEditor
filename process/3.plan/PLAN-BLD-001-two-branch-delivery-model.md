@@ -150,7 +150,7 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-006: Linux x64 GUI build and AppImage packaging
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: Not Started — **deferred behind 008/009/010** (owner decision, 2026-08-16)
 - **Description**: New GUI build for `linux-x64` on a pinned Ubuntu image with the X11/FreeType/
   Fontconfig/ALSA/GL development packages, packaged as an AppImage with a `.desktop` entry and the
   TASK-BLD-004 icon.
@@ -163,7 +163,15 @@ from the commit and deployments that actually contain what a user needs to run t
   - **Given** a distribution without FUSE 2, **When** the documented fallback is used, **Then** it
     still runs
   - **Given** the Linux workflows, **When** the runner image is read, **Then** it is pinned
-- **Dependencies**: TASK-BLD-004
+- **Re-sequenced 2026-08-16.** This was originally to land before the packaging and publishing
+  chain, and the dependency was too strict: 008 needs to know how to wrap a platform, not how to
+  wrap *every* platform. What actually blocks progress is that nothing written since this session
+  began — the version derivation, the generated SBOM, the Windows `.rc` — is executed by any
+  workflow yet. Doing the chain first on the two platforms that **already compile in CI** puts all
+  of it under real execution days earlier, and then Linux is added to a proven pipeline instead of
+  being debugged alongside a brand-new publishing mechanism. That is the same reasoning that makes
+  RQ-GUI-070's defect worth not repeating: unexecuted code is unverified code.
+- **Dependencies**: TASK-BLD-004; **and TASK-BLD-010**, so this lands in a working pipeline
 - **Assignee**: AI
 
 ### TASK-BLD-007: Generate the SBOM at build time
@@ -199,23 +207,29 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-008: `package-deployment` composite action
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: Assembles one archive per platform/configuration — executable or bundle,
   `oberheim.syx`, generated SBOM — named for version, os, architecture and configuration. macOS
-  keeps `ditto`.
+  keeps `ditto`. **Windows and macOS only for now**; Linux is added by TASK-BLD-006.
 - **Requirement refs**: RQ-BLD-021
 - **ADR refs**: ADR-BLD-004 (DEC-BLD-018); ADR-BLD-002 (referenced)
 - **Acceptance Criteria** (Gherkin):
   - **Given** any produced archive, **When** it is expanded, **Then** it holds the executable,
     `oberheim.syx` and the SBOM
-  - **Given** the six archives of a `dev` deployment, **When** their names are compared, **Then**
-    no two collide and each states its version, os, architecture and configuration
-- **Dependencies**: TASK-BLD-006, TASK-BLD-007
+  - **Given** the four archives of a `dev` deployment (Windows and macOS, Debug and Release),
+    **When** their names are compared, **Then** no two collide and each states its version, os,
+    architecture and configuration
+- **Verification**: written, YAML-valid, and exercised for real the moment TASK-BLD-010 lands —
+  the point of the owner's re-sequencing. The action fails loudly on a missing part rather than
+  producing an archive quietly short one file: a deployment without `oberheim.syx` yields an
+  application whose File → New cannot work, which is the state **every release asset was in before
+  this task** and nothing said so.
+- **Dependencies**: TASK-BLD-007
 - **Assignee**: AI
 
 ### TASK-BLD-009: `publish-deployment` composite action, with the unsigned-binaries notice
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: Creates or reuses the stream's release — pre-release for `dev`, production plus
   Latest for `main` — attaches the archive idempotently, and generates the notes: change summary,
   the "not a production deployment" statement for `dev`, the promoted pre-release for `main`, and
@@ -232,16 +246,26 @@ from the commit and deployments that actually contain what a user needs to run t
     notice covers Windows, macOS and Linux
   - **Given** the macOS instruction, **When** it is read, **Then** it names the System Settings
     route and not the Control-click bypass macOS 15 removed
+- **Defect caught while writing it:** the upload first read
+  `gh release upload "$TAG" "$ARCHIVE#$ASSET_NAME"`. That syntax sets a display *label*; the asset
+  keeps the file's own basename, so it looks like a rename and is not one. Harmless here only
+  because `package-deployment` already names the file correctly — but it would have hidden a real
+  naming bug behind an expression that appeared to fix it. Now uploaded plainly.
+- **Requires `fetch-depth: 0`**, stated in the action's own header: the notes list commits since
+  the previous deployment *of the same stream*, found among the tags. A shallow checkout produces
+  notes claiming every commit is new — a failure that looks like a feature.
 - **Dependencies**: TASK-BLD-002, TASK-BLD-008
 - **Assignee**: AI
 
 ### TASK-BLD-010: The fifteen workflows, the cut action, and retiring the old four
 - **Tier**: L
-- **Status**: Not Started
-- **Description**: `<os>-<arch>-<config>-<stage>` × 15, one job each, delegating to the composite
+- **Status**: Done (2026-08-16)
+- **Description**: `<os>-<arch>-<config>-<stage>`, one job each, delegating to the composite
   actions; `cut-deployment` (`workflow_dispatch` on `main`) derives the version and pushes the tag;
   the four `*-app-*` workflows are removed and `linux-headless-release` kept as-is with a note
-  saying why it is outside the scheme.
+  saying why it is outside the scheme. **Ten workflows now** (Windows x64 and macOS arm64 across
+  the three streams); the five Linux ones arrive with TASK-BLD-006, so no inert workflow is
+  committed ahead of the build it would run.
 - **Requirement refs**: RQ-BLD-023, RQ-BLD-028, RQ-BLD-019
 - **ADR refs**: ADR-BLD-003 (DEC-BLD-016, DEC-BLD-017)
 - **Acceptance Criteria** (Gherkin):
@@ -253,8 +277,8 @@ from the commit and deployments that actually contain what a user needs to run t
     display version exists and the three production workflows have run
   - **Given** a push to a `feature/*` branch, **When** its workflows complete, **Then** no release
     and no tag exist and the binaries are downloadable only from the run
-  - **Given** the fifteen files, **When** their build steps are compared, **Then** the shared logic
-    appears once, in composite actions
+  - **Given** the deployment workflow files, **When** their build steps are compared, **Then** the
+    shared logic appears once, in composite actions
   - **Given** a commit already deployed, **When** `cut-deployment` is run again on it, **Then** the
     workflow stops with a message naming the existing deployment, rather than failing on a raw git
     "tag already exists" error — and no second release is created
@@ -263,6 +287,26 @@ from the commit and deployments that actually contain what a user needs to run t
     the full form including the stage suffix — asserted in CI, because the `.rc` path of
     TASK-BLD-003 cannot be exercised on the Linux development container and "read the framework
     source" is not evidence that a binary carries what it should
+- **The ten workflows are GENERATED, not written ten times** (owner instruction, 2026-08-16:
+  avoid duplication). `juce/tools/generate_workflows.py` holds the matrix; each output says it is
+  generated and names its source. This is the pattern the repository already uses for
+  `DesignTokens.hpp` and `GeneratedControlTable.inc`. `--check` fails if a file is edited by hand
+  or falls out of date, so the rule cannot rot. The two mechanisms that would have removed the
+  duplication in GitHub's own terms are excluded by RQ-BLD-023 itself: a reusable workflow reports
+  `<caller> / <job>` and a matrix reports `<workflow> / build (windows, release)`, neither of which
+  is the single self-describing check name the rule exists to produce.
+- **`cut-deployment` is hand-written**: one workflow, not a matrix, and the only one that writes a
+  ref. It refuses to run off `main`, and refuses a commit already deployed with a message naming
+  the existing deployment instead of git's bare "tag already exists".
+- **Retired:** the four `*-app-*` workflows and `.github/actions/alpha-prerelease`.
+  `linux-headless-release` keeps its name and gains a header saying why it sits outside the scheme.
+- **Verification**: every workflow and action parsed as YAML (16 files); `file stem == name == job
+  key` asserted by parsing, not by reading; every local `uses:` resolved to an action that exists;
+  the generator confirmed idempotent.
+  - *The reference check first reported all 33 `uses:` as missing.* `lstrip('./')` strips those
+    **characters**, so it ate the leading dot of `.github` too — `removeprefix` is the operation
+    that was meant. Third self-inflicted false positive this session, and the same shape as the
+    other two: the check was wrong, not the thing checked.
 - **Dependencies**: TASK-BLD-001, TASK-BLD-009
 - **Assignee**: AI
 
@@ -290,17 +334,22 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ## Sequencing
 
+*Revised 2026-08-16 (owner decision): Linux moves behind the chain rather than in front of it.*
+
 ```
-TASK-BLD-001 ─────────────────────────────────────────────┐
-TASK-BLD-002 ──┬── TASK-BLD-003 ── TASK-BLD-007 ──┐        │
-               │                                   ├─ 008 ─┼─ 009 ─ TASK-BLD-010
-TASK-BLD-004 ──┴── TASK-BLD-006 ───────────────────┘        │
-TASK-BLD-005 ──────────────────────────────────────────────┘
+TASK-BLD-001 ────────────────────────────────────────────────┐   (owner, repository settings)
+TASK-BLD-002 ── TASK-BLD-003 ── TASK-BLD-007 ──┐             │
+TASK-BLD-004 ─────────────────────────────────┼─ 008 ─ 009 ─┴─ TASK-BLD-010 ── TASK-BLD-006
+TASK-BLD-005 ─────────────────────────────────┘                 (win + mac)      (+ linux)
 ```
 
 TASK-BLD-001 is the only one needing a human: repository settings cannot be changed from CI.
-TASK-BLD-004 and TASK-BLD-005 are independent and can land first as small, self-contained fixes —
-TASK-BLD-005 in particular repairs a defect that is live today.
+TASK-BLD-004 and TASK-BLD-005 were independent and landed first as small, self-contained fixes —
+TASK-BLD-005 in particular repaired a defect that was live in every published Debug binary.
+
+**TASK-BLD-010 is the point at which everything written so far starts being executed.** Until it
+lands, the version derivation, the generated SBOM and the Windows version resource exist and are
+tested only where they were written. TASK-BLD-006 then extends a pipeline that has already run.
 
 ## Out of scope
 Code signing and notarisation (DEC-BLD-022 — owner declined the cost). `linux-arm64`,

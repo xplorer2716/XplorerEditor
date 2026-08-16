@@ -1,0 +1,71 @@
+# =====================================================================
+# GENERATED FILE — DO NOT EDIT BY HAND.
+# Source of truth : juce/tools/generate_workflows.py
+# Regenerate with : python3 juce/tools/generate_workflows.py
+# =====================================================================
+#
+# macos-arm64-release-preprod
+#
+# One operating system, one architecture, one build configuration, one
+# deployment stream — and the file name, the workflow name and the job key are
+# the same string, so a pull-request check states all four without
+# cross-referencing. [RQ-BLD-019, RQ-BLD-023, ADR-BLD-003 (DEC-BLD-016)]
+#
+# Every step delegates to a composite action under .github/actions/. That is
+# what keeps one-file-per-combination affordable: the procedure exists once.
+name: macos-arm64-release-preprod
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - 'juce/**'
+      - '.github/workflows/macos-arm64-release-preprod.yml'
+      - '.github/actions/**'
+
+permissions:
+  contents: write
+
+jobs:
+  macos-arm64-release-preprod:
+    name: macos arm64 Release (pre-production)
+    runs-on: macos-latest
+
+    steps:
+      # fetch-depth 0, not the default 1: the deployment notes list the commits
+      # since the previous deployment of this stream, and the previous one is
+      # found among the tags. A shallow checkout yields notes claiming every
+      # commit is new. (The version derivation itself needs only HEAD.)
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: version
+        uses: ./.github/actions/resolve-version
+
+      - id: build
+        uses: ./.github/actions/build-app
+        with:
+          os: macos
+          config: release
+          version-numeric: ${{ steps.version.outputs.numeric }}
+          version-full: ${{ steps.version.outputs.full }}
+          version-timestamp: ${{ steps.version.outputs.timestamp }}
+
+      - id: package
+        uses: ./.github/actions/package-deployment
+        with:
+          artefact-dir: ${{ steps.build.outputs.artefact-dir }}
+          version: ${{ steps.version.outputs.display }}
+          os: macos
+          arch: arm64
+          config: release
+
+      - uses: ./.github/actions/publish-deployment
+        with:
+          archive: ${{ steps.package.outputs.archive }}
+          archive-name: ${{ steps.package.outputs.archive-name }}
+          version-display: ${{ steps.version.outputs.display }}
+          version-full: ${{ steps.version.outputs.full }}
+          stage: ${{ steps.version.outputs.stage }}
+          token: ${{ secrets.GITHUB_TOKEN }}

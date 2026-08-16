@@ -1,0 +1,79 @@
+# =====================================================================
+# GENERATED FILE — DO NOT EDIT BY HAND.
+# Source of truth : juce/tools/generate_workflows.py
+# Regenerate with : python3 juce/tools/generate_workflows.py
+# =====================================================================
+#
+# windows-x64-release-prod
+#
+# One operating system, one architecture, one build configuration, one
+# deployment stream — and the file name, the workflow name and the job key are
+# the same string, so a pull-request check states all four without
+# cross-referencing. [RQ-BLD-019, RQ-BLD-023, ADR-BLD-003 (DEC-BLD-016)]
+#
+# Every step delegates to a composite action under .github/actions/. That is
+# what keeps one-file-per-combination affordable: the procedure exists once.
+name: windows-x64-release-prod
+
+on:
+  push:
+    tags:
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[0-9][0-9][0-9][0-9]'
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64-release-prod:
+    name: windows x64 Release (production)
+    runs-on: windows-2022
+
+    steps:
+      # fetch-depth 0, not the default 1: the deployment notes list the commits
+      # since the previous deployment of this stream, and the previous one is
+      # found among the tags. A shallow checkout yields notes claiming every
+      # commit is new. (The version derivation itself needs only HEAD.)
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: version
+        uses: ./.github/actions/resolve-version
+
+      - id: build
+        uses: ./.github/actions/build-app
+        with:
+          os: windows
+          config: release
+          version-numeric: ${{ steps.version.outputs.numeric }}
+          version-full: ${{ steps.version.outputs.full }}
+          version-timestamp: ${{ steps.version.outputs.timestamp }}
+
+      # The tag is minted by cut-deployment from this same commit, so the two
+      # agree by construction. Checking says so out loud, and catches a tag
+      # pushed by hand — the one way they could diverge.
+      - name: The tag must be this commit's own version
+        shell: bash
+        run: |
+          if [ "${{ github.ref_name }}" != "${{ steps.version.outputs.display }}" ]; then
+            echo "::error::tag ${{ github.ref_name }} is not this commit's version ${{ steps.version.outputs.display }} — pushed by hand instead of by cut-deployment?"
+            exit 1
+          fi
+
+      - id: package
+        uses: ./.github/actions/package-deployment
+        with:
+          artefact-dir: ${{ steps.build.outputs.artefact-dir }}
+          version: ${{ steps.version.outputs.display }}
+          os: windows
+          arch: x64
+          config: release
+
+      - uses: ./.github/actions/publish-deployment
+        with:
+          archive: ${{ steps.package.outputs.archive }}
+          archive-name: ${{ steps.package.outputs.archive-name }}
+          version-display: ${{ steps.version.outputs.display }}
+          version-full: ${{ steps.version.outputs.full }}
+          stage: ${{ steps.version.outputs.stage }}
+          token: ${{ secrets.GITHUB_TOKEN }}

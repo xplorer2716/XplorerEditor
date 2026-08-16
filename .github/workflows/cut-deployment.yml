@@ -1,0 +1,68 @@
+# Cuts a production deployment. [RQ-BLD-028, ADR-BLD-003 (DEC-BLD-017)]
+#
+# Hand-written, not generated: it is one workflow, not a matrix, and it is the
+# only one that writes a ref.
+#
+# What the owner does: Actions → cut-deployment → Run workflow → main. That is
+# the whole procedure. No version is typed anywhere, which is what makes a tag
+# trigger possible at all — the version is a function of the commit, so it
+# cannot be known before the commit exists, and a hand-written tag could
+# disagree with what the binaries report. Computing it removes the possibility
+# of disagreement instead of checking for it afterwards.
+#
+# This workflow does NOT build. Pushing the tag triggers the three
+# <os>-<arch>-release-prod workflows, which build, package and publish.
+name: cut-deployment
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cut-deployment:
+    name: Cut a production deployment from main
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # workflow_dispatch offers every branch in the picker, and production is
+      # cut from main alone. Refusing here is cheaper than discovering it from
+      # a release built off a feature branch.
+      - name: Production is cut from main only
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "::error::cut-deployment must run on main, not ${{ github.ref_name }}"
+            exit 1
+          fi
+
+      - id: version
+        uses: ./.github/actions/resolve-version
+
+      # Re-running this on an already-deployed commit is a mistake worth naming.
+      # Left to git, the push would fail with "tag already exists", which says
+      # nothing about what the owner actually did or what already exists.
+      - name: This commit must not already be deployed
+        run: |
+          TAG='${{ steps.version.outputs.display }}'
+          if git rev-parse --verify -q "refs/tags/${TAG}" >/dev/null; then
+            echo "::error::this commit is already deployed as ${TAG} — nothing to cut. To deploy new work, merge it into main first; the version follows the commit."
+            exit 1
+          fi
+
+      - name: Tag the deployment
+        run: |
+          TAG='${{ steps.version.outputs.display }}'
+          git -c user.name='github-actions[bot]' \
+              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+              tag -a "$TAG" -m "Xplorer ${TAG}"
+          git push origin "refs/tags/${TAG}"
+          {
+            echo "### Deployment \`${TAG}\` cut"
+            echo
+            echo "The three \`*-release-prod\` workflows are now building it."
+          } >> "$GITHUB_STEP_SUMMARY"
