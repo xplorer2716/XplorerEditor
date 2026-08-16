@@ -5,8 +5,33 @@
 # Root build for the JUCE (C++) port. [RQ-BLD-001, RQ-BLD-003, RQ-BLD-005]
 cmake_minimum_required(VERSION 3.22)
 
+# --- Product version: DERIVED, never declared [RQ-BLD-015, RQ-BLD-020, ADR-BLD-003] ---
+#
+# CI passes these on the configure line; .github/actions/resolve-version is the
+# one place either value is computed, from the commit being built. There is
+# deliberately no version literal anywhere in this repository to keep in step
+# with them -- that was the defect (four copies, in four languages, nothing
+# holding them equal) these variables exist to remove.
+#
+#   XPL_VERSION_NUMERIC  2026.8.19.1740          four integers: CMake, JUCE target,
+#                                                Windows FILEVERSION, CFBundleVersion
+#   XPL_VERSION_FULL     2026.08.19-1740-preprod carries the stage: About box,
+#                                                ProductVersion string, SBOM
+#
+# The default is what a developer's own build reports, and it is chosen to be
+# unmistakably not a deployment: 0.0.0.0-local sorts below everything, states
+# its origin, and cannot be confused with a published build in a bug report.
+set(XPL_VERSION_NUMERIC "0.0.0.0" CACHE STRING
+    "Numeric product version (YYYY.M.D.HHMM). CI supplies it; a local build gets 0.0.0.0.")
+set(XPL_VERSION_FULL "" CACHE STRING
+    "Full product version with stage suffix. Defaults to <numeric>-local.")
+if(XPL_VERSION_FULL STREQUAL "")
+    set(XPL_VERSION_FULL "${XPL_VERSION_NUMERIC}-local")
+endif()
+message(STATUS "Xplorer product version: ${XPL_VERSION_FULL} (numeric ${XPL_VERSION_NUMERIC})")
+
 project(XplorerJuce
-    VERSION 0.1.0
+    VERSION ${XPL_VERSION_NUMERIC}
     DESCRIPTION "Xplorer JUCE port - real-time editor for Oberheim Xpander/Matrix-12"
     LANGUAGES C CXX)
 

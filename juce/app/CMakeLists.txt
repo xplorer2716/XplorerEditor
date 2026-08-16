@@ -3,7 +3,11 @@
 juce_add_gui_app(XplorerApp
     PRODUCT_NAME "Xplorer"
     COMPANY_NAME "Xplorer"
-    VERSION 0.1.0
+    # Numeric form only: this feeds FILEVERSION (four 16-bit fields) and
+    # CFBundleVersion, neither of which can carry the "-preprod"/"-canary"
+    # suffix. The full form reaches the About box and the Windows
+    # ProductVersion string further down. [RQ-BLD-015, RQ-BLD-020]
+    VERSION ${XPL_VERSION_NUMERIC}
     # The application icon: the executable's own icon, the main window's, the
     # macOS bundle's, and (via the same PNG) the Linux AppImage's desktop entry.
     # The application had NO icon at all before this -- neither ICON_BIG nor
@@ -104,7 +108,28 @@ target_compile_definitions(XplorerApp PRIVATE
     JUCE_USE_CURL=0
     JUCE_WEB_BROWSER=0
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:XplorerApp,JUCE_PRODUCT_NAME>"
-    JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:XplorerApp,JUCE_VERSION>")
+    JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:XplorerApp,JUCE_VERSION>"
+    # What the About box shows. JUCE_APPLICATION_VERSION_STRING above is the
+    # NUMERIC form (it comes from the target's VERSION), so it cannot say which
+    # stream a binary came from -- which is exactly what a bug report needs.
+    # [RQ-BLD-016, RQ-BLD-020]
+    XPL_VERSION_FULL_STRING="${XPL_VERSION_FULL}")
+
+# --- Windows version resource [RQ-BLD-020, ADR-BLD-003 (DEC-BLD-014)] --------
+# juceaide puts the NUMERIC version in both the FileVersion and the
+# ProductVersion strings, so nothing in an executable's properties says which
+# stream it came from. JUCE's own JUCE_USER_DEFINED_RC_FILE hook replaces its
+# VERSIONINFO block -- and only that block; the icon statements sit outside the
+# guard, so RQ-BLD-026's icon is unaffected.
+if(WIN32)
+    string(REPLACE "." "," XPL_VERSION_RC_COMMA "${XPL_VERSION_NUMERIC}")
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/XplorerVersion.rc.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/XplorerVersion.rc" @ONLY)
+    # The value must expand to a QUOTED path: juceaide emits
+    # `#include JUCE_USER_DEFINED_RC_FILE` verbatim.
+    target_compile_definitions(XplorerApp PRIVATE
+        JUCE_USER_DEFINED_RC_FILE="${CMAKE_CURRENT_BINARY_DIR}/XplorerVersion.rc")
+endif()
 target_link_libraries(XplorerApp PRIVATE
     XplorerAssets
     xpl_app_core

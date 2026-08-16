@@ -70,7 +70,7 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-003: Single version derivation, injected everywhere
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: CMake takes the numeric form on the configure line and feeds the JUCE target,
   the Windows version resources, the macOS `Info.plist` and the About dialog; the full form reaches
   the About text and the `ProductVersion` string. Removes the four `0.1.0` literals
@@ -86,8 +86,24 @@ from the commit and deployments that actually contain what a user needs to run t
     carry the numeric form and the product-version string carries the full form
   - **Given** a default local build with no version supplied, **When** it runs, **Then** it still
     builds and reports a clearly non-deployment version
-- **Verification**: a unit test asserts the About string equals the compile-time definition, so the
-  RQ-GUI-025 literal cannot come back.
+- **Verification**: `.github/checks/no-version-literals.sh` is the durable guard — it fails if the
+  retired literal reappears in declaring code, if a CMake `VERSION` takes a literal instead of the
+  variable, if an application source carries a quoted version-shaped string, or if either compile
+  definition the sources read stops being supplied. Five checks, all passing. The wiring itself was
+  verified end to end: configured with `2026.8.19.1740` / `2026.08.19-1740-preprod`, the real
+  compile line carries `XPL_VERSION_FULL_STRING=\"2026.08.19-1740-preprod\"` and the string is
+  present twice in the linked binary.
+  - *Its first run failed on two false positives, and both were the check's fault:* the comment in
+    `Main.cpp` explaining why the literal was removed, and an SPDX fixture in `SbomReaderTests.cpp`
+    whose purpose is to carry an arbitrary version. Comments and `juce/tests/` are now excluded. The
+    same mistake as the TASK-BLD-002 fixture, made twice in one session: a check must separate a
+    declaration from a description of one.
+- **NOT verified in this container:** the Windows `.rc` path. `if(WIN32)` never fires on Linux, so
+  `XplorerVersion.rc.in` has not been compiled by anything. The mechanism was **read** in the
+  vendored JUCE 8.0.9 source rather than inferred — `juce_ResourceRc.cpp` wraps its VERSIONINFO in
+  `#ifdef JUCE_USER_DEFINED_RC_FILE` and emits the icon statements *outside* that guard, so
+  overriding the block cannot cost RQ-BLD-026's icon. Read is not run: TASK-BLD-010 carries an
+  acceptance criterion making the Windows workflow assert the shipped executable's properties.
 - **Dependencies**: TASK-BLD-002
 - **Assignee**: AI
 
@@ -220,6 +236,11 @@ from the commit and deployments that actually contain what a user needs to run t
   - **Given** a commit already deployed, **When** `cut-deployment` is run again on it, **Then** the
     workflow stops with a message naming the existing deployment, rather than failing on a raw git
     "tag already exists" error — and no second release is created
+  - **Given** a Windows deployment build, **When** the produced executable's version resources are
+    read by the workflow itself, **Then** `FileVersion` is the numeric form and `ProductVersion` is
+    the full form including the stage suffix — asserted in CI, because the `.rc` path of
+    TASK-BLD-003 cannot be exercised on the Linux development container and "read the framework
+    source" is not evidence that a binary carries what it should
 - **Dependencies**: TASK-BLD-001, TASK-BLD-009
 - **Assignee**: AI
 
