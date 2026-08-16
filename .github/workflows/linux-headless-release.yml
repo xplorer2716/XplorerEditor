@@ -12,13 +12,16 @@
 # RQ-BLD-007, which is why it has neither an architecture nor a stream to put in
 # a name. Renaming it to fit a deployment nomenclature would state something
 # false about it. [RQ-BLD-007, RQ-BLD-023]
+#
+# Manual only (owner decision, 2026-08-16, during the canary/preprod trigger
+# review): no push or pull_request trigger, so it never overlaps or duplicates
+# with the other ten. Run it by hand from the Actions tab when Linux coverage
+# is actually wanted; it stops running automatically on every push/PR until
+# then. [RQ-BLD-007]
 name: linux-headless-release
 
 on:
-  push:
-    paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
-  pull_request:
-    paths: ['juce/**', '.github/workflows/linux-headless-release.yml']
+  workflow_dispatch:
 
 jobs:
   linux-headless-release:

@@ -81,13 +81,20 @@ def triggers_for(stage: str, name: str) -> str:
                 "    tags:\n"
                 "      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[0-9][0-9][0-9][0-9]'\n")
     if stage == "preprod":
-        return "  push:\n    branches: [dev]\n" + paths_filter(name)
-    # Canary has no bare-push trigger: verifying a change means opening a pull
-    # request, so a feature branch is built once a PR puts it up for review,
-    # not on every push before one exists. A push trigger alongside
-    # pull_request would also double-run on every push to an already-open PR,
-    # since both fire for the same commit. [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
-    return "  pull_request:\n" + paths_filter(name)
+        # Both a push that lands on dev and a pull request that targets it
+        # build dev's pre-production configuration; only the push publishes
+        # (see PUBLISH's own event_name guard). branches: on pull_request
+        # matches the PR's base branch, so this excludes PRs merging INTO
+        # something else that happen to touch dev as their head.
+        # [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
+        return ("  push:\n    branches: [dev]\n" + paths_filter(name)
+                + "  pull_request:\n    branches: [dev]\n" + paths_filter(name))
+    # Canary triggers on push alone, restricted to anything that is not main
+    # or dev: a feature branch gets fast, unconditional feedback on every push,
+    # with no need to open a pull request first. Excluding main/dev keeps it
+    # from overlapping preprod's own push trigger on dev.
+    # [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
+    return "  push:\n    branches-ignore: [main, dev]\n" + paths_filter(name)
 
 
 CHECKOUT = """
@@ -127,7 +134,12 @@ TAG_GUARD = """
 """
 
 PUBLISH = """
+      # Runs on push only. For prod the only trigger IS a tag push, so this
+      # never excludes anything there; for preprod it is what keeps a pull
+      # request that targets dev from publishing a pre-release before the
+      # merge actually lands. [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
       - id: package
+        if: github.event_name == 'push'
         uses: ./.github/actions/package-deployment
         with:
           artefact-dir: ${{{{ steps.build.outputs.artefact-dir }}}}
@@ -137,6 +149,7 @@ PUBLISH = """
           config: {config}
 
       - uses: ./.github/actions/publish-deployment
+        if: github.event_name == 'push'
         with:
           archive: ${{{{ steps.package.outputs.archive }}}}
           archive-name: ${{{{ steps.package.outputs.archive-name }}}}
@@ -157,11 +170,25 @@ CANARY_UPLOAD = """
           if-no-files-found: error
 """
 
+PREPROD_PR_UPLOAD = """
+      # A pull request targeting dev verifies the merge result before it lands:
+      # build and test, but PUBLISH's own guard keeps it from publishing, so an
+      # unmerged PR never produces a pre-release. Its version stage is
+      # "-canary" (resolve-version.sh's pull_request rule, DEC-BLD-020) — this
+      # exact commit was never merged into dev, and the label says so.
+      - if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-${{{{ steps.version.outputs.full }}}}-{os}-{arch}-{config}
+          path: ${{{{ steps.build.outputs.artefact-dir }}}}
+          if-no-files-found: error
+"""
+
 
 def workflow(os_name: str, arch: str, runner: str, config: str, stage: str) -> tuple[str, str]:
     name = f"{os_name}-{arch}-{config}-{stage}"
     _, permission, human = STREAMS[stage]
-    tail = {"prod": TAG_GUARD + PUBLISH, "preprod": PUBLISH, "canary": CANARY_UPLOAD}[stage]
+    tail = {"prod": TAG_GUARD + PUBLISH, "preprod": PUBLISH + PREPROD_PR_UPLOAD, "canary": CANARY_UPLOAD}[stage]
     body = (
         GENERATED_HEADER.format(name=name)
         + f"name: {name}\n\non:\n{triggers_for(stage, name)}\npermissions:\n"

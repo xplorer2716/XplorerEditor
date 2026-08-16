@@ -16,7 +16,8 @@
 name: macos-arm64-release-canary
 
 on:
-  pull_request:
+  push:
+    branches-ignore: [main, dev]
     paths:
       - 'juce/**'
       - '.github/workflows/macos-arm64-release-canary.yml'

@@ -16,7 +16,8 @@
 name: windows-x64-debug-canary
 
 on:
-  pull_request:
+  push:
+    branches-ignore: [main, dev]
     paths:
       - 'juce/**'
       - '.github/workflows/windows-x64-debug-canary.yml'

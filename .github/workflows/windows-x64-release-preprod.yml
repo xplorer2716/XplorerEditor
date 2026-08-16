@@ -22,6 +22,12 @@ on:
       - 'juce/**'
       - '.github/workflows/windows-x64-release-preprod.yml'
       - '.github/actions/**'
+  pull_request:
+    branches: [dev]
+    paths:
+      - 'juce/**'
+      - '.github/workflows/windows-x64-release-preprod.yml'
+      - '.github/actions/**'
 
 permissions:
   contents: write
@@ -52,7 +58,12 @@ jobs:
           version-full: ${{ steps.version.outputs.full }}
           version-timestamp: ${{ steps.version.outputs.timestamp }}
 
+      # Runs on push only. For prod the only trigger IS a tag push, so this
+      # never excludes anything there; for preprod it is what keeps a pull
+      # request that targets dev from publishing a pre-release before the
+      # merge actually lands. [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
       - id: package
+        if: github.event_name == 'push'
         uses: ./.github/actions/package-deployment
         with:
           artefact-dir: ${{ steps.build.outputs.artefact-dir }}
@@ -62,6 +73,7 @@ jobs:
           config: release
 
       - uses: ./.github/actions/publish-deployment
+        if: github.event_name == 'push'
         with:
           archive: ${{ steps.package.outputs.archive }}
           archive-name: ${{ steps.package.outputs.archive-name }}
@@ -69,3 +81,15 @@ jobs:
           version-full: ${{ steps.version.outputs.full }}
           stage: ${{ steps.version.outputs.stage }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # A pull request targeting dev verifies the merge result before it lands:
+      # build and test, but PUBLISH's own guard keeps it from publishing, so an
+      # unmerged PR never produces a pre-release. Its version stage is
+      # "-canary" (resolve-version.sh's pull_request rule, DEC-BLD-020) — this
+      # exact commit was never merged into dev, and the label says so.
+      - if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-${{ steps.version.outputs.full }}-windows-x64-release
+          path: ${{ steps.build.outputs.artefact-dir }}
+          if-no-files-found: error

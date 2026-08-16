@@ -165,26 +165,54 @@ requirement that `main` always builds in Release, and would ship a binary whose 
 says `-preprod`. The mitigation is that production release notes name the pre-release they promote,
 so the chain stays readable.
 
-### DEC-BLD-024 — Canary triggers on `pull_request` alone, not on bare `push`
+### DEC-BLD-024 — One trigger event per stream, chosen so no two ever fire on the same commit
 
-The generated canary trigger originally carried both `push` (`branches-ignore: [main, dev]`) and
-`pull_request`, inherited unexamined from the superseded `ADR-BLD-002` workflows. On a feature
-branch with an open PR the two fire on the same commit — `push` builds the branch tip, `pull_request`
-builds the PR's merge commit against `dev` — doubling every canary build for no benefit once `dev`
-has not moved since the branch was cut, which discovering `TASK-BLD-010`'s first real PR (#49) made
-visible: eight canary runs for four platform/configuration cells.
+The generated canary and preprod triggers originally carried both `push` and `pull_request`,
+inherited unexamined from the superseded `ADR-BLD-002` workflows. On a feature branch with an open
+PR the two fire on the same commit — `push` builds the branch tip, `pull_request` builds the PR's
+merge commit against `dev` — doubling every canary build for no benefit once `dev` has not moved
+since the branch was cut, which `TASK-BLD-010`'s first real PR (#49) made visible: eight canary
+runs for four platform/configuration cells. `linux-headless-release` (RQ-BLD-007) carried the
+identical pair, unrestricted by branch, with the identical defect.
 
-Kept: `pull_request` only. Verifying a change means opening a pull request (the AGNOS process
-step this ADR itself is followed under); a feature branch earns a canary build when it is put up
-for review, not on every push that precedes one. This also removes the double-run entirely, since
-`pull_request` is now the only event that can fire.
+*Revised twice in the same session before merging*, once the owner walked through what each stream
+is actually for:
 
-*Rejected: keep both triggers.* Was the status quo; accepted as a defect once the duplication was
-counted rather than assumed harmless.
+- **Canary (`feature/*`, anything that is not `main` or `dev`) — `push` alone,
+  `branches-ignore: [main, dev]`.** Fast, unconditional feedback on every push to a feature branch;
+  no need to open a pull request first to get a build. This is the opposite of the first cut of this
+  decision, which put canary on `pull_request` alone — reversed because gating even the *first*
+  feedback behind opening a PR was slower than the owner wanted, not because the duplication
+  argument above was wrong.
+- **Preprod (`dev`) — both `push: branches: [dev]` and `pull_request: branches: [dev]`, but
+  only the `push` one publishes.** A PR that targets `dev` builds and tests the merge result before
+  it lands — real verification, not a courtesy — but `PUBLISH`'s own `if: github.event_name ==
+  'push'` guard keeps it from creating a pre-release for a commit that was never merged. Only the
+  push that actually lands on `dev` publishes. The PR-triggered build's own version stage still
+  reads `-canary` (resolve-version.sh's existing `pull_request` → `refs/pull/N/merge` rule,
+  DEC-BLD-020) — accurate, since that exact commit was never merged into `dev`, whichever workflow
+  built it.
+- **`linux-headless-release` — `workflow_dispatch` only, no automatic trigger at all.** Owner
+  decision: rather than pick which of `push`/`pull_request` it should keep, drop both — it runs by
+  hand when Linux coverage is wanted. It was already the *only* Linux build in the pipeline (canary/
+  preprod/prod cover Windows and macOS only, until `TASK-BLD-006`), so this trades automatic
+  Linux regression coverage for a pipeline whose triggers are legible at a glance; the trade is
+  temporary in principle, closed once `TASK-BLD-006` adds Linux to the generated matrix.
 
-*Rejected: `push` only, drop `pull_request`.* Would build the branch tip but never the merge
-result against `dev`, silently losing the one case — `dev` has advanced since the branch was cut —
-where the two builds would actually have disagreed.
+Each stream now has exactly one event that can put a commit through it — no stream fires twice on
+the same commit, and no commit reaches two streams' worth of triggers at once.
+
+*Rejected: canary and preprod both on `pull_request` only.* Matches the "verification happens
+through review" philosophy uniformly, but the owner wants canary's feedback available before a PR
+exists — reserving pull-request gating for the branch that actually publishes.
+
+*Rejected: keep both events on every stream, accept the duplication.* Was the status quo;
+accepted as a defect once the duplication was counted rather than assumed harmless.
+
+*Rejected: give `linux-headless-release` the same push/pull_request split as canary or preprod.*
+Would restore automatic Linux coverage, but the owner explicitly asked for it to have no trigger to
+reason about while the rest of the scheme was being re-examined; revisit when `TASK-BLD-006` gives
+Linux a real place in the generated matrix instead.
 
 ## Consequences
 

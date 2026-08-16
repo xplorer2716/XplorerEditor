@@ -60,7 +60,12 @@ jobs:
             exit 1
           fi
 
+      # Runs on push only. For prod the only trigger IS a tag push, so this
+      # never excludes anything there; for preprod it is what keeps a pull
+      # request that targets dev from publishing a pre-release before the
+      # merge actually lands. [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
       - id: package
+        if: github.event_name == 'push'
         uses: ./.github/actions/package-deployment
         with:
           artefact-dir: ${{ steps.build.outputs.artefact-dir }}
@@ -70,6 +75,7 @@ jobs:
           config: release
 
       - uses: ./.github/actions/publish-deployment
+        if: github.event_name == 'push'
         with:
           archive: ${{ steps.package.outputs.archive }}
           archive-name: ${{ steps.package.outputs.archive-name }}
