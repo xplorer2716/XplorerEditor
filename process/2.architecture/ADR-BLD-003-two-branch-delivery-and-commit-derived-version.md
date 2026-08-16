@@ -165,6 +165,27 @@ requirement that `main` always builds in Release, and would ship a binary whose 
 says `-preprod`. The mitigation is that production release notes name the pre-release they promote,
 so the chain stays readable.
 
+### DEC-BLD-024 — Canary triggers on `pull_request` alone, not on bare `push`
+
+The generated canary trigger originally carried both `push` (`branches-ignore: [main, dev]`) and
+`pull_request`, inherited unexamined from the superseded `ADR-BLD-002` workflows. On a feature
+branch with an open PR the two fire on the same commit — `push` builds the branch tip, `pull_request`
+builds the PR's merge commit against `dev` — doubling every canary build for no benefit once `dev`
+has not moved since the branch was cut, which discovering `TASK-BLD-010`'s first real PR (#49) made
+visible: eight canary runs for four platform/configuration cells.
+
+Kept: `pull_request` only. Verifying a change means opening a pull request (the AGNOS process
+step this ADR itself is followed under); a feature branch earns a canary build when it is put up
+for review, not on every push that precedes one. This also removes the double-run entirely, since
+`pull_request` is now the only event that can fire.
+
+*Rejected: keep both triggers.* Was the status quo; accepted as a defect once the duplication was
+counted rather than assumed harmless.
+
+*Rejected: `push` only, drop `pull_request`.* Would build the branch tip but never the merge
+result against `dev`, silently losing the one case — `dev` has advanced since the branch was cut —
+where the two builds would actually have disagreed.
+
 ## Consequences
 
 **Easier.** There is somewhere to integrate before publishing, and a stream a user can be pointed

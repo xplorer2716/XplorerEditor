@@ -16,12 +16,6 @@
 name: windows-x64-release-canary
 
 on:
-  push:
-    branches-ignore: [main, dev]
-    paths:
-      - 'juce/**'
-      - '.github/workflows/windows-x64-release-canary.yml'
-      - '.github/actions/**'
   pull_request:
     paths:
       - 'juce/**'

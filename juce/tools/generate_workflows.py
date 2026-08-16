@@ -82,8 +82,12 @@ def triggers_for(stage: str, name: str) -> str:
                 "      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[0-9][0-9][0-9][0-9]'\n")
     if stage == "preprod":
         return "  push:\n    branches: [dev]\n" + paths_filter(name)
-    return ("  push:\n    branches-ignore: [main, dev]\n" + paths_filter(name)
-            + "  pull_request:\n" + paths_filter(name))
+    # Canary has no bare-push trigger: verifying a change means opening a pull
+    # request, so a feature branch is built once a PR puts it up for review,
+    # not on every push before one exists. A push trigger alongside
+    # pull_request would also double-run on every push to an already-open PR,
+    # since both fire for the same commit. [RQ-BLD-019, ADR-BLD-003 (DEC-BLD-024)]
+    return "  pull_request:\n" + paths_filter(name)
 
 
 CHECKOUT = """
