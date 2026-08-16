@@ -18,7 +18,8 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-001: Create `dev`, make it the default, protect `main`
 - **Tier**: M
-- **Status**: Not Started — owner-only (repository settings)
+- **Status**: Done (2026-08-16, owner) — `dev` created and set as default; `main` covered by a
+  ruleset (Restrict deletions, Block force push)
 - **Description**: Create `dev` from `main`; set it as the repository default; add an explicit
   protection rule on `main`. Repository settings only — no file in this repository changes.
 - **Requirement refs**: RQ-BLD-019
