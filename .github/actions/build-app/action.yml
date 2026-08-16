@@ -1,0 +1,175 @@
+# Configures, builds and tests the GUI application for one platform and one
+# configuration, and reports where the artefacts landed.
+# [RQ-BLD-023, ADR-BLD-003 (DEC-BLD-016)]
+#
+# Exists so the ten deployment workflows carry a name and a trigger and nothing
+# else: RQ-BLD-023 keeps one workflow per platform/configuration/stream so a
+# pull-request check names itself, and that rule only stays affordable if the
+# steps behind it live in one place.
+name: 'Build the Xplorer application'
+description: 'Configures, builds and tests the GUI app for one platform/configuration; outputs the artefact directory.'
+
+inputs:
+  os:
+    description: 'windows | macos | linux'
+    required: true
+  config:
+    description: 'release | debug (lower case; mapped to the CMake spelling here)'
+    required: true
+  version-numeric:
+    description: 'Numeric version form, from resolve-version.'
+    required: true
+  version-full:
+    description: 'Full version form, from resolve-version.'
+    required: true
+  version-timestamp:
+    description: 'Commit timestamp for the generated SBOM, from resolve-version.'
+    required: true
+  run-tests:
+    description: 'Whether to build and run the unit suites.'
+    default: 'true'
+
+outputs:
+  artefact-dir:
+    description: 'Directory holding the executable, oberheim.syx and the generated SBOM.'
+    value: ${{ steps.locate.outputs.artefact-dir }}
+
+runs:
+  using: composite
+  steps:
+    - id: configure
+      shell: bash
+      env:
+        OS: ${{ inputs.os }}
+        CONFIG: ${{ inputs.config }}
+        NUMERIC: ${{ inputs.version-numeric }}
+        FULL: ${{ inputs.version-full }}
+        STAMP: ${{ inputs.version-timestamp }}
+        RUN_TESTS: ${{ inputs.run-tests }}
+      run: |
+        set -euo pipefail
+
+        # CMake's own spelling, from the workflow's lower-case one.
+        case "$CONFIG" in
+          release) cmake_config=Release ;;
+          debug)   cmake_config=Debug ;;
+          *) echo "::error::unsupported config '${CONFIG}'"; exit 1 ;;
+        esac
+        echo "cmake-config=${cmake_config}" >> "$GITHUB_OUTPUT"
+
+        # Both CMAKE_BUILD_TYPE and --config are passed downstream: Windows uses
+        # the multi-config Visual Studio generator, which ignores the former,
+        # and macOS/Linux use a single-config generator, which ignores the
+        # latter. Passing both keeps one script instead of a per-OS branch.
+        args=(
+          -S juce -B juce/build
+          "-DCMAKE_BUILD_TYPE=${cmake_config}"
+          -DXPL_BUILD_APP=ON
+          "-DXPL_BUILD_TESTS=$([ "$RUN_TESTS" = true ] && echo ON || echo OFF)"
+          "-DXPL_VERSION_NUMERIC=${NUMERIC}"
+          "-DXPL_VERSION_FULL=${FULL}"
+          "-DXPL_VERSION_TIMESTAMP=${STAMP}"
+        )
+        case "$OS" in
+          windows) args+=(-G "Visual Studio 17 2022" -A x64) ;;
+          macos)   args+=(-DCMAKE_OSX_ARCHITECTURES=arm64) ;;
+          linux)   ;;
+        esac
+
+        cmake "${args[@]}"
+
+    - name: Build
+      shell: bash
+      run: cmake --build juce/build --config ${{ steps.configure.outputs.cmake-config }} -j
+
+    - name: Run unit tests
+      if: inputs.run-tests == 'true'
+      shell: bash
+      run: ctest --test-dir juce/build --build-config ${{ steps.configure.outputs.cmake-config }} --output-on-failure
+
+    - id: locate
+      shell: bash
+      env:
+        OS: ${{ inputs.os }}
+        CMAKE_CONFIG: ${{ steps.configure.outputs.cmake-config }}
+      run: |
+        set -euo pipefail
+
+        # Located, not hard-coded: JUCE decides the <target>_artefacts/<config>/
+        # layout and it is JUCE's to change. The macOS case looks one level
+        # deeper because the executable lives inside the bundle -- and so, by
+        # CMake's TARGET_FILE_DIR, do oberheim.syx and the SBOM, which is what
+        # makes the .app self-contained.
+        case "$OS" in
+          macos)
+            app=$(find juce/build -maxdepth 6 -type d -name 'Xplorer.app' | head -n 1)
+            [ -n "$app" ] || { echo "::error::Xplorer.app was not produced"; exit 1; }
+            dir="${app}/Contents/MacOS"
+            ;;
+          windows)
+            exe=$(find juce/build -type f -name 'Xplorer.exe' | head -n 1)
+            [ -n "$exe" ] || { echo "::error::Xplorer.exe was not produced"; exit 1; }
+            dir="$(dirname "$exe")"
+            ;;
+          linux)
+            exe=$(find juce/build -type f -name 'Xplorer' -perm -u+x | head -n 1)
+            [ -n "$exe" ] || { echo "::error::Xplorer was not produced"; exit 1; }
+            dir="$(dirname "$exe")"
+            ;;
+        esac
+
+        # The three parts of a deployment must already be siblings here: CMake's
+        # POST_BUILD steps put them there, and that is also how the running
+        # application resolves them. Checking now means a broken POST_BUILD is
+        # reported by the build that caused it, not by a user opening an empty
+        # dependency window. [RQ-BLD-021, RQ-GUI-008, RQ-BLD-014]
+        for part in oberheim.syx xplorer.sbom.spdx.json; do
+          [ -f "${dir}/${part}" ] || { echo "::error::${part} is missing from ${dir}"; exit 1; }
+        done
+
+        echo "artefact-dir=${dir}" >> "$GITHUB_OUTPUT"
+        echo "Built into ${dir}" >&2
+
+    # The custom .rc of RQ-BLD-020 cannot be exercised on the Linux development
+    # container -- if(WIN32) never fires there -- so it shipped verified only by
+    # reading JUCE's own resource writer. That is exactly how RQ-GUI-070's defect
+    # reached the owner: a mechanism read rather than run. This step is the
+    # replacement, and it runs on every Windows build including canary, so the
+    # earliest possible build reports it. [RQ-BLD-020, RQ-BLD-024]
+    - name: Windows version resources must carry the derived version
+      if: inputs.os == 'windows'
+      shell: pwsh
+      run: |
+        $exe = Join-Path '${{ steps.locate.outputs.artefact-dir }}' 'Xplorer.exe'
+        $info = (Get-Item $exe).VersionInfo
+        Write-Host "FileVersion    : $($info.FileVersion)"
+        Write-Host "ProductVersion : $($info.ProductVersion)"
+
+        # FileVersion is numeric: it maps onto four 16-bit fields and can carry
+        # no stage suffix. ProductVersion is free text and is the ONLY place in
+        # an executable's properties that says which stream it came from.
+        if ($info.FileVersion -ne '${{ inputs.version-numeric }}') {
+          Write-Host "::error::FileVersion is '$($info.FileVersion)', expected '${{ inputs.version-numeric }}'"
+          exit 1
+        }
+        if ($info.ProductVersion -ne '${{ inputs.version-full }}') {
+          Write-Host "::error::ProductVersion is '$($info.ProductVersion)', expected '${{ inputs.version-full }}' — the JUCE_USER_DEFINED_RC_FILE override is not taking effect"
+          exit 1
+        }
+
+    # The application icon reaches the executable through the SAME generated .rc
+    # that the step above overrides. JUCE emits the icon statements outside its
+    # #ifdef guard, so the override should not cost them -- read from the JUCE
+    # source, and therefore worth confirming rather than trusting. [RQ-BLD-026]
+    - name: The executable must still carry its icon
+      if: inputs.os == 'windows'
+      shell: pwsh
+      run: |
+        $exe = Join-Path '${{ steps.locate.outputs.artefact-dir }}' 'Xplorer.exe'
+        Add-Type -AssemblyName System.Drawing
+        $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exe)
+        if ($null -eq $icon) {
+          Write-Host "::error::the executable carries no icon — the .rc override dropped it"
+          exit 1
+        }
+        Write-Host "Icon present: $($icon.Width)x$($icon.Height)"

@@ -960,7 +960,11 @@ namespace xplorer::app
                 }
                 break;
             case 30:
-                showAboutDialog("Xplorer 0.1.0");
+                // Name and version from the build, not from a literal: this
+                // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
+                // root. [RQ-BLD-015, RQ-BLD-016]
+                showAboutDialog(std::string(JUCE_APPLICATION_NAME_STRING) + " "
+                                + XPL_VERSION_FULL_STRING);
                 break;
             // The three Help URLs, opened in the system browser exactly as the
             // reference's OpenBrowserWithUrl does — no update check of our own.

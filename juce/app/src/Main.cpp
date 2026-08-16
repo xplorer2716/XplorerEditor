@@ -33,8 +33,12 @@ namespace xplorer::app
     class XplorerApplication final : public juce::JUCEApplication
     {
     public:
-        const juce::String getApplicationName() override { return "Xplorer"; }
-        const juce::String getApplicationVersion() override { return "0.1.0"; }
+        // Both read the build's own compile-time definitions, never a literal:
+        // a literal cannot be kept in step with what was actually built, which
+        // is how the About box came to advertise 0.1.0 while every published
+        // artefact carried a different version. [RQ-BLD-015, RQ-BLD-016]
+        const juce::String getApplicationName() override { return JUCE_APPLICATION_NAME_STRING; }
+        const juce::String getApplicationVersion() override { return XPL_VERSION_FULL_STRING; }
         bool moreThanOneInstanceAllowed() override { return false; } // [RQ-FMW-072]
 
         void initialise(const juce::String&) override
