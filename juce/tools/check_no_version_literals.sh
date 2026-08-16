@@ -13,9 +13,10 @@
 # cmake_minimum_required, the SPDX schema) are declarations we WANT literal.
 # Only the product's own version must be derived.
 #
-# Run:  bash .github/checks/no-version-literals.sh
+# Run:  bash juce/tools/check_no_version_literals.sh
 set -uo pipefail
 
+# juce/tools/ -> repository root.
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." || exit 1
 FAIL=0
 report() { printf '  FAIL %s\n%s\n' "$1" "$2"; FAIL=$((FAIL + 1)); }

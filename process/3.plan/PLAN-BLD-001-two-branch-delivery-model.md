@@ -86,7 +86,7 @@ from the commit and deployments that actually contain what a user needs to run t
     carry the numeric form and the product-version string carries the full form
   - **Given** a default local build with no version supplied, **When** it runs, **Then** it still
     builds and reports a clearly non-deployment version
-- **Verification**: `.github/checks/no-version-literals.sh` is the durable guard — it fails if the
+- **Verification**: `juce/tools/check_no_version_literals.sh` is the durable guard — it fails if the
   retired literal reappears in declaring code, if a CMake `VERSION` takes a literal instead of the
   variable, if an application source carries a quoted version-shaped string, or if either compile
   definition the sources read stops being supplied. Five checks, all passing. The wiring itself was
