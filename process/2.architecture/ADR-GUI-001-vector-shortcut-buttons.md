@@ -10,6 +10,13 @@ eight buttons do), RQ-GUI-022 (the LED strip beside them), RQ-CLR-001/003/007
 (token module), ADR-JUC-011 (the control accent), ADR-JUC-017 (interaction
 states), ADR-JUC-020 (user-themeable palette), ADR-JUC-024 (display group).
 
+**Referenced (not amended) by RQ-GUI-070** (2026-08-15, session GUI, Tier M,
+no new decision): the Settings/About/Dependencies title-bar icons
+(`DialogIcons.hpp/.cpp`) reuse this ADR's DEC-GUI-001-A (hand-authored
+`juce::Path`, no asset) in a new context — a native OS title bar, rendered
+once to a `juce::Image` rather than painted per frame. DEC-GUI-001-B/C/D/E/F
+are about the shortcut-button row specifically and do not apply.
+
 ## Context
 
 The eight shortcut buttons are `juce::ImageButton`s fed by 24 GIF resources of

@@ -2,6 +2,7 @@
 
 #include "BinaryData.h"
 #include "DesignTokens.hpp"
+#include "DialogIcons.hpp"
 #include "SbomReader.hpp"
 
 #include "xplorer/app/MidiAutomationTable.hpp"
@@ -766,7 +767,9 @@ namespace xplorer::app
         options.escapeKeyTriggersCloseButton = true;
         options.useNativeTitleBar = true;
         options.resizable = false;
-        options.launchAsync();
+        // Native OS chrome: icon set once on the peer, not painted per frame.
+        // [RQ-GUI-070, RQ-GUI-072]
+        applyDialogTitleBarIcon(*options.launchAsync(), DialogIcon::About);
     }
 
     void showDependenciesWindow()
@@ -780,6 +783,9 @@ namespace xplorer::app
         // Resizable: a generated SBOM can carry long component names and URLs
         // that no fixed width fits. [RQ-GUI-057]
         options.resizable = true;
-        options.launchAsync();
+        // Reuses the Settings glyph rather than a third one (owner decision,
+        // 2026-08-15) — this window is a sub-page of About, not a distinct
+        // destination worth its own icon. [RQ-GUI-070, RQ-GUI-072]
+        applyDialogTitleBarIcon(*options.launchAsync(), DialogIcon::Settings);
     }
 }

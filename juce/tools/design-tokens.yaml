@@ -114,6 +114,14 @@ tiers:
     # ---- dialog component sizes (content-driven, not on the spacing scale) ----
     dialogRowHeight:  { kind: int, value: 28,  note: "SettingsDialog/ProgressWindow row height" }
     dialogLabelWidth: { kind: int, value: 150, note: "SettingsDialog label column width, sized to the longest existing label" }
+    # ---- Randomizer page: VCO2/Matrix checkbox columns, shared across both
+    #      rows so a checkbox aligns with its counterpart on the row below.
+    #      Owner report 2026-08-15: FM/Amount aligned by accident (same start
+    #      x), Noise/Quantize and Sync/source & dest. did not, because each
+    #      row picked its own per-checkbox width. RQ-GUI-069, ADR-JUC-033. ----
+    dialogRandomizerCol1Width: { kind: int, value: 90,  note: "FM / Amount column — sized to 'Amount', the wider of the pair" }
+    dialogRandomizerCol2Width: { kind: int, value: 100, note: "Noise / Quantize column — sized to 'Quantize', the wider of the pair" }
+    dialogRandomizerCol3Width: { kind: int, value: 130, note: "Sync / source & dest. column — sized to 'source & dest.' (shortened from 'Sources & destinations' in the same change, RQ-GUI-069), the wider of the pair" }
     # ---- settings COLOURS/KNOB BEHAVIOUR groups (owner-validated mockup,
     #      2026-07-26). RQ-GUI-046, ADR-JUC-020. ----
     dialogSwatchWidth:     { kind: int, value: 40,  note: "colour swatch cell width (value-preserving: the pre-existing knob-LED swatch literal)" }
@@ -165,6 +173,10 @@ tiers:
     shortcutButtonBorderAlpha: { kind: float, value: 0.65, note: "key outline vs the frame colour. At full opacity eight adjacent outlines pulled more attention than the modulation matrix beside them; 0.65 matches the restraint of tickBoxBorderAlpha. RQ-GUI-063" }
     blockFillAlpha:    { kind: float, value: 0.30, note: "tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule." }
     blockFrameRelief:  { kind: float, value: 0.2,  note: "block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094" }
+
+    # ---- dialog title-bar icons (Settings/About/Dependencies, RQ-GUI-070) ----
+    dialogIconAccent: { kind: colour, hex: "66B5E3", note: "static badge colour for OS-native title-bar icons — these cannot live-retheme (set once at DialogWindow::setIcon() time, the window is native chrome outside the app's own LookAndFeel), so this deliberately mirrors DEFAULT_KNOB_COLOR (juce/settings/src/AllUsersSettingsDefaults.cpp) rather than the live, user-customisable ledColour(): the app's own shipped-default identity colour, not a runtime value. A future change to DEFAULT_KNOB_COLOR does not have to update this token, and vice versa — the two are independently owned, deliberately duplicated values, not a shared source of truth." }
+    dialogIconSize:   { kind: int, value: 32, note: "pixel size of the rendered title-bar icon image; the OS scales down for taskbar/alt-tab as needed. RQ-GUI-070" }
 
     # ---- main-panel control-row height (MainForm-extracted; shared by check
     #      boxes / radios / in-panel stacked rows so paired rows align) ----
@@ -328,6 +340,9 @@ tiers:
     dialogResetWidth:      { alias: global.dialogResetWidth,      note: "Reset to defaults button width, RQ-GUI-046" }
     dialogGroupHeaderHeight: { alias: global.dialogGroupHeaderHeight, note: "group-title clearance, RQ-GUI-046" }
     midiCcColumnMinWidth: { alias: global.midiCcColumnMinWidth, note: "automation table 'MIDI CC' column floor width, RQ-GUI-060" }
+    dialogRandomizerCol1Width: { alias: global.dialogRandomizerCol1Width, note: "FM / Amount column, RQ-GUI-069" }
+    dialogRandomizerCol2Width: { alias: global.dialogRandomizerCol2Width, note: "Noise / Quantize column, RQ-GUI-069" }
+    dialogRandomizerCol3Width: { alias: global.dialogRandomizerCol3Width, note: "Sync / source & dest. column, RQ-GUI-069" }
     patchSpinnerWidth:        { alias: global.patchSpinnerWidth,        note: "Go to patch / Store spinner width, RQ-GUI-058" }
     patchSpinnerTextBoxWidth: { alias: global.patchSpinnerTextBoxWidth, note: "Go to patch / Store spinner text-box width, RQ-GUI-058" }
     patchSpinnerRowWidth:     { alias: global.patchSpinnerRowWidth,     note: "Go to patch / Store spinner centring-row width, RQ-GUI-058" }
@@ -362,6 +377,8 @@ tiers:
     shortcutButtonBorderAlpha: { alias: global.shortcutButtonBorderAlpha, note: "diagramFrame.withAlpha(a) for a key outline, RQ-GUI-063" }
     blockFillAlpha:        { alias: global.blockFillAlpha,     note: "blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094" }
     blockFrameRelief:      { alias: global.blockFrameRelief,   note: "blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094" }
+    dialogIconAccent: { alias: global.dialogIconAccent, note: "title-bar icon badge colour, RQ-GUI-070" }
+    dialogIconSize:   { alias: global.dialogIconSize,   note: "title-bar icon render size, RQ-GUI-070" }
 
     # ---- MIDI activity LED (RQ-GUI-056, ADR-JUC-031) ----
     # No semantic tier for these, same reasoning as the VFD group below: one

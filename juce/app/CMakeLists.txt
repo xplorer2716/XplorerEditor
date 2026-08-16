@@ -11,6 +11,7 @@ target_sources(XplorerApp PRIVATE
     src/MainComponent.cpp
     src/BackgroundRenderer.cpp
     src/ShortcutIcons.cpp
+    src/DialogIcons.cpp
     src/BlockPalette.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp

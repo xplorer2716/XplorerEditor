@@ -1,15 +1,22 @@
 # ADR-JUC-027: Diagram Stroke Weight and Paint Order
 
 ## Status
-Proposed
+Proposed.
+
+**Extended 2026-08-15 (session GUI, RQ-GUI-071)** with DEC-JUC-112 — where a
+control tick STOPS. DEC-JUC-075 settled the z-order of a tick against the block
+it hangs from; this settles its length against the control it runs into. Same
+primitive, the other end of it.
 
 <!-- Motivated by RQ-GUI-051 (block frame weight, fill contrast, paint order)
 and RQ-DSN-099 (the stroke-role split). Refines ADR-JUC-013 (the vector
 background this restructures) and ADR-JUC-018 (the block-identity colours whose
-legibility this is about). Token mechanics per ADR-JUC-014 / ADR-JUC-015. -->
+legibility this is about). Token mechanics per ADR-JUC-014 / ADR-JUC-015.
+DEC-JUC-112 additionally refines ADR-JUC-009 (the knob presentation whose ring
+geometry it now shares). -->
 
 ## Requirements
-RQ-GUI-051, RQ-DSN-099, RQ-GUI-037, RQ-GUI-044, RQ-DSN-094
+RQ-GUI-051, RQ-DSN-099, RQ-GUI-037, RQ-GUI-044, RQ-DSN-094, RQ-GUI-071
 
 ## Context
 
@@ -117,10 +124,87 @@ blocks.
   value, so the deviation is written where the value lives rather than left as an
   unexplained number — the design-system deviation rule (CLAUDE.md).
 
+- **DEC-JUC-112 — A tick's end is DERIVED from its target, and the knob's ring
+  insets get one owner.** *(added 2026-08-15, RQ-GUI-071)*
+
+  A tick used to be `stub(cx, y, len)`: a start on the block edge and a **length**
+  — 12, 23 or 24 px, transcribed from the reference bitmap. A length says nothing
+  about the thing at the other end, so nothing kept the two together, and nothing
+  ever had: measured against the control table, the junction was out by −3 px to
+  +3 px depending on the row. It reads as a gap under the two VCA VOLUME knobs and
+  as a line crossing into the ring almost everywhere else, and it survived review
+  because the knob's own value arc paints over the overlap as soon as the knob is
+  turned up (owner report, "tant que la couronne de valeur du slider ne le
+  recouvre pas").
+
+  The primitive now takes the **target's own canvas-frame top edge** instead of a
+  length, and `SectionLayout.hpp` derives the end from it:
+  `tickEndReferenceY = firstPaintedCanvasY + CANVAS_TOP_CROP − strokeDiagram/2`.
+  The half-stroke is not a fudge: the tick is stroked with a **rounded end cap**
+  (DEC-JUC-075's `frameStroke`), so its painted end reaches half a width past the
+  endpoint — subtracting it is exactly what puts the cap **on** the target rather
+  than over it. A knob adds `KNOB_BOUNDS_INSET + KNOB_RING_INSET − strokeKnobRing/2`,
+  a combo box adds zero (it paints from its own bounds, and a Component clips to
+  itself, so the outer half of its outline never reaches the canvas). The zero is
+  written down rather than omitted, so the asymmetry is a decision on the page.
+
+  **The knob's two insets move to `SectionLayout.hpp` and `drawRotarySlider` reads
+  them from there.** This is the substance of the decision. Deriving the end is
+  worth little if the ring's position is a literal in the LookAndFeel and the
+  tick's arithmetic is a copy of it in the painter — that is the same coupling as
+  before, one indirection further away, and it would break silently the first time
+  the knob was restyled. *Rejected:* leaving `reduced(2.0F)` / `radius - 1.0F`
+  where they were and mirroring them in the painter's comment.
+
+  **Rows are stated in the header and pinned by a test, not looked up at paint
+  time.** Same reasoning, and the same precedent, as `SECTION_X_MATRIX`
+  (DEC-JUC-110): the painter must not scan the control table on every repaint, so
+  `BackgroundRendererTests` asserts every stated row against the real table — a
+  control that moves fails the build instead of quietly unpicking its own tick.
+  *Rejected:* a per-paint `controlTable()` lookup. The cost is genuinely
+  negligible next to 180 stroked wood-grain paths, but it would contradict a rule
+  this file already lives by for no gain the test does not already provide.
+
+  **Both combo ticks are recentred, captions with them** (owner decision,
+  2026-08-15). `MODE (15)` and `WAVESHAPE` were drawn at 669 and 657, 6.5 px and
+  4 px left of the combos they belong to — the LFO loop even carried 657 in a
+  comment calling it "the WAVESHAPE combo centre", which it is not. The caption
+  moves with the tick: leaving it behind would trade a tick-vs-combo misalignment
+  for a tick-vs-caption one, which is worse, being two elements the eye compares
+  directly.
+
+  **Deliberately NOT decided here:** equalising how far a control hangs below its
+  block (9 to 26 px across the panel). Within each block the knobs already share
+  one `y`; levelling the blocks would move control-table positions and cascade
+  into ADR-CLR-001's rhythm. Owner decision: junctions only.
+
 ## Consequences
 
 - The blocks read as objects the signal path runs into; the diagram reads as one
   drawing at one weight.
+- A tick can no longer be wrong on its own: its end is a function of the control
+  it points at, and the row it reads is pinned to the control table by a test. The
+  cost is that `BackgroundRenderer` no longer says how long a line is at the call
+  site — it says what the line ends on, which is the thing that was missing.
+- `XplorerLookAndFeel::drawRotarySlider` now depends on `SectionLayout.hpp`. That
+  is a layout header reaching into a painter, which is the right direction (the
+  geometry is the shared fact, the painters are its consumers) but it does mean a
+  knob restyle has to go through the header rather than through two literals.
+- **DEC-JUC-076's parity is restored, and it had to be.** The generator was one
+  refactor behind before this change: TASK-CLR-001/002 displaced the LAG (+13),
+  TRACK (+21), LFO (+8) and RAMP (+12) groups in the painter, moved six section
+  anchors and applied RQ-CLR-006/007 to the centre column and the matrix bar, none
+  of which reached `generate_background_mockup.py`. Applying the tick rule alone
+  would have ended its ticks on knob rows its own blocks no longer sat above — a
+  worse artefact than the drift — so the two were done together (owner request,
+  2026-08-15). The generator now derives its tick ends from the same tokens by the
+  same formula and mirrors the same rows; the SVG and the running app were
+  overlaid to confirm every block, tick and section bar coincides.
+- The tick rule's *values* stay shared through the tokens and its *rows* are
+  mirrored, which is the split ADR-JUC-013 already draws: the mockup and the app
+  cannot diverge on a token, and geometry is copied deliberately. That copy is now
+  in three places (painter, generator, test), and only the first two can drift
+  silently — which is the argument for the test, not against the copy.
 - `paintVectorBackground` gains an indirection: what a statement does and when it
   is painted are no longer the same place. This is the real cost of DEC-JUC-075
   and it is why the layer assignment lives in the four primitive lambdas rather
@@ -163,6 +247,17 @@ blocks.
 - **Raise the fill alpha only, leave strokes alone.** Fixes legibility from a
   distance but leaves the end-cap nubs *more* visible against the stronger fill,
   and leaves a block's boundary indistinguishable from a wire.
+- **(DEC-JUC-112) Retune the 24 tick lengths by hand until they look right.**
+  The cheapest change, and the one that puts the panel back where it is today
+  with none of the arithmetic. Rejected: it repairs 24 numbers that will drift
+  again the next time a knob row or the ring stroke moves, and it leaves no way
+  for a test to say what "right" is.
+- **(DEC-JUC-112) End the tick on the knob's control BOUNDS instead of its ring.**
+  Simpler — the control table already holds the bounds — and it is what the
+  correct-by-accident rows happen to do today. Rejected: the ring is inset 1.8 px
+  inside the bounds, so a tick ending on the bounds stops visibly short of the
+  thing the eye actually reads as the knob. The bounds are an invisible rectangle;
+  the junction is between two drawn objects.
 
 ## Diagram
 
@@ -208,4 +303,20 @@ flowchart TD
     SD --> M0
     FA --> M0
     R -.->|"must match"| M1
+
+    subgraph tick["SectionLayout.hpp — DEC-JUC-112"]
+        K1["KNOB_BOUNDS_INSET = 2<br/>KNOB_RING_INSET = 1"]
+        K2["KNOB_RING_TOP_CANVAS_INSET<br/>= 2 + 1 - strokeKnobRing/2"]
+        K3["tickEndReferenceY(target)<br/>= target + CANVAS_TOP_CROP<br/>- strokeDiagram/2"]
+        K4["KNOB_ROW_* / COMBO_*<br/>stated, not looked up"]
+        K1 --> K2
+        K2 --> K3
+    end
+
+    K1 --> LNF2["XplorerLookAndFeel<br/>drawRotarySlider draws the ring"]
+    K3 --> TICK["BackgroundRenderer<br/>knobTick() / comboTick()"]
+    K4 --> TICK
+    SD --> K3
+    TICK --> L1
+    K4 -.->|"pinned against"| CT2["controlTable()<br/>BackgroundRendererTests"]
 ```

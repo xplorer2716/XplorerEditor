@@ -83,6 +83,9 @@ namespace xplorer::app::tokens
         inline constexpr int space24 = 24;  // xl gap — progress bar height
         inline constexpr int dialogRowHeight = 28;  // SettingsDialog/ProgressWindow row height
         inline constexpr int dialogLabelWidth = 150;  // SettingsDialog label column width, sized to the longest existing label
+        inline constexpr int dialogRandomizerCol1Width = 90;  // FM / Amount column — sized to 'Amount', the wider of the pair
+        inline constexpr int dialogRandomizerCol2Width = 100;  // Noise / Quantize column — sized to 'Quantize', the wider of the pair
+        inline constexpr int dialogRandomizerCol3Width = 130;  // Sync / source & dest. column — sized to 'source & dest.' (shortened from 'Sources & destinations' in the same change, RQ-GUI-069), the wider of the pair
         inline constexpr int dialogSwatchWidth = 40;  // colour swatch cell width (value-preserving: the pre-existing knob-LED swatch literal)
         inline constexpr int dialogChooseWidth = 100;  // uniform 'Choose...' button width (mockup: all colour buttons identical)
         inline constexpr int dialogBlockLabelWidth = 90;  // block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')
@@ -116,6 +119,8 @@ namespace xplorer::app::tokens
         inline constexpr float shortcutButtonBorderAlpha = 0.65F;  // key outline vs the frame colour. At full opacity eight adjacent outlines pulled more attention than the modulation matrix beside them; 0.65 matches the restraint of tickBoxBorderAlpha. RQ-GUI-063
         inline constexpr float blockFillAlpha = 0.3F;  // tinted block fill: block hue at this alpha over the panel plate. Originally 0.18, measured from the owner-supplied modernisation mockup (fill #443326 on plate #242528 for block #C27A52), RQ-DSN-094; raised to 0.30 (owner decision, after 0.24 was reviewed in the mockup and judged too subtle) so the block background reads less transparent and the block is easier to identify, RQ-GUI-051 — deviation from the measured mockup value, recorded here per the design-system deviation rule.
         inline constexpr float blockFrameRelief = 0.2F;  // block frame relief: JUCE Colour::darker() amount applied to the BOTTOM edge of the frame gradient, top edge stays the pure block hue (mockup ratio bottom/top = 0.84). RQ-DSN-094
+        inline const juce::Colour dialogIconAccent = juce::Colour(0xFF66B5E3);  // static badge colour for OS-native title-bar icons — these cannot live-retheme (set once at DialogWindow::setIcon() time, the window is native chrome outside the app's own LookAndFeel), so this deliberately mirrors DEFAULT_KNOB_COLOR (juce/settings/src/AllUsersSettingsDefaults.cpp) rather than the live, user-customisable ledColour(): the app's own shipped-default identity colour, not a runtime value. A future change to DEFAULT_KNOB_COLOR does not have to update this token, and vice versa — the two are independently owned, deliberately duplicated values, not a shared source of truth.
+        inline constexpr int dialogIconSize = 32;  // pixel size of the rendered title-bar icon image; the OS scales down for taskbar/alt-tab as needed. RQ-GUI-070
         inline constexpr int controlRowHeight = 17;  // reference control-row height (check box / radio button); BoundRadioGroup rows use it so radios align with sibling check boxes. TASK-JUC-108, RQ-GUI-040
         inline const juce::Colour vfdPhosphor = juce::Colour(0xFF00FFA1);  // phosphor hue; red stays 0 through the halo and only rises once the core clips, so this is the whole colour of the display
         inline constexpr float vfdSegLeft = 0.28713F;  // left segment rail
@@ -219,6 +224,9 @@ namespace xplorer::app::tokens
         inline constexpr int dialogResetWidth = global::dialogResetWidth;  // Reset to defaults button width, RQ-GUI-046
         inline constexpr int dialogGroupHeaderHeight = global::dialogGroupHeaderHeight;  // group-title clearance, RQ-GUI-046
         inline constexpr int midiCcColumnMinWidth = global::midiCcColumnMinWidth;  // automation table 'MIDI CC' column floor width, RQ-GUI-060
+        inline constexpr int dialogRandomizerCol1Width = global::dialogRandomizerCol1Width;  // FM / Amount column, RQ-GUI-069
+        inline constexpr int dialogRandomizerCol2Width = global::dialogRandomizerCol2Width;  // Noise / Quantize column, RQ-GUI-069
+        inline constexpr int dialogRandomizerCol3Width = global::dialogRandomizerCol3Width;  // Sync / source & dest. column, RQ-GUI-069
         inline constexpr int patchSpinnerWidth = global::patchSpinnerWidth;  // Go to patch / Store spinner width, RQ-GUI-058
         inline constexpr int patchSpinnerTextBoxWidth = global::patchSpinnerTextBoxWidth;  // Go to patch / Store spinner text-box width, RQ-GUI-058
         inline constexpr int patchSpinnerRowWidth = global::patchSpinnerRowWidth;  // Go to patch / Store spinner centring-row width, RQ-GUI-058
@@ -252,6 +260,8 @@ namespace xplorer::app::tokens
         inline constexpr float shortcutButtonBorderAlpha = global::shortcutButtonBorderAlpha;  // diagramFrame.withAlpha(a) for a key outline, RQ-GUI-063
         inline constexpr float blockFillAlpha = global::blockFillAlpha;  // blockColour.withAlpha(a) filled behind a labelled block, RQ-DSN-094
         inline constexpr float blockFrameRelief = global::blockFrameRelief;  // blockColour.darker(a) for the frame's bottom edge, RQ-DSN-094
+        inline const juce::Colour dialogIconAccent = global::dialogIconAccent;  // title-bar icon badge colour, RQ-GUI-070
+        inline constexpr int dialogIconSize = global::dialogIconSize;  // title-bar icon render size, RQ-GUI-070
         inline constexpr int indicatorSize = global::indicatorSize;  // MIDI LED lamp diameter, RQ-GUI-056
         inline constexpr float indicatorGlowAlpha = global::indicatorGlowAlpha;  // MIDI LED glow peak alpha, RQ-GUI-056
         inline constexpr float indicatorGlowRadius = global::indicatorGlowRadius;  // MIDI LED glow radius multiplier, RQ-GUI-056
