@@ -73,7 +73,7 @@ proposed again:
 - Six workflows build one `dev` commit concurrently. A counter must hand all six the same value,
   which means an atomic reservation — GitHub has no such primitive.
 - The default `GITHUB_TOKEN` cannot write repository variables; a counter kept there needs a
-  stored PAT and a global `concurrency` lock, serialising all ten workflows behind one gate.
+  stored PAT and a global `concurrency` lock, serialising all fifteen workflows behind one gate.
 - Canary builds consume numbers while publishing nothing, so the counter cannot be reconstructed
   by counting releases — it must be persisted somewhere that is written even when nothing ships.
 - Re-running a failed workflow would burn a fresh number, giving one commit two versions.
@@ -150,8 +150,7 @@ nothing; giving it a deployment-shaped name would state something false about it
 ### DEC-BLD-017 — Production is cut by an explicit action, which computes and pushes the tag
 
 A push to `main` publishes nothing. A `workflow_dispatch` on `main` derives the version, pushes it
-as a tag, and every production workflow triggers on that tag (two today, rising to three once
-`linux-x64` is added by TASK-BLD-006).
+as a tag, and the three production workflows trigger on that tag.
 
 **The human never types a version.** This resolves a contradiction the owner's requirement carried:
 a tag was to trigger production, while the version was to be assigned by the build — so the tag
@@ -195,10 +194,11 @@ is actually for:
   built it.
 - **`linux-headless-release` — `workflow_dispatch` only, no automatic trigger at all.** Owner
   decision: rather than pick which of `push`/`pull_request` it should keep, drop both — it runs by
-  hand when Linux coverage is wanted. It was already the *only* Linux build in the pipeline (canary/
-  preprod/prod cover Windows and macOS only, until `TASK-BLD-006`), so this trades automatic
-  Linux regression coverage for a pipeline whose triggers are legible at a glance; the trade is
-  temporary in principle, closed once `TASK-BLD-006` adds Linux to the generated matrix.
+  hand when Linux coverage is wanted. It was, at that moment, the *only* Linux build in the
+  pipeline, so this traded automatic Linux regression coverage for a pipeline whose triggers are
+  legible at a glance — a trade taken as temporary and **since closed**: `TASK-BLD-006` added
+  `linux-x64` to the generated matrix, so Linux now has five deployment workflows of its own and
+  this one is again just the headless non-UI suite.
 
 Each stream now has exactly one event that can put a commit through it — no single generated
 workflow file fires twice on the same commit anymore, which was the defect PR #49 exposed. What

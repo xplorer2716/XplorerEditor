@@ -111,6 +111,31 @@ matrix onto the person downloading it.
 to `x64`. Recorded so the arm64 names in the original statement are not read as a dropped
 requirement.
 
+**`oberheim.syx` and the SBOM go INSIDE the AppImage, not beside it** — settled when the packaging
+was actually written (TASK-BLD-006), and it is the same answer the macOS branch already gives for
+the same reason. The application resolves both files from its own executable's directory
+(RQ-GUI-008, RQ-BLD-014); inside a mounted AppImage that directory is the read-only squashfs, so
+copies left next to the `.AppImage` would never be looked at. They therefore sit in
+`AppDir/usr/bin/` alongside the binary, and the deployment archive holds exactly one item — the
+AppImage — exactly as the macOS archive holds exactly one `.app`.
+
+**Two build-time dependencies of the packaging step, found by running it rather than by reading
+about it:**
+
+- `appimagetool` no longer lives in `AppImage/AppImageKit`. That repository's release assets now
+  404, so the `…/AppImageKit/releases/download/13/appimagetool-x86_64.AppImage` URL copied across
+  most of the internet is dead rather than merely dated. The pin is
+  `AppImage/appimagetool` **1.9.0**.
+- `appimagetool` shells out to `desktop-file-validate` and **aborts** when it is absent. It is not
+  on the GitHub runner image, so the packaging action installs `desktop-file-utils` itself.
+
+*Accepted, and stated rather than hidden:* `appimagetool` downloads its type-2 **runtime** from
+`type2-runtime/releases/download/continuous/` at package time. That is an unpinned input in a
+project that pins everything else (RQ-BLD-001). It is accepted because upstream publishes no
+versioned runtime release — pinning would mean pinning to the same moving `continuous` URL and
+buying nothing — and because the runtime is the AppImage's launcher shim, not the product. It does
+mean the Linux packaging step needs network access and can break from upstream alone.
+
 ### DEC-BLD-022 — The binaries are not signed, and every deployment says so
 
 No Apple Developer ID, no Windows code-signing certificate. Owner decision, 2026-08-16: an Apple

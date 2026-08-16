@@ -1,0 +1,62 @@
+# =====================================================================
+# GENERATED FILE — DO NOT EDIT BY HAND.
+# Source of truth : juce/tools/generate_workflows.py
+# Regenerate with : python3 juce/tools/generate_workflows.py
+# =====================================================================
+#
+# linux-x64-debug-canary
+#
+# One operating system, one architecture, one build configuration, one
+# deployment stream — and the file name, the workflow name and the job key are
+# the same string, so a pull-request check states all four without
+# cross-referencing. [RQ-BLD-019, RQ-BLD-023, ADR-BLD-003 (DEC-BLD-016)]
+#
+# Every step delegates to a composite action under .github/actions/. That is
+# what keeps one-file-per-combination affordable: the procedure exists once.
+name: linux-x64-debug-canary
+
+on:
+  push:
+    branches-ignore: [main, dev]
+    paths:
+      - 'juce/**'
+      - '.github/workflows/linux-x64-debug-canary.yml'
+      - '.github/actions/**'
+
+permissions:
+  contents: read
+
+jobs:
+  linux-x64-debug-canary:
+    name: linux x64 Debug (canary)
+    runs-on: ubuntu-22.04
+
+    steps:
+      # fetch-depth 0, not the default 1: the deployment notes list the commits
+      # since the previous deployment of this stream, and the previous one is
+      # found among the tags. A shallow checkout yields notes claiming every
+      # commit is new. (The version derivation itself needs only HEAD.)
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: version
+        uses: ./.github/actions/resolve-version
+
+      - id: build
+        uses: ./.github/actions/build-app
+        with:
+          os: linux
+          config: debug
+          version-numeric: ${{ steps.version.outputs.numeric }}
+          version-full: ${{ steps.version.outputs.full }}
+          version-timestamp: ${{ steps.version.outputs.timestamp }}
+
+      # Canary builds publish NO deployment (RQ-BLD-019). The binary stays
+      # downloadable from this run's own artifacts, and reports "-canary" in
+      # Help → About, so a copy that escapes onto a test machine says so itself.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-${{ steps.version.outputs.full }}-linux-x64-debug
+          path: ${{ steps.build.outputs.artefact-dir }}
+          if-no-files-found: error
