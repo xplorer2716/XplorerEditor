@@ -20,7 +20,7 @@ fail() { printf '  FAIL %s\n       expected: %s\n       actual:   %s\n' "$1" "$2
 ok()   { printf '  ok   %s\n' "$1"; PASS=$((PASS + 1)); }
 
 assert_eq() { # <label> <expected> <actual>
-    if [ "$2" = "$3" ]; then ok "$1"; else fail "$1" "$2" "$3"; fi
+    if [[ "$2" = "$3" ]]; then ok "$1"; else fail "$1" "$2" "$3"; fi
 }
 
 # A repository whose single commit has an exactly-known committer date. The
@@ -164,4 +164,4 @@ for forbidden in 'run_number' 'run_id' 'vars.' '$(date' '`date'; do
 done
 
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
-[ "$FAIL" -eq 0 ]
+[[ "$FAIL" -eq 0 ]]
