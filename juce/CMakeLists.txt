@@ -15,6 +15,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# --- MSVC C runtime: STATIC, in both configurations [RQ-BLD-024, ADR-BLD-004 (DEC-BLD-020)] ---
+#
+# The dynamic DEBUG runtime (MSVCP140D.dll, VCRUNTIME140D.dll) is not
+# redistributable and ships only with Visual Studio, so a Debug binary linked
+# against it does not start on a tester's machine. Debug binaries ARE published
+# -- that is the point of the pre-production stream (RQ-BLD-019), and they were
+# already being attached to every alpha pre-release before this policy existed.
+#
+# Position matters as much as the value: MSVC_RUNTIME_LIBRARY is a PER-TARGET
+# property, and the variable read here seeds it for targets created afterwards.
+# Setting it on XplorerApp alone would leave JUCE on the dynamic runtime and the
+# link would fail with LNK2038 -- so it is set here, above
+# FetchContent_MakeAvailable(JUCE), where every target still inherits it.
+#
+# Release keeps the same treatment for symmetry: one fewer thing to install on
+# the user's machine, at the cost of a larger binary and of needing a rebuild
+# rather than a system update to pick up a CRT fix. Accepted knowingly.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 # The GUI application target only builds when explicitly enabled (Phase 5+);
 # non-UI layers and their tests always build, headless. [RQ-BLD-002]
 option(XPL_BUILD_APP "Build the Xplorer JUCE GUI application" OFF)

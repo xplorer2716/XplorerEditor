@@ -92,6 +92,15 @@ unpunctuated `20260819` the owner first wrote overflows, and no field can hold `
 | display | `2026.08.19-1740` | tag, release title, archive names |
 | full | `2026.08.19-1740-preprod` | About, `ProductVersion` string, `CFBundleShortVersionString`, SBOM |
 
+**A tag ref is the production stream, not an unknown one.** The stage is read from `github.ref`,
+and the obvious rule — `main` is production, `dev` is pre-production, everything else is canary —
+is wrong for the one case that matters most: a production build is triggered by the tag
+`cut-deployment` pushes (DEC-BLD-017), so it never sees `refs/heads/main`, and "everything else"
+would have stamped every production binary `-canary`. Tags are minted by that action alone, so
+matching `refs/tags/*` as production states the truth rather than patching around it. *Found by the
+test fixture of TASK-BLD-002 before any workflow existed;* it is the kind of defect that would
+otherwise have surfaced on the first real deployment, in the About box of a shipped binary.
+
 **The stage suffix travels everywhere it can be text**, not only into the About box as the
 requirement first said. Otherwise a pre-production executable and a production one carrying the
 same number are indistinguishable in their file properties and in their SBOM — the numeric field

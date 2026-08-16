@@ -3,7 +3,26 @@
 juce_add_gui_app(XplorerApp
     PRODUCT_NAME "Xplorer"
     COMPANY_NAME "Xplorer"
-    VERSION 0.1.0)
+    VERSION 0.1.0
+    # The application icon: the executable's own icon, the main window's, the
+    # macOS bundle's, and (via the same PNG) the Linux AppImage's desktop entry.
+    # The application had NO icon at all before this -- neither ICON_BIG nor
+    # ICON_SMALL was declared -- which is why it showed the platform's generic
+    # one everywhere, dialogs included until RQ-GUI-070 gave those their own.
+    #
+    # Reused in place from the reference artwork rather than copied here or
+    # redrawn: JUCE generates the Windows .ico and the macOS .icns from these
+    # PNGs itself, so xdata/IconeXplorer/Xplorer.ico is NOT a build input and
+    # stays what it always was, the archived original.
+    #
+    # ADR-GUI-001's "no binary asset" rule is not being broken: it governs
+    # control-surface icons, painted every frame by juce::Path and required to
+    # scale with the canvas. An application icon is OS chrome consumed by the
+    # shell at fixed sizes -- the same category as about.jpg and the three
+    # menu_*.png already kept verbatim below.
+    # [RQ-BLD-026, ADR-BLD-004 (DEC-BLD-023), ADR-GUI-001 (referenced)]
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/../../xdata/IconeXplorer/Hazard_256.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/../../xdata/IconeXplorer/Hazard_32.png")
 
 target_sources(XplorerApp PRIVATE
     src/Main.cpp

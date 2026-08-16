@@ -34,7 +34,7 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-002: `resolve-version` composite action
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: `.github/actions/resolve-version` — derives the three version forms from HEAD's
   UTC committer date and the stage from `github.ref`, and emits them as step outputs. The single
   place a version is computed.
@@ -49,9 +49,22 @@ from the commit and deployments that actually contain what a user needs to run t
     are identical
   - **Given** the action's source, **When** searched for `run_number`, a repository variable or a
     wall-clock date, **Then** there is no match
+  - **Given** a build triggered by the production tag (`refs/tags/…`), **When** the action runs,
+    **Then** the stage is production, **not** canary, and the derived display form equals the tag
 - **Verification**: a shell test fixture builds a throwaway git repository with fixed committer
   dates in several timezones and asserts every output — this logic is what fifteen workflows agree
-  through, so it is tested rather than observed.
+  through, so it is tested rather than observed. 18 assertions, all passing.
+- **Defect found by that fixture, before any workflow existed:** RQ-BLD-020's stage rule read
+  "`main` → none, `dev` → `-preprod`, **any other ref** → `-canary`", and a production build never
+  runs on `refs/heads/main` — it runs on the tag `cut-deployment` pushes. **Every production binary
+  would have shipped stamped `-canary`**, in its About box, its `ProductVersion` string and its
+  SBOM. The requirement and ADR-BLD-003 are corrected, and the case is pinned by a test. Recorded
+  here because it is the argument for testing this script rather than watching a green run: a
+  wrong-but-consistent version looks exactly like a right one.
+- **Two of the fixture's own checks failed first, and were the test's fault**, not the script's:
+  they grepped the whole file for `run_number` and a `date` call, and matched the header comment
+  that explains why neither is used. The check now strips comments — it must assert what the code
+  reads, not what the prose discusses.
 - **Dependencies**: None
 - **Assignee**: AI
 
@@ -80,7 +93,7 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-004: Application icon on all three platforms
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: `ICON_BIG`/`ICON_SMALL` on the JUCE target from `xdata/IconeXplorer/Hazard_256.png`
   and `Hazard_32.png`; the same PNG feeds the AppImage desktop entry in TASK-BLD-006.
 - **Requirement refs**: RQ-BLD-026
@@ -95,7 +108,7 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-005: Static C runtime on Windows
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done (2026-08-16)
 - **Description**: `set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")` before
   JUCE is made available, so every target agrees.
 - **Requirement refs**: RQ-BLD-024
@@ -204,8 +217,31 @@ from the commit and deployments that actually contain what a user needs to run t
     and no tag exist and the binaries are downloadable only from the run
   - **Given** the fifteen files, **When** their build steps are compared, **Then** the shared logic
     appears once, in composite actions
+  - **Given** a commit already deployed, **When** `cut-deployment` is run again on it, **Then** the
+    workflow stops with a message naming the existing deployment, rather than failing on a raw git
+    "tag already exists" error — and no second release is created
 - **Dependencies**: TASK-BLD-001, TASK-BLD-009
 - **Assignee**: AI
+
+### TASK-BLD-011: Retire the superseded RQ-BLD requirements
+- **Tier**: S
+- **Status**: Blocked — **gated on owner validation of the whole model in practice**
+- **Description**: RQ-BLD-009, 010, 013, 017 and 018 are currently kept in place with a
+  SUPERSEDED note naming what replaced them and what survives. Once the new model has been built
+  **and validated by the owner against a real deployment**, prune them to a short historical index.
+- **Requirement refs**: RQ-BLD-009, RQ-BLD-010, RQ-BLD-013, RQ-BLD-017, RQ-BLD-018
+- **ADR refs**: ADR-BLD-003, ADR-BLD-004
+- **Acceptance Criteria** (Gherkin):
+  - **Given** the requirements file after the model is validated, **When** the superseded entries
+    are read, **Then** each is reduced to its ID, its replacement and one line of rationale
+  - **Given** any artefact still citing a retired ID, **When** it is followed, **Then** it lands on
+    the replacement rather than on a dangling reference
+- **Dependencies**: TASK-BLD-001 … TASK-BLD-010, **and explicit owner sign-off**
+- **Assignee**: AI
+- **Why it is not done now** (owner instruction, 2026-08-16): the superseded text is the only
+  record of what the pipeline did before, and it is what a reviewer compares the new model against
+  while it is being built. Pruning it before the replacement is proven would remove the reference
+  exactly when it is most needed. Deliberately outside this session's ten-task batch.
 
 ---
 
