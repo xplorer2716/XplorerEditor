@@ -345,7 +345,8 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-011: Retire the superseded RQ-BLD requirements
 - **Tier**: S
-- **Status**: Blocked — **gated on owner validation of the whole model in practice**
+- **Status**: Done (2026-08-16) — the model published real preprod deployments and a real Linux
+  build before this ran, which is what it was gated on
 - **Description**: RQ-BLD-009, 010, 013, 017 and 018 are currently kept in place with a
   SUPERSEDED note naming what replaced them and what survives. Once the new model has been built
   **and validated by the owner against a real deployment**, prune them to a short historical index.
