@@ -43,7 +43,10 @@
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # CMake generates build directories named build* (build-win, build-unix, build-win-local, etc.)
 # Each contains all generated binaries, object files, intermediate artifacts, and CMake metadata
-build*/
+# Anchored to the repo root and to juce/ so this never shadows an unrelated directory that
+# happens to start with "build" elsewhere in the tree (e.g. .github/actions/build-app/).
+/build*/
+/juce/build*/
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # COMPILER & LINKER ARTIFACTS
