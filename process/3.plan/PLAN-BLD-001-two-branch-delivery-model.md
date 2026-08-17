@@ -172,8 +172,13 @@ from the commit and deployments that actually contain what a user needs to run t
   deployment: the `AppImageKit/releases/download/13` URL that every tutorial still recommends now
   **404s** (appimagetool moved repositories; the pin is `AppImage/appimagetool` 1.9.0), and
   `appimagetool` **aborts** when `desktop-file-validate` is absent, which it is on the runner image.
-  What is *not* verified locally is the GUI build itself — this container has no
-  X11/GL toolchain — so `linux-x64-*-canary` is the first execution of that half.
+  What was *not* verified locally — this container has no X11/GL toolchain — was the GUI compile
+  itself, and `linux-x64-*-canary`'s first real run **did fail it**: `<format>` is unavailable on
+  the pinned image's GCC 11. Fixed with `midiapp::service::formatStr()`, a portable stand-in used
+  only where the real `std::format` is absent — see ADR-BLD-004 (DEC-BLD-021) for the two rejected
+  alternatives (lowering the C++ standard; upgrading the runner's compiler) and why. Re-verified
+  locally after the fix: `xpl_tests_framework` and `xpl_tests_model` both build and pass in full
+  (headless, `XPL_BUILD_APP=OFF`) — the GUI link step itself still only runs in CI.
 - **`oberheim.syx` and the SBOM live INSIDE the AppImage**, in `AppDir/usr/bin/` beside the binary,
   and the archive holds the AppImage alone — the same shape as the macOS `.app`, for the same
   reason: the application resolves both from its executable's own directory, which inside a mounted

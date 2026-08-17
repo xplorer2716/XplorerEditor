@@ -136,6 +136,26 @@ versioned runtime release — pinning would mean pinning to the same moving `con
 buying nothing — and because the runtime is the AppImage's launcher shim, not the product. It does
 mean the Linux packaging step needs network access and can break from upstream alone.
 
+**The GUI compile itself failed on first real CI execution, found only once TASK-BLD-006 actually
+ran: `Logger.cpp` and the model layer's `XpanderTone*.cpp` all include `<format>` (C++20), which
+GCC's libstdc++ implements only from GCC 13. The pinned image's GCC 11 does not ship the header at
+all.** Two ways out were considered and rejected before the one that shipped:
+- *Lower `CMAKE_CXX_STANDARD` below 20* — rejected outright, owner instruction: the standard is a
+  project-wide decision and not something a Linux packaging detail gets to downgrade.
+- *Install a newer GCC on the runner via the `ubuntu-toolchain-r/test` PPA* — rejected: it does
+  not touch the pinned image's glibc, but it does risk a `g++-13`-linked binary requiring a
+  libstdc++ ABI (`GLIBCXX_3.4.3x`) newer than the pinned image's default `libstdc++.so.6` ships,
+  which is the same class of failure — visible only on the user's older machine — that the glibc
+  pin exists to catch in CI instead. The owner's own words on being asked: *"ca peut casser un max
+  de dépendances."*
+- **Shipped: `midiapp::service::formatStr()`** (`framework/include/midiapp/service/PortableFormat.hpp`),
+  a thin wrapper that forwards to real `std::format` wherever the standard library provides it
+  (Windows, macOS, and Linux whenever `<format>` is restored to the pinned image) and falls back to
+  a portable `{}`-substitution implementation only where it is absent. `Logger.cpp`'s one chrono
+  format call (`"{:%F %T}"`) is hand-rolled with `gmtime_r`/`put_time` instead, since chrono-format
+  needs the same missing header. The C++ standard stays 20, the toolchain and the runner pin are
+  both untouched, and the special case lives entirely in application code. [RQ-BLD-025]
+
 ### DEC-BLD-022 — The binaries are not signed, and every deployment says so
 
 No Apple Developer ID, no Windows code-signing certificate. Owner decision, 2026-08-16: an Apple
