@@ -119,9 +119,17 @@ else()
     # SheenBidi.c, three levels of inlining deep, a documented GCC heuristic
     # limitation rather than a real bug in mature, widely-used third-party C.
     # Scoped to C only: the project itself has no .c file, so this cannot hide
-    # a genuine diagnostic in project code. [RQ-BLD-003]
-    target_compile_options(xpl_warnings INTERFACE
-        $<$<COMPILE_LANGUAGE:C>:-Wno-error=maybe-uninitialized>)
+    # a genuine diagnostic in project code.
+    #
+    # GCC only, NOT just "not MSVC": AppleClang does not recognise the name
+    # "maybe-uninitialized" at all and reports its own -Wunknown-warning-option
+    # for it -- which -Werror then turns into a build failure, on every file,
+    # on every macOS target. First macOS preprod run after this flag landed
+    # caught it. [RQ-BLD-003]
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(xpl_warnings INTERFACE
+            $<$<COMPILE_LANGUAGE:C>:-Wno-error=maybe-uninitialized>)
+    endif()
 endif()
 add_library(xpl::warnings ALIAS xpl_warnings)
 
