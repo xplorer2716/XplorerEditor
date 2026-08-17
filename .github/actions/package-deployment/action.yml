@@ -64,7 +64,10 @@ runs:
         sudo apt-get install -y --no-install-recommends desktop-file-utils
 
         dest="${RUNNER_TEMP}/appimagetool"
-        curl -fsSL -o "${dest}" \
+        # --proto '=https' --tlsv1.2: -L follows redirects, and without pinning
+        # the protocol curl would silently follow one downgraded to plain
+        # http. SonarCloud finding. [RQ-BLD-025]
+        curl --proto '=https' --tlsv1.2 -fsSL -o "${dest}" \
           "https://github.com/AppImage/appimagetool/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
         chmod +x "${dest}"
         echo "path=${dest}" >> "$GITHUB_OUTPUT"
