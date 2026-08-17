@@ -31,6 +31,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   windows-x64-debug-preprod:
@@ -71,6 +73,18 @@ jobs:
           os: windows
           arch: x64
           config: debug
+
+      # Signed, keyless (Sigstore/OIDC) proof that this exact archive was built
+      # by this exact workflow run from this exact commit — free, and it does
+      # not need a paid code-signing certificate. It complements DEC-BLD-022's
+      # unsigned-binaries notice rather than replacing what that notice is for:
+      # SmartScreen/Gatekeeper still show their warning either way, but
+      # `gh attestation verify` now has something to check.
+      # [RQ-BLD-030, ADR-BLD-004 (DEC-BLD-026)]
+      - if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ steps.package.outputs.archive }}
 
       - uses: ./.github/actions/publish-deployment
         if: github.event_name == 'push'

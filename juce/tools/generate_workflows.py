@@ -153,6 +153,18 @@ PUBLISH = """
           arch: {arch}
           config: {config}
 
+      # Signed, keyless (Sigstore/OIDC) proof that this exact archive was built
+      # by this exact workflow run from this exact commit — free, and it does
+      # not need a paid code-signing certificate. It complements DEC-BLD-022's
+      # unsigned-binaries notice rather than replacing what that notice is for:
+      # SmartScreen/Gatekeeper still show their warning either way, but
+      # `gh attestation verify` now has something to check.
+      # [RQ-BLD-030, ADR-BLD-004 (DEC-BLD-026)]
+      - if: github.event_name == 'push'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{{{ steps.package.outputs.archive }}}}
+
       - uses: ./.github/actions/publish-deployment
         if: github.event_name == 'push'
         with:
@@ -194,10 +206,17 @@ def workflow(os_name: str, arch: str, runner: str, config: str, stage: str) -> t
     name = f"{os_name}-{arch}-{config}-{stage}"
     _, permission, human = STREAMS[stage]
     tail = {"prod": TAG_GUARD + PUBLISH, "preprod": PUBLISH + PREPROD_PR_UPLOAD, "canary": CANARY_UPLOAD}[stage]
+    # id-token/attestations are what actions/attest-build-provenance needs to
+    # mint its OIDC token and store the result; only the streams that reach
+    # PUBLISH (prod, preprod) call it, so canary carries neither permission.
+    # [RQ-BLD-030, ADR-BLD-004 (DEC-BLD-026)]
+    permissions = f"  contents: {permission}\n"
+    if stage != "canary":
+        permissions += "  id-token: write\n  attestations: write\n"
     body = (
         GENERATED_HEADER.format(name=name)
         + f"name: {name}\n\non:\n{triggers_for(stage, name)}\npermissions:\n"
-          f"  contents: {permission}\n\njobs:\n  {name}:\n"
+          f"{permissions}\njobs:\n  {name}:\n"
           f"    name: {os_name} {arch} {config.capitalize()} ({human})\n"
           f"    runs-on: {runner}\n"
         + CHECKOUT.format(os=os_name, config=config)
