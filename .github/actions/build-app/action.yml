@@ -2,7 +2,7 @@
 # configuration, and reports where the artefacts landed.
 # [RQ-BLD-023, ADR-BLD-003 (DEC-BLD-016)]
 #
-# Exists so the ten deployment workflows carry a name and a trigger and nothing
+# Exists so the fifteen deployment workflows carry a name and a trigger and nothing
 # else: RQ-BLD-023 keeps one workflow per platform/configuration/stream so a
 # pull-request check names itself, and that rule only stays affordable if the
 # steps behind it live in one place.
@@ -37,6 +37,24 @@ outputs:
 runs:
   using: composite
   steps:
+    # The GUI build needs the X11/font/audio/GL development headers, and so does
+    # juceaide, which JUCE builds first and runs at configure time. Deliberately
+    # NOT libcurl or WebKit: JUCE_USE_CURL=0 and JUCE_WEB_BROWSER=0 are set on
+    # the target, and installing them would link the deployment against
+    # libraries the user then has to have.
+    # [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)]
+    - name: Install the Linux GUI build dependencies
+      if: inputs.os == 'linux'
+      shell: bash
+      run: |
+        set -euo pipefail
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+          libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev \
+          libxcomposite-dev libxext-dev \
+          libfreetype6-dev libfontconfig1-dev \
+          libasound2-dev libgl1-mesa-dev
+
     - id: configure
       shell: bash
       env:

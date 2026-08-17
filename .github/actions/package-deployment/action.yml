@@ -43,6 +43,35 @@ outputs:
 runs:
   using: composite
   steps:
+    # Pinned, like every other dependency this project takes (RQ-BLD-001): a
+    # packaging tool that changes under the pipeline changes the artefact users
+    # download. NOTE the repository -- appimagetool moved out of AppImage/
+    # AppImageKit, whose release assets now 404, so the old widely-copied
+    # AppImageKit/releases/download/13 URL is dead rather than merely old.
+    - id: appimagetool
+      if: inputs.os == 'linux'
+      shell: bash
+      env:
+        APPIMAGETOOL_VERSION: '1.9.0'
+      run: |
+        set -euo pipefail
+
+        # appimagetool runs desktop-file-validate on the AppDir's .desktop entry
+        # and ABORTS if the binary is absent. Found by running this packaging
+        # branch locally before committing it, which is the only reason it is
+        # not a red first Linux deployment.
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends desktop-file-utils
+
+        dest="${RUNNER_TEMP}/appimagetool"
+        # --proto '=https' --tlsv1.2: -L follows redirects, and without pinning
+        # the protocol curl would silently follow one downgraded to plain
+        # http. SonarCloud finding. [RQ-BLD-025]
+        curl --proto '=https' --tlsv1.2 -fsSL -o "${dest}" \
+          "https://github.com/AppImage/appimagetool/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
+        chmod +x "${dest}"
+        echo "path=${dest}" >> "$GITHUB_OUTPUT"
+
     - id: package
       shell: bash
       env:
@@ -51,6 +80,10 @@ runs:
         OS: ${{ inputs.os }}
         ARCH: ${{ inputs.arch }}
         CONFIG: ${{ inputs.config }}
+        APPIMAGETOOL: ${{ steps.appimagetool.outputs.path }}
+        # The application icon of RQ-BLD-026, reused in place -- the same file
+        # juce_add_gui_app already feeds to the Windows .ico and macOS .icns.
+        ICON: ${{ github.workspace }}/xdata/IconeXplorer/Hazard_256.png
       run: |
         set -euo pipefail
 
@@ -80,7 +113,8 @@ runs:
             require "${ARTEFACT_DIR}/xplorer.sbom.spdx.json"
             ditto -c -k --sequesterRsrc --keepParent "${app}" "${out}"
             ;;
-          windows | linux)
+          windows)
+            require "${ARTEFACT_DIR}/Xplorer.exe"
             require "${ARTEFACT_DIR}/oberheim.syx"
             require "${ARTEFACT_DIR}/xplorer.sbom.spdx.json"
             staging="${RUNNER_TEMP}/deployment"
@@ -89,23 +123,82 @@ runs:
             # Copied by name rather than by copying the directory: a build tree
             # also holds .pdb, .ilk and object files, and "everything that
             # happens to be there" is not a deliverable.
-            if [ "$OS" = windows ]; then
-              require "${ARTEFACT_DIR}/Xplorer.exe"
-              cp "${ARTEFACT_DIR}/Xplorer.exe" "${staging}/"
-            else
-              require "${ARTEFACT_DIR}/Xplorer"
-              cp "${ARTEFACT_DIR}/Xplorer" "${staging}/"
-            fi
+            cp "${ARTEFACT_DIR}/Xplorer.exe" "${staging}/"
             cp "${ARTEFACT_DIR}/oberheim.syx" "${staging}/"
             cp "${ARTEFACT_DIR}/xplorer.sbom.spdx.json" "${staging}/"
-            # zip itself is not on the windows-2022 runner's PATH (Git Bash
-            # ships neither zip nor unzip); 7-Zip is preinstalled there instead.
-            # Linux keeps zip, which IS preinstalled on ubuntu-latest.
-            if [ "$OS" = windows ]; then
-              (cd "${staging}" && 7z a -tzip "${out}" . >/dev/null)
-            else
-              (cd "${staging}" && zip -qr "${out}" .)
-            fi
+            # 7z, not zip: Git Bash on the windows-2022 runner ships neither zip
+            # nor unzip, and the first real preprod deployment failed here with
+            # "zip: command not found". 7-Zip IS preinstalled there.
+            (cd "${staging}" && 7z a -tzip "${out}" . >/dev/null)
+            ;;
+          linux)
+            # The AppImage IS the deliverable, and oberheim.syx and the SBOM go
+            # INSIDE it -- the same shape as the macOS branch above and for the
+            # same reason: the application resolves both from its own
+            # executable's directory (RQ-GUI-008, RQ-BLD-014), and inside a
+            # mounted AppImage that directory is the read-only squashfs. Left
+            # beside the AppImage they would simply not be found.
+            # [RQ-BLD-021, RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)]
+            require "${ARTEFACT_DIR}/Xplorer"
+            require "${ARTEFACT_DIR}/oberheim.syx"
+            require "${ARTEFACT_DIR}/xplorer.sbom.spdx.json"
+            require "${ICON}"
+
+            appdir="${RUNNER_TEMP}/Xplorer.AppDir"
+            rm -rf "${appdir}"
+            mkdir -p "${appdir}/usr/bin"
+            cp "${ARTEFACT_DIR}/Xplorer" "${appdir}/usr/bin/"
+            cp "${ARTEFACT_DIR}/oberheim.syx" "${appdir}/usr/bin/"
+            cp "${ARTEFACT_DIR}/xplorer.sbom.spdx.json" "${appdir}/usr/bin/"
+            chmod +x "${appdir}/usr/bin/Xplorer"
+
+            # The icon is the one RQ-BLD-026 already gave the Windows executable
+            # and the macOS bundle -- reused in place, never a second copy. It
+            # is needed twice: at the AppDir root, which is what appimagetool
+            # reads, and in hicolor/, which is where a desktop environment looks
+            # once the AppImage is integrated. [RQ-BLD-026]
+            hicolor="${appdir}/usr/share/icons/hicolor/256x256/apps"
+            mkdir -p "${hicolor}"
+            cp "${ICON}" "${hicolor}/xplorer.png"
+            cp "${ICON}" "${appdir}/xplorer.png"
+
+            # Exec is the bare name: AppRun puts usr/bin on PATH. Icon carries
+            # no extension, per the Desktop Entry Specification.
+            cat > "${appdir}/xplorer.desktop" <<'DESKTOP'
+        [Desktop Entry]
+        Type=Application
+        Name=Xplorer
+        Comment=Realtime editor for the Oberheim Xpander and Matrix-12
+        Exec=Xplorer
+        Icon=xplorer
+        Categories=AudioVideo;Audio;
+        Terminal=false
+        DESKTOP
+
+            cat > "${appdir}/AppRun" <<'APPRUN'
+        #!/bin/sh
+        # Resolve the mount point rather than assuming the working directory:
+        # an AppImage may be launched from anywhere, and the binary finds
+        # oberheim.syx and the SBOM relative to its own location.
+        HERE="$(dirname "$(readlink -f "$0")")"
+        export PATH="${HERE}/usr/bin:${PATH}"
+        exec "${HERE}/usr/bin/Xplorer" "$@"
+        APPRUN
+            chmod +x "${appdir}/AppRun"
+
+            appimage="${RUNNER_TEMP}/Xplorer.AppImage"
+            # --appimage-extract-and-run: appimagetool is itself an AppImage and
+            # the runner has no FUSE, which is the same fallback the deployment
+            # notes hand the user (RQ-BLD-027). ARCH is read from the
+            # environment by appimagetool and has no default.
+            ARCH=x86_64 "${APPIMAGETOOL}" --appimage-extract-and-run \
+                "${appdir}" "${appimage}" >/dev/null
+
+            staging="${RUNNER_TEMP}/deployment"
+            rm -rf "${staging}"
+            mkdir -p "${staging}"
+            cp "${appimage}" "${staging}/Xplorer-${VERSION}-x86_64.AppImage"
+            (cd "${staging}" && zip -qr "${out}" .)
             ;;
           *)
             echo "::error::unsupported os '${OS}'"; exit 1 ;;

@@ -18,7 +18,8 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-001: Create `dev`, make it the default, protect `main`
 - **Tier**: M
-- **Status**: Not Started — owner-only (repository settings)
+- **Status**: Done (2026-08-16, owner) — `dev` created and set as default; `main` covered by a
+  ruleset (Restrict deletions, Block force push)
 - **Description**: Create `dev` from `main`; set it as the repository default; add an explicit
   protection rule on `main`. Repository settings only — no file in this repository changes.
 - **Requirement refs**: RQ-BLD-019
@@ -62,9 +63,8 @@ from the commit and deployments that actually contain what a user needs to run t
   - **Given** a build triggered by the production tag (`refs/tags/…`), **When** the action runs,
     **Then** the stage is production, **not** canary, and the derived display form equals the tag
 - **Verification**: a shell test fixture builds a throwaway git repository with fixed committer
-  dates in several timezones and asserts every output — this logic is what ten workflows agree
-  through today, rising to fifteen once `linux-x64` lands (TASK-BLD-006), so it is tested rather
-  than observed. 18 assertions, all passing.
+  dates in several timezones and asserts every output — this logic is what the fifteen deployment
+  workflows agree through, so it is tested rather than observed. 18 assertions, all passing.
 - **Defect found by that fixture, before any workflow existed:** RQ-BLD-020's stage rule read
   "`main` → none, `dev` → `-preprod`, **any other ref** → `-canary`", and a production build never
   runs on `refs/heads/main` — it runs on the tag `cut-deployment` pushes. **Every production binary
@@ -151,7 +151,8 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-006: Linux x64 GUI build and AppImage packaging
 - **Tier**: L
-- **Status**: Not Started — **deferred behind 008/009/010** (owner decision, 2026-08-16)
+- **Status**: Done (2026-08-16) — landed after the Windows/macOS chain was proven in practice,
+  which is exactly what the re-sequencing below was for
 - **Description**: New GUI build for `linux-x64` on a pinned Ubuntu image with the X11/FreeType/
   Fontconfig/ALSA/GL development packages, packaged as an AppImage with a `.desktop` entry and the
   TASK-BLD-004 icon.
@@ -164,6 +165,24 @@ from the commit and deployments that actually contain what a user needs to run t
   - **Given** a distribution without FUSE 2, **When** the documented fallback is used, **Then** it
     still runs
   - **Given** the Linux workflows, **When** the runner image is read, **Then** it is pinned
+- **Verification**: the packaging branch was **run locally before being committed**, against a stub
+  binary and the real pinned `appimagetool` — AppDir assembled, `.desktop` validated, AppImage
+  built, archive zipped, then extracted and executed through the FUSE-less fallback the deployment
+  notes hand the user. Two blocking defects surfaced there rather than in a red first Linux
+  deployment: the `AppImageKit/releases/download/13` URL that every tutorial still recommends now
+  **404s** (appimagetool moved repositories; the pin is `AppImage/appimagetool` 1.9.0), and
+  `appimagetool` **aborts** when `desktop-file-validate` is absent, which it is on the runner image.
+  What was *not* verified locally — this container has no X11/GL toolchain — was the GUI compile
+  itself, and `linux-x64-*-canary`'s first real run **did fail it**: `<format>` is unavailable on
+  the pinned image's GCC 11. Fixed with `midiapp::service::formatStr()`, a portable stand-in used
+  only where the real `std::format` is absent — see ADR-BLD-004 (DEC-BLD-021) for the two rejected
+  alternatives (lowering the C++ standard; upgrading the runner's compiler) and why. Re-verified
+  locally after the fix: `xpl_tests_framework` and `xpl_tests_model` both build and pass in full
+  (headless, `XPL_BUILD_APP=OFF`) — the GUI link step itself still only runs in CI.
+- **`oberheim.syx` and the SBOM live INSIDE the AppImage**, in `AppDir/usr/bin/` beside the binary,
+  and the archive holds the AppImage alone — the same shape as the macOS `.app`, for the same
+  reason: the application resolves both from its executable's own directory, which inside a mounted
+  AppImage is the read-only squashfs. See ADR-BLD-004 (DEC-BLD-021).
 - **Re-sequenced 2026-08-16.** This was originally to land before the packaging and publishing
   chain, and the dependency was too strict: 008 needs to know how to wrap a platform, not how to
   wrap *every* platform. What actually blocks progress is that nothing written since this session
@@ -211,7 +230,7 @@ from the commit and deployments that actually contain what a user needs to run t
 - **Status**: Done (2026-08-16)
 - **Description**: Assembles one archive per platform/configuration — executable or bundle,
   `oberheim.syx`, generated SBOM — named for version, os, architecture and configuration. macOS
-  keeps `ditto`. **Windows and macOS only for now**; Linux is added by TASK-BLD-006.
+  keeps `ditto`. Linux was added by TASK-BLD-006, which gave it its own branch: an AppImage, with the runtime siblings inside it.
 - **Requirement refs**: RQ-BLD-021
 - **ADR refs**: ADR-BLD-004 (DEC-BLD-018); ADR-BLD-002 (referenced)
 - **Acceptance Criteria** (Gherkin):
@@ -258,7 +277,7 @@ from the commit and deployments that actually contain what a user needs to run t
 - **Dependencies**: TASK-BLD-002, TASK-BLD-008
 - **Assignee**: AI
 
-### TASK-BLD-010: The ten workflows, the cut action, and retiring the old four
+### TASK-BLD-010: The generated workflows, the cut action, and retiring the old four
 - **Tier**: L
 - **Status**: Done (2026-08-16); **trigger scheme reworked 2026-08-16, same session**, after PR #49
   (`feature/BLD` → `dev`) exercised the pipeline for the first time and surfaced a duplicate-run
@@ -274,7 +293,7 @@ from the commit and deployments that actually contain what a user needs to run t
   only the `push` one publishes — a PR targeting `dev` builds and tests the merge result first,
   without creating a pre-release for a commit that was never merged; `linux-headless-release` was
   changed to `workflow_dispatch` only, trading its automatic Linux coverage for a pipeline whose
-  triggers are legible at a glance, until TASK-BLD-006 gives Linux a real place in the matrix.
+  triggers are legible at a glance. TASK-BLD-006 has since given Linux a real place in the matrix, so the trade is closed: it is now covered by five deployment workflows of its own.
 - **Requirement refs**: RQ-BLD-023, RQ-BLD-028, RQ-BLD-019, RQ-BLD-007
 - **ADR refs**: ADR-BLD-003 (DEC-BLD-016, DEC-BLD-017, DEC-BLD-024)
 - **Acceptance Criteria** (Gherkin):
@@ -283,8 +302,7 @@ from the commit and deployments that actually contain what a user needs to run t
   - **Given** a push to `main` with no tag, **When** its workflows complete, **Then** no deployment
     was published
   - **Given** `cut-deployment` run on `main`, **When** it completes, **Then** a tag equal to the
-    display version exists and the two production workflows have run (rising to three once
-    `linux-x64` is added by TASK-BLD-006)
+    display version exists and the three production workflows have run
   - **Given** a push to a `feature/*` branch, **When** its workflows complete, **Then** no release
     and no tag exist and the binaries are downloadable only from the run
   - **Given** a pull request that targets `dev`, **When** its preprod verification workflows
@@ -307,7 +325,7 @@ from the commit and deployments that actually contain what a user needs to run t
     the full form including the stage suffix — asserted in CI, because the `.rc` path of
     TASK-BLD-003 cannot be exercised on the Linux development container and "read the framework
     source" is not evidence that a binary carries what it should
-- **The ten workflows are GENERATED, not written ten times** (owner instruction, 2026-08-16:
+- **The workflows are GENERATED, not written fifteen times** (owner instruction, 2026-08-16:
   avoid duplication). `juce/tools/generate_workflows.py` holds the matrix; each output says it is
   generated and names its source. This is the pattern the repository already uses for
   `DesignTokens.hpp` and `GeneratedControlTable.inc`. `--check` fails if a file is edited by hand
@@ -332,7 +350,8 @@ from the commit and deployments that actually contain what a user needs to run t
 
 ### TASK-BLD-011: Retire the superseded RQ-BLD requirements
 - **Tier**: S
-- **Status**: Blocked — **gated on owner validation of the whole model in practice**
+- **Status**: Done (2026-08-16) — the model published real preprod deployments and a real Linux
+  build before this ran, which is what it was gated on
 - **Description**: RQ-BLD-009, 010, 013, 017 and 018 are currently kept in place with a
   SUPERSEDED note naming what replaced them and what survives. Once the new model has been built
   **and validated by the owner against a real deployment**, prune them to a short historical index.

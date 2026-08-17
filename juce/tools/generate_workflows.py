@@ -31,13 +31,18 @@ HERE = pathlib.Path(__file__).resolve().parent
 WORKFLOWS = HERE.parent.parent / ".github" / "workflows"
 
 # --- the matrix ------------------------------------------------------------
-# linux/x64 is absent on purpose: TASK-BLD-006 adds the Linux GUI build, and
-# committing five workflows that call a build which does not exist would put
-# five permanently-red checks on every pull request. Add the tuple here when
-# that build lands; nothing else in this file needs to change.
+# Adding a tuple here is the whole cost of a new platform: TASK-BLD-006 added
+# linux/x64 and changed nothing else in this file.
+#
+# The runner images are PINNED, and linux's pin is load-bearing rather than
+# tidy: glibc is backward- but not forward-compatible, so a binary linked on a
+# newer image refuses to start on an older distribution -- on the user's
+# machine, where no CI run is watching. `ubuntu-latest` would move that failure
+# out of the pipeline. [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)]
 PLATFORMS = [
     ("windows", "x64", "windows-2022"),
     ("macos", "arm64", "macos-latest"),
+    ("linux", "x64", "ubuntu-22.04"),
 ]
 
 STREAMS = {
