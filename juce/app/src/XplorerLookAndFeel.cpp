@@ -388,9 +388,12 @@ namespace xplorer::app
 
             juce::TextEditor* createEditorComponent() override
             {
-                auto* editor = juce::Label::createEditorComponent();
-                editor->setInputRestrictions(2, "0123456789");
-                return editor;
+                // NOT named `editor`: juce::Label already has a member of that
+                // name, and this translation unit is compiled under /W4 /WX by
+                // the test target (C4458). [RQ-GUI-058]
+                auto* restricted = juce::Label::createEditorComponent();
+                restricted->setInputRestrictions(2, "0123456789");
+                return restricted;
             }
         };
     }
