@@ -369,6 +369,28 @@ from the commit and deployments that actually contain what a user needs to run t
   while it is being built. Pruning it before the replacement is proven would remove the reference
   exactly when it is most needed. Deliberately outside this session's ten-task batch.
 
+### TASK-BLD-012: Disable unused JUCE audio-codec support
+- **Tier**: S
+- **Status**: Done (2026-08-17)
+- **Description**: Set `JUCE_USE_FLAC=0`, `JUCE_USE_OGGVORBIS=0` and `JUCE_USE_WINDOWS_MEDIA_FORMAT=0`
+  on `XplorerApp`, alongside the existing `JUCE_USE_CURL=0`/`JUCE_WEB_BROWSER=0`. The application
+  has no audio file I/O — verified by a full-codebase search before touching anything — so these
+  three vendored codec libraries were compiled for nothing.
+- **Requirement refs**: RQ-BLD-029
+- **ADR refs**: ADR-BLD-004 (DEC-BLD-025)
+- **Acceptance Criteria** (Gherkin):
+  - **Given** the `XplorerApp` CMake target, **When** its compile definitions are read, **Then**
+    all three flags are present
+  - **Given** the built application, **When** a MIDI port is opened, **Then** it still works —
+    confirmed these flags share no module with `JUCE_USE_WINRT_MIDI`
+- **Verification**: full-codebase grep found zero use of `AudioFormatManager`/`AudioFormatReader`/
+  any codec class before disabling anything. JUCE's own module headers (`juce_audio_formats.h`,
+  `juce_audio_processors.h`, `juce_audio_devices.h`) were read directly to confirm defaults and
+  that the plugin-hosting flags already default off and MIDI is gated by an unrelated flag in a
+  different module — not assumed from memory.
+- **Dependencies**: None
+- **Assignee**: AI
+
 ---
 
 ## Sequencing

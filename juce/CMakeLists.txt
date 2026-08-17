@@ -111,6 +111,17 @@ if(MSVC)
     target_compile_options(xpl_warnings INTERFACE /W4 /WX /permissive-)
 else()
     target_compile_options(xpl_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror)
+    # A target that links a juce::* module directly (xpl_tests_app_juce) compiles
+    # JUCE's own module sources as ITS OWN sources -- that is how JUCE's CMake
+    # support works -- so they inherit this INTERFACE library's flags too,
+    # despite the heading above. First seen on the pinned Linux GCC 11 image:
+    # GCC's -Wmaybe-uninitialized false-positives on JUCE's vendored
+    # SheenBidi.c, three levels of inlining deep, a documented GCC heuristic
+    # limitation rather than a real bug in mature, widely-used third-party C.
+    # Scoped to C only: the project itself has no .c file, so this cannot hide
+    # a genuine diagnostic in project code. [RQ-BLD-003]
+    target_compile_options(xpl_warnings INTERFACE
+        $<$<COMPILE_LANGUAGE:C>:-Wno-error=maybe-uninitialized>)
 endif()
 add_library(xpl::warnings ALIAS xpl_warnings)
 

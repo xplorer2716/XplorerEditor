@@ -197,6 +197,31 @@ category as `about.jpg` and the three `menu_*.png` already kept verbatim from th
 `ShortcutIcons.cpp` and `DialogIcons.cpp`. It would be new work to reproduce artwork the repository
 already contains, for a surface where nothing scales dynamically.
 
+### DEC-BLD-025 — Unused JUCE audio-codec support is compiled out, MIDI is unaffected
+
+`XplorerApp` sets `JUCE_USE_FLAC=0`, `JUCE_USE_OGGVORBIS=0` and `JUCE_USE_WINDOWS_MEDIA_FORMAT=0`
+(`juce/app/CMakeLists.txt`), the same pattern as the pre-existing `JUCE_USE_CURL=0`/
+`JUCE_WEB_BROWSER=0`. The application is a MIDI SysEx editor, not an audio-file tool: a
+full-codebase search found no `AudioFormatManager`, `AudioFormatReader` or codec-class usage
+anywhere, so the vendored FLAC/Ogg-Vorbis/Windows-Media codec libraries `juce_audio_formats`
+compiles in by default (FLAC and Ogg-Vorbis are **on** by default; Windows Media only on Windows)
+were pure compiled weight.
+
+**Read before deciding, not assumed.** JUCE's own module headers were checked directly:
+- `juce_audio_processors.h` shows `JUCE_PLUGINHOST_VST/VST3/AU/LADSPA/LV2/ARA` already default to
+  **off** — nothing to gain there, so this decision does not touch them.
+- `juce_audio_devices.h` shows MIDI ports are gated by `JUCE_USE_WINRT_MIDI`, a flag in a
+  *different* module with no code path through `juce_audio_formats`. Grepping JUCE's own
+  `WindowsMediaAudioFormat` source confirmed it is reached only via
+  `AudioFormatManager::registerFormat` — never from `JuceMidiBackend` or any MIDI class.
+
+**One thing this project's own module layering already ruled out:** `juce_audio_utils` itself
+(which pulls in `juce_audio_processors` and `juce_audio_formats` as hard module dependencies)
+cannot be dropped — `PianoWindow.hpp`'s on-screen keyboard uses `juce::MidiKeyboardComponent`,
+which lives there and nowhere else. JUCE has no finer linking granularity than the module, so this
+decision is scoped to what compiles *inside* the modules already linked, not to which modules are
+linked.
+
 ## Consequences
 
 **Easier.** A downloaded deployment is complete: the application starts, File > New works, and the
