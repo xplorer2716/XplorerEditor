@@ -202,3 +202,36 @@ etc.) and from build/release tooling (RQ-BLD-*), hence the RQ-GOV-* series.
     *Then* the assistant can produce an accurate plain-language summary of
     the issue without inventing information not present in the submission.
 - **Dependencies**: RQ-GOV-004, RQ-GOV-005
+
+---
+
+### RQ-GOV-009: Security policy and private vulnerability reporting
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: The repository SHALL publish a `SECURITY.md` at its root
+  stating: which version line receives security fixes, how to report a
+  vulnerability **privately** (not as a public issue), what a report should
+  contain, a best-effort response target, disclosure expectations, and the
+  scope (in/out) of what a report may cover. It SHALL point reporters at
+  GitHub's private vulnerability reporting flow rather than an email
+  address.
+- **Rationale**: ADR-GOV-001 originally deferred a security policy for
+  exactly this reason — no monitored contact email existed, and inventing
+  one would have been misleading (same reasoning as DEC-GOV-003's Code of
+  Conduct contact). GitHub's private vulnerability reporting (draft security
+  advisories) removes that blocker without fabricating a contact channel: it
+  is free, needs no separate inbox, and ties every report to the
+  maintainer's existing GitHub identity. Revisited 2026-08-17 on owner
+  request.
+- **Priority**: Must
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the repository root, *When* `SECURITY.md` is opened, *Then* it
+    names the supported version line, links GitHub's private
+    vulnerability-reporting form, and states scope, response targets and
+    disclosure expectations.
+  - *Given* `SECURITY.md`'s reporting section, *When* read, *Then* it tells
+    the reader explicitly not to open a public issue for a vulnerability.
+  - *Given* GitHub's "Community Standards" checklist for this repository,
+    *When* viewed, *Then* "Security policy" is satisfied.
+- **Dependencies**: ADR-GOV-001 (DEC-GOV-006)

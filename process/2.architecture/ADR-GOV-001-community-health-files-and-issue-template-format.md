@@ -74,6 +74,30 @@ Two forces shape the decision:
   the mechanism that makes the standard "non-negotiable" rather than one
   option among several (RQ-GOV-004/005).
 
+- **DEC-GOV-006 — `SECURITY.md`, routed through GitHub private vulnerability
+  reporting, not an email address.** Revisits the "deferred, out of scope"
+  note this ADR originally carried under Alternatives Considered — the
+  blocker was never "no policy wanted", it was "no monitored contact channel
+  to publish", and GitHub's private security-advisory flow
+  (`/security/advisories/new`) removes that blocker the same way
+  DEC-GOV-003 solved it for the Code of Conduct: point at an existing GitHub
+  identity (`@xplorer2716`) instead of inventing an inbox nobody watches.
+  `SECURITY.md` states the supported-version line (latest release only, no
+  LTS — ADR-BLD-003's rolling `dev`→`main` model has no branch that would
+  make an older line meaningful), scope (the JUCE application and its
+  `.github/` pipeline; the archived .NET codebase and third-party
+  dependencies themselves are out of scope), a best-effort response target
+  (acknowledge in 7 days, first assessment in 14 — explicitly not a
+  contractual SLA, since this is a single-volunteer project), and restates
+  in plain terms what the project already does for supply-chain trust
+  (pinned dependencies RQ-BLD-001, the generated SBOM ADR-BLD-004
+  (DEC-BLD-019), build-provenance attestations ADR-BLD-004 (DEC-BLD-026))
+  so a reporter isn't left to rediscover it. **Enabling "Private
+  vulnerability reporting" in the repository's Security settings is a
+  GitHub UI toggle, unreachable from a commit** — same category as
+  TASK-BLD-001's branch-protection settings — so `SECURITY.md`'s link only
+  works once the owner turns it on.
+
 ## Consequences
 
 - **Easier:** every issue arrives with the same required fields, cutting
@@ -102,11 +126,13 @@ Two forces shape the decision:
   violates the single-source-of-truth pattern already established for the
   git-workflow skill (RQ-PRT-004); two descriptions of the same process
   will diverge.
-- **A dedicated `SECURITY.md` with a monitored contact email:** deferred,
-  out of scope — not requested by the owner; the Code of Conduct's
-  enforcement contact uses the maintainer's existing GitHub handle instead
-  of an invented address. Revisit as a follow-up if a real security-contact
-  need arises.
+- **A dedicated `SECURITY.md` with a monitored contact email:** originally
+  deferred here as out of scope — not requested by the owner, and the Code
+  of Conduct's enforcement contact already used the maintainer's GitHub
+  handle rather than an invented address. Revisited 2026-08-17 on owner
+  request; see DEC-GOV-006, which resolves the same objection (no
+  fabricated inbox) through GitHub's private vulnerability reporting
+  instead of email.
 
 ## Diagram
 
