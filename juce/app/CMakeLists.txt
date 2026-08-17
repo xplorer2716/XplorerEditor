@@ -117,6 +117,15 @@ target_include_directories(XplorerApp PRIVATE src)
 target_compile_definitions(XplorerApp PRIVATE
     JUCE_USE_CURL=0
     JUCE_WEB_BROWSER=0
+    # The application performs no audio file I/O -- no AudioFormatManager,
+    # no AudioFormatReader anywhere in the codebase -- so the vendored FLAC,
+    # Ogg-Vorbis and Windows Media codec libraries juce_audio_formats compiles
+    # in by default are dead weight. Unrelated to MIDI: ports go through
+    # juce_audio_devices' own JUCE_USE_WINRT_MIDI, a different module these
+    # flags never touch. [RQ-BLD-029, ADR-BLD-004 (DEC-BLD-025)]
+    JUCE_USE_FLAC=0
+    JUCE_USE_OGGVORBIS=0
+    JUCE_USE_WINDOWS_MEDIA_FORMAT=0
     JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:XplorerApp,JUCE_PRODUCT_NAME>"
     JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:XplorerApp,JUCE_VERSION>"
     # What the About box shows. JUCE_APPLICATION_VERSION_STRING above is the
