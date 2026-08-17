@@ -97,6 +97,11 @@ if(XPL_BUILD_APP)
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
         app/SbomReaderTests.cpp
+        # The knob LED colour is retuned in place for live preview, so the
+        # values derived from it at construction can now go stale where a
+        # rebuild made that impossible. [RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]
+        app/XplorerLookAndFeelTests.cpp
+        ../app/src/XplorerLookAndFeel.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
         ../app/src/ShortcutIcons.cpp

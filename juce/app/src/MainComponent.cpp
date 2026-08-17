@@ -1017,14 +1017,12 @@ namespace xplorer::app
 
     void MainComponent::updateLedColour(int argb)
     {
-        // Rebuild the skin with the new LED colour and repaint the tree; the
-        // block palette is carried across the rebuild so a customised palette
-        // survives an LED-colour change. [RQ-GUI-031, RQ-DSN-095, ADR-JUC-020]
-        const auto palette = _lookAndFeel->blockPalette();
-        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-        _lookAndFeel = std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(argb)));
-        _lookAndFeel->setBlockPalette(palette);
-        juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
+        // Live preview / accept / cancel-restore all land here, exactly as they
+        // do for the block palette above: retune the colour in place and
+        // repaint the tree — no LookAndFeel rebuild, so a customised block
+        // palette survives with nothing to carry across.
+        // [RQ-GUI-031, RQ-GUI-073, RQ-DSN-095, ADR-JUC-011, ADR-JUC-020 (DEC-JUC-113)]
+        _lookAndFeel->setLedColour(juce::Colour(static_cast<juce::uint32>(argb)));
         if (auto* top = getTopLevelComponent())
         {
             top->sendLookAndFeelChange();
