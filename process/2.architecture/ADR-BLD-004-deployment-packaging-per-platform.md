@@ -222,6 +222,40 @@ which lives there and nowhere else. JUCE has no finer linking granularity than t
 decision is scoped to what compiles *inside* the modules already linked, not to which modules are
 linked.
 
+### DEC-BLD-026 — Published archives carry a signed build-provenance attestation
+
+Every production and pre-production workflow adds one step, right after `package-deployment` and
+before `publish-deployment`:
+
+```yaml
+- if: github.event_name == 'push'
+  uses: actions/attest-build-provenance@v2
+  with:
+    subject-path: ${{ steps.package.outputs.archive }}
+```
+
+`id-token: write` and `attestations: write` join the existing `contents: write` on the same nine
+workflows (three `prod`, six `preprod`) — never on canary, which publishes no deployment
+(RQ-BLD-019) and so has nothing durable worth attesting. `juce/tools/generate_workflows.py` is
+where both the step and the permission lines live, gated on `stage != "canary"`, so a future
+platform added to the matrix picks this up for free.
+
+**What this buys, and what it does not.** Sigstore/OIDC signs a statement — free, no certificate —
+that the file at `subject-path` was built by this exact workflow run, from this exact commit, in
+this exact repository. `gh attestation verify` checks it. **It is not code signing**: Windows
+SmartScreen and macOS Gatekeeper read a different, paid credential and will keep warning the user
+exactly as before (DEC-BLD-022). The two are complementary, not substitutes — DEC-BLD-022 explains
+what the user sees; this decision gives a technical reviewer something to check instead of trusting
+the download blindly.
+
+**Version pinned to `@v2`, the same convention as `actions/checkout@v4` and
+`actions/upload-artifact@v4` already in these workflows** — a floating major tag, not a commit SHA,
+which is the level of pinning this project already applies to third-party GitHub Actions (RQ-BLD-001
+pins the JUCE *dependency*, not the Actions runtime). Checked before choosing it: from version 4,
+`actions/attest-build-provenance` becomes a thin wrapper over the more general `actions/attest`,
+which needs an explicit predicate type; `v2` is the last major built specifically for build
+provenance, with no extra input required.
+
 ## Consequences
 
 **Easier.** A downloaded deployment is complete: the application starts, File > New works, and the

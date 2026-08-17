@@ -391,6 +391,32 @@ from the commit and deployments that actually contain what a user needs to run t
 - **Dependencies**: None
 - **Assignee**: AI
 
+### TASK-BLD-013: Sign published archives with a build-provenance attestation
+- **Tier**: M
+- **Status**: Done (2026-08-17)
+- **Description**: Add `actions/attest-build-provenance@v2` to the generated `prod`/`preprod`
+  workflows (not canary), attesting the packaged archive right after `package-deployment`, gated
+  `github.event_name == 'push'` like packaging and publishing already are. `id-token: write` and
+  `attestations: write` join the existing `contents: write` on the same nine workflows.
+- **Requirement refs**: RQ-BLD-030
+- **ADR refs**: ADR-BLD-004 (DEC-BLD-026)
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a production or pre-production workflow file, **When** its permissions are read,
+    **Then** `id-token: write` and `attestations: write` are present
+  - **Given** a canary workflow file, **When** it is read, **Then** neither the extra permissions
+    nor an attestation step appear
+  - **Given** the generator, **When** `--check` is run after regenerating, **Then** all fifteen
+    workflows report up to date
+- **Verification**: `python3 juce/tools/generate_workflows.py` regenerated exactly the nine
+  `prod`/`preprod` files (three `prod`, six `preprod`); `--check` reports all fifteen up to date
+  afterwards, confirming the generator is idempotent. Every generated workflow parses as valid
+  YAML. Canary files diffed clean — zero byte changed. The action's own permission and usage
+  requirements were read from its README (pinned major, `v2`) rather than assumed, including the
+  note that version 4 turns it into a thin wrapper over `actions/attest`, which is why `v2` was
+  chosen over chasing the newest tag.
+- **Dependencies**: None
+- **Assignee**: AI
+
 ---
 
 ## Sequencing
