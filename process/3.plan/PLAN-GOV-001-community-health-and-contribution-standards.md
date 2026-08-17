@@ -156,6 +156,35 @@ runs last.
 
 ---
 
+### TASK-GOV-007: Author `SECURITY.md`
+- **Tier**: M
+- **Status**: Done
+- **Description**: Add `SECURITY.md` at the repository root: supported
+  version line (latest release only), a link to GitHub's private
+  vulnerability-reporting form as the sole reporting channel, what a report
+  should contain, best-effort response targets, disclosure expectations,
+  scope (in/out), and a transparency section restating the project's
+  existing supply-chain practices (pinned dependencies, generated SBOM,
+  build-provenance attestations) so a reporter isn't left to rediscover
+  them (DEC-GOV-006).
+- **Requirement refs**: RQ-GOV-009
+- **ADR refs**: ADR-GOV-001 (DEC-GOV-006)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the repository root, *When* `SECURITY.md` is opened, *Then* it
+    names the supported version line, links GitHub's private
+    vulnerability-reporting form, and states scope, response targets and
+    disclosure expectations.
+  - *Given* `SECURITY.md`'s reporting section, *When* read, *Then* it tells
+    the reader explicitly not to open a public issue for a vulnerability.
+- **Owner action required, unreachable from a commit**: "Private
+  vulnerability reporting" must be turned on in the repository's Settings →
+  Security page for the linked form to actually appear — same category as
+  TASK-BLD-001's branch-protection settings.
+- **Dependencies**: None
+- **Assignee**: AI
+
+---
+
 ## Definition of Ready
 
 - [x] Each task has a description, Gherkin acceptance criteria and a tier.
@@ -163,3 +192,5 @@ runs last.
 - [x] **Owner approval** — granted 2026-08-05 (RQ-GOV-004 amended to drop the
       .NET dropdown per owner instruction before implementation started).
 - [x] All six tasks Done.
+- [x] TASK-GOV-007 added 2026-08-17 on owner request (SECURITY.md);
+      Done pending the owner's own Settings → Security toggle.

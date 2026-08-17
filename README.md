@@ -73,6 +73,8 @@ This port also aims to demonstrate the integration of AI software development ag
   covers the workflow and, if you use an AI coding agent (GitHub Copilot,
   Claude Code, ...), the mandatory AGNOS process.
 - This project follows a [Code of Conduct](CODE_OF_CONDUCT.md).
+- Found a security vulnerability? **Don't open a public issue** — see
+  [SECURITY.md](SECURITY.md) for private reporting.
 
 ## Credits
 
