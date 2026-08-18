@@ -53,6 +53,7 @@ namespace xplorer::app
             }
             row.source->setBounds(spec->x, spec->y, spec->width, spec->height);
             row.source->onChange = [this, entryNumber] { onSourceChanged(entryNumber); };
+            row.source->setOnAboutToShowPopup([this, entryNumber] { onSourcePopupAboutToShow(entryNumber); });
             parent.addAndMakeVisible(*row.source);
         }
 
@@ -129,6 +130,11 @@ namespace xplorer::app
         applyBlockIdentity(entryNumber);
         _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = static_cast<int>(entry.destination);
         _refreshing = false;
+        // Whatever just changed for this entry can change every OTHER row's
+        // combo availability too (shared destinations). Runs once per
+        // refreshRow call, including the 20 calls refreshAll makes -- cheap
+        // (small lists, not a render loop). [ADR-JUC-036 (DEC-JUC-122)]
+        refreshComboAvailability();
     }
 
     void ModMatrixPanel::refreshAll()
@@ -159,6 +165,87 @@ namespace xplorer::app
         if (row.destination != nullptr)
         {
             row.destination->setBlockId(modulationDestinationBlock(entry.destination));
+        }
+    }
+
+    void ModMatrixPanel::refreshDestinationComboItems(int entryNumber)
+    {
+        auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
+        const auto* spec = specFor("MOD_DEST_" + std::to_string(entryNumber));
+        if (row.destination == nullptr || spec == nullptr)
+        {
+            return;
+        }
+        const auto labels = comboLabelsForControl(spec->tag);
+        const auto available = _controller.getAvailableModulationDestinationsForEntry(entryNumber);
+        // getAvailableModulationDestinationsForEntry always includes this
+        // entry's OWN current destination even when it is itself at the cap
+        // (that is what "available" means for the row's own assignment), so
+        // the reselect below always finds a match -- no reference-style
+        // fall-back-to-first-item branch is reachable here.
+        const int currentValue = comboValue(*row.destination);
+        row.destination->clear(juce::dontSendNotification);
+        for (const auto destination : available)
+        {
+            const auto index = static_cast<std::size_t>(destination);
+            if (index < labels.size())
+            {
+                row.destination->addItem(labels[index], static_cast<int>(index) + 1);
+            }
+        }
+        row.destination->setSelectedId(currentValue + 1, juce::dontSendNotification);
+    }
+
+    void ModMatrixPanel::refreshSourceComboItems(int entryNumber)
+    {
+        auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
+        const auto* spec = specFor("MOD_SRC_" + std::to_string(entryNumber));
+        if (row.source == nullptr || spec == nullptr)
+        {
+            return;
+        }
+        const auto labels = comboLabelsForControl(spec->tag);
+        const int currentValue = comboValue(*row.source);
+        row.source->clear(juce::dontSendNotification);
+        if (_controller.sourceAvailabilityForEntry(entryNumber))
+        {
+            for (std::size_t i = 0; i < labels.size(); ++i)
+            {
+                row.source->addItem(labels[i], static_cast<int>(i) + 1);
+            }
+        }
+        else
+        {
+            // Destination at the RQ-GUI-016 6-source cap and this row
+            // contributes no source: only NONE is selectable (reference
+            // OnModSourceDropDown "else" branch) -- structurally, not just
+            // by convention, so neither a click nor an arrow key can reach
+            // anything else. [ADR-JUC-036 (DEC-JUC-122)]
+            const auto noneIndex = static_cast<std::size_t>(model::EnumModulationSourcesModMatrix::NONE);
+            if (noneIndex < labels.size())
+            {
+                row.source->addItem(labels[noneIndex], static_cast<int>(noneIndex) + 1);
+            }
+        }
+        // sourceAvailabilityForEntry is false only when entry.source == NONE
+        // already, so currentValue is always the item just added above.
+        row.source->setSelectedId(currentValue + 1, juce::dontSendNotification);
+    }
+
+    void ModMatrixPanel::refreshComboAvailability()
+    {
+        for (int entryNumber = 1; entryNumber <= 20; ++entryNumber)
+        {
+            refreshDestinationComboItems(entryNumber);
+            refreshSourceComboItems(entryNumber);
+        }
+    }
+
+    void ModMatrixPanel::onSourcePopupAboutToShow(int entryNumber)
+    {
+        if (!_controller.sourceAvailabilityForEntry(entryNumber) && _maxSourceReachedHandler)
+        {
+            _maxSourceReachedHandler(entryNumber);
         }
     }
 
@@ -221,6 +308,7 @@ namespace xplorer::app
                                            row.quantize->getToggleState() ? 1 : 0,
                                            comboValue(*row.destination), entryNumber);
         applyBlockIdentity(entryNumber);
+        refreshComboAvailability(); // [ADR-JUC-036 (DEC-JUC-122)]
         if (_editHandler)
         {
             _editHandler(entryNumber);
@@ -262,6 +350,7 @@ namespace xplorer::app
                                                 oldDestination, newDestination, entryNumber);
         _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = newDestination;
         applyBlockIdentity(entryNumber);
+        refreshComboAvailability(); // [ADR-JUC-036 (DEC-JUC-122)]
         if (_editHandler)
         {
             _editHandler(entryNumber);

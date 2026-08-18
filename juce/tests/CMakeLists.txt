@@ -109,6 +109,11 @@ if(XPL_BUILD_APP)
         # amount knob. [RQ-GUI-034, PLAN-GUI-009 (TASK-GUI-036)]
         app/NumericEntryKnobTests.cpp
         ../app/src/NumericEntryKnob.cpp
+        # Combo item lists must stay within the RQ-GUI-016 6-source cap, which
+        # can only be pinned against real juce::ComboBox instances and the
+        # control table their bounds come from. [RQ-GUI-016, ADR-JUC-036]
+        app/ModMatrixPanelTests.cpp
+        ../app/src/ModMatrixPanel.cpp
         # The knob LED colour is retuned in place for live preview, so the
         # values derived from it at construction can now go stale where a
         # rebuild made that impossible. [RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]

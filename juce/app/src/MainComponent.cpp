@@ -159,6 +159,14 @@ namespace xplorer::app
                 _vfd->showModulationEntry(_controller->getModulationEntryByNumber(entryNumber),
                                           false); // [RQ-GUI-020]
             });
+        _matrixPanel->setMaxSourceReachedHandler(
+            [this](int entryNumber)
+            {
+                // showModulationEntry already carried this exact notice; only
+                // the true-passing trigger was missing. [RQ-GUI-020,
+                // ADR-JUC-036 (DEC-JUC-123)]
+                _vfd->showModulationEntry(_controller->getModulationEntryByNumber(entryNumber), true);
+            });
 
         // Modulation-matrix hover highlight: the colour is derived from the
         // LookAndFeel (single source of truth, ADR-JUC-011); knobs and page-family

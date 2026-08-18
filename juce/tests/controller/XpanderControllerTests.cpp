@@ -3,6 +3,7 @@
 #include "xplorer/controller/XpanderController.hpp"
 #include "xpl/midi/MockMidiBackend.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -402,6 +403,88 @@ SCENARIO("Synth utilities emit the reference byte frames", "[RQ-CTL-060][RQ-CTL-
                 CHECK(m12Frames[2].size() == 5 + 80 + 1);
                 CHECK(m12Frames[2][5] == 'X'); // "XPLORER TEST 1.0"
             }
+        }
+    }
+}
+
+SCENARIO("Modulation-matrix source/destination availability follows the 6-source cap",
+         "[RQ-GUI-016][RQ-CTL-030]")
+{
+    GIVEN("six entries already sourced to the same destination")
+    {
+        Fixture f;
+        for (int entryNumber = 1; entryNumber <= 6; ++entryNumber)
+        {
+            f.controller.changeModulationSource(
+                static_cast<int>(model::EnumModulationSourcesModMatrix::LFO1), 10, 0,
+                static_cast<int>(model::EnumModulationDestinations::VCF_FRQ), entryNumber);
+        }
+        // Entry 7 already targets the now-saturated destination but has no
+        // source of its own -- the real shape of "this row can't add a 7th"
+        // (sourceAvailabilityForEntry reads the ROW'S OWN destination, not
+        // just "is anything, anywhere, saturated").
+        f.controller.changeModulationDestination(
+            static_cast<int>(model::EnumModulationSourcesModMatrix::NONE), 0, 0,
+            static_cast<int>(model::EnumModulationDestinations::VCO1_FRQ),
+            static_cast<int>(model::EnumModulationDestinations::VCF_FRQ), 7);
+        // Entry 8 stays untouched (default destination, no source): the
+        // control for "excluded from a row that is NOT itself pointed at
+        // the saturated destination".
+        REQUIRE(f.controller.getModulationEntryByNumber(8).source
+                == model::EnumModulationSourcesModMatrix::NONE);
+
+        THEN("the cap is reported reached for that destination")
+        {
+            CHECK(f.controller.isMaxSourceCountForDestinationReached(model::EnumModulationDestinations::VCF_FRQ));
+        }
+
+        THEN("entry 7, pointed at the saturated destination with no source of its own, cannot pick one")
+        {
+            CHECK_FALSE(f.controller.sourceAvailabilityForEntry(7));
+        }
+
+        THEN("one of the six entries already contributing a source remains editable")
+        {
+            // Not adding a 7th -- changing which of the 6 this row uses.
+            CHECK(f.controller.sourceAvailabilityForEntry(1));
+        }
+
+        THEN("the saturated destination is absent from entry 8's available list")
+        {
+            const auto available = f.controller.getAvailableModulationDestinationsForEntry(8);
+            CHECK(std::find(available.begin(), available.end(),
+                            model::EnumModulationDestinations::VCF_FRQ)
+                  == available.end());
+        }
+
+        THEN("the saturated destination stays offered to entry 7, which is already pointed at it")
+        {
+            const auto available = f.controller.getAvailableModulationDestinationsForEntry(7);
+            CHECK(std::find(available.begin(), available.end(),
+                            model::EnumModulationDestinations::VCF_FRQ)
+                  != available.end());
+        }
+
+        THEN("the saturated destination stays offered to one of the six entries that already targets it")
+        {
+            const auto available = f.controller.getAvailableModulationDestinationsForEntry(1);
+            CHECK(std::find(available.begin(), available.end(),
+                            model::EnumModulationDestinations::VCF_FRQ)
+                  != available.end());
+        }
+    }
+
+    GIVEN("no destination anywhere near the cap")
+    {
+        Fixture f;
+
+        THEN("every entry's source is available and every destination is offered")
+        {
+            CHECK(f.controller.sourceAvailabilityForEntry(1));
+            const auto available = f.controller.getAvailableModulationDestinationsForEntry(1);
+            CHECK(std::find(available.begin(), available.end(),
+                            model::EnumModulationDestinations::VCF_FRQ)
+                  != available.end());
         }
     }
 }

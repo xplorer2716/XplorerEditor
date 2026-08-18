@@ -1,8 +1,10 @@
 #pragma once
 
 // A modulation-matrix source/destination combo box: a HoverRepaintingComboBox
-// (so it inherits the issue-#21 hover-repaint fix) that additionally carries the
-// two pieces of state XplorerLookAndFeel::drawComboBox needs to paint it —
+// (so it inherits the issue-#21 hover-repaint fix) that additionally carries
+// the two pieces of state XplorerLookAndFeel::drawComboBox needs to paint it,
+// plus an "about to show its popup" hook used only by the source combo
+// (ADR-JUC-036) —
 //
 //   * blockId     : WHICH functional block its SELECTED VALUE belongs to, or
 //                   nullopt when that value has no block (VEL, NONE, KBD, the
@@ -28,7 +30,9 @@
 
 #include "xplorer/app/BlockIdentity.hpp"
 
+#include <functional>
 #include <optional>
+#include <utility>
 
 namespace xplorer::app
 {
@@ -36,6 +40,26 @@ namespace xplorer::app
     {
     public:
         using HoverRepaintingComboBox::HoverRepaintingComboBox;
+
+        // The item list itself is kept correct continuously (ModMatrixPanel::
+        // refreshComboAvailability, ADR-JUC-036 DEC-JUC-122), so this hook is
+        // NOT needed for filtering -- only for the source combo's "MAX SRC
+        // COUNT REACHED FOR" VFD notice, which the reference ties to the
+        // dropdown-open moment (WinForms DropDown). showPopup() is JUCE's
+        // exact equivalent. [ADR-JUC-036 (DEC-JUC-123)]
+        void showPopup() override
+        {
+            if (_onAboutToShowPopup)
+            {
+                _onAboutToShowPopup();
+            }
+            HoverRepaintingComboBox::showPopup();
+        }
+
+        void setOnAboutToShowPopup(std::function<void()> callback)
+        {
+            _onAboutToShowPopup = std::move(callback);
+        }
 
         /// Sets which block the selected value belongs to (nullopt = no block).
         /// Called on every value change, not only at construction: the tint
@@ -69,5 +93,6 @@ namespace xplorer::app
     private:
         std::optional<BlockId> _blockId;
         bool _highlighted = false;
+        std::function<void()> _onAboutToShowPopup;
     };
 }
