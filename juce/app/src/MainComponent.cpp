@@ -415,7 +415,17 @@ namespace xplorer::app
         };
         _shortcutActions["btPatchSave"] = [this]
         {
-            _fileChooser = std::make_unique<juce::FileChooser>("Save patch", juce::File(), "*.syx");
+            // Default the file name to the tone's own name, sanitized and
+            // made unique the same way RQ-CTL-003's bank extraction already
+            // does — one sanitizer, not a second implementation of the same
+            // rule. [RQ-GUI-077]
+            const auto documentsDirectory =
+                juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+            const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
+                _controller->toneName(), midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+                documentsDirectory.getFullPathName().toStdString());
+            _fileChooser = std::make_unique<juce::FileChooser>(
+                "Save patch", documentsDirectory.getChildFile(defaultFileName), "*.syx");
             _fileChooser->launchAsync(
                 juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
                 [this](const juce::FileChooser& chooser)
