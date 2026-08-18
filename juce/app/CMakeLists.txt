@@ -36,6 +36,7 @@ target_sources(XplorerApp PRIVATE
     src/ShortcutIcons.cpp
     src/DialogIcons.cpp
     src/BlockPalette.cpp
+    src/NumericEntryKnob.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
     src/ModMatrixComboBox.hpp
@@ -48,8 +49,28 @@ target_sources(XplorerApp PRIVATE
     src/SettingsDialog.cpp
     src/ProgressWindow.cpp
     src/PianoWindow.cpp
+    src/PianoLabelledKeyboardComponent.cpp
     src/XplorerLookAndFeel.cpp
     src/JuceEventDispatcher.cpp)
+
+# Piano-window keyboard-layout query (DEC-JUC-116): one native implementation
+# per OS, calling real system APIs — deliberately NOT part of xpl_app_core, so
+# the headless configuration (-DXPL_BUILD_APP=OFF, RQ-BLD-025) never needs
+# libX11-dev/Carbon.framework/user32 just to build the non-UI layers.
+# [RQ-GUI-074, ADR-JUC-035]
+if(WIN32)
+    target_sources(XplorerApp PRIVATE src/PianoKeyboardLayoutQuery_windows.cpp)
+elseif(APPLE)
+    target_sources(XplorerApp PRIVATE src/PianoKeyboardLayoutQuery_mac.cpp)
+    target_link_libraries(XplorerApp PRIVATE "-framework Carbon")
+else()
+    target_sources(XplorerApp PRIVATE src/PianoKeyboardLayoutQuery_linux.cpp)
+    # JUCE's own Linux backend dlopen()s X11 at runtime rather than linking it,
+    # so it is not transitively available here — link it explicitly for this
+    # one file's direct Xlib/Xkb calls.
+    find_package(X11 REQUIRED)
+    target_link_libraries(XplorerApp PRIVATE X11::X11)
+endif()
 
 # UI assets (button images) embedded as binary data. The main background and
 # the VFD glyphs are both drawn vectorially now, so neither is embedded.

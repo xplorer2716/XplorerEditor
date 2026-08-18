@@ -3,9 +3,9 @@
 // Tabbed settings dialog (MIDI / User interface / Randomizer), port of the
 // reference SettingsForm hosting MidiPage, UserInterfacePage and
 // RandomizerPage. On OK it persists every page and re-applies the MIDI
-// settings; a changed knob LED colour is signalled back so the skin updates
-// live, and block-colour edits preview live through the palette callback.
-// [RQ-GUI-025, RQ-GUI-046]
+// settings; both colour groups of the User interface page — the knob LED
+// colour and the eight block colours — preview live through their callbacks.
+// [RQ-GUI-025, RQ-GUI-046, RQ-GUI-073]
 
 #include "BlockPalette.hpp"
 
@@ -17,13 +17,12 @@
 
 namespace xplorer::app
 {
-    /// Opens the modal settings dialog. `onLedColourChanged` is invoked (with
-    /// the new 32-bit ARGB value) when the accepted UI page changed the knob
-    /// LED colour, so the caller can refresh the LookAndFeel.
-    /// `onBlockPaletteChanged` is invoked with the palette to make live: on
-    /// every block-colour edit (preview), on accept (final resolved palette)
-    /// and on a non-accept close (snapshot restore). [ADR-JUC-020
-    /// (DEC-JUC-038)]
+    /// Opens the modal settings dialog. Both callbacks are invoked with the
+    /// value to make live, on the same three occasions: on every edit of their
+    /// control (preview), on accept (final accepted value) and on a non-accept
+    /// close (snapshot restore). `onLedColourChanged` carries a 32-bit ARGB
+    /// value, `onBlockPaletteChanged` the resolved palette.
+    /// [ADR-JUC-020 (DEC-JUC-038, DEC-JUC-113)]
     void showSettingsDialog(controller::XpanderController& controller,
                             settings::ISettingsService& settingsService,
                             xpl::midi::MidiBackend& backend,

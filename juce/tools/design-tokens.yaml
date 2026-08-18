@@ -44,6 +44,7 @@ tiers:
     black:     { kind: colour, hex: "000000", note: "juce::Colours::black" }
     grey:      { kind: colour, hex: "808080", note: "juce::Colours::grey" }
     lightGrey: { kind: colour, hex: "D3D3D3", note: "juce::Colours::lightgrey" }
+    darkGrey:  { kind: colour, hex: "555555", note: "juce::Colours::darkgrey" }
     linkBlue:  { kind: colour, hex: "0000FF", note: "juce::Colours::blue — hyperlink text on a light surface" }
 
     # ---- MIDI-activity LED hues (MainComponent LedPanelComponent) ----
@@ -313,6 +314,7 @@ tiers:
     textWave:     { alias: global.fs115, note: "TRIANGLE/SAWTOOTH/PULSE" }
     textSmall:    { alias: global.fs11,  note: "IN/OUT labels" }
     textDense:    { alias: global.fs9,   note: "DESTINATION/TRIGGER/NOISE, combo floor" }
+    pianoKeyLabelSize: { alias: global.fs9, note: "piano-window key-mapping character, same size class as textDense — small text on a small control. RQ-DSN-102, RQ-GUI-075" }
 
     # ---- geometry roles ----
     radiusControl:      { alias: global.radius20, note: "tick box outer, block corner" }
@@ -350,6 +352,14 @@ tiers:
     comboArrowZone:   { alias: global.comboArrowZone,   note: "combo arrow zone, RQ-GUI-047" }
     comboLabelBorder: { alias: global.comboLabelBorder, note: "combo label border, RQ-GUI-047" }
     textHint:              { alias: global.caption, note: "muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046" }
+    # Split from a single pianoKeyLabel value, 2026-08-18, owner report: mid
+    # grey (global.grey) read as too low-contrast on a WHITE key; the single
+    # value was the deliberate RQ-DSN-102 default and this is the escape
+    # hatch it reserved for exactly this case. Black keys were not reported
+    # as a problem, so pianoKeyLabelOnBlack keeps the original value
+    # unchanged. [RQ-DSN-102, RQ-GUI-075]
+    pianoKeyLabelOnWhite: { alias: global.darkGrey, note: "piano-window key-mapping character on a white key — darker than the black-key value for contrast against the light key" }
+    pianoKeyLabelOnBlack: { alias: global.white, note: "piano-window key-mapping character on a black key — owner report 2026-08-18: the mid grey was unreadable against the near-black key; white matches the white-key surface colour for maximum contrast on its opposite" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 

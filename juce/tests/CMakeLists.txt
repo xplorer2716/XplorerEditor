@@ -70,7 +70,14 @@ add_executable(xpl_tests_app
     app/ComboBoxSizingTests.cpp
     app/ModulationHighlightTests.cpp
     app/SegmentFontTests.cpp
-    app/WindowGeometryTests.cpp)
+    app/WindowGeometryTests.cpp
+    # Layout-independent piano key mapping: OS-free, JUCE-free, so it belongs
+    # in the headless target and runs even with -DXPL_BUILD_APP=OFF.
+    # [RQ-GUI-074, RQ-BLD-025]
+    app/PianoKeyMappingTests.cpp
+    # Key-label decision logic, measurer injected (ComboBoxSizing's own
+    # pattern) so it stays JUCE-free too. [RQ-GUI-075, RQ-BLD-025]
+    app/PianoKeyLabelPlanTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)
@@ -97,6 +104,21 @@ if(XPL_BUILD_APP)
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
         app/SbomReaderTests.cpp
+        # The double-click -> inline numeric entry now lives on
+        # NumericEntryKnob, shared by BoundKnob and the modulation-matrix
+        # amount knob. [RQ-GUI-034, PLAN-GUI-009 (TASK-GUI-036)]
+        app/NumericEntryKnobTests.cpp
+        ../app/src/NumericEntryKnob.cpp
+        # Combo item lists must stay within the RQ-GUI-016 6-source cap, which
+        # can only be pinned against real juce::ComboBox instances and the
+        # control table their bounds come from. [RQ-GUI-016, ADR-JUC-036]
+        app/ModMatrixPanelTests.cpp
+        ../app/src/ModMatrixPanel.cpp
+        # The knob LED colour is retuned in place for live preview, so the
+        # values derived from it at construction can now go stale where a
+        # rebuild made that impossible. [RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]
+        app/XplorerLookAndFeelTests.cpp
+        ../app/src/XplorerLookAndFeel.cpp
         ../app/src/VfdSegmentRenderer.cpp
         ../app/src/BackgroundRenderer.cpp
         ../app/src/ShortcutIcons.cpp
