@@ -73,6 +73,17 @@ namespace xplorer::app
                 .getChildFile("Xplorer")
                 .getFullPathName();
         }
+
+        // Name and version from the build, not from a literal: the same
+        // string the About dialog shows (RQ-BLD-015, RQ-BLD-016), now also
+        // the controller's own product-name-and-version (RQ-CTL-061) instead
+        // of the constructor's placeholder default — a second call site with
+        // its own literal would drift from the About box the moment either
+        // changed. [RQ-CTL-061]
+        std::string productNameAndVersion()
+        {
+            return std::string(JUCE_APPLICATION_NAME_STRING) + " " + XPL_VERSION_FULL_STRING;
+        }
     }
 
     MainComponent::MainComponent()
@@ -81,7 +92,7 @@ namespace xplorer::app
         _settingsService = std::make_unique<settings::XmlSettingsService>(
             settingsDirectory().toStdString());
         _controller = std::make_unique<controller::XpanderController>(
-            _backend, *_settingsService, _dispatcher, "XPLORER");
+            _backend, *_settingsService, _dispatcher, productNameAndVersion());
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);
         _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
             juce::Colour(static_cast<juce::uint32>(
@@ -419,10 +430,17 @@ namespace xplorer::app
             // made unique the same way RQ-CTL-003's bank extraction already
             // does — one sanitizer, not a second implementation of the same
             // rule. [RQ-GUI-077]
+            //
+            // Trailing spaces are trimmed first: the model pads tone names to
+            // a fixed width with spaces (XPANDER's own on-synth storage
+            // format), which are meaningless trailing characters in a file
+            // name and not caught by the sanitizer (space is a legal file-name
+            // character everywhere else in a name).
+            const auto trimmedToneName = juce::String(_controller->toneName()).trimEnd().toStdString();
             const auto documentsDirectory =
                 juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
             const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
-                _controller->toneName(), midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+                trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
                 documentsDirectory.getFullPathName().toStdString());
             _fileChooser = std::make_unique<juce::FileChooser>(
                 "Save patch", documentsDirectory.getChildFile(defaultFileName), "*.syx");
@@ -973,8 +991,7 @@ namespace xplorer::app
                 // Name and version from the build, not from a literal: this
                 // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
                 // root. [RQ-BLD-015, RQ-BLD-016]
-                showAboutDialog(std::string(JUCE_APPLICATION_NAME_STRING) + " "
-                                + XPL_VERSION_FULL_STRING);
+                showAboutDialog(productNameAndVersion());
                 // Reference AboutForm.OnLoad() greets the synth the moment the
                 // About window is shown (XpanderController.cs:756, called from
                 // AboutForm.cs:90); the JUCE port already carries a faithful

@@ -406,6 +406,46 @@ SCENARIO("Synth utilities emit the reference byte frames", "[RQ-CTL-060][RQ-CTL-
     }
 }
 
+SCENARIO("A greeting product name/version too long for the display line is truncated at its stream suffix",
+         "[RQ-CTL-061]")
+{
+    GIVEN("a controller whose product name/version does not fit the 40-character greeting line, "
+          "but does once its \"-<stream>\" suffix is dropped")
+    {
+        MockMidiBackend backend;
+        settings::InMemorySettingsService settingsService;
+        // 13 chars before '-', 31 after: the whole string is 44 chars (over
+        // the line's 40-char budget), the part before '-' alone is not.
+        const std::string longNameWithSuffix = "Xplorer 1.2.3-" + std::string(30, 'X');
+        XpanderController controller{backend, settingsService, nullptr, longNameWithSuffix};
+        backend.addOutputDevice(SYNTH_OUT);
+        REQUIRE(controller.setSynthOutputDevice(SYNTH_OUT));
+
+        WHEN("the synth is greeted")
+        {
+            controller.sendGreetingsToSynth();
+
+            THEN("line 1 is truncated at the suffix and padded to the line width, not overflowing into line 2")
+            {
+                const auto sent = backend.sentMessages(SYNTH_OUT);
+                REQUIRE(sent.size() == 3); // display off, on, text
+                const auto bytes = sent[2].toBytes();
+                constexpr std::size_t TEXT_START = 5;
+                constexpr std::size_t PADDING_LENGTH = 40;
+                const std::string line1(bytes.begin() + TEXT_START,
+                                        bytes.begin() + TEXT_START + PADDING_LENGTH);
+                std::string expectedLine1 = "XPLORER 1.2.3";
+                expectedLine1.resize(PADDING_LENGTH, ' ');
+                CHECK(line1 == expectedLine1);
+
+                const std::string line2(bytes.begin() + TEXT_START + PADDING_LENGTH,
+                                        bytes.begin() + TEXT_START + 2 * PADDING_LENGTH);
+                CHECK(line2.rfind("GITHUB.COM", 0) == 0); // untouched by the overflow
+            }
+        }
+    }
+}
+
 SCENARIO("Restore all-data dump paces frames and reports progression", "[RQ-CTL-005]")
 {
     GIVEN("a .syx file with two frames (the fixture)")

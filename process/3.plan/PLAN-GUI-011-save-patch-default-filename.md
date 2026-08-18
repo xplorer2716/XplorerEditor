@@ -25,11 +25,12 @@ second implementation of the same rule.
 - **Status**: Done (2026-08-18)
 - **Description**: In `MainComponent`'s `btPatchSave` action (shared by the
   File → Save menu item and the shortcut button, RQ-GUI-021), compute a
-  sanitized, unique default file name from `_controller->xpanderTone().
-  toneName()` via `makeUniqueFilenameFromString`, checked against the user's
-  Documents directory (the dialog's own starting directory, chosen because
-  no directory is tracked anywhere else in this codebase), and pass it as
-  the `FileChooser`'s initial file so its name field is pre-filled.
+  sanitized, unique default file name from `_controller->toneName()` (the
+  public `AbstractController` accessor — `xpanderTone()` is private) via
+  `makeUniqueFilenameFromString`, checked against the user's Documents
+  directory (the dialog's own starting directory, chosen because no
+  directory is tracked anywhere else in this codebase), and pass it as the
+  `FileChooser`'s initial file so its name field is pre-filled.
 - **Requirement refs**: RQ-GUI-077
 - **ADR refs**: None
 - **Acceptance Criteria** (Gherkin):
@@ -45,6 +46,14 @@ second implementation of the same rule.
     dialog's starting value)
 - **Dependencies**: None
 - **Assignee**: AI
+  - *Amended 2026-08-18 (owner report, same session):* `toneName()` returns
+    the model's fixed-width, space-padded storage form, so a short name
+    reached the sanitizer with meaningless trailing spaces (space is a legal
+    file-name character, so the sanitizer did not remove them). Fixed by
+    trimming trailing whitespace (`juce::String::trimEnd()`) before the
+    sanitizer call — at the call site, not inside the shared sanitizer, so
+    RQ-CTL-003's bank extraction (which reads already-unpadded names) is
+    untouched.
 
 ---
 
