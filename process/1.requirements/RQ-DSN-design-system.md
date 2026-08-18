@@ -394,10 +394,11 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     request, 2026-08-17: "dans une couleur de type gris moyen"); **split
     2026-08-18** on owner report that the mid grey read as too low-contrast
     on a white key — exactly the escape hatch this requirement reserved
-    below. `pianoKeyLabelOnBlack` keeps the original mid-grey value
-    unchanged (black keys were not reported as a problem);
-    `pianoKeyLabelOnWhite` is a darker grey for contrast against the light
-    key.
+    below. `pianoKeyLabelOnWhite` is a darker grey for contrast against the
+    light key. `pianoKeyLabelOnBlack` first kept the original mid grey, then
+    was itself reported unreadable against the near-black key the same day
+    and moved to **pure white** — the same value the white keys' own
+    surface uses — for maximum contrast on its opposite.
   - `pianoKeyLabelSize` — the label's text size.
   - **Display text is upper-case; the matched character is not.** Owner
     request, 2026-08-18. The character `KeyPress` matches against stays

@@ -359,7 +359,7 @@ tiers:
     # as a problem, so pianoKeyLabelOnBlack keeps the original value
     # unchanged. [RQ-DSN-102, RQ-GUI-075]
     pianoKeyLabelOnWhite: { alias: global.darkGrey, note: "piano-window key-mapping character on a white key — darker than the black-key value for contrast against the light key" }
-    pianoKeyLabelOnBlack: { alias: global.grey, note: "piano-window key-mapping character on a black key — the original single value, unchanged" }
+    pianoKeyLabelOnBlack: { alias: global.white, note: "piano-window key-mapping character on a black key — owner report 2026-08-18: the mid grey was unreadable against the near-black key; white matches the white-key surface colour for maximum contrast on its opposite" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 

@@ -237,7 +237,7 @@ namespace xplorer::app::tokens
         inline constexpr int comboLabelBorder = global::comboLabelBorder;  // combo label border, RQ-GUI-047
         inline const juce::Colour textHint = global::caption;  // muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046
         inline const juce::Colour pianoKeyLabelOnWhite = global::darkGrey;  // piano-window key-mapping character on a white key — darker than the black-key value for contrast against the light key
-        inline const juce::Colour pianoKeyLabelOnBlack = global::grey;  // piano-window key-mapping character on a black key — the original single value, unchanged
+        inline const juce::Colour pianoKeyLabelOnBlack = global::white;  // piano-window key-mapping character on a black key — owner report 2026-08-18: the mid grey was unreadable against the near-black key; white matches the white-key surface colour for maximum contrast on its opposite
         inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
         inline constexpr int controlRowHeight = global::controlRowHeight;  // shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)
     }

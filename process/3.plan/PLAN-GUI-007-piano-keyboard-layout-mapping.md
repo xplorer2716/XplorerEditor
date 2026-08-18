@@ -85,6 +85,10 @@ self-documenting.
   (RQ-DSN-102's reserved escape hatch), and scaled the piano window + key
   width 1.5× JUCE's defaults. No new task ID: same feature, same-session
   refinement, Tier S in isolation.
+- **Amended again same day, owner report ("on ne voit rien" on black
+  keys)**: `pianoKeyLabelOnBlack` moved from mid grey to pure white (same
+  value as the white-key surface). Compile-checked only (XplorerApp target),
+  not re-run through the full suite, per explicit owner instruction.
 - **Description**: Override `drawWhiteNote` and `drawBlackNote`, each calling
   the base implementation first and then drawing the binding character from the
   RQ-DSN-102 tokens. On the two Cs inside the mapped span, stack the character
