@@ -431,7 +431,7 @@ svg.append(section(SECTION_X_LEFT, SECTION_TRACK_Y, "TRACK X", 370, "track"))
 # --- VCF/VCA chain
 svg.append(box(525, 45, 186, 26, "vcf") + T(618, 63, "MULTIMODE VCF", FS_BLOCK, "bold", TITLE, "middle"))
 svg.append(box(729, 45, 62, 26, "vcf") + T(760, 63, "VCA1", FS_VCA, "bold", TITLE, "middle"))
-svg.append(box(804, 45, 62, 26, "vcf") + T(835, 63, "VCA", FS_VCA, "bold", TITLE, "middle"))
+svg.append(box(804, 45, 62, 26, "vcf") + T(835, 63, "VCA2", FS_VCA, "bold", TITLE, "middle"))  # was "VCA" [RQ-GUI-001]
 svg.append(line(711, 58, 729, 58) + line(791, 58, 804, 58))
 svg.append(outlab(866, 58, "VOICE", "OUT"))
 for cx in (541, 591, 759, 834):   # FREQ / RES / VCA1 VOLUME / VCA VOLUME

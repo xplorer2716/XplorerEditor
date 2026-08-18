@@ -6,7 +6,8 @@ Owner decisions (2026-07): reuse the existing background bitmap; **resizable** m
 
 ## Main window — global structure
 
-- **RQ-GUI-001** — The main window shall present all single-patch parameters simultaneously on one screen, laid out over the reference background image (block diagram of the synth signal path), organized as: LEFT column = VCO1, VCO2, FM/VCA, LAG, TRACK X blocks; CENTER column = MULTIMODE VCF/VCA1/VCA, ENV X, LFO X, RAMP X blocks; RIGHT column = VFD display, shortcut buttons, modulation matrix.
+- **RQ-GUI-001** — The main window shall present all single-patch parameters simultaneously on one screen, laid out over the reference background image (block diagram of the synth signal path), organized as: LEFT column = VCO1, VCO2, FM/VCA, LAG, TRACK X blocks; CENTER column = MULTIMODE VCF/VCA1/VCA2, ENV X, LFO X, RAMP X blocks; RIGHT column = VFD display, shortcut buttons, modulation matrix.
+  - *Defect closed 2026-08-18 (owner report, session GUI): the VCF/VCA block's second VCA rendered as "VCA" instead of "VCA2" — this requirement's own wording already had the same typo, next to a model that has always named the pair `VCA1_VOL`/`VCA2_VOL` (`XpanderConstants.hpp`). Corrected here and in both renderers (`generate_background_mockup.py`, `BackgroundRenderer.cpp`).*
 - **RQ-GUI-002** — The UI shall bind every control to its model parameter by name through a registration mechanism (control identifier → parameter name), so control changes call `SetParameter` and controller events update controls, with no per-control hand-written glue.
 - **RQ-GUI-003** — When a parameter-change event arrives from the controller (automation or synth), the affected control shall update without echoing the change back to the synth.
 - **RQ-GUI-004** — While a control is being edited from the UI, its mapped CC automation shall be temporarily disabled (RQ-FMW-033).
