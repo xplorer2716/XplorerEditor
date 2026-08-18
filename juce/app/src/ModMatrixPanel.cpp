@@ -56,11 +56,13 @@ namespace xplorer::app
             parent.addAndMakeVisible(*row.source);
         }
 
-        // Amount knob (-63..63).
+        // Amount knob (-63..63). NumericEntryKnob so double-click opens the
+        // same inline numeric entry every other rotary knob has.
+        // [RQ-GUI-034, PLAN-GUI-009 (TASK-GUI-036)]
         if (const auto* spec = specFor("MOD_AMNT_SRC_" + suffix))
         {
-            row.amount = std::make_unique<juce::Slider>(juce::Slider::RotaryHorizontalVerticalDrag,
-                                                        juce::Slider::NoTextBox);
+            row.amount = std::make_unique<NumericEntryKnob>(juce::Slider::RotaryHorizontalVerticalDrag,
+                                                             juce::Slider::NoTextBox);
             row.amount->setRange(ModulationMatrixEntry::MIN_AMOUNT, ModulationMatrixEntry::MAX_AMOUNT, 1);
             row.amount->setBounds(spec->x, spec->y, spec->width, spec->height);
             row.amount->onValueChange = [this, entryNumber] { onAmountChanged(entryNumber); };

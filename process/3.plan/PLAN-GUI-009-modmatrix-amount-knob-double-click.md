@@ -1,0 +1,59 @@
+# PLAN-GUI-009: Modulation-Matrix Amount Knob — Double-Click Numeric Entry
+
+## Overview
+Fix a defect reported by the owner: double-clicking a modulation-matrix
+amount knob does not open the inline numeric entry that every other rotary
+knob offers. Root cause: the amount control (`ModMatrixPanel::buildRow`) is
+built as a plain `juce::Slider`, while the double-click behaviour lives only
+on `BoundKnob`, the parameter-knob wrapper class the matrix row does not use
+(matrix edits are dedicated controller operations, not parameter bindings).
+
+## References
+- **Requirements**: RQ-GUI-034 (amended — defect closed), RQ-GUI-015
+  (defines the amount knob)
+- **ADRs**: None. No new architectural decision: this reapplies the shared
+  base-class pattern already established for combo boxes
+  (`HoverRepaintingComboBox`, ADR-JUC-017 DEC-JUC-040) to knobs. Tier M.
+
+---
+
+## Tasks
+
+### TASK-GUI-036: Extract NumericEntryKnob and wire it to the matrix amount knob
+- **Tier**: M
+- **Status**: Done (2026-08-18)
+- **Description**: Extract `BoundKnob`'s double-click → inline numeric entry
+  behaviour (`mouseDoubleClick`/`applyTextEntry`/`dismissTextEntry`) into a
+  new `NumericEntryKnob : juce::Slider` base class. `BoundKnob` inherits it
+  instead of duplicating it. `ModMatrixPanel::Row::amount` changes from
+  `juce::Slider` to `NumericEntryKnob`, closing the gap.
+- **Requirement refs**: RQ-GUI-034, RQ-GUI-015
+- **ADR refs**: None
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a `NumericEntryKnob` with a parent component, **When** it is
+    double-clicked, **Then** an inline `TextEditor` opens over its bounds,
+    pre-filled with its current integer value
+  - **Given** the inline editor is open, **When** Return is pressed with a
+    typed value, **Then** the knob's value is set to it (`sendNotificationSync`)
+    and the editor closes
+  - **Given** the inline editor is open, **When** Escape is pressed, **Then**
+    the editor closes and the knob's value is unchanged
+  - **Given** a modulation-matrix amount knob, **When** it is double-clicked,
+    **Then** it behaves identically to a parameter `BoundKnob` (same class,
+    one implementation)
+- **Dependencies**: None
+- **Assignee**: AI
+
+---
+
+## Note on testing
+`NumericEntryKnob` is new code (Tier M): unit tests cover its double-click
+open, Return-commit and Escape-dismiss paths directly against the class,
+since both `BoundKnob` and the matrix row now get identical behaviour from
+it — testing the base class once is testing both call sites.
+
+## Out of scope
+`BoundKnob`'s registry wiring (`onDragStart`/`onDragEnd`/`onValueChange` →
+`ParameterBindingRegistry`) and `ModMatrixPanel::onAmountChanged`'s
+controller call — both unchanged, already correct, already reachable
+through the same `setValue()` path the new class already used.

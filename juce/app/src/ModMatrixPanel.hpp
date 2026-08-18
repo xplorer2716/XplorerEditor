@@ -7,6 +7,7 @@
 // [RQ-GUI-015..017, ADR-JUC-006]
 
 #include "ModMatrixComboBox.hpp"
+#include "NumericEntryKnob.hpp"
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/controller/XpanderController.hpp"
 
@@ -50,7 +51,10 @@ namespace xplorer::app
         struct Row
         {
             std::unique_ptr<ModMatrixComboBox> source;
-            std::unique_ptr<juce::Slider> amount;
+            // NumericEntryKnob, not a plain juce::Slider: the double-click ->
+            // inline numeric entry of RQ-GUI-034 applies to every rotary knob,
+            // amount included. [RQ-GUI-015, PLAN-GUI-009 (TASK-GUI-036)]
+            std::unique_ptr<NumericEntryKnob> amount;
             std::unique_ptr<ModMatrixComboBox> destination;
             std::unique_ptr<juce::ToggleButton> quantize;
         };

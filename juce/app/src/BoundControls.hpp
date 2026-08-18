@@ -7,6 +7,7 @@
 // instance. [RQ-GUI-030, RQ-GUI-032, RQ-GUI-010, ADR-JUC-006]
 
 #include "HoverRepaintingComboBox.hpp"
+#include "NumericEntryKnob.hpp"
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 
@@ -40,7 +41,11 @@ namespace xplorer::app
         std::string _parameterName;
     };
 
-    class BoundKnob final : public juce::Slider, public BoundControl
+    // The double-click -> inline numeric entry behaviour (no permanent text
+    // box; value otherwise shown on the VFD and the drag bubble, RQ-GUI-034)
+    // comes from NumericEntryKnob, shared with the modulation-matrix amount
+    // knob rather than duplicated here. [RQ-GUI-034, PLAN-GUI-009]
+    class BoundKnob final : public NumericEntryKnob, public BoundControl
     {
     public:
         BoundKnob(ParameterBindingRegistry& registry, std::string parameterName,
@@ -49,17 +54,6 @@ namespace xplorer::app
         void setDisplayedValue(int value) override;
         [[nodiscard]] std::string displayText() const override;
         juce::Component& asComponent() override { return *this; }
-
-        // Double-click opens a transient inline numeric entry (no permanent
-        // text box; value otherwise shown on the VFD and the drag bubble).
-        // [RQ-GUI-034]
-        void mouseDoubleClick(const juce::MouseEvent& event) override;
-
-    private:
-        void applyTextEntry();
-        void dismissTextEntry();
-
-        std::unique_ptr<juce::TextEditor> _entryEditor;
     };
 
     // The hover repaint that RQ-GUI-041 needs comes from the shared

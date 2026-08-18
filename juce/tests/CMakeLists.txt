@@ -104,6 +104,11 @@ if(XPL_BUILD_APP)
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
         app/SbomReaderTests.cpp
+        # The double-click -> inline numeric entry now lives on
+        # NumericEntryKnob, shared by BoundKnob and the modulation-matrix
+        # amount knob. [RQ-GUI-034, PLAN-GUI-009 (TASK-GUI-036)]
+        app/NumericEntryKnobTests.cpp
+        ../app/src/NumericEntryKnob.cpp
         # The knob LED colour is retuned in place for live preview, so the
         # values derived from it at construction can now go stale where a
         # rebuild made that impossible. [RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]

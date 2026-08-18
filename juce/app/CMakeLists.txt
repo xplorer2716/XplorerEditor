@@ -36,6 +36,7 @@ target_sources(XplorerApp PRIVATE
     src/ShortcutIcons.cpp
     src/DialogIcons.cpp
     src/BlockPalette.cpp
+    src/NumericEntryKnob.cpp
     src/BoundControls.cpp
     src/PageFamilyBlock.cpp
     src/ModMatrixComboBox.hpp
