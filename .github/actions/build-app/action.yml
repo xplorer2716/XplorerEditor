@@ -98,7 +98,20 @@ runs:
 
     - name: Build
       shell: bash
-      run: cmake --build juce/build --config ${{ steps.configure.outputs.cmake-config }} -j
+      # Bounded parallelism, not bare -j: on Make, -j alone means unlimited,
+      # which fires every ready translation unit at once. A Debug JUCE build
+      # (full symbols, no optimization) is heavy enough per TU that this
+      # OOM-kills cc1plus on a 2-core/7GB Linux runner once the tree has
+      # enough targets to launch dozens simultaneously -- observed directly
+      # in a failed run's log ("Killed signal terminated program cc1plus").
+      # getconf is the portable core-count query (Linux + macOS); nproc and
+      # sysctl are the Linux-only / macOS-only fallbacks respectively, in
+      # case getconf is ever unavailable, with a safe default if all three
+      # are. [RQ-BLD-031]
+      run: |
+        set -euo pipefail
+        jobs="$(getconf _NPROCESSORS_ONLN 2>/dev/null || nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
+        cmake --build juce/build --config ${{ steps.configure.outputs.cmake-config }} -j "$jobs"
 
     - name: Run unit tests
       if: inputs.run-tests == 'true'
