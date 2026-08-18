@@ -31,6 +31,7 @@ namespace xplorer::app::tokens
         inline const juce::Colour black = juce::Colour(0xFF000000);  // juce::Colours::black
         inline const juce::Colour grey = juce::Colour(0xFF808080);  // juce::Colours::grey
         inline const juce::Colour lightGrey = juce::Colour(0xFFD3D3D3);  // juce::Colours::lightgrey
+        inline const juce::Colour darkGrey = juce::Colour(0xFF555555);  // juce::Colours::darkgrey
         inline const juce::Colour linkBlue = juce::Colour(0xFF0000FF);  // juce::Colours::blue — hyperlink text on a light surface
         inline const juce::Colour ledGreen = juce::Colour(0xFF90FF90);  // fromRGB(144,255,144) — automation in
         inline const juce::Colour ledBlue = juce::Colour(0xFF5CABFF);  // fromRGB(92,171,255) — synth in
@@ -235,7 +236,8 @@ namespace xplorer::app::tokens
         inline constexpr int comboArrowZone = global::comboArrowZone;  // combo arrow zone, RQ-GUI-047
         inline constexpr int comboLabelBorder = global::comboLabelBorder;  // combo label border, RQ-GUI-047
         inline const juce::Colour textHint = global::caption;  // muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046
-        inline const juce::Colour pianoKeyLabel = global::grey;  // piano-window key-mapping character — mid grey, quieter than JUCE's own note text, so it reads as a reminder rather than a reading of the instrument. Single value for white AND black keys (RQ-DSN-102). RQ-GUI-075, owner request 2026-08-17
+        inline const juce::Colour pianoKeyLabelOnWhite = global::darkGrey;  // piano-window key-mapping character on a white key — darker than the black-key value for contrast against the light key
+        inline const juce::Colour pianoKeyLabelOnBlack = global::grey;  // piano-window key-mapping character on a black key — the original single value, unchanged
         inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
         inline constexpr int controlRowHeight = global::controlRowHeight;  // shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)
     }

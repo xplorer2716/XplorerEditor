@@ -79,6 +79,12 @@ self-documenting.
 - **Status**: Done (2026-08-18) — headless pixel-render check confirmed white
   AND black key labels, correct stacking over JUCE's octave marker on both
   mapped Cs, and no label on unmapped notes.
+- **Amended same day, owner report ("les lettres sont vraiment petites")**:
+  upper-cased display text (matched character unchanged), split
+  `pianoKeyLabel` into `pianoKeyLabelOnWhite`/`pianoKeyLabelOnBlack`
+  (RQ-DSN-102's reserved escape hatch), and scaled the piano window + key
+  width 1.5× JUCE's defaults. No new task ID: same feature, same-session
+  refinement, Tier S in isolation.
 - **Description**: Override `drawWhiteNote` and `drawBlackNote`, each calling
   the base implementation first and then drawing the binding character from the
   RQ-DSN-102 tokens. On the two Cs inside the mapped span, stack the character

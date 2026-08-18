@@ -44,6 +44,7 @@ tiers:
     black:     { kind: colour, hex: "000000", note: "juce::Colours::black" }
     grey:      { kind: colour, hex: "808080", note: "juce::Colours::grey" }
     lightGrey: { kind: colour, hex: "D3D3D3", note: "juce::Colours::lightgrey" }
+    darkGrey:  { kind: colour, hex: "555555", note: "juce::Colours::darkgrey" }
     linkBlue:  { kind: colour, hex: "0000FF", note: "juce::Colours::blue — hyperlink text on a light surface" }
 
     # ---- MIDI-activity LED hues (MainComponent LedPanelComponent) ----
@@ -351,7 +352,14 @@ tiers:
     comboArrowZone:   { alias: global.comboArrowZone,   note: "combo arrow zone, RQ-GUI-047" }
     comboLabelBorder: { alias: global.comboLabelBorder, note: "combo label border, RQ-GUI-047" }
     textHint:              { alias: global.caption, note: "muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046" }
-    pianoKeyLabel:         { alias: global.grey, note: "piano-window key-mapping character — mid grey, quieter than JUCE's own note text, so it reads as a reminder rather than a reading of the instrument. Single value for white AND black keys (RQ-DSN-102). RQ-GUI-075, owner request 2026-08-17" }
+    # Split from a single pianoKeyLabel value, 2026-08-18, owner report: mid
+    # grey (global.grey) read as too low-contrast on a WHITE key; the single
+    # value was the deliberate RQ-DSN-102 default and this is the escape
+    # hatch it reserved for exactly this case. Black keys were not reported
+    # as a problem, so pianoKeyLabelOnBlack keeps the original value
+    # unchanged. [RQ-DSN-102, RQ-GUI-075]
+    pianoKeyLabelOnWhite: { alias: global.darkGrey, note: "piano-window key-mapping character on a white key — darker than the black-key value for contrast against the light key" }
+    pianoKeyLabelOnBlack: { alias: global.grey, note: "piano-window key-mapping character on a black key — the original single value, unchanged" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 

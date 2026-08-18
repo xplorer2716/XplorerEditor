@@ -389,17 +389,26 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
   system does not currently name, and both SHALL be tokens (ADR-JUC-014,
   ADR-JUC-015 — declared in `juce/tools/design-tokens.yaml`, never as a literal
   in `PianoWindow`):
-  - `pianoKeyLabel` — the label's colour. A **mid grey**, deliberately quieter
-    than the note text JUCE already prints for octave Cs, because the label is a
-    reminder rather than a reading of the instrument (owner request, 2026-08-17:
-    "dans une couleur de type gris moyen").
+  - `pianoKeyLabelOnWhite` / `pianoKeyLabelOnBlack` — the label's colour,
+    per key colour. Originally a single `pianoKeyLabel` mid grey (owner
+    request, 2026-08-17: "dans une couleur de type gris moyen"); **split
+    2026-08-18** on owner report that the mid grey read as too low-contrast
+    on a white key — exactly the escape hatch this requirement reserved
+    below. `pianoKeyLabelOnBlack` keeps the original mid-grey value
+    unchanged (black keys were not reported as a problem);
+    `pianoKeyLabelOnWhite` is a darker grey for contrast against the light
+    key.
   - `pianoKeyLabelSize` — the label's text size.
-  - **One colour for both key colours.** The label appears on white keys *and*
-    on black keys, whose backgrounds are near-opposite. A single mid grey is
-    specified rather than a pair, because a mid grey is the one value that
-    carries acceptable contrast against both; a second token SHALL only be
-    introduced if that proves false on screen, and then with a rationale note
-    recording why the single value failed.
+  - **Display text is upper-case; the matched character is not.** Owner
+    request, 2026-08-18. The character `KeyPress` matches against stays
+    exactly what `KeyboardLayoutQuery` resolved (RQ-GUI-074) — only the
+    glyph drawn on the key is upper-cased, purely a rendering choice with no
+    token of its own (it is a transform of `pianoKeyLabelSize`'s glyph, not a
+    new value).
+  - **Two colours, not one.** *(Superseded by the split above.)* A single mid
+    grey was specified first, precisely so a second token would only be
+    added "if that proves false on screen, and then with a rationale note
+    recording why the single value failed" — the split above is that note.
   - **Fitting is a rule, not a value.** The label SHALL be clamped to the key it
     sits on, so a narrow black key cannot overflow its neighbour. The clamp is
     derived from the rendered key width at paint time — it is NOT a second size

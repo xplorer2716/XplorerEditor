@@ -8,6 +8,16 @@ namespace xplorer::app
 {
     namespace
     {
+        // Uppercased for legibility (owner request, 2026-08-18) — display
+        // only: the resolved character itself (matched against KeyPress)
+        // never changes case. Centralised here so the fit check
+        // (measureCharacterWidth) and the actual drawText agree on what
+        // glyph is measured, since upper-case letters run wider than lower.
+        juce::String toDisplayString(char32_t character)
+        {
+            return juce::String::charToString(static_cast<juce::juce_wchar>(character)).toUpperCase();
+        }
+
         // The one JUCE-touching piece of pianoKeyLabelFor's injected
         // measurer: GlyphArrangement, not the deprecated
         // Font::getStringWidthFloat — same metric-accurate call the codebase
@@ -16,8 +26,7 @@ namespace xplorer::app
         float measureCharacterWidth(char32_t character, float fontSize)
         {
             const auto font = juce::Font{juce::FontOptions{fontSize}};
-            return juce::GlyphArrangement::getStringWidth(
-                font, juce::String::charToString(static_cast<juce::juce_wchar>(character)));
+            return juce::GlyphArrangement::getStringWidth(font, toDisplayString(character));
         }
 
         // JUCE's own drawWhiteNote prints the octave marker at
@@ -69,10 +78,9 @@ namespace xplorer::app
         auto labelArea = area.withTrimmedLeft(1.0f)
                              .withTrimmedBottom(hasOctaveMarker ? ESTIMATED_OCTAVE_MARKER_HEIGHT : 2.0f);
 
-        g.setColour(tokens::semantic::pianoKeyLabel);
+        g.setColour(tokens::semantic::pianoKeyLabelOnWhite);
         g.setFont(juce::Font{juce::FontOptions{tokens::semantic::pianoKeyLabelSize}});
-        g.drawText(juce::String::charToString(static_cast<juce::juce_wchar>(*label)), labelArea,
-                  juce::Justification::centredBottom, false);
+        g.drawText(toDisplayString(*label), labelArea, juce::Justification::centredBottom, false);
     }
 
     void PianoLabelledKeyboardComponent::drawBlackNote(int midiNoteNumber, juce::Graphics& g,
@@ -92,9 +100,8 @@ namespace xplorer::app
             return; // dropped: too narrow to fit legibly [DEC-JUC-121]
         }
 
-        g.setColour(tokens::semantic::pianoKeyLabel);
+        g.setColour(tokens::semantic::pianoKeyLabelOnBlack);
         g.setFont(juce::Font{juce::FontOptions{tokens::semantic::pianoKeyLabelSize}});
-        g.drawText(juce::String::charToString(static_cast<juce::juce_wchar>(*label)), area.reduced(1.0f),
-                  juce::Justification::centredBottom, false);
+        g.drawText(toDisplayString(*label), area.reduced(1.0f), juce::Justification::centredBottom, false);
     }
 }

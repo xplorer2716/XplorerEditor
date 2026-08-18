@@ -4,16 +4,30 @@
 
 namespace xplorer::app
 {
+    namespace
+    {
+        // Owner request, 2026-08-18: the whole piano reads too small,
+        // including the RQ-GUI-075 key-mapping labels; scaling the window and
+        // the key width together keeps the same visible note range while
+        // giving the labels proportionally more room. [RQ-GUI-075]
+        constexpr int BASE_WINDOW_WIDTH = 760;
+        constexpr int BASE_WINDOW_HEIGHT = 90;
+        constexpr float BASE_KEY_WIDTH = 16.0F; // JUCE's own default (KeyboardComponentBase)
+        constexpr float PIANO_SCALE = 1.5F;
+    }
+
     PianoWindow::PianoWindow(controller::XpanderController& controller)
         : juce::DocumentWindow("Piano", juce::Colours::black, juce::DocumentWindow::closeButton),
           _controller(controller),
           _keyboard(_keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
     {
         _keyboardState.addListener(this);
+        _keyboard.setKeyWidth(BASE_KEY_WIDTH * PIANO_SCALE);
         setContentNonOwned(&_keyboard, false);
         setUsingNativeTitleBar(true);
         setResizable(true, false);
-        centreWithSize(760, 90);
+        centreWithSize(static_cast<int>(BASE_WINDOW_WIDTH * PIANO_SCALE),
+                      static_cast<int>(BASE_WINDOW_HEIGHT * PIANO_SCALE));
         setVisible(true);
     }
 
