@@ -203,6 +203,7 @@ namespace xplorer::app::tokens
         inline constexpr float textWave = global::fs115;  // TRIANGLE/SAWTOOTH/PULSE
         inline constexpr float textSmall = global::fs11;  // IN/OUT labels
         inline constexpr float textDense = global::fs9;  // DESTINATION/TRIGGER/NOISE, combo floor
+        inline constexpr float pianoKeyLabelSize = global::fs9;  // piano-window key-mapping character, same size class as textDense — small text on a small control. RQ-DSN-102, RQ-GUI-075
         inline constexpr float radiusControl = global::radius20;  // tick box outer, block corner
         inline constexpr float radiusControlInner = global::radius15;  // tick box checked fill
         inline constexpr float strokeBorder = global::stroke10;  // tick box border
@@ -234,6 +235,7 @@ namespace xplorer::app::tokens
         inline constexpr int comboArrowZone = global::comboArrowZone;  // combo arrow zone, RQ-GUI-047
         inline constexpr int comboLabelBorder = global::comboLabelBorder;  // combo label border, RQ-GUI-047
         inline const juce::Colour textHint = global::caption;  // muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046
+        inline const juce::Colour pianoKeyLabel = global::grey;  // piano-window key-mapping character — mid grey, quieter than JUCE's own note text, so it reads as a reminder rather than a reading of the instrument. Single value for white AND black keys (RQ-DSN-102). RQ-GUI-075, owner request 2026-08-17
         inline constexpr int progressBarHeight = global::space24;  // ProgressWindow bar height
         inline constexpr int controlRowHeight = global::controlRowHeight;  // shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)
     }

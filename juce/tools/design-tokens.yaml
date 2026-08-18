@@ -313,6 +313,7 @@ tiers:
     textWave:     { alias: global.fs115, note: "TRIANGLE/SAWTOOTH/PULSE" }
     textSmall:    { alias: global.fs11,  note: "IN/OUT labels" }
     textDense:    { alias: global.fs9,   note: "DESTINATION/TRIGGER/NOISE, combo floor" }
+    pianoKeyLabelSize: { alias: global.fs9, note: "piano-window key-mapping character, same size class as textDense — small text on a small control. RQ-DSN-102, RQ-GUI-075" }
 
     # ---- geometry roles ----
     radiusControl:      { alias: global.radius20, note: "tick box outer, block corner" }
@@ -350,6 +351,7 @@ tiers:
     comboArrowZone:   { alias: global.comboArrowZone,   note: "combo arrow zone, RQ-GUI-047" }
     comboLabelBorder: { alias: global.comboLabelBorder, note: "combo label border, RQ-GUI-047" }
     textHint:              { alias: global.caption, note: "muted settings hint lines (same muted grey as diagram captions), RQ-GUI-046" }
+    pianoKeyLabel:         { alias: global.grey, note: "piano-window key-mapping character — mid grey, quieter than JUCE's own note text, so it reads as a reminder rather than a reading of the instrument. Single value for white AND black keys (RQ-DSN-102). RQ-GUI-075, owner request 2026-08-17" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 

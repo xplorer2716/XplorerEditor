@@ -1,7 +1,10 @@
 # ADR-JUC-035: Layout-Independent Computer-Keyboard Mapping for the Piano Window
 
 ## Status
-Proposed (2026-08-17, session GUI).
+Accepted — implemented (2026-08-18, session GUI): TASK-GUI-032 (tokens),
+TASK-GUI-033 (mapping resolution seam), TASK-GUI-034 (key labels). Windows
+and macOS `KeyboardLayoutQuery` implementations are unverified by compilation
+in this session (no toolchain available) — CI is their first real build.
 
 <!-- Motivated by RQ-GUI-074 (mapping resolved from physical key positions),
 RQ-GUI-075 (the resolved character printed on the key) and RQ-DSN-102 (the two

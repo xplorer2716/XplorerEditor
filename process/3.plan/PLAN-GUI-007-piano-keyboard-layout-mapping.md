@@ -18,7 +18,7 @@ self-documenting.
 
 ### TASK-GUI-032: Design tokens for the key-mapping labels
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done (2026-08-18)
 - **Description**: Add `pianoKeyLabel` (mid grey) and `pianoKeyLabelSize` to
   `juce/tools/design-tokens.yaml` in the semantic tier, then regenerate
   `DesignTokens.hpp` with `generate_design_tokens.py`. No hand edit of the
@@ -37,7 +37,10 @@ self-documenting.
 
 ### TASK-GUI-033: Resolve the mapping from physical key positions
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: Done (2026-08-18) — Windows and macOS query implementations are
+  unverified by compilation in this session (no toolchain available); CI is
+  their first real build. Linux compiled, linked and ran under the headless
+  suite.
 - **Description**: Introduce the physical-position table — the same 17
   positions as JUCE's default (`a w s e d f t g y h u j k o l p ;`, 10 white +
   7 black), named after those reference letters rather than a row/column
@@ -56,7 +59,7 @@ self-documenting.
     behaviour, proving no regression for US users
   - **Given** a fake query returning the French AZERTY layout, **When** the
     mapping is built, **Then** the home-row leftmost letter key plays C and the
-    upper row carries the five black keys
+    upper row carries the seven black keys
   - **Given** a fake query returning a layout never named in the sources,
     **When** the mapping is built, **Then** every position resolves to that
     layout's character with no layout name appearing anywhere in the code
@@ -73,7 +76,9 @@ self-documenting.
 
 ### TASK-GUI-034: Print the resolved character on each mapped key
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-08-18) — headless pixel-render check confirmed white
+  AND black key labels, correct stacking over JUCE's octave marker on both
+  mapped Cs, and no label on unmapped notes.
 - **Description**: Override `drawWhiteNote` and `drawBlackNote`, each calling
   the base implementation first and then drawing the binding character from the
   RQ-DSN-102 tokens. On the two Cs inside the mapped span, stack the character
