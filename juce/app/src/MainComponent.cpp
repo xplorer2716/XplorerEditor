@@ -965,6 +965,12 @@ namespace xplorer::app
                 // root. [RQ-BLD-015, RQ-BLD-016]
                 showAboutDialog(std::string(JUCE_APPLICATION_NAME_STRING) + " "
                                 + XPL_VERSION_FULL_STRING);
+                // Reference AboutForm.OnLoad() greets the synth the moment the
+                // About window is shown (XpanderController.cs:756, called from
+                // AboutForm.cs:90); the JUCE port already carries a faithful
+                // sendGreetingsToSynth() but nothing called it here — this was
+                // the missing link. [RQ-GUI-076, RQ-CTL-061]
+                _controller->sendGreetingsToSynth();
                 break;
             // The three Help URLs, opened in the system browser exactly as the
             // reference's OpenBrowserWithUrl does — no update check of our own.

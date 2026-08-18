@@ -41,7 +41,7 @@ Scope: C++ port of `Xplorer/Controller` (XpanderController and helpers). Extends
 ## Synth utilities
 
 - **RQ-CTL-060** — The controller shall send: Tune Request; All Notes Off — "smart" variant per the reference when enabled in settings; and a Program Change on the tone's channel.
-- **RQ-CTL-061** — The controller shall display text on the synth VFD (greetings at startup, typewriter mode), using display-control command 0x05 for Xpander and 0x06 for Matrix-12 per the synth-type setting.
+- **RQ-CTL-061** — The controller shall display text on the synth VFD (a greeting — product name/version plus the project's GitHub URL — and typewriter mode), using display-control command 0x05 for Xpander and 0x06 for Matrix-12 per the synth-type setting. *(Corrected 2026-08-18, session GUI: "greetings at startup" was inaccurate — the reference (`XpanderController.cs:756`, `SendGreetingsToSynth`) has exactly one caller, `AboutForm.OnLoad()`; nothing calls it at application launch. The UI-side trigger is RQ-GUI-076.)*
 - **RQ-CTL-062** — The controller shall support both Xpander and Matrix-12 protocol variants selected by configuration everywhere they differ.
 
 ## Events (to UI)
