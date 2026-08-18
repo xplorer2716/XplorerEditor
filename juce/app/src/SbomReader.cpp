@@ -1,5 +1,7 @@
 #include "SbomReader.hpp"
 
+#include "BinaryData.h"
+
 #include <algorithm>
 #include <utility>
 
@@ -7,10 +9,6 @@ namespace xplorer::app
 {
     namespace
     {
-        // Fixed by RQ-BLD-014 so the application and whatever produces the
-        // document agree without configuration. [DEC-ABT-002]
-        constexpr const char* SBOM_FILE_NAME = "xplorer.sbom.spdx.json";
-
         // SPDX encodes "no value" as these two string literals rather than by
         // omitting the field. Treated as absent at this boundary so they can
         // never reach the screen as text. [DEC-ABT-003]
@@ -79,21 +77,10 @@ namespace xplorer::app
         }
     }
 
-    SbomResult readSbom(const juce::File& sbomFile)
+    SbomResult readSbom(const juce::String& jsonText)
     {
-        if (!sbomFile.existsAsFile())
-        {
-            return {SbomStatus::FileNotFound, {}};
-        }
-
-        juce::FileInputStream stream{sbomFile};
-        if (!stream.openedOk())
-        {
-            return {SbomStatus::Unreadable, {}};
-        }
-
         juce::var document;
-        if (juce::JSON::parse(stream.readEntireStreamAsString(), document).failed())
+        if (juce::JSON::parse(jsonText, document).failed())
         {
             return {SbomStatus::InvalidJson, {}};
         }
@@ -148,9 +135,9 @@ namespace xplorer::app
         return {SbomStatus::Loaded, std::move(entries)};
     }
 
-    juce::File defaultSbomFile()
+    SbomResult readEmbeddedSbom()
     {
-        return juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-            .getSiblingFile(SBOM_FILE_NAME);
+        return readSbom(juce::String::createStringFromData(BinaryData::xplorer_sbom_spdx_json,
+                                                             BinaryData::xplorer_sbom_spdx_jsonSize));
     }
 }

@@ -646,17 +646,27 @@ namespace xplorer::app
         constexpr const char* RELEASES_URL = "https://github.com/xplorer2716/XplorerEditor/releases/latest";
         constexpr const char* WEBSITE_URL = "https://xplorer2716.github.io/XplorerEditor.site/";
 
-        // The default patch File > New loads, copied beside the executable by
-        // the build (app/CMakeLists.txt). The reference resolves it the same
-        // way -- executable directory + this name -- and "New" there means
-        // "load this patch", not "blank the editor".
-        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+        // The default patch File > New loads, embedded in the executable as
+        // BinaryData rather than shipped as a sibling file -- immune to being
+        // edited or deleted between download and launch. "New" means "load
+        // this patch", not "blank the editor", matching the reference.
+        // [RQ-GUI-008, ADR-BLD-005 (DEC-BLD-027, DEC-BLD-028) -- supersedes
+        // ADR-JUC-032 (DEC-JUC-100)]
         constexpr const char* DEFAULT_TONE_FILENAME = "oberheim.syx";
 
+        // Rewritten from the embedded bytes on every call, never cached: the
+        // existing tone-loading API (IToneReader::readTone) takes a filesystem
+        // path with no in-memory overload, so the temp file is the bounce that
+        // keeps that API untouched -- and always overwriting it, rather than
+        // reusing a path written once, means a tampered temp copy cannot
+        // survive to the next File > New. [ADR-BLD-005 (DEC-BLD-028)]
         [[nodiscard]] juce::File defaultToneFile()
         {
-            return juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                .getSiblingFile(DEFAULT_TONE_FILENAME);
+            auto file = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                            .getChildFile(DEFAULT_TONE_FILENAME);
+            file.replaceWithData(BinaryData::oberheim_syx,
+                                  static_cast<size_t>(BinaryData::oberheim_syxSize));
+            return file;
         }
 
         // The reference's sixteen menu shortcuts (MainForm.resx
