@@ -1,7 +1,7 @@
 # ADR-SET-001: Settings-Directory Fallback and In-Memory Safety Net
 
 ## Status
-Proposed (session SET, 2026-08-19).
+Accepted — implemented in TASK-SET-001 (session SET, 2026-08-19).
 
 <!-- Motivated by an owner bug report: on Linux, most persisted settings read back as
 unset/zero after a restart (MIDI SysEx transmit delay 0, no knob LED colour, no knob-movement

@@ -32,9 +32,14 @@ namespace xplorer::settings
     public:
         static constexpr auto SETTINGS_FILE_NAME = "xplorer.users.config";
 
-        /// @param settingsDirectory per-machine app-data directory (the app
+        /// @param preferredDirectory per-machine app-data directory (the app
         /// passes the ProgramData-equivalent path; tests a temp dir).
-        explicit XmlSettingsService(std::string settingsDirectory);
+        /// @param fallbackDirectory used instead when preferredDirectory
+        /// cannot be created — e.g. Linux (/opt) and macOS (/Library) are
+        /// root-owned and this project ships no installer to grant a
+        /// standard user write access there. Empty (default) disables the
+        /// fallback. [RQ-SET-001, ADR-SET-001 (DEC-SET-001)]
+        explicit XmlSettingsService(std::string preferredDirectory, std::string fallbackDirectory = {});
         ~XmlSettingsService() override;
 
         [[nodiscard]] AllUsersSettings& allUsersSettings() override;

@@ -150,6 +150,23 @@ namespace xplorer::settings
             child->addTextElement(value);
         }
 
+        // Prefers the per-machine directory (ProgramData on Windows), but
+        // falls back to the per-user one when it cannot be created — Linux
+        // (/opt) and macOS (/Library) are root-owned and this project ships
+        // no installer to grant a standard user write access there. Reuses
+        // the same createDirectory() call save() makes, so the check and the
+        // later write can never disagree. [RQ-SET-001, ADR-SET-001 (DEC-SET-001)]
+        juce::File resolveSettingsDirectory(const std::string& preferredDirectory,
+                                             const std::string& fallbackDirectory)
+        {
+            juce::File preferred{juce::String(preferredDirectory)};
+            if (fallbackDirectory.empty() || preferred.createDirectory().wasOk())
+            {
+                return preferred;
+            }
+            return juce::File(juce::String(fallbackDirectory));
+        }
+
         // --- load ----------------------------------------------------------
 
         std::optional<AllUsersSettings> parseSettings(const juce::XmlElement& root)
@@ -281,10 +298,11 @@ namespace xplorer::settings
         }
     };
 
-    XmlSettingsService::XmlSettingsService(std::string settingsDirectory)
+    XmlSettingsService::XmlSettingsService(std::string preferredDirectory, std::string fallbackDirectory)
         : _impl(std::make_unique<Impl>())
     {
-        _impl->file = juce::File(juce::String(settingsDirectory)).getChildFile(SETTINGS_FILE_NAME);
+        _impl->file = resolveSettingsDirectory(preferredDirectory, fallbackDirectory)
+                          .getChildFile(SETTINGS_FILE_NAME);
     }
 
     XmlSettingsService::~XmlSettingsService() = default;
@@ -300,6 +318,14 @@ namespace xplorer::settings
                 // defaults and reload, as the reference does. [RQ-SET-004]
                 _impl->save(defaultAllUsersSettings());
                 _impl->cache = _impl->load();
+            }
+            if (!_impl->cache.has_value())
+            {
+                // Persisting failed even on the fallback directory (e.g. a
+                // read-only filesystem): continue with defaults held in
+                // memory only, rather than dereference the empty cache.
+                // [RQ-SET-004, ADR-SET-001 (DEC-SET-001)]
+                _impl->cache = defaultAllUsersSettings();
             }
         }
         return *_impl->cache;

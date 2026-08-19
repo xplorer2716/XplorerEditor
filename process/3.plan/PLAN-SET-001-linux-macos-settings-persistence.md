@@ -18,7 +18,7 @@ This plan implements the tasks in the format specified below.
 
 ### TASK-SET-001: Writable-directory fallback and in-memory safety net for settings persistence
 - **Tier**: L
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: `XmlSettingsService` gains an optional fallback directory, used when the
   preferred (per-machine) directory cannot be created; `MainComponent` supplies the per-user
   directory as that fallback. `allUsersSettings()` no longer dereferences an empty cache when
