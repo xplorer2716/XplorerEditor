@@ -2,40 +2,21 @@
 
 #include "SbomReader.hpp"
 
+#include <algorithm>
+
 // The SPDX reader behind About > Dependencies: field mapping and its fallbacks,
 // SPDX no-value sentinels, documentDescribes filtering, alphabetical ordering,
-// and every failure result.
-//
-// Fixtures are written to temporary files by the tests themselves and deleted
-// with them: no SBOM fixture is committed (owner instruction), so none can drift
-// away from the case it claims to cover.
-// [RQ-GUI-057; ADR-ABT-001 (DEC-ABT-003, DEC-ABT-004, DEC-ABT-005, DEC-ABT-006)]
+// and every failure result. Reads an in-memory juce::String directly -- no
+// fixture file, committed or temporary -- since the production reader no
+// longer touches the filesystem at all (ADR-BLD-005: the SBOM is embedded
+// BinaryData, parsed straight from memory).
+// [RQ-GUI-057; ADR-ABT-001 (DEC-ABT-003, DEC-ABT-004, DEC-ABT-005, DEC-ABT-006);
+// ADR-BLD-005 (DEC-BLD-027, DEC-BLD-028)]
 
 using namespace xplorer::app;
 
 namespace
 {
-    /** A temp .json file carrying `content`, removed when the test leaves scope. */
-    class TemporarySbom final
-    {
-    public:
-        explicit TemporarySbom(const juce::String& content)
-            : _file(juce::File::createTempFile(".spdx.json"))
-        {
-            _file.replaceWithText(content);
-        }
-
-        ~TemporarySbom() { _file.deleteFile(); }
-
-        TemporarySbom(const TemporarySbom&) = delete;
-        TemporarySbom& operator=(const TemporarySbom&) = delete;
-
-        [[nodiscard]] const juce::File& file() const { return _file; }
-
-    private:
-        juce::File _file;
-    };
-
     /** A minimal but schema-shaped SPDX document wrapping `packagesJson`. */
     juce::String spdxDocument(const juce::String& packagesJson,
                               const juce::String& documentDescribesJson = "[]")
@@ -49,14 +30,14 @@ SCENARIO("The dependency list is read from an SPDX document", "[RQ-GUI-057]")
 {
     GIVEN("a document whose packages are not in alphabetical order")
     {
-        const TemporarySbom sbom{spdxDocument(
+        const auto sbom = spdxDocument(
             R"([{"SPDXID":"SPDXRef-z","name":"Zlib","versionInfo":"1.3"},)"
             R"({"SPDXID":"SPDXRef-c","name":"catch2","versionInfo":"3.9.1"},)"
-            R"({"SPDXID":"SPDXRef-j","name":"JUCE","versionInfo":"8.0.9"}])")};
+            R"({"SPDXID":"SPDXRef-j","name":"JUCE","versionInfo":"8.0.9"}])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("every package is returned, ordered alphabetically and case-insensitively")
             {
@@ -77,12 +58,12 @@ SCENARIO("The dependency list is read from an SPDX document", "[RQ-GUI-057]")
 
     GIVEN("a package whose concluded licence is NOASSERTION but whose declared licence is set")
     {
-        const TemporarySbom sbom{spdxDocument(
-            R"([{"name":"Foo","licenseConcluded":"NOASSERTION","licenseDeclared":"MIT"}])")};
+        const auto sbom = spdxDocument(
+            R"([{"name":"Foo","licenseConcluded":"NOASSERTION","licenseDeclared":"MIT"}])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("the declared licence is used")
             {
@@ -95,12 +76,12 @@ SCENARIO("The dependency list is read from an SPDX document", "[RQ-GUI-057]")
 
     GIVEN("a package whose every licence field is an SPDX no-value sentinel")
     {
-        const TemporarySbom sbom{spdxDocument(
-            R"([{"name":"Foo","licenseConcluded":"NOASSERTION","licenseDeclared":"NONE"}])")};
+        const auto sbom = spdxDocument(
+            R"([{"name":"Foo","licenseConcluded":"NOASSERTION","licenseDeclared":"NONE"}])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("its licence is empty -- the sentinel never becomes display text")
             {
@@ -113,12 +94,12 @@ SCENARIO("The dependency list is read from an SPDX document", "[RQ-GUI-057]")
 
     GIVEN("a package with no homepage but a usable download location")
     {
-        const TemporarySbom sbom{spdxDocument(
-            R"([{"name":"Foo","downloadLocation":"https://example.com/foo"}])")};
+        const auto sbom = spdxDocument(
+            R"([{"name":"Foo","downloadLocation":"https://example.com/foo"}])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("the download location becomes its website")
             {
@@ -131,12 +112,12 @@ SCENARIO("The dependency list is read from an SPDX document", "[RQ-GUI-057]")
 
     GIVEN("a package with a homepage and a different download location")
     {
-        const TemporarySbom sbom{spdxDocument(
-            R"([{"name":"Foo","homepage":"https://foo.example","downloadLocation":"https://dl.example"}])")};
+        const auto sbom = spdxDocument(
+            R"([{"name":"Foo","homepage":"https://foo.example","downloadLocation":"https://dl.example"}])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("the homepage wins")
             {
@@ -148,12 +129,11 @@ SCENARIO("The dependency list is read from an SPDX document", "[RQ-GUI-057]")
 
     GIVEN("a package whose download location is the NOASSERTION sentinel")
     {
-        const TemporarySbom sbom{spdxDocument(
-            R"([{"name":"Foo","downloadLocation":"NOASSERTION"}])")};
+        const auto sbom = spdxDocument(R"([{"name":"Foo","downloadLocation":"NOASSERTION"}])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("its website is empty rather than the sentinel")
             {
@@ -168,14 +148,14 @@ SCENARIO("The document's own subject is not one of its dependencies", "[RQ-GUI-0
 {
     GIVEN("a document describing itself, alongside a real dependency")
     {
-        const TemporarySbom sbom{spdxDocument(
+        const auto sbom = spdxDocument(
             R"([{"SPDXID":"SPDXRef-Package-Xplorer","name":"Xplorer","versionInfo":"0.1.0"},)"
             R"({"SPDXID":"SPDXRef-Package-JUCE","name":"JUCE","versionInfo":"8.0.9"}])",
-            R"(["SPDXRef-Package-Xplorer"])")};
+            R"(["SPDXRef-Package-Xplorer"])");
 
         WHEN("it is read")
         {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("the described package is filtered out and the dependency remains")
             {
@@ -188,15 +168,15 @@ SCENARIO("The document's own subject is not one of its dependencies", "[RQ-GUI-0
 
     GIVEN("a document whose only package is the one it describes")
     {
-        const TemporarySbom sbom{spdxDocument(
+        const auto sbom = spdxDocument(
             R"([{"SPDXID":"SPDXRef-Package-Xplorer","name":"Xplorer"}])",
-            R"(["SPDXRef-Package-Xplorer"])")};
+            R"(["SPDXRef-Package-Xplorer"])");
 
         WHEN("it is read")
         {
             THEN("it reports having no dependency information, not an empty success")
             {
-                CHECK(readSbom(sbom.file()).status == SbomStatus::NotSpdxOrEmpty);
+                CHECK(readSbom(sbom).status == SbomStatus::NotSpdxOrEmpty);
             }
         }
     }
@@ -204,31 +184,13 @@ SCENARIO("The document's own subject is not one of its dependencies", "[RQ-GUI-0
 
 SCENARIO("An unusable SBOM is reported, never silently substituted", "[RQ-GUI-057]")
 {
-    GIVEN("a path where no file exists")
+    GIVEN("malformed JSON")
     {
-        const auto missing = juce::File::getSpecialLocation(juce::File::tempDirectory)
-                                 .getChildFile("xplorer-no-such-sbom.spdx.json");
-        REQUIRE(!missing.existsAsFile());
+        const juce::String sbom = R"({"spdxVersion":"SPDX-2.3","packages":[)";
 
         WHEN("it is read")
         {
-            const auto result = readSbom(missing);
-
-            THEN("the absence is reported and no entry is invented")
-            {
-                CHECK(result.status == SbomStatus::FileNotFound);
-                CHECK(result.entries.empty());
-            }
-        }
-    }
-
-    GIVEN("a file containing malformed JSON")
-    {
-        const TemporarySbom sbom{R"({"spdxVersion":"SPDX-2.3","packages":[)"};
-
-        WHEN("it is read")
-        {
-            const auto result = readSbom(sbom.file());
+            const auto result = readSbom(sbom);
 
             THEN("it is reported as unparseable")
             {
@@ -240,58 +202,59 @@ SCENARIO("An unusable SBOM is reported, never silently substituted", "[RQ-GUI-05
 
     GIVEN("valid JSON that is not an SPDX document")
     {
-        const TemporarySbom sbom{R"({"hello":"world"})"};
+        const juce::String sbom = R"({"hello":"world"})";
 
         WHEN("it is read")
         {
             THEN("it is reported as not being an SPDX document")
             {
-                CHECK(readSbom(sbom.file()).status == SbomStatus::NotSpdxOrEmpty);
+                CHECK(readSbom(sbom).status == SbomStatus::NotSpdxOrEmpty);
             }
         }
     }
 
     GIVEN("an SPDX document with an empty package list")
     {
-        const TemporarySbom sbom{spdxDocument("[]")};
+        const auto sbom = spdxDocument("[]");
 
         WHEN("it is read")
         {
             THEN("it is reported as carrying no dependency information")
             {
-                CHECK(readSbom(sbom.file()).status == SbomStatus::NotSpdxOrEmpty);
+                CHECK(readSbom(sbom).status == SbomStatus::NotSpdxOrEmpty);
             }
         }
     }
 
     GIVEN("an SPDX document whose package list holds no named package")
     {
-        const TemporarySbom sbom{spdxDocument(R"([{"SPDXID":"SPDXRef-x","versionInfo":"1.0"}])")};
+        const auto sbom = spdxDocument(R"([{"SPDXID":"SPDXRef-x","versionInfo":"1.0"}])");
 
         WHEN("it is read")
         {
             THEN("it is reported as carrying no dependency information")
             {
-                CHECK(readSbom(sbom.file()).status == SbomStatus::NotSpdxOrEmpty);
+                CHECK(readSbom(sbom).status == SbomStatus::NotSpdxOrEmpty);
             }
         }
     }
 }
 
-SCENARIO("The shipped SBOM is looked for beside the executable", "[RQ-BLD-014]")
+SCENARIO("The embedded SBOM the build itself produced is readable with no file at all",
+         "[RQ-GUI-057][ADR-BLD-005]")
 {
-    GIVEN("the running executable")
+    GIVEN("the executable's own embedded BinaryData")
     {
-        WHEN("the default SBOM location is resolved")
+        WHEN("it is read")
         {
-            const auto sbom = defaultSbomFile();
+            const auto result = readEmbeddedSbom();
 
-            THEN("it is the agreed file name, in the executable's own directory")
+            THEN("it loads, and the component this build always ships is present")
             {
-                CHECK(sbom.getFileName() == "xplorer.sbom.spdx.json");
-                CHECK(sbom.getParentDirectory()
-                      == juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                             .getParentDirectory());
+                REQUIRE(result.status == SbomStatus::Loaded);
+                const auto hasJuce = std::any_of(result.entries.begin(), result.entries.end(),
+                                                 [](const SbomEntry& e) { return e.name == "JUCE"; });
+                CHECK(hasJuce);
             }
         }
     }

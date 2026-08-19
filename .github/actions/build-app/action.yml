@@ -149,15 +149,6 @@ runs:
             ;;
         esac
 
-        # The three parts of a deployment must already be siblings here: CMake's
-        # POST_BUILD steps put them there, and that is also how the running
-        # application resolves them. Checking now means a broken POST_BUILD is
-        # reported by the build that caused it, not by a user opening an empty
-        # dependency window. [RQ-BLD-021, RQ-GUI-008, RQ-BLD-014]
-        for part in oberheim.syx xplorer.sbom.spdx.json; do
-          [ -f "${dir}/${part}" ] || { echo "::error::${part} is missing from ${dir}"; exit 1; }
-        done
-
         echo "artefact-dir=${dir}" >> "$GITHUB_OUTPUT"
         echo "Built into ${dir}" >&2
 
