@@ -66,9 +66,21 @@ namespace xplorer::app
             return false;
         }
 
-        juce::String settingsDirectory()
+        juce::String preferredSettingsDirectory()
         {
             return juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory)
+                .getChildFile("Xplorer")
+                .getChildFile("Xplorer")
+                .getFullPathName();
+        }
+
+        // Used when preferredSettingsDirectory() cannot be created — Linux
+        // (/opt) and macOS (/Library) are root-owned and this project ships
+        // no installer to grant a standard user write access there.
+        // [RQ-SET-001, ADR-SET-001 (DEC-SET-001)]
+        juce::String fallbackSettingsDirectory()
+        {
+            return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
                 .getChildFile("Xplorer")
                 .getChildFile("Xplorer")
                 .getFullPathName();
@@ -90,7 +102,7 @@ namespace xplorer::app
     {
         _dispatcher = std::make_shared<JuceEventDispatcher>();
         _settingsService = std::make_unique<settings::XmlSettingsService>(
-            settingsDirectory().toStdString());
+            preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString());
         _controller = std::make_unique<controller::XpanderController>(
             _backend, *_settingsService, _dispatcher, productNameAndVersion());
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);

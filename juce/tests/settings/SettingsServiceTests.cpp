@@ -81,6 +81,62 @@ SCENARIO("Missing or corrupted files fall back to persisted defaults", "[RQ-SET-
     }
 }
 
+SCENARIO("A non-writable preferred directory falls back to the per-user one",
+         "[RQ-SET-001][ADR-SET-001]")
+{
+    GIVEN("a preferred directory blocked by a file in its path, and a writable fallback")
+    {
+        const auto root = freshTempDir("xpl_settings_fallback");
+        const auto blocker = root / "blocker";
+        std::ofstream(blocker) << "not a directory";
+        // mkdir() fails under a non-directory path component regardless of
+        // privilege level, so this reproduces the /opt (Linux) and /Library
+        // (macOS) permission failure deterministically, including when the
+        // test itself runs as root. [ADR-SET-001]
+        const auto preferred = (blocker / "Xplorer" / "Xplorer").string();
+        const auto fallback = freshTempDir("xpl_settings_fallback_user");
+
+        WHEN("the service is constructed with both directories")
+        {
+            XmlSettingsService service(preferred, fallback.string());
+
+            THEN("settings load with defaults and persist under the fallback directory")
+            {
+                CHECK(service.allUsersSettings().midiConfig.sysexTransmitDelay == 30);
+                const auto path = service.settingsFilePath();
+                CHECK(path.rfind(fallback.string(), 0) == 0);
+                CHECK(std::filesystem::exists(path));
+            }
+        }
+    }
+}
+
+SCENARIO("Both the preferred and the fallback directories are unwritable", "[RQ-SET-004][ADR-SET-001]")
+{
+    GIVEN("two candidate directories that both cannot be created")
+    {
+        const auto root = freshTempDir("xpl_settings_both_blocked");
+        const auto blocker1 = root / "blocker1";
+        std::ofstream(blocker1) << "x";
+        const auto blocker2 = root / "blocker2";
+        std::ofstream(blocker2) << "x";
+        const auto preferred = (blocker1 / "Xplorer").string();
+        const auto fallback = (blocker2 / "Xplorer").string();
+
+        WHEN("settings are accessed")
+        {
+            XmlSettingsService service(preferred, fallback);
+
+            THEN("in-memory defaults are returned instead of dereferencing an empty cache")
+            {
+                CHECK(service.allUsersSettings().midiConfig.sysexTransmitDelay == 30);
+                CHECK(service.allUsersSettings().uiConfig.knobLedBorderColor
+                      == static_cast<std::int32_t>(0xFF66B5E3));
+            }
+        }
+    }
+}
+
 SCENARIO("Settings round-trip through the XML file", "[RQ-SET-001][RQ-SET-002]")
 {
     GIVEN("modified settings saved to disk")
