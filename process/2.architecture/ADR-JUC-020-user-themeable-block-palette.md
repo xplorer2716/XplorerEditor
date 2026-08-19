@@ -7,6 +7,10 @@ painter parameter + selector `BlockId`), TASK-GUI-007 (optional per-block
 persistence), TASK-GUI-008 (settings COLOURS group with live preview and
 Reset to defaults). All six decisions DEC-JUC-034..039 are in the code.
 
+**Amended 2026-08-17, session GUI** (TASK-GUI-031, RQ-GUI-073): DEC-JUC-113
+extends the DEC-JUC-038 live-preview technique to the knob LED colour, which
+this ADR had originally left on its rebuild-only path. See DEC-JUC-113 below.
+
 <!-- Motivated by RQ-DSN-095 (block colours themeable through a single runtime
 accessor), RQ-SET-007 (per-block override persistence) and RQ-GUI-046 (settings
 UI + reset to defaults). Extends ADR-JUC-018 (block colours in the painter),
@@ -14,7 +18,7 @@ ADR-JUC-019 (selector buttons) and follows ADR-JUC-011's single-source-of-truth
 rule for the knob LED colour. -->
 
 ## Requirements
-RQ-DSN-095, RQ-SET-007, RQ-GUI-046
+RQ-DSN-095, RQ-SET-007, RQ-GUI-046, RQ-GUI-073
 
 ## Context
 
@@ -110,6 +114,26 @@ separate **KNOB BEHAVIOUR** group.
   defaults as literals, otherwise a future palette revision would never reach
   users who had pressed Reset once. (RQ-SET-007)
 
+- **DEC-JUC-113 — Amendment, 2026-08-17, session GUI (TASK-GUI-031): the LED
+  path stops being "left alone" and gets the same in-place mutation as the
+  palette.** `XplorerLookAndFeel` gains `setLedColour(juce::Colour)` next to
+  `setBlockPalette()`; it mutates `_ledColour` and re-applies the one JUCE
+  colour-ID baked from it at construction (`PopupMenu::highlightedBackgroundColourId`,
+  RQ-GUI-068/ADR-JUC-017 DEC-JUC-111) so that promise holds under live preview
+  too, with no cached copy anywhere. `MainComponent::updateLedColour` is
+  simplified from a full LookAndFeel rebuild to `setLedColour` +
+  `sendLookAndFeelChange()`, dropping the block-palette save/restore dance
+  DEC-JUC-036 needed only because a rebuild used to discard it. `SettingsDialog`
+  wires the knob-LED `ColourSelector` and "Reset to defaults" to preview live
+  through this callback, and reverts it on any non-accept close — the exact
+  `_originalLedColour` snapshot/restore shape DEC-JUC-038 already used for the
+  palette, now applied to the LED colour it was modelled on.
+  DEC-JUC-038's objection to rebuilding "on every mouse-move of a colour
+  picker" is **not** overridden here — it still holds for a rebuild. What
+  changes is that the LED colour no longer needs one: the same in-place
+  technique that made block-colour live preview cheap now removes the reason
+  the LED path was scoped out. (RQ-GUI-073, ADR-JUC-011)
+
 ## Consequences
 
 - **Easier:** one authority for every runtime colour (LED + blocks); the painter
@@ -139,8 +163,13 @@ separate **KNOB BEHAVIOUR** group.
   rejected as a hack — it cannot work for the 18 %-alpha fills or the gradient
   frames, and it would leave two sources of truth.
 - **Rebuilding `XplorerLookAndFeel` on every palette change** (symmetry with the
-  LED path): rejected for live preview, see DEC-JUC-038; the LED path is left
+  LED path): rejected for live preview, see DEC-JUC-038; the LED path was left
   alone rather than "fixed" opportunistically, to keep this change scoped.
+  *(Amended 2026-08-17, session GUI, DEC-JUC-113: the LED path is no longer
+  left alone — it gets `setLedColour()`, the same in-place-mutation technique
+  this bullet describes for the palette, once RQ-GUI-073 asked for the two
+  controls to behave alike. The rebuild itself is still rejected; only the
+  LED path's exemption from the fix is withdrawn.)*
 - **Storing the eight overrides as a single packed string / one XML blob:**
   rejected — it defeats the per-entry optionality RQ-SET-007 requires, and makes
   a hand-edited settings file harder to read and repair.
@@ -161,9 +190,9 @@ flowchart TD
     PAINT --> UI["panel: frames, fills,<br/>section headers"]
     BTN --> UI
 
-    DLG["Settings > User interface<br/>COLOURS group + Reset (RQ-GUI-046)"]
-    DLG -->|"live preview:<br/>setBlockPalette + sendLookAndFeelChange"| LAF
+    DLG["Settings > User interface<br/>COLOURS group + Reset (RQ-GUI-046, RQ-GUI-073)"]
+    DLG -->|"live preview:<br/>setBlockPalette / setLedColour<br/>+ sendLookAndFeelChange (DEC-JUC-113)"| LAF
     DLG -->|"on accept"| XML
-    DLG -->|"on cancel: restore snapshot"| LAF
+    DLG -->|"on cancel: restore snapshot<br/>(palette AND led colour)"| LAF
     DLG -->|"Reset: clear overrides (DEC-JUC-039)"| RES
 ```

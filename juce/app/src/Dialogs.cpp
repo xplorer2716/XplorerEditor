@@ -313,26 +313,20 @@ namespace xplorer::app
             std::vector<std::unique_ptr<DependencyRow>> _rows;
         };
 
-        /** Why the list is empty, in the user's terms. Every branch is a real,
-            reachable configuration -- a developer build with no SBOM copied, a
-            truncated download, a future CI change -- so none of them may fail
-            silently or show a blank frame. [RQ-GUI-057, DEC-ABT-005] */
-        juce::String explanationFor(SbomStatus status, const juce::File& sbomFile)
+        /** Why the list is empty, in the user's terms. The SBOM is embedded
+            BinaryData (ADR-BLD-005), so it can no longer be missing or
+            unreadable -- only its content can still be malformed, which is the
+            one real, reachable configuration left. [RQ-GUI-057, DEC-ABT-005] */
+        juce::String explanationFor(SbomStatus status)
         {
-            const auto location = "\n\nExpected at:\n" + sbomFile.getFullPathName();
             switch (status)
             {
-                case SbomStatus::FileNotFound:
-                    return "The software bill of materials that lists this application's "
-                           "dependencies was not found." + location;
-                case SbomStatus::Unreadable:
-                    return "The software bill of materials could not be read." + location;
                 case SbomStatus::InvalidJson:
                     return "The software bill of materials is not valid JSON and could not "
-                           "be parsed." + location;
+                           "be parsed.";
                 case SbomStatus::NotSpdxOrEmpty:
                     return "The software bill of materials contains no dependency "
-                           "information." + location;
+                           "information.";
                 case SbomStatus::Loaded:
                     break;
             }
@@ -344,8 +338,7 @@ namespace xplorer::app
         public:
             DependenciesContent()
             {
-                const auto sbomFile = defaultSbomFile();
-                const auto result = readSbom(sbomFile);
+                const auto result = readEmbeddedSbom();
 
                 const juce::Font headerFont{juce::FontOptions{DEP_TEXT_SIZE}};
                 if (result.status == SbomStatus::Loaded)
@@ -375,7 +368,7 @@ namespace xplorer::app
                     _message.setFont(headerFont);
                     _message.setColour(juce::Label::textColourId, tokens::semantic::textOnDocument);
                     _message.setJustificationType(juce::Justification::topLeft);
-                    _message.setText(explanationFor(result.status, sbomFile), juce::dontSendNotification);
+                    _message.setText(explanationFor(result.status), juce::dontSendNotification);
                     addAndMakeVisible(_message);
                     setSize(WIDTH, MESSAGE_HEIGHT);
                 }

@@ -1,0 +1,41 @@
+# The single place a product version is computed. Every deployment workflow
+# calls this, and CMake, the About dialog, the executable's version resources,
+# the SBOM, the archive names and the release tag all take their value from what
+# it emits — so "no file in the repository contains a literal product version"
+# is checkable by searching for any version-shaped literal, rather than by
+# comparing four files kept equal by hand.
+# [RQ-BLD-015, RQ-BLD-016, RQ-BLD-020, ADR-BLD-003 (DEC-BLD-014, DEC-BLD-015)]
+#
+# The derivation itself lives in resolve-version.sh rather than inline here, so
+# it can be run and asserted outside GitHub Actions — see tests/. It is the one
+# piece of logic every deployment workflow agrees through, which is the argument
+# for testing it rather than observing it.
+name: 'Resolve the product version'
+description: 'Derives the numeric, display and full product-version forms from the commit being built.'
+
+outputs:
+  numeric:
+    description: 'Four integers, e.g. 2026.8.19.1740 — CMake, JUCE target, Windows FILEVERSION, CFBundleVersion.'
+    value: ${{ steps.resolve.outputs.numeric }}
+  display:
+    description: 'Zero-padded, e.g. 2026.08.19-1740 — release tag, release title, archive names.'
+    value: ${{ steps.resolve.outputs.display }}
+  full:
+    description: 'Display form plus the stage suffix, e.g. 2026.08.19-1740-preprod — About box, ProductVersion string, SBOM.'
+    value: ${{ steps.resolve.outputs.full }}
+  stage:
+    description: 'Empty for production, "preprod" on dev, "canary" everywhere else.'
+    value: ${{ steps.resolve.outputs.stage }}
+  timestamp:
+    description: 'The commit''s own committer time in UTC, ISO 8601 — the SBOM''s `created` field. From the commit, not the clock, so a rebuild produces a byte-identical document.'
+    value: ${{ steps.resolve.outputs.timestamp }}
+
+runs:
+  using: composite
+  steps:
+    # Needs the commit object, nothing more: `git log -1 HEAD` is satisfied by a
+    # depth-1 checkout. (Release NOTES need history — that is publish-deployment's
+    # problem, not this action's.)
+    - id: resolve
+      shell: bash
+      run: "${GITHUB_ACTION_PATH}/resolve-version.sh"

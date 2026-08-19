@@ -66,12 +66,35 @@ namespace xplorer::app
             return false;
         }
 
-        juce::String settingsDirectory()
+        juce::String preferredSettingsDirectory()
         {
             return juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory)
                 .getChildFile("Xplorer")
                 .getChildFile("Xplorer")
                 .getFullPathName();
+        }
+
+        // Used when preferredSettingsDirectory() cannot be created — Linux
+        // (/opt) and macOS (/Library) are root-owned and this project ships
+        // no installer to grant a standard user write access there.
+        // [RQ-SET-001, ADR-SET-001 (DEC-SET-001)]
+        juce::String fallbackSettingsDirectory()
+        {
+            return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
+                .getChildFile("Xplorer")
+                .getChildFile("Xplorer")
+                .getFullPathName();
+        }
+
+        // Name and version from the build, not from a literal: the same
+        // string the About dialog shows (RQ-BLD-015, RQ-BLD-016), now also
+        // the controller's own product-name-and-version (RQ-CTL-061) instead
+        // of the constructor's placeholder default — a second call site with
+        // its own literal would drift from the About box the moment either
+        // changed. [RQ-CTL-061]
+        std::string productNameAndVersion()
+        {
+            return std::string(JUCE_APPLICATION_NAME_STRING) + " " + XPL_VERSION_FULL_STRING;
         }
     }
 
@@ -79,9 +102,9 @@ namespace xplorer::app
     {
         _dispatcher = std::make_shared<JuceEventDispatcher>();
         _settingsService = std::make_unique<settings::XmlSettingsService>(
-            settingsDirectory().toStdString());
+            preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString());
         _controller = std::make_unique<controller::XpanderController>(
-            _backend, *_settingsService, _dispatcher, "XPLORER");
+            _backend, *_settingsService, _dispatcher, productNameAndVersion());
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);
         _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
             juce::Colour(static_cast<juce::uint32>(
@@ -147,6 +170,14 @@ namespace xplorer::app
             {
                 _vfd->showModulationEntry(_controller->getModulationEntryByNumber(entryNumber),
                                           false); // [RQ-GUI-020]
+            });
+        _matrixPanel->setMaxSourceReachedHandler(
+            [this](int entryNumber)
+            {
+                // showModulationEntry already carried this exact notice; only
+                // the true-passing trigger was missing. [RQ-GUI-020,
+                // ADR-JUC-036 (DEC-JUC-123)]
+                _vfd->showModulationEntry(_controller->getModulationEntryByNumber(entryNumber), true);
             });
 
         // Modulation-matrix hover highlight: the colour is derived from the
@@ -415,7 +446,24 @@ namespace xplorer::app
         };
         _shortcutActions["btPatchSave"] = [this]
         {
-            _fileChooser = std::make_unique<juce::FileChooser>("Save patch", juce::File(), "*.syx");
+            // Default the file name to the tone's own name, sanitized and
+            // made unique the same way RQ-CTL-003's bank extraction already
+            // does — one sanitizer, not a second implementation of the same
+            // rule. [RQ-GUI-077]
+            //
+            // Trailing spaces are trimmed first: the model pads tone names to
+            // a fixed width with spaces (XPANDER's own on-synth storage
+            // format), which are meaningless trailing characters in a file
+            // name and not caught by the sanitizer (space is a legal file-name
+            // character everywhere else in a name).
+            const auto trimmedToneName = juce::String(_controller->toneName()).trimEnd().toStdString();
+            const auto documentsDirectory =
+                juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+            const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
+                trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+                documentsDirectory.getFullPathName().toStdString());
+            _fileChooser = std::make_unique<juce::FileChooser>(
+                "Save patch", documentsDirectory.getChildFile(defaultFileName), "*.syx");
             _fileChooser->launchAsync(
                 juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
                 [this](const juce::FileChooser& chooser)
@@ -610,17 +658,27 @@ namespace xplorer::app
         constexpr const char* RELEASES_URL = "https://github.com/xplorer2716/XplorerEditor/releases/latest";
         constexpr const char* WEBSITE_URL = "https://xplorer2716.github.io/XplorerEditor.site/";
 
-        // The default patch File > New loads, copied beside the executable by
-        // the build (app/CMakeLists.txt). The reference resolves it the same
-        // way -- executable directory + this name -- and "New" there means
-        // "load this patch", not "blank the editor".
-        // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+        // The default patch File > New loads, embedded in the executable as
+        // BinaryData rather than shipped as a sibling file -- immune to being
+        // edited or deleted between download and launch. "New" means "load
+        // this patch", not "blank the editor", matching the reference.
+        // [RQ-GUI-008, ADR-BLD-005 (DEC-BLD-027, DEC-BLD-028) -- supersedes
+        // ADR-JUC-032 (DEC-JUC-100)]
         constexpr const char* DEFAULT_TONE_FILENAME = "oberheim.syx";
 
+        // Rewritten from the embedded bytes on every call, never cached: the
+        // existing tone-loading API (IToneReader::readTone) takes a filesystem
+        // path with no in-memory overload, so the temp file is the bounce that
+        // keeps that API untouched -- and always overwriting it, rather than
+        // reusing a path written once, means a tampered temp copy cannot
+        // survive to the next File > New. [ADR-BLD-005 (DEC-BLD-028)]
         [[nodiscard]] juce::File defaultToneFile()
         {
-            return juce::File::getSpecialLocation(juce::File::currentExecutableFile)
-                .getSiblingFile(DEFAULT_TONE_FILENAME);
+            auto file = juce::File::getSpecialLocation(juce::File::tempDirectory)
+                            .getChildFile(DEFAULT_TONE_FILENAME);
+            file.replaceWithData(BinaryData::oberheim_syx,
+                                  static_cast<size_t>(BinaryData::oberheim_syxSize));
+            return file;
         }
 
         // The reference's sixteen menu shortcuts (MainForm.resx
@@ -960,7 +1018,16 @@ namespace xplorer::app
                 }
                 break;
             case 30:
-                showAboutDialog("Xplorer 0.1.0");
+                // Name and version from the build, not from a literal: this
+                // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
+                // root. [RQ-BLD-015, RQ-BLD-016]
+                showAboutDialog(productNameAndVersion());
+                // Reference AboutForm.OnLoad() greets the synth the moment the
+                // About window is shown (XpanderController.cs:756, called from
+                // AboutForm.cs:90); the JUCE port already carries a faithful
+                // sendGreetingsToSynth() but nothing called it here — this was
+                // the missing link. [RQ-GUI-076, RQ-CTL-061]
+                _controller->sendGreetingsToSynth();
                 break;
             // The three Help URLs, opened in the system browser exactly as the
             // reference's OpenBrowserWithUrl does — no update check of our own.
@@ -1013,14 +1080,12 @@ namespace xplorer::app
 
     void MainComponent::updateLedColour(int argb)
     {
-        // Rebuild the skin with the new LED colour and repaint the tree; the
-        // block palette is carried across the rebuild so a customised palette
-        // survives an LED-colour change. [RQ-GUI-031, RQ-DSN-095, ADR-JUC-020]
-        const auto palette = _lookAndFeel->blockPalette();
-        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
-        _lookAndFeel = std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(argb)));
-        _lookAndFeel->setBlockPalette(palette);
-        juce::LookAndFeel::setDefaultLookAndFeel(_lookAndFeel.get());
+        // Live preview / accept / cancel-restore all land here, exactly as they
+        // do for the block palette above: retune the colour in place and
+        // repaint the tree — no LookAndFeel rebuild, so a customised block
+        // palette survives with nothing to carry across.
+        // [RQ-GUI-031, RQ-GUI-073, RQ-DSN-095, ADR-JUC-011, ADR-JUC-020 (DEC-JUC-113)]
+        _lookAndFeel->setLedColour(juce::Colour(static_cast<juce::uint32>(argb)));
         if (auto* top = getTopLevelComponent())
         {
             top->sendLookAndFeelChange();

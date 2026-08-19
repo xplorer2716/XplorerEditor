@@ -532,7 +532,7 @@ namespace xplorer::app
         box(729, 45, 62, 26, &BLK_VCF);
         blockTitle(760, 63, "VCA1", FS_VCA);
         box(804, 45, 62, 26, &BLK_VCF);
-        blockTitle(835, 63, "VCA", FS_VCA);
+        blockTitle(835, 63, "VCA2", FS_VCA); // was "VCA" [RQ-GUI-001]
         line(711, 58, 729, 58);
         line(791, 58, 804, 58);
         outLabel(866, 58, "VOICE", "OUT");

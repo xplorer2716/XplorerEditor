@@ -593,6 +593,19 @@ namespace xplorer::controller
         std::string line1 = _productNameAndVersion;
         std::transform(line1.begin(), line1.end(), line1.begin(),
             [](char c) { return static_cast<char>(::toupper(static_cast<unsigned char>(c))); });
+        // padRight only grows a string, never shrinks it: a name+version that
+        // does not fit the line must be shortened first, or it silently
+        // overruns onto the fixed-width line2 that follows it. Dropping the
+        // "-<stream>" suffix (canary/preprod/...) is the one part of the
+        // string that is not the product name or the semantic version.
+        if (line1.size() > static_cast<std::size_t>(PADDING_LENGTH))
+        {
+            const auto streamSuffix = line1.find('-');
+            if (streamSuffix != std::string::npos)
+            {
+                line1 = line1.substr(0, streamSuffix);
+            }
+        }
         line1 = padRight(line1, PADDING_LENGTH);
         const auto line2 = padRight("GITHUB.COM/XPLORER2716/XPLOREREDITOR", PADDING_LENGTH);
         sendDisplayOffOnToSynth();

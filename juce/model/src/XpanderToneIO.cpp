@@ -3,14 +3,18 @@
 #include "xplorer/model/XpanderSinglePatch.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
+
 #include <algorithm>
-#include <format>
 #include <fstream>
 
 namespace xplorer::model
 {
     using midiapp::model::AbstractTone;
     using midiapp::model::ToneException;
+    using midiapp::service::formatStr;
 
     namespace
     {
@@ -94,7 +98,7 @@ namespace xplorer::model
         }
         catch (const std::exception& e)
         {
-            throw ToneException(std::format("Unable to load sysex data from {}.\r\n{}", filename, e.what()));
+            throw ToneException(formatStr("Unable to load sysex data from {}.\r\n{}", filename, e.what()));
         }
     }
 
@@ -120,7 +124,7 @@ namespace xplorer::model
         }
         catch (const std::exception& e)
         {
-            throw ToneException(std::format("Unable to load sysex data from {}.\r\n{}", filename, e.what()));
+            throw ToneException(formatStr("Unable to load sysex data from {}.\r\n{}", filename, e.what()));
         }
         return result;
     }
@@ -132,7 +136,7 @@ namespace xplorer::model
         stream.write(reinterpret_cast<const char*>(data.data()), static_cast<std::streamsize>(data.size()));
         if (!stream.good())
         {
-            throw ToneException(std::format("Unable to save tone {} to file {}", tone.toneName(), filename));
+            throw ToneException(formatStr("Unable to save tone {} to file {}", tone.toneName(), filename));
         }
     }
 }

@@ -1,0 +1,45 @@
+/* Windows version resource. Configured by CMake into the build tree and pulled
+   in through JUCE's own JUCE_USER_DEFINED_RC_FILE hook.
+   [RQ-BLD-020, RQ-BLD-024, ADR-BLD-003 (DEC-BLD-014)]
+
+   Why this file exists at all: juceaide generates a VERSIONINFO block whose
+   FileVersion AND ProductVersion strings both come from the target's VERSION —
+   the numeric form, which cannot carry "-preprod" or "-canary". A
+   pre-production executable and a production one built the same minute would
+   then be indistinguishable in their file properties, which is precisely the
+   case someone reads those properties to settle.
+
+   What is safe to override, read from juce_ResourceRc.cpp rather than assumed:
+   JUCE emits the whole VERSIONINFO inside `#ifdef JUCE_USER_DEFINED_RC_FILE /
+   #else / #endif`, so defining that macro replaces this block and nothing else.
+   The icon statements (IDI_ICON1/IDI_ICON2) are written OUTSIDE that guard, so
+   RQ-BLD-026's application icon survives untouched — verified in the vendored
+   JUCE 8.0.9 source, not inferred from the docs.
+
+   FILEVERSION stays numeric because it is four 16-bit integers. The stage
+   travels in ProductVersion, which is free text. */
+#undef  WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION  @XPL_VERSION_RC_COMMA@
+PRODUCTVERSION  @XPL_VERSION_RC_COMMA@
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName",     "Xplorer\0"
+      VALUE "FileDescription", "Xplorer\0"
+      VALUE "FileVersion",     "@XPL_VERSION_NUMERIC@\0"
+      VALUE "ProductName",     "Xplorer\0"
+      VALUE "ProductVersion",  "@XPL_VERSION_FULL@\0"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

@@ -20,8 +20,16 @@ namespace xplorer::app
 
         /// The single runtime source of truth for the knob LED colour; every
         /// consumer (knobs, tick boxes, matrix highlight) derives from it, so a
-        /// colour change only rebuilds this object. [ADR-JUC-011]
+        /// colour change only touches this object. [ADR-JUC-011]
         [[nodiscard]] juce::Colour ledColour() const { return _ledColour; }
+
+        /// Retunes the LED colour IN PLACE, so the settings dialog can preview
+        /// a pick live without rebuilding the whole LookAndFeel on every drag
+        /// of the colour picker — the same technique setBlockPalette() already
+        /// uses. Re-seeds the JUCE colour IDs derived from it at construction,
+        /// which is what keeps ADR-JUC-011's no-cached-copy promise true under
+        /// live preview. [RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113), ADR-JUC-011]
+        void setLedColour(juce::Colour colour);
 
         /// The single runtime source of truth for the block-identity palette
         /// (defaults = design tokens, user overrides win). The painter takes it

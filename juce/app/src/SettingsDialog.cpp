@@ -408,16 +408,17 @@ namespace xplorer::app
         // ---- User interface page ------------------------------------------
         // COLOURS group (knob LED + the eight block colours + Reset to
         // defaults, presented as one coherent set) and KNOB BEHAVIOUR group
-        // (movement/style radios) — owner-validated mockup layout. Block
-        // colour edits preview live through the LookAndFeel palette; the
-        // dialog owns the cancel-restore snapshot. [RQ-GUI-046, RQ-DSN-095,
-        // ADR-JUC-020 (DEC-JUC-038/039)]
+        // (movement/style radios) — owner-validated mockup layout. Every
+        // colour in the group — knob LED included — previews live through the
+        // LookAndFeel; the dialog owns the cancel-restore snapshots.
+        // [RQ-GUI-046, RQ-GUI-073, RQ-DSN-095, ADR-JUC-020 (DEC-JUC-038/039/113)]
         class UiSettingsPage final : public juce::Component, private juce::ChangeListener
         {
         public:
             UiSettingsPage(settings::ISettingsService& settingsService,
-                           std::function<void(const BlockPalette&)> onPalettePreview)
-                : _onPalettePreview(std::move(onPalettePreview))
+                           std::function<void(const BlockPalette&)> onPalettePreview,
+                           std::function<void(int)> onLedPreview)
+                : _onPalettePreview(std::move(onPalettePreview)), _onLedPreview(std::move(onLedPreview))
             {
                 const auto& ui = settingsService.allUsersSettings().uiConfig;
                 _ledColour = juce::Colour(static_cast<juce::uint32>(ui.knobLedBorderColor));
@@ -611,11 +612,13 @@ namespace xplorer::app
                 const auto colour = selector->getCurrentColour();
                 if (_editTarget == LED_TARGET)
                 {
-                    // LED colour keeps its apply-on-accept path (no live
-                    // preview) — unchanged behaviour. [ADR-JUC-020]
                     _ledColour = colour;
                     _ledSwatch.colour = colour;
                     _ledSwatch.repaint();
+                    if (_onLedPreview) // live preview [DEC-JUC-113]
+                    {
+                        _onLedPreview(ledColourArgb());
+                    }
                     return;
                 }
                 const auto index = static_cast<std::size_t>(_editTarget);
@@ -643,6 +646,10 @@ namespace xplorer::app
                 if (_onPalettePreview)
                 {
                     _onPalettePreview(_palette);
+                }
+                if (_onLedPreview) // one set, one preview [RQ-GUI-073]
+                {
+                    _onLedPreview(ledColourArgb());
                 }
             }
 
@@ -673,6 +680,7 @@ namespace xplorer::app
             }
 
             std::function<void(const BlockPalette&)> _onPalettePreview;
+            std::function<void(int)> _onLedPreview;
             juce::Colour _ledColour;
             BlockPalette _palette;
             int _editTarget = LED_TARGET;
@@ -856,13 +864,14 @@ namespace xplorer::app
                   _onBlockPaletteChanged(std::move(onBlockPaletteChanged)),
                   _tabs(juce::TabbedButtonBar::TabsAtTop)
             {
+                // Both colour snapshots are taken on open and restored on any
+                // non-accept close (Cancel, Esc, title bar).
+                // [DEC-JUC-038, DEC-JUC-113]
                 _originalLedColour = settingsService.allUsersSettings().uiConfig.knobLedBorderColor;
-                // Palette snapshot taken on open, restored on any non-accept
-                // close (Cancel, Esc, title bar). [DEC-JUC-038]
                 _originalPalette = resolveBlockPalette(settingsService.allUsersSettings().uiConfig);
 
                 auto* midiPage = new MidiSettingsPage(settingsService, backend);
-                auto* uiPage = new UiSettingsPage(settingsService, _onBlockPaletteChanged);
+                auto* uiPage = new UiSettingsPage(settingsService, _onBlockPaletteChanged, _onLedColourChanged);
                 auto* randomPage = new RandomizerSettingsPage(settingsService);
                 _midiPage = midiPage;
                 _uiPage = uiPage;
@@ -888,10 +897,19 @@ namespace xplorer::app
             ~SettingsContent() override
             {
                 // Any close that did not go through accept() reverts the live
-                // preview to the palette snapshot. [DEC-JUC-038, RQ-GUI-046]
-                if (!_accepted && _onBlockPaletteChanged)
+                // preview to the snapshots taken on open — both colour groups.
+                // [DEC-JUC-038, DEC-JUC-113, RQ-GUI-046, RQ-GUI-073]
+                if (_accepted)
+                {
+                    return;
+                }
+                if (_onBlockPaletteChanged)
                 {
                     _onBlockPaletteChanged(_originalPalette);
+                }
+                if (_onLedColourChanged)
+                {
+                    _onLedColourChanged(_originalLedColour);
                 }
             }
 
@@ -915,14 +933,16 @@ namespace xplorer::app
                 _settingsService.saveSettings(settings);
                 applyMidiSettings(_controller, _settingsService, _backend);
 
-                const int newLed = _uiPage->ledColourArgb();
-                if (newLed != _originalLedColour && _onLedColourChanged)
-                {
-                    _onLedColourChanged(newLed);
-                }
-                // Commit the accepted palette (override ?? default) as the live
-                // one; the destructor must not revert it. [DEC-JUC-039]
+                // Commit the accepted colours as the live ones; the destructor
+                // must not revert them. Both are committed unconditionally: the
+                // live preview has already applied them, so a "changed?" guard
+                // would only make the two paths differ for no gain.
+                // [DEC-JUC-039, DEC-JUC-113]
                 _accepted = true;
+                if (_onLedColourChanged)
+                {
+                    _onLedColourChanged(_uiPage->ledColourArgb());
+                }
                 if (_onBlockPaletteChanged)
                 {
                     _onBlockPaletteChanged(resolveBlockPalette(settings.uiConfig));

@@ -25,11 +25,11 @@ namespace xplorer::app
         // checkbox/radio fill (drawTickBox/drawRadioBox) exactly rather than a
         // tint of it — owner correction 2026-08-15: an alpha-blended first pass
         // read as a different, darker colour, not "the same colour" the knob
-        // LED swatch shows. Reads live from the ctor's ledColour, so a
-        // LookAndFeel rebuild (MainComponent::updateLedColour) keeps it in sync
-        // with every other accent-coloured control, no cached copy.
-        // [RQ-GUI-068, ADR-JUC-011, ADR-JUC-017 (DEC-JUC-111)]
-        setColour(juce::PopupMenu::highlightedBackgroundColourId, ledColour);
+        // LED swatch shows. Seeded through setLedColour, which is also what a
+        // live retune calls, so this ID cannot go stale behind the accent
+        // colour it derives from.
+        // [RQ-GUI-068, RQ-GUI-073, ADR-JUC-011, ADR-JUC-017 (DEC-JUC-111)]
+        setLedColour(ledColour);
         setColour(juce::PopupMenu::highlightedTextColourId, tokens::semantic::textPrimary);
         setColour(juce::ToggleButton::textColourId, tokens::semantic::textPrimary);
         setColour(juce::Label::textColourId, tokens::semantic::textPrimary);
@@ -72,6 +72,16 @@ namespace xplorer::app
             jassert(overflowing.empty());
         }
 #endif
+    }
+
+    void XplorerLookAndFeel::setLedColour(juce::Colour colour)
+    {
+        _ledColour = colour;
+        // The one JUCE colour ID baked from the accent rather than read from
+        // _ledColour at paint time; re-seeding it here is what makes the
+        // in-place retune equivalent to the rebuild it replaces.
+        // [RQ-GUI-068, RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]
+        setColour(juce::PopupMenu::highlightedBackgroundColourId, colour);
     }
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -378,9 +388,12 @@ namespace xplorer::app
 
             juce::TextEditor* createEditorComponent() override
             {
-                auto* editor = juce::Label::createEditorComponent();
-                editor->setInputRestrictions(2, "0123456789");
-                return editor;
+                // NOT named `editor`: juce::Label already has a member of that
+                // name, and this translation unit is compiled under /W4 /WX by
+                // the test target (C4458). [RQ-GUI-058]
+                auto* restricted = juce::Label::createEditorComponent();
+                restricted->setInputRestrictions(2, "0123456789");
+                return restricted;
             }
         };
     }

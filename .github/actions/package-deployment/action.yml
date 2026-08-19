@@ -1,0 +1,194 @@
+# Wraps one built platform/configuration into the single archive a deployment
+# carries. [RQ-BLD-021, ADR-BLD-004 (DEC-BLD-018)]
+#
+# Why an archive rather than a bare asset: GitHub requires unique asset names on
+# a release, so six configurations sharing one flat naming scheme still need
+# something to group under. The archive/bundle/AppImage container also keeps the
+# per-platform shape (a macOS .app is a directory, an AppImage is one file with
+# its own internal layout) behind one consistent asset-naming convention.
+#
+# The archive holds ONE item now, not three: oberheim.syx and the generated SBOM
+# are compiled into the executable as BinaryData (ADR-BLD-005), so there is
+# nothing left to copy or check for beside it. [RQ-BLD-021, ADR-BLD-005]
+name: 'Package one deployment archive'
+description: 'Archives the application for one platform and configuration.'
+
+inputs:
+  artefact-dir:
+    description: 'Directory holding the built executable (Windows/Linux) or the .app bundle (macOS).'
+    required: true
+  version:
+    description: 'Display version form, e.g. 2026.08.19-1740.'
+    required: true
+  os:
+    description: 'windows | macos | linux'
+    required: true
+  arch:
+    description: 'x64 | arm64'
+    required: true
+  config:
+    description: 'release | debug'
+    required: true
+
+outputs:
+  archive:
+    description: 'Path of the produced archive.'
+    value: ${{ steps.package.outputs.archive }}
+  archive-name:
+    description: 'Its file name, which is also the release asset name.'
+    value: ${{ steps.package.outputs.archive-name }}
+
+runs:
+  using: composite
+  steps:
+    # Pinned, like every other dependency this project takes (RQ-BLD-001): a
+    # packaging tool that changes under the pipeline changes the artefact users
+    # download. NOTE the repository -- appimagetool moved out of AppImage/
+    # AppImageKit, whose release assets now 404, so the old widely-copied
+    # AppImageKit/releases/download/13 URL is dead rather than merely old.
+    - id: appimagetool
+      if: inputs.os == 'linux'
+      shell: bash
+      env:
+        APPIMAGETOOL_VERSION: '1.9.0'
+      run: |
+        set -euo pipefail
+
+        # appimagetool runs desktop-file-validate on the AppDir's .desktop entry
+        # and ABORTS if the binary is absent. Found by running this packaging
+        # branch locally before committing it, which is the only reason it is
+        # not a red first Linux deployment.
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends desktop-file-utils
+
+        dest="${RUNNER_TEMP}/appimagetool"
+        # --proto '=https' --tlsv1.2: -L follows redirects, and without pinning
+        # the protocol curl would silently follow one downgraded to plain
+        # http. SonarCloud finding. [RQ-BLD-025]
+        curl --proto '=https' --tlsv1.2 -fsSL -o "${dest}" \
+          "https://github.com/AppImage/appimagetool/releases/download/${APPIMAGETOOL_VERSION}/appimagetool-x86_64.AppImage"
+        chmod +x "${dest}"
+        echo "path=${dest}" >> "$GITHUB_OUTPUT"
+
+    - id: package
+      shell: bash
+      env:
+        ARTEFACT_DIR: ${{ inputs.artefact-dir }}
+        VERSION: ${{ inputs.version }}
+        OS: ${{ inputs.os }}
+        ARCH: ${{ inputs.arch }}
+        CONFIG: ${{ inputs.config }}
+        APPIMAGETOOL: ${{ steps.appimagetool.outputs.path }}
+        # The application icon of RQ-BLD-026, reused in place -- the same file
+        # juce_add_gui_app already feeds to the Windows .ico and macOS .icns.
+        ICON: ${{ github.workspace }}/xdata/IconeXplorer/Hazard_256.png
+      run: |
+        set -euo pipefail
+
+        name="Xplorer-${VERSION}-${OS}-${ARCH}-${CONFIG}.zip"
+        out="${RUNNER_TEMP}/${name}"
+
+        # Fail loudly on a missing part rather than shipping an archive that is
+        # quietly empty.
+        require() {
+          [ -e "$1" ] || { echo "::error::deployment part missing: $1"; exit 1; }
+        }
+
+        case "$OS" in
+          macos)
+            # The bundle IS the deliverable, self-contained now that CMake
+            # compiles the patch and the SBOM into the binary itself rather than
+            # placing them inside Contents/MacOS -- the archive holds exactly
+            # one item. [ADR-BLD-005]
+            #
+            # ditto, not zip: it is the macOS-native archiver and it preserves
+            # the bundle structure and its resource forks. Established by
+            # ADR-BLD-002 and kept.
+            app="$(dirname "$(dirname "${ARTEFACT_DIR}")")"
+            require "${app}"
+            ditto -c -k --sequesterRsrc --keepParent "${app}" "${out}"
+            ;;
+          windows)
+            require "${ARTEFACT_DIR}/Xplorer.exe"
+            staging="${RUNNER_TEMP}/deployment"
+            rm -rf "${staging}"
+            mkdir -p "${staging}"
+            # Copied by name rather than by copying the directory: a build tree
+            # also holds .pdb, .ilk and object files, and "everything that
+            # happens to be there" is not a deliverable.
+            cp "${ARTEFACT_DIR}/Xplorer.exe" "${staging}/"
+            # 7z, not zip: Git Bash on the windows-2022 runner ships neither zip
+            # nor unzip, and the first real preprod deployment failed here with
+            # "zip: command not found". 7-Zip IS preinstalled there.
+            (cd "${staging}" && 7z a -tzip "${out}" . >/dev/null)
+            ;;
+          linux)
+            # The AppImage IS the deliverable. It no longer needs oberheim.syx
+            # or the SBOM copied into AppDir/usr/bin: both are compiled into the
+            # Xplorer binary itself as BinaryData, so the executable is
+            # self-contained wherever it runs from, mounted squashfs included.
+            # [RQ-BLD-021, RQ-BLD-025, ADR-BLD-005]
+            require "${ARTEFACT_DIR}/Xplorer"
+            require "${ICON}"
+
+            appdir="${RUNNER_TEMP}/Xplorer.AppDir"
+            rm -rf "${appdir}"
+            mkdir -p "${appdir}/usr/bin"
+            cp "${ARTEFACT_DIR}/Xplorer" "${appdir}/usr/bin/"
+            chmod +x "${appdir}/usr/bin/Xplorer"
+
+            # The icon is the one RQ-BLD-026 already gave the Windows executable
+            # and the macOS bundle -- reused in place, never a second copy. It
+            # is needed twice: at the AppDir root, which is what appimagetool
+            # reads, and in hicolor/, which is where a desktop environment looks
+            # once the AppImage is integrated. [RQ-BLD-026]
+            hicolor="${appdir}/usr/share/icons/hicolor/256x256/apps"
+            mkdir -p "${hicolor}"
+            cp "${ICON}" "${hicolor}/xplorer.png"
+            cp "${ICON}" "${appdir}/xplorer.png"
+
+            # Exec is the bare name: AppRun puts usr/bin on PATH. Icon carries
+            # no extension, per the Desktop Entry Specification.
+            cat > "${appdir}/xplorer.desktop" <<'DESKTOP'
+        [Desktop Entry]
+        Type=Application
+        Name=Xplorer
+        Comment=Realtime editor for the Oberheim Xpander and Matrix-12
+        Exec=Xplorer
+        Icon=xplorer
+        Categories=AudioVideo;Audio;
+        Terminal=false
+        DESKTOP
+
+            cat > "${appdir}/AppRun" <<'APPRUN'
+        #!/bin/sh
+        # Resolve the mount point rather than assuming the working directory:
+        # an AppImage may be launched from anywhere, and the binary finds
+        # oberheim.syx and the SBOM relative to its own location.
+        HERE="$(dirname "$(readlink -f "$0")")"
+        export PATH="${HERE}/usr/bin:${PATH}"
+        exec "${HERE}/usr/bin/Xplorer" "$@"
+        APPRUN
+            chmod +x "${appdir}/AppRun"
+
+            appimage="${RUNNER_TEMP}/Xplorer.AppImage"
+            # --appimage-extract-and-run: appimagetool is itself an AppImage and
+            # the runner has no FUSE, which is the same fallback the deployment
+            # notes hand the user (RQ-BLD-027). ARCH is read from the
+            # environment by appimagetool and has no default.
+            ARCH=x86_64 "${APPIMAGETOOL}" --appimage-extract-and-run \
+                "${appdir}" "${appimage}" >/dev/null
+
+            staging="${RUNNER_TEMP}/deployment"
+            rm -rf "${staging}"
+            mkdir -p "${staging}"
+            cp "${appimage}" "${staging}/Xplorer-${VERSION}-x86_64.AppImage"
+            (cd "${staging}" && zip -qr "${out}" .)
+            ;;
+          *)
+            echo "::error::unsupported os '${OS}'"; exit 1 ;;
+        esac
+
+        echo "archive=${out}" >> "$GITHUB_OUTPUT"
+        echo "archive-name=${name}" >> "$GITHUB_OUTPUT"
+        echo "Packaged ${name}" >&2

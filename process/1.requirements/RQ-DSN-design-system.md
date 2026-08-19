@@ -383,6 +383,40 @@ position of each block (same positional-redundancy argument as RQ-DSN-051).
     it. *Given* any non-combo text, *When* it renders, *Then* it uses the host
     font, unchanged.
 
+- **RQ-DSN-102** — **The piano-window key-mapping labels SHALL have their own
+  token pair.** RQ-GUI-075 prints, on each computer-keyboard-mapped piano key,
+  the character that triggers it. That introduces two visual values the design
+  system does not currently name, and both SHALL be tokens (ADR-JUC-014,
+  ADR-JUC-015 — declared in `juce/tools/design-tokens.yaml`, never as a literal
+  in `PianoWindow`):
+  - `pianoKeyLabelOnWhite` / `pianoKeyLabelOnBlack` — the label's colour,
+    per key colour. Originally a single `pianoKeyLabel` mid grey (owner
+    request, 2026-08-17: "dans une couleur de type gris moyen"); **split
+    2026-08-18** on owner report that the mid grey read as too low-contrast
+    on a white key — exactly the escape hatch this requirement reserved
+    below. `pianoKeyLabelOnWhite` is a darker grey for contrast against the
+    light key. `pianoKeyLabelOnBlack` first kept the original mid grey, then
+    was itself reported unreadable against the near-black key the same day
+    and moved to **pure white** — the same value the white keys' own
+    surface uses — for maximum contrast on its opposite.
+  - `pianoKeyLabelSize` — the label's text size.
+  - **Display text is upper-case; the matched character is not.** Owner
+    request, 2026-08-18. The character `KeyPress` matches against stays
+    exactly what `KeyboardLayoutQuery` resolved (RQ-GUI-074) — only the
+    glyph drawn on the key is upper-cased, purely a rendering choice with no
+    token of its own (it is a transform of `pianoKeyLabelSize`'s glyph, not a
+    new value).
+  - **Two colours, not one.** *(Superseded by the split above.)* A single mid
+    grey was specified first, precisely so a second token would only be
+    added "if that proves false on screen, and then with a rationale note
+    recording why the single value failed" — the split above is that note.
+  - **Fitting is a rule, not a value.** The label SHALL be clamped to the key it
+    sits on, so a narrow black key cannot overflow its neighbour. The clamp is
+    derived from the rendered key width at paint time — it is NOT a second size
+    token, and `pianoKeyLabelSize` remains the design decision it clamps.
+
+  **Dependencies:** RQ-GUI-074, RQ-GUI-075; RQ-DSN-020, ADR-JUC-014, ADR-JUC-015.
+
 - **RQ-DSN-101** — **The section-separator header SHALL have its own geometry
   token group.** RQ-GUI-062 turns the section header from "label above a rule"
   into "one rule interrupted by its label", which introduces three geometry
@@ -854,3 +888,4 @@ implemented both, and are stale for that reason alone — out of scope here.*
 | 098 | RQ-GUI-050, RQ-DSN-094, RQ-DSN-097, ADR-JUC-014, ADR-JUC-015, ADR-JUC-024 |
 | 099 | RQ-GUI-051, RQ-GUI-037, RQ-GUI-044, RQ-DSN-021, RQ-DSN-094, ADR-JUC-013, ADR-JUC-014, ADR-JUC-015, ADR-JUC-027 |
 | 100 | RQ-GUI-045, RQ-GUI-052, RQ-DSN-023, RQ-DSN-092, RQ-DSN-094, RQ-DSN-095, RQ-DSN-099, ADR-JUC-014, ADR-JUC-018, ADR-JUC-020, ADR-JUC-028 |
+| 102 | RQ-GUI-028, RQ-GUI-074, RQ-GUI-075, RQ-DSN-020, ADR-JUC-014, ADR-JUC-015, ADR-JUC-035 |

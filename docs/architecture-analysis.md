@@ -145,8 +145,8 @@ same regardless of generator. `option(XPL_BUILD_APP)` (default `OFF`) and
 | Target | Kind | Purpose | Output location |
 |---|---|---|---|
 | `xpl_midi`, `xpl_midi_juce`, `xpl_framework`, `xpl_model`, `xpl_controller`, `xpl_settings`, `xpl_app_core` | Static libraries | One per architectural layer (§3) — never shipped standalone, only linked into `XplorerApp` and/or the test executables | `<build-dir>/<layer>/` — intermediate `.a`/`.lib`, not a deliverable |
-| `XplorerAssets` | Static library (`juce_add_binary_data`) | Embeds the shortcut-button GIFs, the three reference menu icons, the About image and the Roboto Condensed font as in-memory `BinaryData` (§4.10) | Same as above — linked into `XplorerApp` and `xpl_tests_app_juce` only |
-| `XplorerApp` | **GUI executable** (`juce_add_gui_app`; only exists when `XPL_BUILD_APP=ON`) | The Xplorer editor itself — the one artefact end users run and CI uploads/releases | `<build-dir>/app/XplorerApp_artefacts/<Config>/Xplorer[.exe \| .app]`. A `POST_BUILD` step copies `oberheim.syx` (the "New" default patch, ADR-JUC-032) and `xplorer.sbom.spdx.json` (dependency disclosure, ADR-ABT-001) beside the binary |
+| `XplorerAssets` | Static library (`juce_add_binary_data`) | Embeds the three reference menu icons, the About image, the Roboto Condensed font, the default patch `oberheim.syx` and the generated SBOM as in-memory `BinaryData` (§4.10, ADR-BLD-005) | Same as above — linked into `XplorerApp` and `xpl_tests_app_juce` only |
+| `XplorerApp` | **GUI executable** (`juce_add_gui_app`; only exists when `XPL_BUILD_APP=ON`) | The Xplorer editor itself — the one, self-contained artefact end users run and CI uploads/releases | `<build-dir>/app/XplorerApp_artefacts/<Config>/Xplorer[.exe \| .app]`. No sibling files: `oberheim.syx` (the "New" default patch) and `xplorer.sbom.spdx.json` (dependency disclosure) are compiled in as `BinaryData` rather than copied beside the binary (ADR-BLD-005; supersedes ADR-JUC-032's and ADR-ABT-001's sibling-file convention) |
 | `xpl_tests_smoke`, `xpl_tests_midi`, `xpl_tests_midi_juce`, `xpl_tests_framework`, `xpl_tests_model`, `xpl_tests_settings`, `xpl_tests_controller`, `xpl_tests_app` (8 executables) | Catch2 test executables (exist when `XPL_BUILD_TESTS=ON`, the default) | One per layer (§9), headless — no display needed, so these run in every CI job including the Linux headless one | `<build-dir>/tests/[<Config>/]<target-name>[.exe]`, registered with CTest via `catch_discover_tests` |
 | `xpl_tests_app_juce` | Catch2 test executable (only exists when `XPL_BUILD_APP=ON`, **and** `XPL_BUILD_TESTS=ON`) | The one suite that needs real JUCE font/graphics metrics to be meaningful: combo-box real-metrics fit, VFD segment renderer, background renderer, bound radio group, LED-panel geometry, dialog patch-name validation, SBOM reader (§9) | Same layout as the other test executables; produced and run only in app-enabled CI jobs (`windows-app-*`, `macos-app-*`), never in `linux-headless-release` |
 
@@ -883,19 +883,20 @@ application with no server or hosted component.
 The About dialog previously named only the project's own licence. It now carries a
 **Dependencies** button opening a window that lists every bundled third-party component
 (currently: JUCE 8.0.9, the embedded Roboto Condensed typeface, and — test-build only —
-Catch2) with name, version, licence and URL (ADR-ABT-001). The list is **never compiled into
-the binary**: it is read at run time from an SPDX 2.3 JSON file
-(`xplorer.sbom.spdx.json`) shipped as a sibling of the executable — the same
-copied-next-to-the-binary convention already used for the default patch `oberheim.syx`
-(§4.9, ADR-JUC-032). SPDX was chosen because it is what GitHub's dependency-graph export
-emits natively, so a future CI step can drop that output in place with zero application
-change. The reader (`SbomReader`, headless-testable, pure data in/out) resolves SPDX's
-"unknown" sentinels (`NOASSERTION`/`NONE`) to a neutral placeholder rather than displaying
-them literally, filters out the SBOM's own self-describing root package, and renders a
-discriminated failure result — never a silent empty list — if the file is missing or
-malformed. **Interim state**: the shipped SBOM is currently hand-maintained
-(`juce/app/sbom/xplorer.sbom.spdx.json`); replacing it with GitHub's generated export is the
-intended, application-transparent migration path (§10-22).
+Catch2) with name, version, licence and URL (ADR-ABT-001). The document is an SPDX 2.3 JSON
+file, generated at build time from CMake's own knowledge (pinned JUCE tag, project version,
+curated component list) so its version can never drift from what was actually built
+(RQ-BLD-022). SPDX was chosen because it is what GitHub's dependency-graph export emits
+natively. As of ADR-BLD-005, that generated document is **compiled into the executable as
+BinaryData**, the same as the default patch `oberheim.syx` (§4.9) — both were sibling files
+copied next to the executable until the owner asked for one self-contained, tamper-resistant
+binary; `SbomReader::readEmbeddedSbom()` now parses it straight from memory, no file involved,
+which also means GitHub's generated SBOM can no longer be swapped in post-build without a
+rebuild — a deliberate trade, accepted in ADR-BLD-005. The reader (`SbomReader`,
+headless-testable, pure data in/out) resolves SPDX's "unknown" sentinels
+(`NOASSERTION`/`NONE`) to a neutral placeholder rather than displaying them literally, filters
+out the SBOM's own self-describing root package, and renders a discriminated failure result —
+never a silent empty list — if the embedded content is malformed.
 
 ### 14.3 Repository governance: community-health files
 

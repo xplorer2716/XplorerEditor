@@ -37,6 +37,14 @@ consumer derives from it rather than caching a copy.
    calls `setHighlightColour`; `updateLedColour` keeps rebuilding the
    LookAndFeel and that alone now fixes every consumer, because the highlight is
    re-derived from the live LookAndFeel on each hover.
+   *(Amended 2026-08-17, session GUI, ADR-JUC-020 DEC-JUC-113/RQ-GUI-073:
+   `updateLedColour` no longer rebuilds — it calls the new
+   `XplorerLookAndFeel::setLedColour()` mutator in place, so the settings
+   dialog can preview a knob-LED pick live without rebuilding on every drag.
+   This ADR's single-runtime-owner decision is unchanged: every consumer still
+   derives the colour from the same live `XplorerLookAndFeel` instance, which
+   still exists as one object — it just stops being replaced wholesale on
+   every change.)*
 4. The **persisted** source of truth stays `UiConfiguration.knobLedBorderColor`
    (with the one default literal `DEFAULT_KNOB_COLOR` in
    `AllUsersSettingsDefaults`); the runtime source is the LookAndFeel derived
