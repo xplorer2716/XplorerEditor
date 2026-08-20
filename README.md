@@ -18,15 +18,9 @@ The main goal of Xplorer is to explore the sound capabilities of these wonderful
 
 ## Status
 
-Xplorer is being migrated from its original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation. The JUCE port is the active development effort and lives under [juce](juce). Migration is almost complete. Current activities are related to polish the user interface details (yes, the Vacuum Fluorescent Display was digitally cleaned with a cloth and isopropyl alcohol)
+The migration from the original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation is now complete. JUCE is the active and only supported codebase, and it lives under [juce](juce).
 
-- **Alpha preview available**: the latest JUCE development version for Windows and macOS is available as an alpha preview in the releases stream: https://github.com/xplorer2716/XplorerEditor/releases
-
-- **Compile from sources**: if you want to test the latest source code before the official release, compile it from the `main` branch source code — on Windows, run [make-windows-local-release-no-tests](make-windows-local-release-no-tests) (CMake + MSVC), or configure the [juce](juce) CMake project directly on any platform.
-
-- **Latest official legacy release (.NET)**: [v2025.12.7.1](https://github.com/xplorer2716/XplorerEditor/releases/latest) — the next official release (JUCE-based) will be published in the same releases stream
-
-- **Latest official legacy source code (.NET)**: archived at [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
+- **Legacy .NET version (archive)**: [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
 
 
 ## Main features
@@ -48,7 +42,8 @@ Xplorer is being migrated from its original .NET/WinForms implementation to a cr
 - **Window size presets & full screen** — a View menu offers five size presets (1x to 2x) plus full screen, falling back to full screen automatically when a preset doesn't fit the display; the VFD's glyph grid is snapped to whole device pixels so text stays equally crisp at every scale
 - **Colour-coded functional blocks** — VCO, VCF, ENV, LFO, RAMP, LAG, TRACK and the Modulation Matrix each carry their own colour identity (frame, fill and section header), with a live modulation-matrix highlight, making the signal-path diagram easier to read at a glance
 - **Refined VFD display** — a recessed bezel and vector-drawn segments, with the three MIDI-activity indicators redesigned as glowing lamps instead of flat squares
-- **Reference-aligned menu bar** — menu order, icons and keyboard shortcuts now match the original hardware editor exactly
+- **Double-click to type a value** — double-clicking any slider opens a numeric entry field for precise parameter values
+- **Double-click to rename from the VFD** — double-clicking the VFD display opens the patch rename dialog directly
 - **Native cross-platform target** — Windows, Linux and macOS, on a modern C++20/JUCE stack with no legacy third-party framework dependency, and a future path to run as a plugin inside DAWs
 - **Modernised interaction feedback** — consistent hover and disabled states across every control, radio-button selectors matching the reference hardware panel (e.g. FM destination, LAG timing), and instant startup with no splash screen
 
@@ -56,7 +51,7 @@ This port also aims to demonstrate the integration of AI software development ag
 
 ## Requirements
 
-- Windows, Linux, or macOS (x64)
+- Windows, Linux, or macOS (x64) — **macOS support is currently considered experimental**: it has not yet been tested
 - A MIDI interface (recommended: a MIDI interface with one MIDI OUT and one MIDI IN, plus a virtual MIDI cable driver such as [LoopBe1](http://www.nerds.de/en/loopbe1.html) for loopback to a DAW)
 
 ## Project structure
