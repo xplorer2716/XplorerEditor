@@ -26,9 +26,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Must authenticate as a real identity, not the default GITHUB_TOKEN: GitHub
+      # never lets a GITHUB_TOKEN-authenticated push trigger other workflows (its
+      # anti-recursion rule), so the tag pushed below would never reach the three
+      # *-release-prod workflows without this. [RQ-BLD-028, ADR-BLD-003 (DEC-BLD-017)]
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.CUT_DEPLOYMENT }}
 
       # workflow_dispatch offers every branch in the picker, and production is
       # cut from main alone. Refusing here is cheaper than discovering it from
