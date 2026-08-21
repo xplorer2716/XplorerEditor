@@ -78,45 +78,6 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 
 [Oberheim Xpander LFO Rate to BPM 18](#__RefHeading___Toc338714110)
 
-**Figures**
-
-[Figure 1 - Activation of Xplorer 6](#__RefHeading___Toc338714111)
-
-[Figure 2 – Xplorer user interface 6](#__RefHeading___Toc338714112)
-
-[Figure 3 – Knob gesture (circular movement) 7](#__RefHeading___Toc338714113)
-
-[Figure 4 – List of choice gesture 8](#__RefHeading___Toc338714114)
-
-[Figure 5 – predefined values shortcuts 8](#__RefHeading___Toc338714115)
-
-[Figure 6 – File menu 9](#__RefHeading___Toc338714116)
-
-[Figure 7 – Patch menu 9](#__RefHeading___Toc338714117)
-
-[Figure 8 – Setting menu 10](#__RefHeading___Toc338714118)
-
-[Figure 9 – Help menu 10](#__RefHeading___Toc338714119)
-
-[Figure 10 – “About” message on synthesizer’s display 11](#__RefHeading___Toc338714120)
-
-[Figure 11 – Quick buttons 11](#__RefHeading___Toc338714121)
-
-[Figure 12 – Settings window (MIDI Page) 11](#__RefHeading___Toc338714122)
-
-[Figure 13 – Connecting a hardware controller to Xplorer 13](#__RefHeading___Toc338714123)
-
-[Figure 14 – using a virtual MIDI cable in FL Studio (1/2) 14](#__RefHeading___Toc338714124)
-
-[Figure 15 – using a virtual MIDI cable in FL Studio (2/2) 14](#__RefHeading___Toc338714125)
-
-[Figure 16 – using a virtual MIDI cable in Cubase 14](#__RefHeading___Toc338714126)
-
-[Figure 17 – using a virtual MIDI cable in Xplorer 15](#__RefHeading___Toc338714127)
-
-[Figure 18 – using Xplorer with a DAW and a hardware controller 15](#__RefHeading___Toc338714128)
-
-[Figure 19 – Settings window (User interface) 17](#__RefHeading___Toc338714129)
 
 # Release history
 
@@ -134,7 +95,15 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 You agree that any and all claims, suits or other disputes arising from your use of the software shall be determined in accordance with the laws of France, in the event the author is made a party thereto.
 
-You agree to submit to the jurisdiction of the court in Strasbourg, France for all actions, whether in contract or in tort, arising from your use or purchase of the software.
+You agree to submit to the jurisdiction of the court in Strasbourg, France for all actions, whether in contract or in tort, arising from your use of the software.
+
+# License
+
+This software is released under **GNU Affero General Public License v3.0**
+
+https://github.com/xplorer2716/XplorerEditor/blob/dev/LICENSE
+
+Permissions of this strongest copyleft license are conditioned on making available complete source code of licensed works and modifications, which include larger works using a licensed work, under the same license. Copyright and license notices must be preserved. Contributors provide an express grant of patent rights. When a modified version is used to provide a service over a network, the complete source code of the modified version must be made available.
 
 # System requirements
 
@@ -193,22 +162,34 @@ The main features of Xplorer are:
 * Auto-sized user interface depending on system’s default font size
 * …and more to come in the next releases.
 
-As a registered user, you get:
-
-* Lifetime free updates for the Xplorer software
-* Free access to the latest Xplorer source code starting 2018/01/01
 
 # Installation
 
-You should have received the download link by email. Extract the downloaded archive and launch the setup.exe file.
+1. Download latest release from https://github.com/xplorer2716/XplorerEditor/releases/latest
+2. Unzip the archive
+3. launch the executable/app/AppImage depending on your OS. 
 
-# Product activation
+These binaries are not signed. Xplorer is an AGPL project and carries no paid publisher
+certificate, so each operating system will ask you to confirm — once.
 
-The first time Xplorer is started, it will ask you for the activation of the product. You should have received your license key file by email. Please select the location of the file and click OK. The application will restart. Please keep your license key file in a safe place for future reuse. It’s your personal license key file. Do not share it.
+**Windows** — SmartScreen shows "Windows protected your PC".
+Click More info, then Run anyway.
 
-![](data:image/jpeg;base64...)
+**macOS** — the app is blocked with "Apple could not verify it is free of malware".
+Open System Settings → Privacy & Security, scroll to the bottom, and click Open Anyway.
+Since macOS 15 the old Control-click → Open shortcut no longer works; the Settings route is the
+only one.
 
-Figure 1 - Activation of Xplorer
+**Linux** — make the AppImage executable, then run it:
+```
+chmod +x Xplorer-*.AppImage && ./Xplorer-*.AppImage
+```
+
+If nothing happens, your distribution does not ship FUSE 2:
+```
+./Xplorer-*.AppImage --appimage-extract-and-run
+```
+
 
 # Overview
 
@@ -224,56 +205,6 @@ With Xplorer you can tweak the sound simultaneously using a computer mouse, a ha
 
 Use the method you prefer to change the sound. Xplorer’s display shows you in real-time which parameter is currently being modified.
 
-## Using Xplorer on Touch Screens
-
-The user interface of Xplorer was designed to be usable on touch screens. Most users of touch screens enlarge the system font size to have graphics more suited to this type of use.
-
-The Xplorer user interface automatically changes based on the system font size. If you increase the system font size to 125%, Xplorer’s user interface will be 25% bigger. Larger controls are then easier to manipulate.
-
-With a +25% font size, Xplorer user interface fits perfectly into a 1680\*1050 resolution, which is the native resolution of many common LCD screens.
-
-### Recommended Touch Screen Gestures
-
-To optimize the user experience, the following gestures are recommended:
-
-Knobs
-
-Depending on the choice made in the settings, the knobs can be tweaked using a linear movement or a circular movement.
-
-Linear movement: This is the default movement (the mouse or the finger moves up or down to increase/decrease knob’s value).
-
-Circular movement: This is similar to what you do when you turn the knob to the left or right.
-
-![](data:image/x-wmf;base64...)
-
-Figure 3 – Knob gesture (circular movement)
-
-To use circular movement on touch screens, press the knob with your finger, turn in the direction of the current value of the knob, and then turn left or right according to your wishes, so you can see the knob while changing the value.
-
-List of choice (combo boxes)
-
-Forget about the right down arrow. Press the combo box with your finger and then release it from the screen to show the content of the list. Then move your finger up or down (depending on your choice) and release it to make a selection.
-
-![](data:image/x-wmf;base64...)
-
-Figure 4 – List of choice gesture
-
-Check boxes and radio buttons
-
-Press either on the control itself or its label.
-
-## Predefined values for knobs
-
-To speed up the tone programming, each knob with positive values (e.g.: from 0 to 63) has 10 predefined values. Each knob with negative values (detune, mod matrix amount...) has 11 predefined values (10 + 1 for zero).
-
-Default value can be chosen directly when mouse is over the knob by pressing the "1" to "0" or "-" top keys on the keyboard ("1" for the minimum, "0" or "-" for the maximum).
-
-![](data:image/jpeg;base64...)
-
-Figure 5 – predefined values shortcuts
-
-For VCO Freq knobs, default values are set to harmonic values (5th, 7th, one octave up, etc...). If you change the predefined value of a VCO Freq while playing a note or a chord, you’ll notice a lovely little glide. Hey, you’re playing with an analog synth!
-
 ## Menus
 
 All menu items have defined shortcuts to minimize use of the mouse whenever possible.
@@ -284,9 +215,9 @@ All menu items have defined shortcuts to minimize use of the mouse whenever poss
 
 Figure 6 – File menu
 
-These commands are straightforward. With Open, Save, and Save As, you can manage your single patch sysex files on your hard disk.
+These commands are straightforward. With Open and Save you can manage your single patch sysex files on your hard disk.
 
-Please note that you can simply drag and drop a SysEx file onto Xplorer. If the SysEx file contains a single patch, it will be loaded directly.
+Please note that you can simply drag and drop a SysEx file onto Xplorer. If the SysEx file contains a single patch, it will be loaded directly. 
 
 The “New” (Ctrl-N) command is a bit different. It will load the default “Oberheim“ patch into the current memory location of your synthesizer, as described in the synthesizer owner’s manual.
 
@@ -308,7 +239,7 @@ Randomize (F8): This command randomizes all the parameters of the patch to get a
 
 Rename (F9): Opens a dialog to set the patch name. Please keep in mind that this is the *patch* name, not the *file* name on your computer.
 
-Store (F10): Stores the current patch into the synthesizer memory at the current memory location. Please keep in mind that this command is not the same as saving the sysex file on your hard disk.
+Store (F10): Stores the current patch *into the synthesizer memory* at the current memory location. Please keep in mind that this command is not the same as saving the sysex file on your hard disk.
 
 Synchronize (F12): In case of communication errors between the synthesizer and Xplorer (such as an unplugged MIDI cable), you can use this command to get the current synthesizer patch into Xplorer. Changes made in Xplorer will be erased by the synthesizer current patch values.
 
@@ -340,9 +271,9 @@ Restore all data: restore a previously backup file into synthesizer’s memory.
 
 Figure 9 – Help menu
 
-Xplorer help (F1): Opens this manual.
+Xplorer help (F1): Opens this file into you browser
 
-Check for new releases, go to website, and go to forum: redirects your web browser to the corresponding website page.
+Check for new releases, go to website redirects your web browser to the corresponding website page.
 
 About: Shows the infamous “About” window. Note: when the “About” window is shown, a message is sent on the display of the synthesizer. This can be a quick way to verify the MIDI output communication to the synthesizer.
 
@@ -512,24 +443,8 @@ Color: You can choose your own color for the user interface. This color is appli
 
 Knob movement: you can choose linear or circular movement for the knobs.
 
-# Credits
 
-Wes Milholen: user’s manual and website design.
+# Website
 
-Sean Hancock, Eduardo Saponara, Doug Terrbonne, Tony Cappelini: beta testing.
+Go to the website https://xplorer2716.github.io/XplorerEditor.site/ for news, ressources and more.
 
-Hielo Patagonia Sounds: macro photography.
-
-# Appendix
-
-## Oberheim Xpander LFO Rate to BPM[[7]](#footnote-8)
-
-![](data:image/jpeg;base64...)
-
-1. Oracle VM Virtual Box, VMWare Player, Parallels Desktop, Microsoft Windows XP, Vista, Windows 7 are all registered trademarks or trademarks of their respective owners [↑](#footnote-ref-2)
-2. As described at <http://www.trademarkia.com/oberheim-77616105.html>, Oberheim is a trademark of Bank of America, National Association, Charlotte, NC 28255 [↑](#footnote-ref-3)
-3. Depending on both hardware and software specifications of the synthesizer [↑](#footnote-ref-4)
-4. In short, this command is the same as doing manually a backup into a file and extracting all single patches from this file. [↑](#footnote-ref-5)
-5. Cubase, Ableton Live, FL Studio, Reaper are respectively trademarks of Steinberg Media Technologies GmbH, Ableton AG, Image Line and Cockos Incorporated. [↑](#footnote-ref-6)
-6. VST is a trademarks of Steinberg Media Technologies GmbH [↑](#footnote-ref-7)
-7. Experimental measures. May vary depending on your synthesizer. [↑](#footnote-ref-8)
