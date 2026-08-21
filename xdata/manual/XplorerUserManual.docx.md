@@ -12,6 +12,12 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 
 [System requirements](#system-requirements)
 
+&nbsp;&nbsp;&nbsp;&nbsp;[Computer](#computer)
+
+&nbsp;&nbsp;&nbsp;&nbsp;[MIDI interface](#midi-interface)
+
+&nbsp;&nbsp;&nbsp;&nbsp;[Synthesizer](#synthesizer)
+
 [Introduction](#introduction)
 
 [Installation](#installation)
@@ -157,7 +163,7 @@ The main features of Xplorer are:
 
 1. Download latest release from https://github.com/xplorer2716/XplorerEditor/releases/latest
 2. Unzip the archive
-3. launch the executable/app/AppImage depending on your OS. 
+3. launch the executable/app/AppImage depending on your OS.
 
 These binaries are not signed. Xplorer is an AGPL project and carries no paid publisher
 certificate, so each operating system will ask you to confirm — once.
@@ -409,8 +415,8 @@ When this option is activated, an “all notes off” MIDI message is sent to th
 
 ### SysEx Delay
 
-This is the delay in milliseconds used between each SysEx message sent to the synthesizer. Keep the default value (30 ms) as long as communication between Xplorer and the synthesizer works fine. If it does not, try increasing it. 
-On Xpander, 30 ms (default value) should be ok. On Matrix-12, you may require to increase this value up to 100 ms. Values below 10 ms may hang the synthesizer, because it then receives data faster than it can handle.
+This is the delay in milliseconds used between each SysEx message sent to the synthesizer. Keep the default value (30 ms) as long as communication between Xplorer and the synthesizer works fine. If it does not, try increasing it.
+On the Xpander, the default 30 ms should be fine. On the Matrix-12, you may need to increase it, up to 100 ms. Values below 10 ms may hang the synthesizer, because it then receives data faster than it can handle.
 
 ### Default patch number
 
@@ -479,7 +485,7 @@ Sets the musical interval between the two oscillators instead of leaving their p
 * Free: both pitches are random.
 * Same note: both oscillators are tuned to the same note.
 * Third, Fifth, Seventh, Ninth, Eleventh, Thirteenth: VCO2 is tuned that interval above VCO1.
-* Octave:  VCO2 is set one octave higher than VCO1
+* Octave: VCO2 is tuned one octave above VCO1.
 
 **VCO detune**
 
