@@ -58,7 +58,7 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 
 [Output MIDI channel 16](#__RefHeading___Toc338714100)
 
-[Smart “all not off” 16](#__RefHeading___Toc338714101)
+[Smart “all notes off” 16](#__RefHeading___Toc338714101)
 
 [SysEx Delay 16](#__RefHeading___Toc338714102)
 
@@ -107,38 +107,41 @@ Permissions of this strongest copyleft license are conditioned on making availab
 
 # System requirements
 
-The following are the system requirements for using Xplorer.
+Xplorer is a native application. It no longer needs the .NET Framework, and Mac users no longer need BootCamp or a virtual machine — there is a native macOS build.
 
-PC or compatible hardware /Mac BootCamp / Virtual machine (\*)
+Supported platforms
 
-* Processor: 400 MHz Pentium processor or equivalent (Minimum); Core 2 Duo processor or equivalent (Recommended)
-* RAM:96 MB (Minimum); 512 MB (Recommended)
-* Hard Disk: Up to 500 MB of available space may be required
-* CD or DVD Drive: Not required
-* Display: 1280 x 900, 256 colors (Minimum); 1680 x 1050 high color, 32-bit (Recommended)
+| Operating system | Architecture | What you download |
+| --- | --- | --- |
+| Windows | 64-bit (x64) | Executable |
+| Linux | 64-bit (x64) | AppImage |
+| macOS | Apple Silicon (arm64) | Application bundle (.app) |
 
-(\*) Virtual machines like[[1]](#footnote-2):
+The Linux build is made on an older distribution on purpose, so that it also runs on recent ones.
 
-* Parallels Desktop (<http://www.parallels.com/products/desktop/>)
-* Oracle VM Virtual Box ([https://www.virtualbox.org/](https://www.virtualbox.org/%29%20%20https%3A/www.virtualbox.org/%29%20%20)),
-* VMWare Player (<http://www.vmware.com/products/player/overview.html>)
+**Note on macOS:** the macOS build is currently considered **experimental**, because it has not yet been tested on real hardware. Please report anything that does not work as expected (see the Website chapter at the end of this manual).
 
-Windows®
+Computer
+
+* Processor: any 64-bit processor from the last ten years is largely sufficient
+* RAM: 512 MB available (Minimum); 1 GB (Recommended)
+* Hard disk: about 100 MB of available space
+* Display: 1280 x 800 (Minimum); 1920 x 1080 or higher (Recommended)
+
+Xplorer draws its interface with vector graphics, so it stays sharp on high-resolution and scaled displays. You can choose the window size from the View menu.
+
+MIDI interface
 
 Minimum:
 
-* Windows XP SP3, Windows Vista, Windows 7 or Windows 8 with latest service pack, 32 or 64 bits (note: Xplorer does not run on Windows RT).
-* Microsoft .NET Framework 4.0 Client Profile (may be already installed on your operating system)
-
-MIDI Interface
-
-Minimum:
-
-* MIDI compatible interface with at least one MIDI OUT port
+* A MIDI interface with at least one MIDI OUT port
 
 Recommended:
 
-* MIDI interface with one MIDI OUT and one MIDI IN, one Virtual MIDI cable driver (like LoopBe1 - <http://www.nerds.de/en/loopbe1.html>, or MIDI Yoke - <http://www.midiox.com/>)
+* A MIDI interface with one MIDI OUT and one MIDI IN, plus a virtual MIDI cable so you can also use Xplorer with a DAW:
+  * Windows: LoopBe1 (<http://www.nerds.de/en/loopbe1.html>) or loopMIDI (<https://www.tobias-erichsen.de/software/loopmidi.html>)
+  * macOS: no extra software needed — use the IAC Driver built into Audio MIDI Setup
+  * Linux: no extra software needed — use the ALSA virtual MIDI ports
 
 Synthesizer
 
@@ -159,7 +162,8 @@ The main features of Xplorer are:
 * Rename patch, go to patch, store patch, save patch to disk
 * Real-time update of all parameters when the user tweaks the synthesizer knobs (dual editing can be done without needing to reload the patch and resynchronize the synthesizer and the PC as most editors need to do)
 * Patch randomizer (generates a new patch from random values)
-* Auto-sized user interface depending on system’s default font size
+* An on-screen piano keyboard to play the patch you are editing
+* A resizable, vector-drawn interface that stays sharp at any size, with colours you can set yourself
 * …and more to come in the next releases.
 
 
@@ -199,15 +203,20 @@ Figure 2 – Xplorer user interface
 
 Xplorer is not just another generic synthesizer editor with ranges of slider controls that are all the same and don’t really tell you what you are doing.
 
-Xplorer was developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix.
+Xplorer was developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix. Each functional block of the signal path — VCO, VCF, ENV, LFO, RAMP, LAG, TRACK and the Modulation Matrix — has its own colour, so you can find your way around the panel at a glance.
 
 With Xplorer you can tweak the sound simultaneously using a computer mouse, a hardware MIDI controller, your DAW software, or directly on your Xpander or Matrix-12.
 
-Use the method you prefer to change the sound. Xplorer’s display shows you in real-time which parameter is currently being modified.
+Use the method you prefer to change the sound. Xplorer’s display shows you in real time which parameter is currently being modified.
+
+Two shortcuts are worth knowing from the start:
+
+* double-click a knob to type an exact value instead of dialling it;
+* double-click the display to rename the current patch.
 
 ## Menus
 
-All menu items have defined shortcuts to minimize use of the mouse whenever possible.
+Most menu commands have a keyboard shortcut, so you can keep your hands off the mouse whenever possible.
 
 ### File
 
@@ -215,9 +224,9 @@ All menu items have defined shortcuts to minimize use of the mouse whenever poss
 
 Figure 6 – File menu
 
-These commands are straightforward. With Open and Save you can manage your single patch sysex files on your hard disk.
+These commands are straightforward. With Open and Save you can manage your single-patch SysEx files on your hard disk.
 
-Please note that you can simply drag and drop a SysEx file onto Xplorer. If the SysEx file contains a single patch, it will be loaded directly. 
+Please note that you can simply drag and drop a SysEx file onto Xplorer. If the SysEx file contains a single patch, it will be loaded directly.
 
 The “New” (Ctrl-N) command is a bit different. It will load the default “Oberheim“ patch into the current memory location of your synthesizer, as described in the synthesizer owner’s manual.
 
@@ -233,37 +242,48 @@ Previous (F5): same as using “-“ on the synthesizer
 
 Next (F6): same as using “+“ on the synthesizer
 
-Go to patch (F7): This command opens a dialog to get the patch number, and goes to this patch when Enter is pressed.
+Go to patch (F7): Opens a dialog asking for a patch number, and switches to that patch when you press Enter.
 
-Randomize (F8): This command randomizes all the parameters of the patch to get a new patch. The new patch name will be called “Random”. Press the F8 key to get soundscape inspiration!
+Randomize (F8): Randomizes all the parameters of the patch to create a new one, named “Random”. Press F8 a few times when you are looking for inspiration!
 
 Rename (F9): Opens a dialog to set the patch name. Please keep in mind that this is the *patch* name, not the *file* name on your computer.
 
-Store (F10): Stores the current patch *into the synthesizer memory* at the current memory location. Please keep in mind that this command is not the same as saving the sysex file on your hard disk.
+Store (F10): Stores the current patch *into the synthesizer memory* at the current memory location. Please keep in mind that this command is not the same as saving the SysEx file on your hard disk.
 
-Synchronize (F12): In case of communication errors between the synthesizer and Xplorer (such as an unplugged MIDI cable), you can use this command to get the current synthesizer patch into Xplorer. Changes made in Xplorer will be erased by the synthesizer current patch values.
+Synchronize (F12): In case of communication errors between the synthesizer and Xplorer (such as an unplugged MIDI cable), you can use this command to get the current synthesizer patch into Xplorer. Any changes made in Xplorer will be overwritten by the values of the synthesizer’s current patch.
 
 ### Tools
 
 ![](data:image/jpeg;base64...)
 
-Figure 8 – Setting menu
+Figure 8 – Tools menu
 
 Settings (Ctrl-G): Opens the Settings window (see next chapter).
 
 Tune request (F4): Sends a tune request to the synthesizer.
 
+Piano keyboard: Opens a small on-screen keyboard that plays your synthesizer, so you can hear the patch you are editing without reaching for a MIDI keyboard.
+
+You can play it in two ways:
+
+* with the mouse, by clicking on the keys;
+* with your computer keyboard — each playable key shows, printed on it, the character that plays it.
+
+Those characters are worked out from your own keyboard layout, so the keys shown are the ones actually under your fingers, whether you use a QWERTY, AZERTY or any other layout.
+
+The notes are sent to your synthesizer on the output MIDI channel set in the Settings window, so the MIDI output port must be configured for the keyboard to make any sound.
+
 Single patches:
 
-Get all single patches from synth: Get all single patches from synth and store them to given folder[[4]](#footnote-5)
+Get all single patches from synth: Gets all single patches from the synthesizer and stores them in a folder of your choice[[4]](#footnote-5)
 
-Extract all single patches from file: extract all single patches from a SysEx file (aka “all data dump”) and store them to a given folder.
+Extract all single patches from file: Extracts all single patches from a SysEx file (an “all data dump”) and stores them in a folder of your choice.
 
 Backup/Restore:
 
-Backup all data: save all synth data (single and multi patches) into a SysEx file on disk.
+Backup all data: Saves all synthesizer data (single and multi patches) into a SysEx file on disk.
 
-Restore all data: restore a previously backup file into synthesizer’s memory.
+Restore all data: Restores a previously saved backup file into the synthesizer’s memory.
 
 ### Help
 
@@ -271,11 +291,11 @@ Restore all data: restore a previously backup file into synthesizer’s memory.
 
 Figure 9 – Help menu
 
-Xplorer help (F1): Opens this file into you browser
+Xplorer help (F1): Opens this manual in your web browser.
 
-Check for new releases, go to website redirects your web browser to the corresponding website page.
+Check for new releases and Go to website open the corresponding page in your web browser.
 
-About: Shows the infamous “About” window. Note: when the “About” window is shown, a message is sent on the display of the synthesizer. This can be a quick way to verify the MIDI output communication to the synthesizer.
+About: Shows the “About” window. When it opens, Xplorer also sends a short message to the synthesizer’s display — a quick way to check that MIDI communication towards the synthesizer is working.
 
 ![](data:image/jpeg;base64...)
 
@@ -283,7 +303,7 @@ Figure 10 – “About” message on synthesizer’s display
 
 ## The Quick Buttons
 
-The quick buttons are located under the display. They give another way to access the main menu commands without going into the menu.
+The quick buttons sit under the display. They give you direct access to the most-used menu commands, without opening a menu.
 
 ![](data:image/jpeg;base64...)
 
@@ -291,7 +311,7 @@ Figure 11 – Quick buttons
 
 # Settings
 
-The settings window is available thru Xplorer’s menu or the Ctrl-G keyboard shortcut.
+The Settings window is available from Xplorer’s Tools menu, or with the Ctrl-G keyboard shortcut.
 
 ## MIDI page
 
@@ -325,7 +345,7 @@ This is the INPUT port of your MIDI interface, which should be connected to the 
 
 ### Controller or DAW input port
 
-This port is the port of your MIDI Keyboard or the MIDI Controller you want to use to control your synthesizer. In you’re using a DAW MIDI output as the INPUT port, this is the port of a MIDI Virtual cable that connects the DAW with Xplorer. Let’s see these configurations in detail.
+This port is the port of your MIDI Keyboard or the MIDI Controller you want to use to control your synthesizer. If you are using a DAW MIDI output as the input port, this is the port of a virtual MIDI cable that connects the DAW to Xplorer. Both configurations are described in detail below.
 
 ### Connecting a hardware controller to Xplorer
 
@@ -343,7 +363,9 @@ A virtual MIDI cable is software that emulates a MIDI interface. It uses one or 
 
 You may ask: why is a virtual MIDI cable needed? It’s because Xplorer is not based on proprietary technologies like VST[[6]](#footnote-7). This guarantees that it will be still usable and maintainable years from now.
 
-There are many virtual MIDI cable applications available. In the example below we will see how to use Xplorer with a DAW and MIDI Yoke, which is a free virtual MIDI cable (see <http://www.midiox.com/>). If you use Windows 7, you may prefer to use LoopBe1, which is free too (see <http://www.nerds.de/en/loopbe1.html>).
+On macOS and Linux you already have one: use the IAC Driver in Audio MIDI Setup on macOS, or the ALSA virtual MIDI ports on Linux. On Windows you need to install one — LoopBe1 (<http://www.nerds.de/en/loopbe1.html>) and loopMIDI (<https://www.tobias-erichsen.de/software/loopmidi.html>) are both free.
+
+The examples below were made on Windows with MIDI Yoke, an older free virtual cable. The principle is exactly the same whichever one you use: pick the same port on both sides.
 
 Once the virtual MIDI cable software is installed (please follow the installation guidelines), you should see the virtual MIDI ports in your DAW.
 
@@ -393,19 +415,19 @@ Figure 18 – using Xplorer with a DAW and a hardware controller
 
 ### Output MIDI channel
 
-This is the channel number used on the output MIDI port to communicate with your synthesizer. You must ensure that the channel you set in Xplorer is the same as the channel set on your synthesizer. Go to Master Page/MIDI/Channel to set this up on your synthesizer
+This is the channel number used on the output MIDI port to communicate with your synthesizer. You must ensure that the channel you set in Xplorer is the same as the channel set on your synthesizer. Go to MASTER PAGE/MIDI/CHANNEL to set this up on your synthesizer.
 
-### Smart “all not off”
+### Smart “all notes off”
 
-When this option is activated, an “all not off” MIDI message is sent to the synthesizer before a single patch change occurs to avoid stuck notes.
+When this option is activated, an “all notes off” MIDI message is sent to the synthesizer just before a patch change, to avoid notes that stay stuck on.
 
 ### SysEx Delay
 
-This is the delay in milliseconds used between each SysEx message sent to the synthesizer. It is a good idea to use the default value (30 ms) if communication between Xplorer and the synthesizer is working fine. If not, try to increase this value. Values lower than 10 ms may hang up the synthesizer because it’s receiving data too quickly.
+This is the delay in milliseconds used between each SysEx message sent to the synthesizer. Keep the default value (30 ms) as long as communication between Xplorer and the synthesizer works fine. If it does not, try increasing it. Values below 10 ms may hang the synthesizer, because it then receives data faster than it can handle.
 
 ### Default patch number
 
-This is the default patch number used by the editor when you start up Xplorer or when you generate a random patch. A good practice is to set it to 99, and to leave patch 99 as your “testing” patch. This will prevent you from accidentally overwriting patches that you may want to keep.
+This is the patch number the editor uses when you start Xplorer or generate a random patch. A good habit is to set it to 99 and keep patch 99 as your “scratch” patch, so you never overwrite a patch you wanted to keep.
 
 ### Synthesizer type
 
@@ -415,11 +437,11 @@ This is the type of synthesizer you have: an Xpander or a Matrix-12. Please set 
 
 This is the table where you can set up MIDI control change messages to automate the parameters (e.g., automate VCF Freq with CC #1, VCF Resonance with CC #2, and so on). To remove a control change assignment, select “None” at the end of the list (you can press “N” on your keyboard to quickly set this value).
 
-The same control change number can be used to automate more than one parameter at a time, although this not recommend for parameters that are on different pages or subpages (see below, “Understanding Xpander/Matrix-12 parameter pages”).
+The same control change number can be used to automate more than one parameter at a time, although this is not recommended for parameters that are on different pages or subpages (see below, “Understanding Xpander/Matrix-12 parameter pages”).
 
 Please keep in mind that MIDI control change messages are received by the Controller/DAW Input port. If this port is not defined, the MIDI automation feature will not work.
 
-Right-clicking on the table enables an HTML export of the content of the list, so you can keep track of your assignments and recreate them for other patches.
+The table can be exported as an HTML file, so you can keep a record of your assignments and recreate them for other patches.
 
 ### Understanding Xpander/Matrix-12 parameter pages
 
@@ -427,11 +449,11 @@ Xpander and Matrix-12 synthesizer parameters are organized into pages and subpag
 
 When Xplorer needs to change the value of a parameter, it has to change the current page and subpage depending on the parameter, whether the parameter is changed with the mouse on the user interface of Xplorer or by MIDI automation.
 
-An example: let’s say we are changing the VCF Freq value, and then we want to change the ENV1 Delay value. We must first change the page/subpage to page ENV1, subpage 1, since VCF Freq is not on the same page/sub page than ENV1 Delay).
+An example: let’s say we are changing the VCF Freq value, and then we want to change the ENV1 Delay value. Xplorer must first change the page/subpage to page ENV1, subpage 1, because VCF Freq is not on the same page/subpage as ENV1 Delay.
 
-Page and subpage changes are handled slowly by the synthesizer, and it not possible to do anything to improve that.
+Page and subpage changes are handled slowly by the synthesizer, and there is nothing Xplorer can do to speed them up.
 
-If a lot of page/subpage messages are received by the synthesizer in a short amount of time this can result in a loss of page/suppage message handling. This can mainly happen when two parameters in different page/subpages are automated with CC messages and a lot of those messages are received in a short amount of time by Xplorer, resulting in a lot of page/subpage messages sent to the synthesizer. So, again, it’s not recommended to use the same CC to change parameters that appear in different pages/subpages.
+If the synthesizer receives a lot of page/subpage messages in a short amount of time, it may stop handling some of them. This can mainly happen when two parameters in different page/subpages are automated with CC messages and a lot of those messages are received in a short amount of time by Xplorer, resulting in a lot of page/subpage messages sent to the synthesizer. So, again, it’s not recommended to use the same CC to change parameters that appear in different pages/subpages.
 
 ## User interface page
 
@@ -439,12 +461,24 @@ If a lot of page/subpage messages are received by the synthesizer in a short amo
 
 Figure 19 – Settings window (User interface)
 
-Color: You can choose your own color for the user interface. This color is applied to all knobs and buttons.
+**Colours**
 
-Knob movement: you can choose linear or circular movement for the knobs.
+Knob LED colour: The colour used by all knobs, tick boxes and radio buttons.
+
+Block colours: Each of the eight functional blocks — VCO, LAG, TRACK, VCF, ENV, LFO, RAMP and MODULATION MATRIX — has its own colour, and you can set each one separately. Changing a block’s colour recolours everything that belongs to it: its frame, its background, its section heading and its page selector buttons.
+
+The colours are what let you read the panel at a glance, so being able to retune them matters: screens, lighting and eyesight all differ, and a set of colours that works well for one person may not for another.
+
+Every colour change is previewed **live**: while the colour picker is open, the panel behind it updates immediately, so you can judge the result on the real interface before deciding. Nothing is committed until you click OK — clicking Cancel restores the colours that were in use before you opened the window.
+
+Reset to defaults: Restores all eight block colours **and** the knob LED colour to the original values, with the same live preview.
+
+**Knob behaviour**
+
+Knob movement: You can choose linear or circular movement for the knobs.
 
 
 # Website
 
-Go to the website https://xplorer2716.github.io/XplorerEditor.site/ for news, ressources and more.
+Go to the website https://xplorer2716.github.io/XplorerEditor.site/ for news, resources and more.
 
