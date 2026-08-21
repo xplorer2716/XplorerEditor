@@ -71,6 +71,10 @@ add_executable(xpl_tests_app
     app/ModulationHighlightTests.cpp
     app/SegmentFontTests.cpp
     app/WindowGeometryTests.cpp
+    # Menu identity invariants: id uniqueness and View-range overlap, checked
+    # in the headless target because the GUI target that consumes them is off
+    # by default. [RQ-QLT-002, RQ-QLT-010, ADR-QLT-001 (DEC-QLT-001)]
+    app/MenuIdsTests.cpp
     # Layout-independent piano key mapping: OS-free, JUCE-free, so it belongs
     # in the headless target and runs even with -DXPL_BUILD_APP=OFF.
     # [RQ-GUI-074, RQ-BLD-025]
