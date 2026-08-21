@@ -561,20 +561,36 @@ namespace xplorer::model
         parameterAt("VCO2_DETUNE").setValue(detuneValue);
     }
 
+    /// Tunes the two oscillators to the interval the randomizer strategy names,
+    /// VCO2 above VCO1. `Free` is the only value that leaves both pitches as the
+    /// randomizer left them.
+    ///
+    /// `Octave` diverges from the reference implementation, which has no `case`
+    /// for it and so lets it behave exactly like `Free` — an option that never
+    /// did anything. [RQ-BUG-001, ADR-BUG-001 (DEC-BUG-001, DEC-BUG-003,
+    /// DEC-BUG-004)]
     void XpanderTone::defineVCOFrequenciesTuning(EnumRandomVCOFreq tuning)
     {
+        // Shared term of the compound intervals: a ninth is a second an octave
+        // up, an eleventh a fourth, a thirteenth a sixth.
+        constexpr int SEMITONES_PER_OCTAVE = 12;
+        // Not an interval, despite holding the same value: the reference parks
+        // both oscillators on this mid-range pitch for "same note". Kept
+        // separate so a later edit to one cannot silently move the other.
+        constexpr int SAME_NOTE_SEMITONE = 12;
+
         auto& vco1 = parameterAt("VCO1_FREQ");
         auto& vco2 = parameterAt("VCO2_FREQ");
         switch (tuning)
         {
-            case EnumRandomVCOFreq::SameNote: vco1.setValue(12); vco2.setValue(vco1.value()); break;
+            case EnumRandomVCOFreq::SameNote: vco1.setValue(SAME_NOTE_SEMITONE); vco2.setValue(vco1.value()); break;
             case EnumRandomVCOFreq::Third:    vco1.setValue(0);  vco2.setValue(4); break;
             case EnumRandomVCOFreq::Fifth:    vco1.setValue(0);  vco2.setValue(7); break;
             case EnumRandomVCOFreq::Seventh:  vco1.setValue(0);  vco2.setValue(11); break;
-            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(12 + 2); break;
-            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(12 + 5); break;
-            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(12 + 9); break;
-            case EnumRandomVCOFreq::Octave: // reference has no case: falls through unchanged
+            case EnumRandomVCOFreq::Octave:   vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE); break;
+            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 2); break;
+            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 5); break;
+            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(SEMITONES_PER_OCTAVE + 9); break;
             case EnumRandomVCOFreq::Free:
                 break;
         }

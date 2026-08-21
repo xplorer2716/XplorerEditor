@@ -3,7 +3,10 @@
 #include "xpl/midi/SysexStreamIterator.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
+#include <algorithm>
+#include <array>
 #include <fstream>
+#include <functional>
 #include <vector>
 
 using namespace xplorer::model;
@@ -227,6 +230,84 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
             {
                 CHECK(tone.modulationMatrix()[4].destination == EnumModulationDestinations::LAG_RATE);
                 CHECK(sentCommands.empty());
+            }
+        }
+    }
+}
+
+SCENARIO("The randomizer's Octave strategy tunes VCO2 an octave above VCO1", "[RQ-BUG-001]")
+{
+    // The reference has no case for Octave, so it shared Free's branch and left
+    // both pitches random -- the one strategy in the list that did nothing.
+    // [RQ-BUG-001, ADR-BUG-001 (DEC-BUG-001, DEC-BUG-003)]
+    GIVEN("a tone")
+    {
+        XpanderTone tone;
+
+        WHEN("the Octave strategy is applied")
+        {
+            tone.defineVCOFrequenciesTuning(EnumRandomVCOFreq::Octave);
+
+            THEN("VCO2 sits twelve semitones above VCO1")
+            {
+                CHECK(tone.parameterMap().at("VCO1_FREQ").value() == 0);
+                CHECK(tone.parameterMap().at("VCO2_FREQ").value() == 12);
+            }
+        }
+
+        WHEN("the Free strategy is applied over a known tuning")
+        {
+            tone.defineVCOFrequenciesTuning(EnumRandomVCOFreq::Fifth);
+            tone.defineVCOFrequenciesTuning(EnumRandomVCOFreq::Free);
+
+            THEN("neither oscillator is touched")
+            {
+                // Free stays the only value that leaves the randomizer's
+                // pitches alone -- the branch Octave no longer shares.
+                CHECK(tone.parameterMap().at("VCO1_FREQ").value() == 0);
+                CHECK(tone.parameterMap().at("VCO2_FREQ").value() == 7);
+            }
+        }
+    }
+}
+
+SCENARIO("The randomizer's VCO intervals widen in option order", "[RQ-BUG-001]")
+{
+    GIVEN("the interval strategies in the order the settings page lists them")
+    {
+        constexpr std::array INTERVALS{
+            EnumRandomVCOFreq::SameNote, EnumRandomVCOFreq::Third,
+            EnumRandomVCOFreq::Fifth,    EnumRandomVCOFreq::Seventh,
+            EnumRandomVCOFreq::Octave,   EnumRandomVCOFreq::Ninth,
+            EnumRandomVCOFreq::Eleventh, EnumRandomVCOFreq::Thirteenth};
+
+        WHEN("each is applied to a fresh tone")
+        {
+            std::vector<int> distances;
+            distances.reserve(INTERVALS.size());
+            for (const auto interval : INTERVALS)
+            {
+                XpanderTone tone;
+                tone.defineVCOFrequenciesTuning(interval);
+                distances.push_back(tone.parameterMap().at("VCO2_FREQ").value()
+                                    - tone.parameterMap().at("VCO1_FREQ").value());
+            }
+
+            THEN("each produces the semitone distance its name states")
+            {
+                const std::vector<int> expected{0, 4, 7, 11, 12, 14, 17, 21};
+                CHECK(distances == expected);
+            }
+
+            AND_THEN("the distance grows strictly from one option to the next")
+            {
+                // Octave's list position between Seventh and Ninth is what
+                // fixes its value at 12; this is the check that catches a
+                // later edit putting it back on Free's branch, or anywhere
+                // else in the sequence.
+                CHECK(std::adjacent_find(distances.begin(), distances.end(),
+                                         std::greater_equal<int>{})
+                      == distances.end());
             }
         }
     }
