@@ -101,7 +101,7 @@ Permissions of this strongest copyleft license are conditioned on making availab
 
 # System requirements
 
-Xplorer is a native application. It no longer needs the .NET Framework, and Mac users no longer need BootCamp or a virtual machine — there is a native macOS build.
+Xplorer is a native application based on the JUCE framework.
 
 Supported platforms
 
@@ -111,33 +111,25 @@ Supported platforms
 | Linux | 64-bit (x64) | AppImage |
 | macOS | Apple Silicon (arm64) | Application bundle (.app) |
 
-The Linux build is made on an older distribution on purpose, so that it also runs on recent ones.
+**Note on macOS:** the macOS build is currently considered **experimental**, because it has not yet been tested on real hardware. Please report anything that does not work as expected on the project's GitHub page.
 
-**Note on macOS:** the macOS build is currently considered **experimental**, because it has not yet been tested on real hardware. Please report anything that does not work as expected (see the Website chapter at the end of this manual).
-
-Computer
+## Computer
 
 * Processor: any 64-bit processor from the last ten years is largely sufficient
-* RAM: 512 MB available (Minimum); 1 GB (Recommended)
-* Hard disk: about 100 MB of available space
-* Display: 1280 x 800 (Minimum); 1920 x 1080 or higher (Recommended)
+* Display: Xplorer draws its interface with vector graphics, so it stays sharp on high-resolution and scaled displays. You can choose the window size from the View menu. 1920 x 1080 or higher is recommended.
 
-Xplorer draws its interface with vector graphics, so it stays sharp on high-resolution and scaled displays. You can choose the window size from the View menu.
-
-MIDI interface
+## MIDI interface
 
 Minimum:
-
 * A MIDI interface with at least one MIDI OUT port
 
 Recommended:
-
 * A MIDI interface with one MIDI OUT and one MIDI IN, plus a virtual MIDI cable so you can also use Xplorer with a DAW:
   * Windows: LoopBe1 (<http://www.nerds.de/en/loopbe1.html>) or loopMIDI (<https://www.tobias-erichsen.de/software/loopmidi.html>)
   * macOS: no extra software needed — use the IAC Driver built into Audio MIDI Setup
   * Linux: no extra software needed — use the ALSA virtual MIDI ports
 
-Synthesizer
+## Synthesizer
 
 * Oberheim[[2]](#footnote-3) Xpander or Matrix-12 synthesizer
 
@@ -417,11 +409,12 @@ When this option is activated, an “all notes off” MIDI message is sent to th
 
 ### SysEx Delay
 
-This is the delay in milliseconds used between each SysEx message sent to the synthesizer. Keep the default value (30 ms) as long as communication between Xplorer and the synthesizer works fine. If it does not, try increasing it. Values below 10 ms may hang the synthesizer, because it then receives data faster than it can handle.
+This is the delay in milliseconds used between each SysEx message sent to the synthesizer. Keep the default value (30 ms) as long as communication between Xplorer and the synthesizer works fine. If it does not, try increasing it. 
+On Xpander, 30 ms (default value) should be ok. On Matrix-12, you may require to increase this value up to 100 ms. Values below 10 ms may hang the synthesizer, because it then receives data faster than it can handle.
 
 ### Default patch number
 
-This is the patch number the editor uses when you start Xplorer or generate a random patch. A good habit is to set it to 99 and keep patch 99 as your “scratch” patch, so you never overwrite a patch you wanted to keep.
+This is the patch number the editor uses when you start Xplorer or generate a random patch. A good practice is to set it to 99 and keep patch 99 as your “scratch” patch, so you never overwrite a patch you wanted to keep.
 
 ### Synthesizer type
 
@@ -435,7 +428,7 @@ The same control change number can be used to automate more than one parameter a
 
 Please keep in mind that MIDI control change messages are received by the Controller/DAW Input port. If this port is not defined, the MIDI automation feature will not work.
 
-The table can be exported as an HTML file, so you can keep a record of your assignments and recreate them for other patches.
+The table can be exported as an HTML file, so you can keep a record of your assignments for live performances.
 
 ### Understanding Xpander/Matrix-12 parameter pages
 
@@ -486,7 +479,7 @@ Sets the musical interval between the two oscillators instead of leaving their p
 * Free: both pitches are random.
 * Same note: both oscillators are tuned to the same note.
 * Third, Fifth, Seventh, Ninth, Eleventh, Thirteenth: VCO2 is tuned that interval above VCO1.
-* Octave: kept for compatibility with the original editor, where it behaves like Free.
+* Octave:  VCO2 is set one octave higher than VCO1
 
 **VCO detune**
 
