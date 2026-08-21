@@ -267,10 +267,12 @@ namespace xplorer::app
 
     MainComponent::~MainComponent()
     {
-        // Balances start() above. Only stop() is needed: ~AbstractController
-        // already closes the MIDI devices and stops the worker, but the smart
-        // all-notes-off lives in this override alone, and without it a held
-        // note survives the application.
+        // Balances start() above, and has to be here rather than left to
+        // ~XpanderController: this body runs before _controller is destroyed,
+        // so the synth output device is still open and the smart all-notes-off
+        // stop() sends actually goes out. ~AbstractController runs after, and
+        // only stops the worker and closes the devices — it sends nothing, so
+        // relying on it alone would leave a held note sounding.
         // [RQ-CTL-060, RQ-BUG-003, ADR-BUG-002 (DEC-BUG-005)]
         _controller->stop();
         juce::LookAndFeel::setDefaultLookAndFeel(nullptr);

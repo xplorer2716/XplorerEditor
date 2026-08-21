@@ -58,11 +58,18 @@ RQ-FMW-041, RQ-GUI-025, RQ-MID-006.
 positional equivalent of `MainForm.OnLoad` and `OnClosing`: the component that
 creates the controller is the component that runs it.
 
-Only `stop()` is added at teardown. `closeMidiDevices()` and the handler
-release, which the reference's `DoCleanupBeforeClosing` performs explicitly,
-are already covered in this port — `~AbstractController()` calls
-`closeMidiDevices()`, and the event handlers are `std::function` members that
-die with the controller. Adding them again would be redundant, not faithful.
+Only `stop()` is added at teardown, and the destructor **body** is where it
+belongs: that body runs before `_controller` — a `std::unique_ptr` member — is
+destroyed, so the synth output device is still open and the all-notes-off
+`stop()` sends actually reaches the synth. `~AbstractController()` runs
+afterwards; it stops the worker and closes the devices but sends nothing, which
+is why leaving teardown to it alone loses RQ-CTL-060.
+
+`closeMidiDevices()` and the handler release, which the reference's
+`DoCleanupBeforeClosing` performs explicitly, need no equivalent here:
+`~AbstractController()` already calls `closeMidiDevices()`, and the event
+handlers are `std::function` members that die with the controller. Adding them
+again would be redundant, not faithful.
 
 ### DEC-BUG-006 — Startup synchronization is `start()`'s job, not a separate call
 The startup half of RQ-BUG-002 SHALL be delivered by `start()`'s existing
