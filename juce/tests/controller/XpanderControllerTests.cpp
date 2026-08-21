@@ -345,6 +345,63 @@ SCENARIO("Clipboard pastes a page family instance onto another", "[RQ-CTL-040]")
     }
 }
 
+SCENARIO("The first start synchronizes on the editing patch, later starts do not",
+         "[RQ-BUG-003][RQ-CTL-006]")
+{
+    // Every consequence of ADR-BUG-002 rests on this once-only branch: the
+    // application had never called start(), so it stayed armed and fired from
+    // the trailing start() of whichever tone-mutating operation ran first,
+    // overwriting that operation's own result.
+    // [RQ-BUG-003, ADR-BUG-002 (DEC-BUG-006)]
+    GIVEN("a controller that has never been started, on a known editing patch")
+    {
+        Fixture f;
+        constexpr int EDITING_PROGRAM = 42;
+        f.controller.setEditingProgramNumber(EDITING_PROGRAM);
+        f.backend.clearSentMessages();
+
+        WHEN("it is started for the first time")
+        {
+            f.controller.start();
+
+            THEN("the current patch is aligned on the editing one")
+            {
+                CHECK(f.controller.currentProgramNumber() == EDITING_PROGRAM);
+            }
+
+            AND_THEN("a program change and a dump request go out for it")
+            {
+                // Three frames: sendProgramChangeToSynthOutput emits the
+                // program change and then re-selects page VCO_1_X, and the
+                // dump request follows.
+                REQUIRE(f.waitForSentCount(3));
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                REQUIRE(sent.size() >= 3);
+                CHECK(sent[0].command() == xpl::midi::ChannelCommand::ProgramChange);
+                CHECK(sent[0].data1() == EDITING_PROGRAM);
+                CHECK(sent[1][3] == 0x0B); // page select opcode
+                CHECK(sent[2][3] == 0x00); // single-patch dump request opcode
+                CHECK(sent[2][5] == EDITING_PROGRAM); // F0 10 02 00 00 <prog> F7
+            }
+        }
+
+        WHEN("it is started a second time")
+        {
+            f.controller.start();
+            REQUIRE(f.waitForSentCount(3));
+            f.backend.clearSentMessages();
+            f.controller.start();
+
+            THEN("nothing further is requested from the synth")
+            {
+                // The trailing start() of loadTone / randomizeTone / morphTones
+                // and friends lands here, and must stay silent.
+                CHECK(f.backend.sentMessages(SYNTH_OUT).empty());
+            }
+        }
+    }
+}
+
 SCENARIO("Synth utilities emit the reference byte frames", "[RQ-CTL-060][RQ-CTL-061][RQ-CTL-062]")
 {
     GIVEN("a controller")

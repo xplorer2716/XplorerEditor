@@ -202,14 +202,26 @@ namespace xplorer::app
 
         // Apply persisted MIDI device/channel/delay settings at startup. [RQ-GUI-025]
         applyMidiSettings(*_controller, *_settingsService, _backend);
-        // ...then ask the synth which patch it is on, so the editor opens in
-        // step with it rather than on its own default tone. Same call the
-        // Patch > Synchronize menu item makes. [RQ-BUG-002]
-        _controller->sendProgramChangeAndGetSinglePatchFromSynth(_controller->currentProgramNumber());
+        // ...then run the controller, exactly where the reference's
+        // MainForm.OnLoad does. This starts the transmit worker — without it
+        // panel edits are queued and never sent — and consumes the once-only
+        // first-start branch, which aligns the current program number on the
+        // editing one and asks the synth for that patch, so the editor opens
+        // in step with it. Leaving that branch unconsumed is what let the
+        // session's first load or randomize be overwritten by a late patch
+        // request. Balanced by stop() in the destructor.
+        // [RQ-BUG-002, RQ-BUG-003, ADR-BUG-002 (DEC-BUG-005, DEC-BUG-006)]
+        _controller->start();
     }
 
     MainComponent::~MainComponent()
     {
+        // Balances start() above. Only stop() is needed: ~AbstractController
+        // already closes the MIDI devices and stops the worker, but the smart
+        // all-notes-off lives in this override alone, and without it a held
+        // note survives the application.
+        // [RQ-CTL-060, RQ-BUG-003, ADR-BUG-002 (DEC-BUG-005)]
+        _controller->stop();
         juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     }
 

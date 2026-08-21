@@ -49,9 +49,18 @@ each departure SHALL be justified by an ADR — see ADR-BUG-001.
 - **EARS Type**: Event-driven
 - **Statement**: WHEN the application finishes applying its persisted MIDI
   settings at startup, and WHEN the user accepts a change in the Settings
-  dialog, the application SHALL synchronize with the synthesizer on the current
-  program number — the same call the Patch > Synchronize menu item makes — so
-  that the patch shown in the editor is the patch the synthesizer holds.
+  dialog, the application SHALL synchronize with the synthesizer so that the
+  patch shown in the editor is the patch the synthesizer holds.
+- **Correction (2026-08-21, TASK-BUG-004)**: this requirement was first
+  delivered as two explicit `sendProgramChangeAndGetSinglePatchFromSynth(
+  currentProgramNumber())` calls. Analysis of the reference implementation
+  (see ADR-BUG-002) showed the startup half belongs to the controller's own
+  first-start behaviour, which the application had never triggered, and which
+  synchronizes on the **editing** program number — the "Default patch number"
+  setting — not the current one. The startup call is therefore replaced by
+  `start()` (RQ-BUG-003) and only the settings-accepted resync remains an
+  explicit call, made after the controller has been restarted so the reply
+  dump is not received on stopped input ports.
 - **Rationale**: The reference .NET implementation synchronized on both events.
   The JUCE port applies the MIDI settings (`applyMidiSettings`) but never
   follows them with the patch request, so the editor opens on its own default
@@ -63,17 +72,64 @@ each departure SHALL be justified by an ADR — see ADR-BUG-001.
 - **Acceptance Criteria** (Gherkin):
   - **Given** persisted MIDI settings naming a synth output port, **When** the
     application starts, **Then** a program change and a single-patch dump
-    request are sent for the current program number
+    request are sent for the program number those settings designate
   - **Given** an open Settings dialog with a changed MIDI port, **When** the
-    user accepts it, **Then** the same program change and dump request are sent
-    on the newly applied port
+    user accepts it, **Then** a program change and dump request are sent on the
+    newly applied port, for the patch the user is currently editing
+  - **Given** the Settings dialog, **When** the user accepts it, **Then** the
+    resynchronization happens after the controller has been restarted, so the
+    synthesizer's reply reaches running input ports
   - **Given** the Settings dialog, **When** the user cancels it, **Then** no
     synchronization is triggered
-  - **Given** the three trigger sites — startup, settings accepted, and the
-    Patch > Synchronize menu item — **When** the sources are read, **Then** all
-    three make the identical `sendProgramChangeAndGetSinglePatchFromSynth(
-    currentProgramNumber())` call, with no variant of their own
-- **Dependencies**: RQ-CTL-006, RQ-CTL-021, RQ-GUI-008, RQ-GUI-025
+- **Dependencies**: RQ-BUG-003, RQ-CTL-006, RQ-CTL-021, RQ-GUI-008, RQ-GUI-025;
+  ADR-BUG-002
+
+### RQ-BUG-003: The application drives the controller lifecycle
+- **Category**: Functional
+- **EARS Type**: Complex
+- **Statement**: The application SHALL own the controller's run state:
+  - WHEN the main window has applied its persisted MIDI settings at startup,
+    the application SHALL start the controller;
+  - WHEN the main window is destroyed, the application SHALL stop the
+    controller before releasing it;
+  - WHEN the Settings dialog opens, the application SHALL stop the controller,
+    and WHEN that dialog closes by any route — accept, cancel, Escape or the
+    title bar — the application SHALL start it again.
+- **Rationale**: `XpanderController::start()` and `stop()` are fully
+  implemented and unit-tested, but nothing in `juce/app/` has ever called
+  either. Three defects follow. (a) The transmit worker is only started by the
+  trailing `start()` inside `loadTone`, `randomizeTone`, `morphTones`,
+  `backupAllDataDumpToFile`, `getSingleTonesFromSynth` and the program-dump
+  handler, so until one of those runs, panel edits are queued and never sent.
+  (b) Because `start()` has never run, its once-only first-start branch is
+  still armed, and the first of those operations fires a patch request whose
+  reply overwrites the tone the user just loaded or randomized. (c) `stop()` is
+  never reached at exit, so the smart all-notes-off of RQ-CTL-060 is never
+  sent. All three are consequences of the same omission: the reference drives
+  this lifecycle from its view layer, and the port carried over the controller
+  but not its callers.
+- **Priority**: Must
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a controller that has never been started, **When** `start()` is
+    called, **Then** the current program number is aligned on the editing
+    program number **And** a program change and a single-patch dump request are
+    sent for it
+  - **Given** a controller already started once, **When** `start()` is called
+    again, **Then** no program change and no dump request are sent
+  - **Given** the application at startup, **When** the main window is
+    constructed, **Then** the controller is started once, after its MIDI
+    settings are applied
+  - **Given** a running application, **When** the main window is destroyed,
+    **Then** the controller is stopped before it is released
+  - **Given** the Settings dialog, **When** it opens, **Then** the controller is
+    stopped, **And When** it closes by any route, **Then** the controller is
+    started again exactly once
+  - **Given** the first tone-mutating operation of a session (load, randomize,
+    morph, backup, get-single-tones), **When** it completes, **Then** its
+    trailing `start()` sends no patch request, because the first-start branch
+    was already consumed at application startup
+- **Dependencies**: RQ-BUG-002, RQ-CTL-001, RQ-CTL-005, RQ-CTL-021, RQ-CTL-050,
+  RQ-CTL-060, RQ-FMW-041, RQ-GUI-025, RQ-MID-006; ADR-BUG-002, ADR-JUC-005
 
 ---
 

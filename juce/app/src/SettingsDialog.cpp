@@ -864,6 +864,16 @@ namespace xplorer::app
                   _onBlockPaletteChanged(std::move(onBlockPaletteChanged)),
                   _tabs(juce::TabbedButtonBar::TabsAtTop)
             {
+                // The reference brackets its settings dialog with
+                // Stop() ... finally { Start(); }. ShowDialog() blocks there;
+                // showSettingsDialog below uses launchAsync and returns at
+                // once, so the restart cannot follow the launch call — it goes
+                // in this object's destructor, which the DialogWindow runs on
+                // every close path. Stopping also keeps incoming MIDI from
+                // mutating the tone underneath the dialog.
+                // [RQ-BUG-003, ADR-BUG-002 (DEC-BUG-007)]
+                _controller.stop();
+
                 // Both colour snapshots are taken on open and restored on any
                 // non-accept close (Cancel, Esc, title bar).
                 // [DEC-JUC-038, DEC-JUC-113]
@@ -896,11 +906,26 @@ namespace xplorer::app
 
             ~SettingsContent() override
             {
+                // This destructor is the port's `finally`: the DialogWindow
+                // owns the content, so every close path — accept, Cancel, Esc,
+                // title bar — reaches here exactly once. Balances the stop()
+                // in the constructor.
+                // [RQ-BUG-003, ADR-BUG-002 (DEC-BUG-007)]
+                _controller.start();
+
                 // Any close that did not go through accept() reverts the live
                 // preview to the snapshots taken on open — both colour groups.
                 // [DEC-JUC-038, DEC-JUC-113, RQ-GUI-046, RQ-GUI-073]
                 if (_accepted)
                 {
+                    // Accepted settings may have swapped the MIDI ports under
+                    // the controller, so re-read the patch the user is on.
+                    // It has to follow start() above: while the controller is
+                    // stopped its input ports are stopped with it, and the
+                    // synth's reply dump would reach nobody.
+                    // [RQ-BUG-002, ADR-BUG-002 (DEC-BUG-008)]
+                    _controller.sendProgramChangeAndGetSinglePatchFromSynth(
+                        _controller.currentProgramNumber());
                     return;
                 }
                 if (_onBlockPaletteChanged)
@@ -931,12 +956,12 @@ namespace xplorer::app
                 _uiPage->applyTo(settings.uiConfig);
                 _randomPage->applyTo(settings.randomizerConfig);
                 _settingsService.saveSettings(settings);
+                // No isRunning() guard around this call: the constructor
+                // stopped the controller and the destructor restarts it, so
+                // it is always stopped here. The reference guards its own
+                // equivalent only because its call ordering can reach it
+                // running. [ADR-BUG-002 (DEC-BUG-009)]
                 applyMidiSettings(_controller, _settingsService, _backend);
-                // The ports, channel or delay may have just changed under the
-                // controller; re-synchronize so the editor still shows the
-                // patch the synth is on. Same call as startup and as the
-                // Patch > Synchronize menu item. [RQ-BUG-002]
-                _controller.sendProgramChangeAndGetSinglePatchFromSynth(_controller.currentProgramNumber());
 
                 // Commit the accepted colours as the live ones; the destructor
                 // must not revert them. Both are committed unconditionally: the
