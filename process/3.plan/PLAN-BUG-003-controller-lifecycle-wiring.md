@@ -100,7 +100,8 @@ Run on this toolchain, 2026-08-21:
    diagnostic**.
 2. `ctest` reports **118/118 pass** (117 before, plus TASK-BUG-005's scenario),
    1 skipped as always (virtual MIDI cable absent). No pre-existing test
-   modified.
+   modified. Re-run after merging `feature/QLT` (PR #67) into this branch:
+   **122/122 pass**, same skip.
 3. The reference-parity analysis was re-run after the change. All four
    view-layer call sites of the reference are now matched, and the two frames
    the first-start branch emits are asserted by TASK-BUG-005. Result recorded
