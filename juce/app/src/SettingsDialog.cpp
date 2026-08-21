@@ -426,8 +426,6 @@ namespace xplorer::app
 
                 _coloursGroup.setText("Colours");
                 addAndMakeVisible(_coloursGroup);
-                _knobGroup.setText("Knob behaviour");
-                addAndMakeVisible(_knobGroup);
 
                 // The unity message the owner asked for: one set, one reset.
                 setupHint(_unityHint,
@@ -470,15 +468,11 @@ namespace xplorer::app
                 _resetDefaults.setButtonText("Reset to defaults");
                 _resetDefaults.onClick = [this] { resetToDefaults(); };
                 addAndMakeVisible(_resetDefaults);
-
-                setupRadioPair(_movementLabel, "Knob movement", _linear, "Linear", _circular, "Circular",
-                               MOVEMENT_GROUP, ui.knobMovementIsLinear);
             }
 
             void applyTo(settings::AllUsersSettings::UiConfiguration& ui) const
             {
                 ui.knobLedBorderColor = static_cast<int>(_ledColour.getARGB());
-                ui.knobMovementIsLinear = _linear.getToggleState();
 
                 // A block equal to its default stores NO entry, so users who
                 // never customised (or who reset) keep following future palette
@@ -537,17 +531,9 @@ namespace xplorer::app
                 }
                 _resetDefaults.setBounds(
                     rowBounds(inner).removeFromRight(tokens::semantic::dialogResetWidth));
-
-                // ---- KNOB BEHAVIOUR group.
-                area.removeFromTop(gap);
-                auto knobArea = area.removeFromTop(header + 1 * ROW_HEIGHT + 2 * MARGIN);
-                _knobGroup.setBounds(knobArea);
-                auto knobInner = knobArea.reduced(MARGIN).withTrimmedTop(header);
-                layoutRadioRow(knobInner, _movementLabel, _linear, _circular);
             }
 
         private:
-            static constexpr int MOVEMENT_GROUP = 4001;
             static constexpr int GRID_COLUMNS = 2;    // block-colour grid, mockup 2x4
             static constexpr int LED_TARGET = -1;     // openColourSelector target: knob LED
             static constexpr int SELECTOR_SIZE = 300; // ColourSelector call-out edge
@@ -653,46 +639,19 @@ namespace xplorer::app
                 }
             }
 
-            void setupRadioPair(juce::Label& label, const juce::String& caption, juce::ToggleButton& first,
-                                const juce::String& firstText, juce::ToggleButton& second,
-                                const juce::String& secondText, int group, bool firstSelected)
-            {
-                label.setText(caption, juce::dontSendNotification);
-                label.setFont(dialogControlFont());
-                addAndMakeVisible(label);
-                first.setButtonText(firstText);
-                second.setButtonText(secondText);
-                first.setRadioGroupId(group);
-                second.setRadioGroupId(group);
-                first.setToggleState(firstSelected, juce::dontSendNotification);
-                second.setToggleState(!firstSelected, juce::dontSendNotification);
-                addAndMakeVisible(first);
-                addAndMakeVisible(second);
-            }
-
-            void layoutRadioRow(juce::Rectangle<int>& area, juce::Label& label, juce::ToggleButton& first,
-                                juce::ToggleButton& second)
-            {
-                auto row = rowBounds(area);
-                label.setBounds(row.removeFromLeft(LABEL_WIDTH));
-                first.setBounds(row.removeFromLeft(120));
-                second.setBounds(row.removeFromLeft(120));
-            }
-
             std::function<void(const BlockPalette&)> _onPalettePreview;
             std::function<void(int)> _onLedPreview;
             juce::Colour _ledColour;
             BlockPalette _palette;
             int _editTarget = LED_TARGET;
 
-            juce::GroupComponent _coloursGroup, _knobGroup;
+            juce::GroupComponent _coloursGroup;
             juce::Label _unityHint, _blockHint;
-            juce::Label _ledLabel, _movementLabel;
+            juce::Label _ledLabel;
             Swatch _ledSwatch;
             juce::TextButton _ledChoose, _resetDefaults;
             std::array<BlockRow, BLOCK_COLOUR_COUNT> _blockRows;
             juce::Rectangle<int> _separator;
-            juce::ToggleButton _linear, _circular;
         };
 
         // ---- Randomizer page ----------------------------------------------

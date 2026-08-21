@@ -46,7 +46,6 @@ namespace xplorer::settings
         settings.midiConfig.automationTable = DEFAULT_AUTOMATION_TABLE;
 
         settings.uiConfig.knobLedBorderColor = DEFAULT_KNOB_COLOR;
-        settings.uiConfig.knobMovementIsLinear = true;
 
         settings.randomizerConfig = defaultRandomizerConfiguration();
         return settings;

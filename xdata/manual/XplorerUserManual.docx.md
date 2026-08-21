@@ -466,10 +466,6 @@ Every colour change is previewed **live**: while the colour picker is open, the 
 
 Reset to defaults: Restores all eight block colours **and** the knob LED colour to the original values, with the same live preview.
 
-**Knob behaviour**
-
-Knob movement: You can choose linear or circular movement for the knobs.
-
 ## Randomizer page
 
 *(Figure to be added — see “Missing figures” at the end of this manual.)*
@@ -540,7 +536,7 @@ These three are needed because the text above describes something that no existi
 
 | Figure | Subject | Why |
 | --- | --- | --- |
-| 19 | Settings window, User interface page | The existing picture only shows a single Color button and the knob movement option. It shows nothing of the eight block colours, the live preview or Reset to defaults. |
+| 19 | Settings window, User interface page | The existing picture only shows a single Color button and a knob-movement option that no longer exists. It shows nothing of the eight block colours, the live preview or Reset to defaults. |
 | 8 | Tools menu | The existing picture predates the Piano keyboard command. |
 | new | The piano keyboard window | Never existed. Should show the characters printed on the keys. |
 | new | Settings window, Randomizer page | Never existed. |

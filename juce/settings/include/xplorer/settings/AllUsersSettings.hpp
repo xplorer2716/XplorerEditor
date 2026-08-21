@@ -37,7 +37,6 @@ namespace xplorer::settings
 
             /// 32-bit ARGB, as .NET Color.ToArgb() persists it.
             int knobLedBorderColor = 0;
-            bool knobMovementIsLinear = false;
             /// Individually optional per-block ARGB overrides; an unset entry
             /// means "use the design-system default", so files from earlier
             /// versions and imported .NET files (RQ-SET-006) load unchanged.

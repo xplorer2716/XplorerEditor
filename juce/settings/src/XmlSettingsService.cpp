@@ -200,7 +200,6 @@ namespace xplorer::settings
             }
 
             settings.uiConfig.knobLedBorderColor = childInt(*ui, "KnobLedBorderColor").value_or(0);
-            settings.uiConfig.knobMovementIsLinear = childBool(*ui, "KnobMovementIsLinear").value_or(false);
             for (std::size_t i = 0; i < AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT; ++i)
             {
                 settings.uiConfig.blockColours[i] = childInt(*ui, BLOCK_COLOUR_ELEMENTS[i]);
@@ -251,7 +250,6 @@ namespace xplorer::settings
 
             auto* ui = root->createNewChildElement("UiConfig");
             addChildText(*ui, "KnobLedBorderColor", juce::String(settings.uiConfig.knobLedBorderColor));
-            addChildText(*ui, "KnobMovementIsLinear", settings.uiConfig.knobMovementIsLinear ? "true" : "false");
             for (std::size_t i = 0; i < AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT; ++i)
             {
                 if (settings.uiConfig.blockColours[i].has_value())
