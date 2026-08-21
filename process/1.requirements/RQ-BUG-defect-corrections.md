@@ -44,6 +44,37 @@ each departure SHALL be justified by an ADR — see ADR-BUG-001.
     semitone distance it produces, matching its position in the option list
 - **Dependencies**: RQ-CTL-050, RQ-MOD-033, RQ-SET-003; ADR-BUG-001
 
+### RQ-BUG-002: Synchronization with the synthesizer at startup and after a MIDI settings change
+- **Category**: Functional
+- **EARS Type**: Event-driven
+- **Statement**: WHEN the application finishes applying its persisted MIDI
+  settings at startup, and WHEN the user accepts a change in the Settings
+  dialog, the application SHALL synchronize with the synthesizer on the current
+  program number — the same call the Patch > Synchronize menu item makes — so
+  that the patch shown in the editor is the patch the synthesizer holds.
+- **Rationale**: The reference .NET implementation synchronized on both events.
+  The JUCE port applies the MIDI settings (`applyMidiSettings`) but never
+  follows them with the patch request, so the editor opens on its own default
+  tone while the synthesizer sits on whatever patch it was left on — and the two
+  stay out of step until the user happens to trigger a Goto, Store or the
+  Patch > Synchronize menu item. Changing the MIDI ports mid-session has the
+  same effect: the newly opened port has never been asked for a patch.
+- **Priority**: Must
+- **Acceptance Criteria** (Gherkin):
+  - **Given** persisted MIDI settings naming a synth output port, **When** the
+    application starts, **Then** a program change and a single-patch dump
+    request are sent for the current program number
+  - **Given** an open Settings dialog with a changed MIDI port, **When** the
+    user accepts it, **Then** the same program change and dump request are sent
+    on the newly applied port
+  - **Given** the Settings dialog, **When** the user cancels it, **Then** no
+    synchronization is triggered
+  - **Given** the three trigger sites — startup, settings accepted, and the
+    Patch > Synchronize menu item — **When** the sources are read, **Then** all
+    three make the identical `sendProgramChangeAndGetSinglePatchFromSynth(
+    currentProgramNumber())` call, with no variant of their own
+- **Dependencies**: RQ-CTL-006, RQ-CTL-021, RQ-GUI-008, RQ-GUI-025
+
 ---
 
 ## Traceability note

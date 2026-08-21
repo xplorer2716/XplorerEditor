@@ -932,6 +932,11 @@ namespace xplorer::app
                 _randomPage->applyTo(settings.randomizerConfig);
                 _settingsService.saveSettings(settings);
                 applyMidiSettings(_controller, _settingsService, _backend);
+                // The ports, channel or delay may have just changed under the
+                // controller; re-synchronize so the editor still shows the
+                // patch the synth is on. Same call as startup and as the
+                // Patch > Synchronize menu item. [RQ-BUG-002]
+                _controller.sendProgramChangeAndGetSinglePatchFromSynth(_controller.currentProgramNumber());
 
                 // Commit the accepted colours as the live ones; the destructor
                 // must not revert them. Both are committed unconditionally: the

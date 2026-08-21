@@ -202,6 +202,10 @@ namespace xplorer::app
 
         // Apply persisted MIDI device/channel/delay settings at startup. [RQ-GUI-025]
         applyMidiSettings(*_controller, *_settingsService, _backend);
+        // ...then ask the synth which patch it is on, so the editor opens in
+        // step with it rather than on its own default tone. Same call the
+        // Patch > Synchronize menu item makes. [RQ-BUG-002]
+        _controller->sendProgramChangeAndGetSinglePatchFromSynth(_controller->currentProgramNumber());
     }
 
     MainComponent::~MainComponent()
