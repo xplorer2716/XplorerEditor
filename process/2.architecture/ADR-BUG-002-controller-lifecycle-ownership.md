@@ -107,8 +107,17 @@ received by nobody. `_accepted` is already the flag the destructor uses to
 decide whether to keep or revert the colours; it decides this too.
 
 This resynchronization is a deliberate addition to the reference, which
-re-applies the MIDI settings but never re-requests the patch. It is kept
-because a port change is exactly when the two can have drifted apart.
+re-applies the MIDI settings but never re-requests the patch — confirmed as
+the reference's own gap, not a JUCE-port regression: `Start()`'s first-start
+guard is consumed at application launch there too, so the reference's own
+`finally { Start(); }` after the settings dialog does not resend a patch
+request either. Kept anyway, by owner decision (2026-08-21, session BUG,
+raised and confirmed after implementation): the controller cannot tell a
+same-instrument port rename from a reconnection to a different synth or
+patch, because its input ports are stopped for the whole time the dialog is
+open (DEC-BUG-007) — so on the common case this is one harmless silent
+round-trip, and on the case that matters it is the only thing that catches
+the drift.
 
 ### DEC-BUG-009 — No `isRunning()` guard around `applyMidiSettings`
 `applyMidiSettings` SHALL NOT bracket itself with `stop()`/`start()`.
