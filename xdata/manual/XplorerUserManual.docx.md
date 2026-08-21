@@ -4,79 +4,73 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 
 **Table of contents**
 
-[Release history 3](#__RefHeading___Toc338714074)
+[Release history](#release-history)
 
-[Notice 4](#__RefHeading___Toc338714075)
+[Notice](#notice)
 
-[System requirements 4](#__RefHeading___Toc338714076)
+[License](#license)
 
-[Introduction 5](#__RefHeading___Toc338714077)
+[System requirements](#system-requirements)
 
-[Installation 5](#__RefHeading___Toc338714078)
+[Introduction](#introduction)
 
-[Product activation 5](#__RefHeading___Toc338714079)
+[Installation](#installation)
 
-[Overview 6](#__RefHeading___Toc338714080)
+[Overview](#overview)
 
-[Using Xplorer on Touch Screens 7](#__RefHeading___Toc338714081)
+&nbsp;&nbsp;&nbsp;&nbsp;[Menus](#menus)
 
-[Recommended Touch Screen Gestures 7](#__RefHeading___Toc338714082)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[File](#file)
 
-[Predefined values for knobs 8](#__RefHeading___Toc338714083)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Patch](#patch)
 
-[Menus 8](#__RefHeading___Toc338714084)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Tools](#tools)
 
-[File 9](#__RefHeading___Toc338714085)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Help](#help)
 
-[Patch 9](#__RefHeading___Toc338714086)
+&nbsp;&nbsp;&nbsp;&nbsp;[The Quick Buttons](#the-quick-buttons)
 
-[Tools 10](#__RefHeading___Toc338714087)
+[Settings](#settings)
 
-[Help 10](#__RefHeading___Toc338714088)
+&nbsp;&nbsp;&nbsp;&nbsp;[MIDI page](#midi-page)
 
-[The Quick Buttons 11](#__RefHeading___Toc338714089)
+&nbsp;&nbsp;&nbsp;&nbsp;[MIDI Ports](#midi-ports)
 
-[Settings 11](#__RefHeading___Toc338714090)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Output port to synthesizer](#output-port-to-synthesizer)
 
-[MIDI page 11](#__RefHeading___Toc338714091)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Input port from synthesizer](#input-port-from-synthesizer)
 
-[MIDI Ports 12](#__RefHeading___Toc338714092)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Controller or DAW input port](#controller-or-daw-input-port)
 
-[Output port to synthesizer 12](#__RefHeading___Toc338714093)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Connecting a hardware controller to Xplorer](#connecting-a-hardware-controller-to-xplorer)
 
-[Input port from synthesizer 12](#__RefHeading___Toc338714094)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Connecting a DAW to Xplorer](#connecting-a-daw-to-xplorer)
 
-[Controller or DAW input port 12](#__RefHeading___Toc338714095)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Using a hardware controller and a DAW](#using-a-hardware-controller-and-a-daw)
 
-[Connecting a hardware controller to Xplorer 12](#__RefHeading___Toc338714096)
+&nbsp;&nbsp;&nbsp;&nbsp;[MIDI communication](#midi-communication)
 
-[Connecting a DAW to Xplorer 13](#__RefHeading___Toc338714097)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Output MIDI channel](#output-midi-channel)
 
-[Using a hardware controller and a DAW 15](#__RefHeading___Toc338714098)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Smart “all notes off”](#smart-all-notes-off)
 
-[MIDI communication 16](#__RefHeading___Toc338714099)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[SysEx Delay](#sysex-delay)
 
-[Output MIDI channel 16](#__RefHeading___Toc338714100)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Default patch number](#default-patch-number)
 
-[Smart “all notes off” 16](#__RefHeading___Toc338714101)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Synthesizer type](#synthesizer-type)
 
-[SysEx Delay 16](#__RefHeading___Toc338714102)
+&nbsp;&nbsp;&nbsp;&nbsp;[MIDI Automation](#midi-automation)
 
-[Default patch number 16](#__RefHeading___Toc338714103)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Understanding Xpander/Matrix-12 parameter pages](#understanding-xpandermatrix-12-parameter-pages)
 
-[Synthesizer type 16](#__RefHeading___Toc338714104)
+&nbsp;&nbsp;&nbsp;&nbsp;[User interface page](#user-interface-page)
 
-[MIDI Automation 16](#__RefHeading___Toc338714105)
+&nbsp;&nbsp;&nbsp;&nbsp;[Randomizer page](#randomizer-page)
 
-[Understanding Xpander/Matrix-12 parameter pages 16](#__RefHeading___Toc338714106)
+[Website](#website)
 
-[User interface page 17](#__RefHeading___Toc338714107)
-
-[Credits 17](#__RefHeading___Toc338714108)
-
-[Appendix 18](#__RefHeading___Toc338714109)
-
-[Oberheim Xpander LFO Rate to BPM 18](#__RefHeading___Toc338714110)
+[Missing figures](#missing-figures)
 
 
 # Release history
@@ -477,8 +471,111 @@ Reset to defaults: Restores all eight block colours **and** the knob LED colour 
 
 Knob movement: You can choose linear or circular movement for the knobs.
 
+## Randomizer page
+
+*(Figure to be added — see “Missing figures” at the end of this manual.)*
+
+This page decides what the Randomize command (F8, or the dice quick button) is allowed to change. On the Xpander and the Matrix-12, a completely random patch is often silent or unusable, so these settings let you keep a few key elements under control while everything else is drawn at random.
+
+Each setting can be left on **Free**, which means “randomize this too, with no constraint”.
+
+**VCO frequency**
+
+Sets the musical interval between the two oscillators instead of leaving their pitches to chance:
+
+* Free: both pitches are random.
+* Same note: both oscillators are tuned to the same note.
+* Third, Fifth, Seventh, Ninth, Eleventh, Thirteenth: VCO2 is tuned that interval above VCO1.
+* Octave: kept for compatibility with the original editor, where it behaves like Free.
+
+**VCO detune**
+
+Sets how far the two oscillators are detuned from each other:
+
+* Free: the detune amount is random.
+* Digital: a very slight detune, for a clean, precise sound.
+* Analog: a wider detune, for the thicker, drifting sound of an analogue oscillator pair.
+
+**VCA2 envelope**
+
+Gives the patch a usable volume shape, which is what most often makes the difference between a random patch you can play and one you cannot hear:
+
+* Free: the envelope is random.
+* Organ: instant attack, full sustain, instant release — the note lasts exactly as long as you hold the key.
+* Strings: slow attack and slow release.
+* Percusive: instant attack then a short decay, with no release.
+* Percusive with release: the same, but the sound rings on after you let go of the key.
+
+**VCO2 random**
+
+Three tick boxes — FM, Noise and Sync — deciding whether those features of VCO2 may be switched on at random. Clear them if you find the results too aggressive.
+
+**Matrix random**
+
+Three tick boxes deciding how much of the Modulation Matrix is randomized:
+
+* Amount: the modulation amounts.
+* Quantize: the quantize flag of each entry.
+* source & dest.: the modulation sources and destinations themselves.
+
+Clearing “source & dest.” is a good way to keep a modulation routing you like while still shaking up the rest of the patch.
+
+**Randomize all**
+
+Sets every option on this page back to “randomize everything, with no constraint”. Note that this button changes the settings on the page — it does not generate a patch. Use Randomize (F8) in the Patch menu for that.
+
 
 # Website
 
 Go to the website https://xplorer2716.github.io/XplorerEditor.site/ for news, resources and more.
+
+# Missing figures
+
+Working note for this edition of the manual — to be removed once the screenshots have been retaken.
+
+Every image in this document is currently an empty placeholder: the file carries `data:image/…;base64...` markers with no image data behind them. The original pictures are kept in `xdata/manual/images/legacy/` and all of them show the previous .NET version of Xplorer, so they no longer match what the application looks like.
+
+## To be produced
+
+These three are needed because the text above describes something that no existing picture shows:
+
+| Figure | Subject | Why |
+| --- | --- | --- |
+| 19 | Settings window, User interface page | The existing picture only shows a single Color button and the knob movement option. It shows nothing of the eight block colours, the live preview or Reset to defaults. |
+| 8 | Tools menu | The existing picture predates the Piano keyboard command. |
+| new | The piano keyboard window | Never existed. Should show the characters printed on the keys. |
+| new | Settings window, Randomizer page | Never existed. |
+
+## To be retaken
+
+These have a legacy picture that is still readable, but shows the .NET interface:
+
+| Figure | Subject | Legacy file |
+| --- | --- | --- |
+| 2 | Xplorer user interface | `MainView.jpg` |
+| 6 | File menu | `File.jpg` |
+| 7 | Patch menu | `Patch.jpg` |
+| 9 | Help menu | `Help.jpg` |
+| 10 | “About” message on the synthesizer display | `About.jpg` — also shows a dead web address and version 1.3.26 |
+| 11 | Quick buttons | `SmartButtons.jpg` — the buttons are now vector-drawn |
+| 12 | Settings window, MIDI page | `settings.jpg` |
+| 17 | Virtual MIDI cable in Xplorer | `VirtualMIDICableXplorer.jpg` |
+
+## Still usable
+
+| Figure | Subject | Legacy file |
+| --- | --- | --- |
+| 13 | Connecting a hardware controller | `VirtualMIDICable.jpg` — diagram, not a screenshot |
+| 18 | Xplorer with a DAW and a controller | `BigPicture.jpg` — diagram, not a screenshot |
+| 14, 15 | Virtual MIDI cable in FL Studio | `VirtualMIDICable.FL.jpg` — one picture for two figures; a second one is needed, or the two figures should be merged into one |
+
+## Never existed
+
+| Figure | Subject |
+| --- | --- |
+| 16 | Virtual MIDI cable in Cubase — referenced by the text, no picture has ever been supplied |
+
+## Numbering
+
+The figures run 2, 6, 7, 8 … 19: numbers **1, 3, 4 and 5** are unused. They belonged to chapters that are no longer part of the manual — the cover image, Product activation (`Activation.jpg`), the touch-screen chapters, and Predefined values for knobs (`PredefinedValues.jpg`). Either renumber the figures from 1 with no gaps, or restore those chapters if they are still wanted.
 
