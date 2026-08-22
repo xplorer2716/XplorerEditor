@@ -731,7 +731,7 @@ namespace xplorer::app
         // own -- same as the reference's OpenBrowserWithUrl.
         // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
         constexpr const char* USER_MANUAL_URL =
-            "https://github.com/xplorer2716/XplorerEditor/blob/main/xdata/manual/XplorerUserManual.pdf";
+            "https://github.com/xplorer2716/XplorerEditor/blob/main/docs/manual/XplorerUserManual.md";
         constexpr const char* RELEASES_URL = "https://github.com/xplorer2716/XplorerEditor/releases/latest";
         constexpr const char* WEBSITE_URL = "https://xplorer2716.github.io/XplorerEditor.site/";
 

@@ -131,7 +131,7 @@ uploads patches — it is a live control surface.
 ```mermaid
 flowchart LR
     subgraph P ["The problem"]
-        SYN["🎛 Xpander / Matrix-12<br/>227 parameters<br/><b>2×6 character display</b>"]
+        SYN["🎛 Xpander / Matrix-12<br/>227 parameters<br/>"]
     end
     subgraph S ["What Xplorer adds"]
         SCR["🖥 One screen, all parameters,<br/>in the instrument's own layout"]
@@ -434,7 +434,7 @@ nobody notices, and is silently reverted by the next regeneration.
 flowchart LR
     subgraph SRC ["✍️ Sources of truth (edit these)"]
         DTY["juce/tools/design-tokens.yaml"]
-        REF[".NET reference sources<br/><i>archived repo, read-only</i>"]
+        REF[".NET reference sources<br/><i>archived repo, read-only</i> NOT USED ANYMORE"]
         SVG["generate_background_mockup.py"]
         MTX["generate_workflows.py<br/><i>(matrix inside)</i>"]
         SEG["generate_segment_font.py"]
@@ -555,12 +555,13 @@ load / confirm-and-restore / warn — the same path as File ▸ Open.
 
 ### 5.3 The extraction pipeline
 
-The UI is not re-described by hand. `app/core/tools/extract_control_table.py` regenerates
-all UI facts mechanically from the archived WinForms sources.
+The UI is not re-described by hand. `app/core/tools/extract_control_table.py` regenerated
+all UI facts mechanically from the archived WinForms sources during the migration process.
+Now the control table has its onw life.
 
 ```mermaid
 flowchart LR
-    subgraph ref ["Archived reference sources (read-only)"]
+    subgraph ref ["Archived reference sources (read-only) NOT USED ANYMORE"]
         D["MainForm.Designer.cs<br/><i>types, tags, parent chain</i>"]
         R["MainForm.resx<br/><i>geometry, captions</i>"]
         RS["Resources.resx<br/><i>enum labels, parameter names</i>"]

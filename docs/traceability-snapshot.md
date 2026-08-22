@@ -2,7 +2,7 @@
 
 _Generated 2026-08-20 from repository state at commit `56309a8` (branch `claude/readme-juce-update-7tbi9z`)._
 
-A quantitative snapshot of the requirements → decisions → plans → tests chain backing the JUCE port.
+A quantitative snapshot of the requirements → decisions → plans → tests chain of Xplorer.
 
 ## Summary
 

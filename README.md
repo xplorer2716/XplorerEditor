@@ -4,7 +4,7 @@
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=xplorer2716_XplorerEditor&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xplorer2716_XplorerEditor)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-green.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-![Xplorer UI](README.XplorerFullScreen.jpg)
+![Xplorer UI](/docs/assets/README.XplorerFullScreen.jpg)
 
 Xplorer is a real-time and bi-directional software editor for the Oberheim Xpander and Matrix-12 synthesizers.
 
@@ -16,13 +16,6 @@ With Xplorer you can tweak the sound simultaneously using a computer mouse, a ha
 "Real-time and bi-directional" means that every change you make in Xplorer is reflected into the synthesizer memory with minimal latency, and vice-versa. Whether you change the sound parameters on the synthesizer, in Xplorer, or with a MIDI controller, the software and the synthesizer will simultaneously update the parameters of the sound, without needing to reload the patch into the synthesizer memory.
 
 The main goal of Xplorer is to explore the sound capabilities of these wonderful synths (hence the name). More to come in the next releases...
-
-## Status
-
-The migration from the original .NET/WinForms implementation to a cross-platform **JUCE/C++20** implementation is now complete. JUCE is the active and only supported codebase, and it lives under [juce](juce).
-
-- **Legacy .NET version (archive)**: [xplorer2716/XplorerEditor-dotnet-archive](https://github.com/xplorer2716/XplorerEditor-dotnet-archive)
-
 
 ## Main features
 

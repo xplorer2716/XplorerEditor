@@ -1,8 +1,8 @@
-Xplorer – A realtime editor for the Xpander / Matrix-12
+# Xplorer – A realtime editor for the Xpander / Matrix-12
 
-![](data:image/jpeg;base64...)
+![Xplorer UI](/docs/assets/README.XplorerFullScreen.jpg)
 
-**Table of contents**
+## Table of contents
 
 [Release history](#release-history)
 
@@ -74,9 +74,6 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 
 &nbsp;&nbsp;&nbsp;&nbsp;[Randomizer page](#randomizer-page)
 
-[Website](#website)
-
-[Missing figures](#missing-figures)
 
 
 # Release history
@@ -84,9 +81,8 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 |  |  |  |
 | --- | --- | --- |
 | Version | Release date | Change log |
-| 1.10.24.1 | October 24, 2012 | * Windows 8 support. * Drag and drop support for single patch SysEx files. * Enhanced single patch data detection in SysEx files. * Extract single patches from an "all data data dump" SysEx file into a given folder. * Get all single patches from synthesizer into a given folder. * All data dump request backup and restore (save and restore synthesizer whole memory to/from a sysex file). * MIDI status is now displayed as 3 leds under the VFD Display. * “Smart all not off” mode to reduce stuck notes when changing patch. * Links to website added to help menu. |
-| 1.8.12.3 | August 12, 2012 | * Tune request, linear knob movement, predefined knob values. |
-| 1.5.8.1 | May 8, 2012 | First final release |
+| 2026.08.XX-YYZZ | August XX, 2026 | JUCE port |
+| 1.5.8.1 | May 8, 2012 | First prod release |
 | 1.4.15.1 | April 15, 2012 | First beta release |
 
 # Notice
@@ -94,8 +90,6 @@ Xplorer – A realtime editor for the Xpander / Matrix-12
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 You agree that any and all claims, suits or other disputes arising from your use of the software shall be determined in accordance with the laws of France, in the event the author is made a party thereto.
-
-You agree to submit to the jurisdiction of the court in Strasbourg, France for all actions, whether in contract or in tort, arising from your use of the software.
 
 # License
 
@@ -132,18 +126,18 @@ Minimum:
 Recommended:
 * A MIDI interface with one MIDI OUT and one MIDI IN, plus a virtual MIDI cable so you can also use Xplorer with a DAW:
   * Windows: LoopBe1 (<http://www.nerds.de/en/loopbe1.html>) or loopMIDI (<https://www.tobias-erichsen.de/software/loopmidi.html>)
-  * macOS: no extra software needed — use the IAC Driver built into Audio MIDI Setup
-  * Linux: no extra software needed — use the ALSA virtual MIDI ports
+  * macOS: no extra software needed - use the IAC Driver built into Audio MIDI Setup
+  * Linux: no extra software needed - use the ALSA virtual MIDI ports
 
 ## Synthesizer
 
-* Oberheim[[2]](#footnote-3) Xpander or Matrix-12 synthesizer
+* Oberheim Xpander or Matrix-12 synthesizer
 
 # Introduction
 
 Xplorer is a real-time and bi-directional software editor for the Oberheim Matrix-12 and Xpander synthesizers.
 
-“Real-time and bi-directional” means that every change you make in Xplorer is reflected into the synthesizer memory with minimal latency[[3]](#footnote-4), and vice-versa. Whether you change the sound parameters on the synthesizer, in Xplorer, or with a MIDI controller, the software and the synthesizer will simultaneously update the parameters of the sound, without needing to reload the patch into the synthesizer memory.
+“Real-time and bi-directional” means that every change you make in Xplorer is reflected into the synthesizer memory with minimal latency, and vice-versa. Whether you change the sound parameters on the synthesizer, in Xplorer, or with a MIDI controller, the software and the synthesizer will simultaneously update the parameters of the sound, without needing to reload the patch into the synthesizer memory.
 
 The main features of Xplorer are:
 
@@ -166,17 +160,17 @@ The main features of Xplorer are:
 3. launch the executable/app/AppImage depending on your OS.
 
 These binaries are not signed. Xplorer is an AGPL project and carries no paid publisher
-certificate, so each operating system will ask you to confirm — once.
+certificate, so each operating system will ask you to confirm - once.
 
-**Windows** — SmartScreen shows "Windows protected your PC".
+**Windows** - SmartScreen shows "Windows protected your PC".
 Click More info, then Run anyway.
 
-**macOS** — the app is blocked with "Apple could not verify it is free of malware".
+**macOS** - the app is blocked with "Apple could not verify it is free of malware".
 Open System Settings → Privacy & Security, scroll to the bottom, and click Open Anyway.
 Since macOS 15 the old Control-click → Open shortcut no longer works; the Settings route is the
 only one.
 
-**Linux** — make the AppImage executable, then run it:
+**Linux** - make the AppImage executable, then run it:
 ```
 chmod +x Xplorer-*.AppImage && ./Xplorer-*.AppImage
 ```
@@ -189,22 +183,15 @@ If nothing happens, your distribution does not ship FUSE 2:
 
 # Overview
 
-![](data:image/jpeg;base64...)
-
-Figure 2 – Xplorer user interface
+![Xplorer UI](/docs/assets/README.XplorerFullScreen.jpg)
 
 Xplorer is not just another generic synthesizer editor with ranges of slider controls that are all the same and don’t really tell you what you are doing.
 
-Xplorer was developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix. Each functional block of the signal path — VCO, VCF, ENV, LFO, RAMP, LAG, TRACK and the Modulation Matrix — has its own colour, so you can find your way around the panel at a glance.
+Xplorer was developed by an Xpander owner for use by Xpander and Matrix-12 owners. With Xplorer you quickly get an overview of all parameters of a single patch, including an overview of the Modulation Matrix. Each functional block of the signal path - VCO, VCF, ENV, LFO, RAMP, LAG, TRACK and the Modulation Matrix - has its own colour, so you can find your way around the panel at a glance.
 
 With Xplorer you can tweak the sound simultaneously using a computer mouse, a hardware MIDI controller, your DAW software, or directly on your Xpander or Matrix-12.
 
 Use the method you prefer to change the sound. Xplorer’s display shows you in real time which parameter is currently being modified.
-
-Two shortcuts are worth knowing from the start:
-
-* double-click a knob to type an exact value instead of dialling it;
-* double-click the display to rename the current patch.
 
 ## Menus
 
@@ -212,94 +199,66 @@ Most menu commands have a keyboard shortcut, so you can keep your hands off the 
 
 ### File
 
-![](data:image/jpeg;base64...)
-
-Figure 6 – File menu
-
 These commands are straightforward. With Open and Save you can manage your single-patch SysEx files on your hard disk.
 
-Please note that you can simply drag and drop a SysEx file onto Xplorer. If the SysEx file contains a single patch, it will be loaded directly.
+Please note that you can simply drag and drop a SysEx file onto Xplorer. If the SysEx file contains a single patch, it will be loaded directly. If the SysEx file is a bank of patches, Xplorer will ask you to confirm the import of the whole bank in the synth.
 
-The “New” (Ctrl-N) command is a bit different. It will load the default “Oberheim“ patch into the current memory location of your synthesizer, as described in the synthesizer owner’s manual.
-
-In short, Ctrl-N in Xplorer will give you the same result as using Clear+Store on the synthesizer.
+The “New” (Ctrl-N) command is a bit different. It will load the default “Oberheim“ patch into the current memory location of your synthesizer, as described in the synthesizer owner’s manual. In short, Ctrl-N in Xplorer will give you the same result as using Clear+Store on the synthesizer.
 
 ### Patch
 
-![](data:image/jpeg;base64...)
+* Previous (F5): same as using "-" on the synthesizer
 
-Figure 7 – Patch menu
+* Next (F6): same as using "+" on the synthesizer
 
-Previous (F5): same as using “-“ on the synthesizer
+* Go to patch (F7): Opens a dialog asking for a patch number, and switches to that patch when you press Enter.
 
-Next (F6): same as using “+“ on the synthesizer
+* Randomize (F8): Randomizes all the parameters of the patch to create a new one, named “Random”. The settings/randomizer dialog enable to define which parameters are impacted.
 
-Go to patch (F7): Opens a dialog asking for a patch number, and switches to that patch when you press Enter.
+* Rename (F9): Opens a dialog to set the patch name. Please keep in mind that this is the *patch* name, not the *file* name on your computer.
 
-Randomize (F8): Randomizes all the parameters of the patch to create a new one, named “Random”. Press F8 a few times when you are looking for inspiration!
+* Store (F10): Stores the current patch *into the synthesizer memory* at the current memory location. Please keep in mind that this command is not the same as saving the SysEx file on your hard disk.
 
-Rename (F9): Opens a dialog to set the patch name. Please keep in mind that this is the *patch* name, not the *file* name on your computer.
-
-Store (F10): Stores the current patch *into the synthesizer memory* at the current memory location. Please keep in mind that this command is not the same as saving the SysEx file on your hard disk.
-
-Synchronize (F12): In case of communication errors between the synthesizer and Xplorer (such as an unplugged MIDI cable), you can use this command to get the current synthesizer patch into Xplorer. Any changes made in Xplorer will be overwritten by the values of the synthesizer’s current patch.
+* Synchronize (F12): In case of communication errors between the synthesizer and Xplorer (such as an unplugged MIDI cable), you can use this command to get the current synthesizer patch into Xplorer. Any changes made in Xplorer will be overwritten by the values of the synthesizer’s current patch.
 
 ### Tools
 
-![](data:image/jpeg;base64...)
 
-Figure 8 – Tools menu
+* Settings (Ctrl-G): Opens the Settings window (see next chapter).
 
-Settings (Ctrl-G): Opens the Settings window (see next chapter).
+* Tune request (F4): Sends a tune request to the synthesizer.
 
-Tune request (F4): Sends a tune request to the synthesizer.
+* Piano keyboard: Opens a small on-screen keyboard that plays your synthesizer, so you can hear the patch you are editing without reaching for a MIDI keyboard. You can play it in two ways: with the mouse, by clicking on the keys, or with your computer keyboard - each playable key shows, printed on it, the character that plays it. Those characters are worked out from your own keyboard layout, so the keys shown are the ones actually under your fingers, whether you use a QWERTY, AZERTY or any other layout. The notes are sent to your synthesizer on the output MIDI channel set in the Settings window, so the MIDI output port must be configured for the keyboard to make any sound.
 
-Piano keyboard: Opens a small on-screen keyboard that plays your synthesizer, so you can hear the patch you are editing without reaching for a MIDI keyboard.
+* Single patches:
+  - Get all single patches from synth: Gets all single patches from the synthesizer and stores them in a folder of your choice
+  - Extract all single patches from file: Extracts all single patches from a SysEx file (an “all data dump”) and stores them in a folder of your choice.
 
-You can play it in two ways:
-
-* with the mouse, by clicking on the keys;
-* with your computer keyboard — each playable key shows, printed on it, the character that plays it.
-
-Those characters are worked out from your own keyboard layout, so the keys shown are the ones actually under your fingers, whether you use a QWERTY, AZERTY or any other layout.
-
-The notes are sent to your synthesizer on the output MIDI channel set in the Settings window, so the MIDI output port must be configured for the keyboard to make any sound.
-
-Single patches:
-
-Get all single patches from synth: Gets all single patches from the synthesizer and stores them in a folder of your choice[[4]](#footnote-5)
-
-Extract all single patches from file: Extracts all single patches from a SysEx file (an “all data dump”) and stores them in a folder of your choice.
-
-Backup/Restore:
-
-Backup all data: Saves all synthesizer data (single and multi patches) into a SysEx file on disk.
-
-Restore all data: Restores a previously saved backup file into the synthesizer’s memory.
+* Backup/Restore:
+  - Backup all data: Saves all synthesizer data (single and multi patches) into a SysEx file on disk.
+  - Restore all data: Restores a previously saved backup file into the synthesizer’s memory.
 
 ### Help
 
-![](data:image/jpeg;base64...)
+* Xplorer help (F1): Opens this manual in your web browser.
 
-Figure 9 – Help menu
+* Check for new releases and Go to website open the corresponding page in your web browser.
 
-Xplorer help (F1): Opens this manual in your web browser.
+* About: Shows the “About” window. When it opens, Xplorer also sends a message to the synthesizer’s display - a quick way to check that MIDI communication towards the synthesizer is working.
 
-Check for new releases and Go to website open the corresponding page in your web browser.
+![The Quick Buttons](/docs/assets/xplorerabout.jpg)
 
-About: Shows the “About” window. When it opens, Xplorer also sends a short message to the synthesizer’s display — a quick way to check that MIDI communication towards the synthesizer is working.
-
-![](data:image/jpeg;base64...)
-
-Figure 10 – “About” message on synthesizer’s display
 
 ## The Quick Buttons
 
-The quick buttons sit under the display. They give you direct access to the most-used menu commands, without opening a menu.
+![The Quick Buttons](/docs/assets/quickbuttons.jpg)
 
-![](data:image/jpeg;base64...)
+The quick buttons sit under the display. They give you direct access to the most-used menu commands, without opening a menu: previous and next patch, randomizer, save patch as file, store patch, midi settings.
 
-Figure 11 – Quick buttons
+Also please note that two shortcuts are worth knowing:
+
+* double-click a knob to type an exact value instead of dialling it;
+* double-click the display to rename the current patch.
 
 # Settings
 
@@ -307,21 +266,19 @@ The Settings window is available from Xplorer’s Tools menu, or with the Ctrl-G
 
 ## MIDI page
 
-![](data:image/jpeg;base64...)
+![settings/midi](/docs/assets/settings.midi.jpg)
 
-Figure 12 – Settings window (MIDI Page)
+The first thing is to set up your synthesizer MIDI configuration to enable communication with Xplorer. Please check your synthesizer's manual:
 
-The first thing is to set up your synthesizer MIDI configuration to enable communication with Xplorer.
+**Enable MIDI system exclusive messages**: go to MASTER PAGE/MIDI/ENABLES and select SYSTEMX.
 
-Enable MIDI system exclusive messages: go to MASTER PAGE/MIDI/ENABLES and select SYSTEMX.
+**Disable MIDI echo**: go to MASTER PAGE/MIDI/ENABLES and unselect ECHO.
 
-Disable MIDI echo: go to MASTER PAGE/MIDI/ENABLES and unselect ECHO.
+**Enable Patch change**: go to MASTER PAGE/MIDI/ENABLES and select PATCH.
 
-Enable Patch change: go to MASTER PAGE/MIDI/ENABLES and select PATCH.
+**Set up MIDI channel**: see below.
 
-Set up MIDI channel: see below “MIDI communication/Output MIDI channel”.
-
-Set up Memory Protection: see the switch at the back of your synth.
+**Set up Memory Protection**: see the switch at the back of your synth.
 
 ## MIDI Ports
 
@@ -343,53 +300,25 @@ This port is the port of your MIDI Keyboard or the MIDI Controller you want to u
 
 The figure below describes how to connect an external hardware MIDI controller to Xplorer. The MIDI interfaces in the picture below could be external MIDI interfaces, sound card MIDI interfaces, or a mix of both.
 
-![](data:image/x-wmf;base64...)
-
-Figure 13 – Connecting a hardware controller to Xplorer
-
 ### Connecting a DAW to Xplorer
 
-To use Xplorer in conjunction with a DAW (like Cubase[[5]](#footnote-6), Ableton Live, FL Studio, Reaper, etc…) you need a virtual MIDI cable.
+To use Xplorer in conjunction with a DAW (Digital Audio Workstation) you need a virtual MIDI cable.
 
-A virtual MIDI cable is software that emulates a MIDI interface. It uses one or more virtual MIDI ports to allow communication of MIDI data between applications. One application is sending MIDI data to the virtual MIDI output port, and the other one is listening to the virtual MIDI input port.
+A **virtual MIDI cable** is software that emulates a MIDI interface. It uses one or more virtual MIDI ports to allow communication of MIDI data between applications. One application is sending MIDI data to the virtual MIDI output port, and the other one is listening to the virtual MIDI input port.
 
-You may ask: why is a virtual MIDI cable needed? It’s because Xplorer is not based on proprietary technologies like VST[[6]](#footnote-7). This guarantees that it will be still usable and maintainable years from now.
+You may ask: why is a virtual MIDI cable needed? It’s because Xplorer is not based on proprietary technologies like VST. This guarantees that it will be still usable and maintainable years from now.
 
-On macOS and Linux you already have one: use the IAC Driver in Audio MIDI Setup on macOS, or the ALSA virtual MIDI ports on Linux. On Windows you need to install one — LoopBe1 (<http://www.nerds.de/en/loopbe1.html>) and loopMIDI (<https://www.tobias-erichsen.de/software/loopmidi.html>) are both free.
+On macOS and Linux you already have one: use the IAC Driver in Audio MIDI Setup on macOS, or the ALSA virtual MIDI ports on Linux. On Windows you need to install one - LoopBe1 (<http://www.nerds.de/en/loopbe1.html>) and loopMIDI (<https://www.tobias-erichsen.de/software/loopmidi.html>) are both free.
 
-The examples below were made on Windows with MIDI Yoke, an older free virtual cable. The principle is exactly the same whichever one you use: pick the same port on both sides.
+Once the virtual MIDI cable software is installed (please follow the installation guidelines), you should see the virtual MIDI ports in your DAW. As an example, here's how loopMIDI can be used in a MIDI track in Cubase.
 
-Once the virtual MIDI cable software is installed (please follow the installation guidelines), you should see the virtual MIDI ports in your DAW.
+![virtual midi cable](/docs/assets/virtualmidicable.jpg)
 
-Using the virtual MIDI Cable in your DAW (FL Studio)
+**Using the virtual MIDI cable in Xplorer**
 
-In this example, we use MIDI Yoke Port #1 with Xplorer, and in FL Studio we use Port #21. (This internal port number is specific and may vary depending on your setup).
+Select as “Controller or DAW input port” the same port you use in your DAW. Following the previous example, we use here loopMidi. Now the connection between Cubase and Xplorer is functionnal.
 
-![](data:image/jpeg;base64...)
-
-Figure 14 – using a virtual MIDI cable in FL Studio (1/2)
-
-In FL Studio, you can use this port as a standard MIDI OUT.
-
-![](data:image/jpeg;base64...)
-
-Figure 15 – using a virtual MIDI cable in FL Studio (2/2)
-
-Using the virtual MIDI Cable in your DAW (Cubase)
-
-Add a MIDI Track and set the output MIDI channel of the track to the corresponding MIDI Channel.
-
-![](data:image/png;base64...)
-
-Figure 16 – using a virtual MIDI cable in Cubase
-
-Using the virtual MIDI Cable in Xplorer
-
-Select as “Controller or DAW input port” the same port you use in your DAW. In this case, it is MIDI Yoke Port #1.
-
-![](data:image/jpeg;base64...)
-
-Figure 17 – using a virtual MIDI cable in Xplorer
+![virtual midi cable](/docs/assets/virtualmidicablexplorer.jpg)
 
 You’re done!
 
@@ -399,9 +328,8 @@ If the other ports of Xplorer are configured (MIDI Out to synthesizer and MIDI I
 
 The diagram below summarizes the whole process.
 
-![](data:image/jpeg;base64...)
+![virtual midi cable](/docs/assets/virtualmidicablefullsetup.jpg)
 
-Figure 18 – using Xplorer with a DAW and a hardware controller
 
 ## MIDI communication
 
@@ -450,25 +378,23 @@ If the synthesizer receives a lot of page/subpage messages in a short amount of 
 
 ## User interface page
 
-![](data:image/jpeg;base64...)
-
-Figure 19 – Settings window (User interface)
+![settings/user interface](/docs/assets/settings.ui.jpg)
 
 **Colours**
 
 Knob LED colour: The colour used by all knobs, tick boxes and radio buttons.
 
-Block colours: Each of the eight functional blocks — VCO, LAG, TRACK, VCF, ENV, LFO, RAMP and MODULATION MATRIX — has its own colour, and you can set each one separately. Changing a block’s colour recolours everything that belongs to it: its frame, its background, its section heading and its page selector buttons.
+Block colours: Each of the eight functional blocks - VCO, LAG, TRACK, VCF, ENV, LFO, RAMP and MODULATION MATRIX - has its own colour, and you can set each one separately. Changing a block’s colour recolours everything that belongs to it: its frame, its background, its section heading and its page selector buttons.
 
 The colours are what let you read the panel at a glance, so being able to retune them matters: screens, lighting and eyesight all differ, and a set of colours that works well for one person may not for another.
 
-Every colour change is previewed **live**: while the colour picker is open, the panel behind it updates immediately, so you can judge the result on the real interface before deciding. Nothing is committed until you click OK — clicking Cancel restores the colours that were in use before you opened the window.
+Every colour change is previewed **live**: while the colour picker is open, the panel behind it updates immediately, so you can judge the result on the real interface before deciding. Nothing is committed until you click OK - clicking Cancel restores the colours that were in use before you opened the window.
 
 Reset to defaults: Restores all eight block colours **and** the knob LED colour to the original values, with the same live preview.
 
 ## Randomizer page
 
-*(Figure to be added — see “Missing figures” at the end of this manual.)*
+![settings/randomizer](/docs/assets/settings.randomizer.jpg)
 
 This page decides what the Randomize command (F8, or the dice quick button) is allowed to change. On the Xpander and the Matrix-12, a completely random patch is often silent or unusable, so these settings let you keep a few key elements under control while everything else is drawn at random.
 
@@ -496,14 +422,14 @@ Sets how far the two oscillators are detuned from each other:
 Gives the patch a usable volume shape, which is what most often makes the difference between a random patch you can play and one you cannot hear:
 
 * Free: the envelope is random.
-* Organ: instant attack, full sustain, instant release — the note lasts exactly as long as you hold the key.
+* Organ: instant attack, full sustain, instant release - the note lasts exactly as long as you hold the key.
 * Strings: slow attack and slow release.
 * Percusive: instant attack then a short decay, with no release.
 * Percusive with release: the same, but the sound rings on after you let go of the key.
 
 **VCO2 random**
 
-Three tick boxes — FM, Noise and Sync — deciding whether those features of VCO2 may be switched on at random. Clear them if you find the results too aggressive.
+Three tick boxes - FM, Noise and Sync - deciding whether those features of VCO2 may be switched on at random. Clear them if you find the results too aggressive.
 
 **Matrix random**
 
@@ -517,60 +443,9 @@ Clearing “source & dest.” is a good way to keep a modulation routing you lik
 
 **Randomize all**
 
-Sets every option on this page back to “randomize everything, with no constraint”. Note that this button changes the settings on the page — it does not generate a patch. Use Randomize (F8) in the Patch menu for that.
+Sets every option on this page back to “randomize everything, with no constraint”. Note that this button changes the settings on the page - it does not generate a patch. Use Randomize (F8) in the Patch menu for that.
 
 
 # Website
 
 Go to the website https://xplorer2716.github.io/XplorerEditor.site/ for news, resources and more.
-
-# Missing figures
-
-Working note for this edition of the manual — to be removed once the screenshots have been retaken.
-
-Every image in this document is currently an empty placeholder: the file carries `data:image/…;base64...` markers with no image data behind them. The original pictures are kept in `xdata/manual/images/legacy/` and all of them show the previous .NET version of Xplorer, so they no longer match what the application looks like.
-
-## To be produced
-
-These three are needed because the text above describes something that no existing picture shows:
-
-| Figure | Subject | Why |
-| --- | --- | --- |
-| 19 | Settings window, User interface page | The existing picture only shows a single Color button and a knob-movement option that no longer exists. It shows nothing of the eight block colours, the live preview or Reset to defaults. |
-| 8 | Tools menu | The existing picture predates the Piano keyboard command. |
-| new | The piano keyboard window | Never existed. Should show the characters printed on the keys. |
-| new | Settings window, Randomizer page | Never existed. |
-
-## To be retaken
-
-These have a legacy picture that is still readable, but shows the .NET interface:
-
-| Figure | Subject | Legacy file |
-| --- | --- | --- |
-| 2 | Xplorer user interface | `MainView.jpg` |
-| 6 | File menu | `File.jpg` |
-| 7 | Patch menu | `Patch.jpg` |
-| 9 | Help menu | `Help.jpg` |
-| 10 | “About” message on the synthesizer display | `About.jpg` — also shows a dead web address and version 1.3.26 |
-| 11 | Quick buttons | `SmartButtons.jpg` — the buttons are now vector-drawn |
-| 12 | Settings window, MIDI page | `settings.jpg` |
-| 17 | Virtual MIDI cable in Xplorer | `VirtualMIDICableXplorer.jpg` |
-
-## Still usable
-
-| Figure | Subject | Legacy file |
-| --- | --- | --- |
-| 13 | Connecting a hardware controller | `VirtualMIDICable.jpg` — diagram, not a screenshot |
-| 18 | Xplorer with a DAW and a controller | `BigPicture.jpg` — diagram, not a screenshot |
-| 14, 15 | Virtual MIDI cable in FL Studio | `VirtualMIDICable.FL.jpg` — one picture for two figures; a second one is needed, or the two figures should be merged into one |
-
-## Never existed
-
-| Figure | Subject |
-| --- | --- |
-| 16 | Virtual MIDI cable in Cubase — referenced by the text, no picture has ever been supplied |
-
-## Numbering
-
-The figures run 2, 6, 7, 8 … 19: numbers **1, 3, 4 and 5** are unused. They belonged to chapters that are no longer part of the manual — the cover image, Product activation (`Activation.jpg`), the touch-screen chapters, and Predefined values for knobs (`PredefinedValues.jpg`). Either renumber the figures from 1 with no gaps, or restore those chapters if they are still wanted.
-
