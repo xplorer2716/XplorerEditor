@@ -1,3 +1,22 @@
+// A page-family block: one set of on-screen controls that edits any ONE of
+// several identical parameter groups -- ENV 1-5, LFO 1-5, RAMP 1-4, TRACK 1-3.
+// The instrument works the same way, which is why the editor does.
+//
+// The mechanism is a TAG INDIRECTION. The generated control table gives these
+// controls a family tag with a placeholder, e.g. "ENV_X_ATTACK". Nothing is
+// bound to that tag: at any moment the block resolves it against the active
+// instance (resolveControlTag, headless, in xpl_app_core) to a concrete
+// parameter name such as "ENV_3_ATTACK", and binds THAT. Switching instance
+// means rebinding the same widgets to different parameters -- no widget is
+// created or destroyed, and no per-instance UI code exists.
+//
+// Two ways the active instance changes, and they must not fight:
+//   * selectInstance()          -- the user clicked a selector here, so the
+//                                  synth is told to follow (page select).
+//   * setActiveInstanceFromSynth() -- the synth changed page on its own panel,
+//                                  so the UI follows and sends NOTHING back.
+// The asymmetry is the echo guard: whichever side initiated does not get told
+// its own news. [RQ-GUI-011, RQ-CTL-023, RQ-CTL-028]
 #include "PageFamilyBlock.hpp"
 
 #include "DesignTokens.hpp"
@@ -250,6 +269,15 @@ namespace xplorer::app
         rebindControlsToActiveInstance();
     }
 
+    // Inbound counterpart of selectInstance: the user turned the page on the
+    // instrument itself. Same state change, but deliberately WITHOUT a page
+    // select back to the synth -- and the selector buttons are updated with
+    // juce::dontSendNotification so their onClick does not fire and re-enter
+    // selectInstance. Both omissions are the echo guard; either one restored
+    // would bounce the change back at the instrument. [RQ-GUI-011, RQ-CTL-023]
+    //
+    // Out-of-range values are ignored rather than clamped: they mean the synth
+    // reported a page this family does not cover, which is not this block's.
     void PageFamilyBlock::setActiveInstanceFromSynth(int instance)
     {
         if (instance < 1 || instance > _descriptor.count)
@@ -264,6 +292,11 @@ namespace xplorer::app
         rebindControlsToActiveInstance();
     }
 
+    // Hovering a control highlights the matching row of the modulation matrix.
+    // Only knobs qualify, because on this instrument only continuous parameters
+    // can be modulation destinations -- hence the dynamic_cast filter rather
+    // than attaching to everything. The selectors are included so hovering the
+    // instance buttons highlights the whole block. [RQ-GUI-018, ADR-JUC-010]
     void PageFamilyBlock::attachHoverListener(juce::MouseListener* listener)
     {
         for (auto& entry : _controls)
@@ -280,6 +313,19 @@ namespace xplorer::app
         }
     }
 
+    // The heart of the family mechanism. For every control: drop the old
+    // binding, resolve the family tag against the active instance, adopt the
+    // concrete name, rebind, and seed the widget with the new parameter's
+    // current value.
+    //
+    // The unbind MUST come first. The registry is keyed by parameter name, so
+    // binding the new name before releasing the old one would leave the block's
+    // previous instance still registered and receiving updates through a widget
+    // that no longer represents it.
+    //
+    // A parameter that does not resolve leaves the widget bound but unseeded --
+    // it keeps its last displayed value rather than jumping to zero.
+    // [RQ-GUI-011]
     void PageFamilyBlock::rebindControlsToActiveInstance()
     {
         for (auto& entry : _controls)

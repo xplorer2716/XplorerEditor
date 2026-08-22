@@ -36,6 +36,14 @@ namespace xplorer::model
         }
     }
 
+    // A tone is the editor's live patch buffer: the 227 parameters of one
+    // Xpander voice plus its 20-row modulation matrix. One instance exists per
+    // controller and is mutated in place -- loading a file, receiving a dump or
+    // randomizing all rewrite THIS object rather than replacing it, which is
+    // why the UI can hold long-lived bindings to parameter names.
+    //
+    // "XPLORER" as the initial name is the reference's, and it is what the VFD
+    // shows before the first patch arrives from the synth.
     XpanderTone::XpanderTone()
     {
         initializeParameterMap();
@@ -43,6 +51,14 @@ namespace xplorer::model
         clearModulationMatrix();
     }
 
+    // Patch names are FIXED-WIDTH on the wire: exactly TONE_NAME_LENGTH
+    // characters, space-padded. The padding is not cosmetic -- toByteArray
+    // writes the string straight into the dump, so a short name would shift
+    // every following byte. [RQ-MOD-023]
+    //
+    // Note this is the plain model setter. The controller's own setToneName
+    // override adds the heavy side effect (full retransmission + resync) that
+    // the rename dialog depends on.
     void XpanderTone::setToneName(const std::string& name)
     {
         // Reference: truncate to 8 or pad right with spaces to 8.
@@ -57,6 +73,10 @@ namespace xplorer::model
         }
     }
 
+    // Wraps rather than clamps: stepping past patch 99 lands on 0 and vice
+    // versa, which is what makes the previous/next buttons cycle endlessly the
+    // way the instrument's own do. A clamp would make them stick at the ends.
+    // [RQ-MOD-021, RQ-CTL-007]
     void XpanderTone::setCurrentProgramNumber(int programNumber)
     {
         if (programNumber < MIN_PROGRAM_NUMBER)
@@ -93,6 +113,11 @@ namespace xplorer::model
         return static_cast<XpanderModMatrixParameter&>(parameterMap().at(name));
     }
 
+    // Matrix rows have no dedicated storage: each row's amount and quantize
+    // live in the ordinary parameter map under a generated name. These two
+    // helpers are the single place those names are formed, so the map key and
+    // every lookup can never drift apart. Entry numbers are 1-based here, as
+    // everywhere in the matrix API.
     std::string XpanderTone::amountSourceParameterNameForEntry(int entryNumber)
     {
         return formatStr("MOD_AMNT_SRC_{}", entryNumber);
@@ -105,6 +130,16 @@ namespace xplorer::model
 
     // --- parameter map ----------------------------------------------------
 
+    // Builds all 227 parameters, in the reference's own order -- and that order
+    // is part of the contract, not an implementation detail: the map is
+    // ORDERED, and the transmit worker's scan, the morphing filter and the
+    // full-tone send all iterate it.
+    //
+    // Two sources feed this: the literal (non-family) parameters come from the
+    // generated XpanderToneFixedParameters.inc, and the repeated families
+    // (TRACK x3, ENV x5, LFO x5, RAMP x4, matrix x20) are looped here because
+    // they differ only by index. Do not hand-edit the .inc -- regenerate it
+    // with juce/tools/generate_fixed_parameters.py. [RQ-MOD-020]
     void XpanderTone::initializeParameterMap()
     {
         auto& map = parameterMap();
@@ -554,6 +589,11 @@ namespace xplorer::model
 
     // --- randomizer helpers -------------------------------------------------
 
+    // Spreads the two oscillators apart so a random patch sounds like an
+    // analogue instrument rather than a single stiff tone. The two magnitudes
+    // are the reference's: a barely-there 1 for "digital", a wide 10 for
+    // "analog". Symmetric around centre, so the perceived pitch does not move.
+    // [RQ-CTL-050]
     void XpanderTone::detune(bool detuneAnalog)
     {
         const int detuneValue = detuneAnalog ? 10 : 1;
@@ -596,6 +636,15 @@ namespace xplorer::model
         }
     }
 
+    // The randomizer's audibility guarantee. A fully random matrix usually
+    // leaves nothing routed to the amplifier, so the patch is silent -- which
+    // is why the user can ask for ENV2 to be forced onto VCA2 and pick the
+    // envelope shape. The four shapes below are the reference's DADSR + volume
+    // presets, not tunable values.
+    //
+    // EnumRandomVCAEnv::Free returns early: the reference asserts on it rather
+    // than handling it, so there is deliberately no shape to apply.
+    // [RQ-MOD-033, RQ-CTL-050]
     void XpanderTone::forceEnv2ModVca2AfterRandomizeMatrix(EnumRandomVCAEnv enveloppe)
     {
         struct EnvelopeShape { int values[6]; }; // DADSR + volume

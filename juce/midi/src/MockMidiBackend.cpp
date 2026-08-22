@@ -15,6 +15,26 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+// In-memory MidiBackend used by every test that needs MIDI without hardware.
+// It is the mock half of the port/adapter pair whose real half is
+// JuceMidiBackend. [RQ-MID-002, ADR-JUC-004]
+//
+// Three behaviours make it usable as a test double, and each is a deliberate
+// choice rather than a simplification:
+//
+//   * Delivery is SYNCHRONOUS, on whichever thread called injectIncoming() or
+//     send(). A test can therefore assert immediately after injecting, with no
+//     wait and no polling. The real backend delivers on a JUCE-owned callback
+//     thread instead, so a test that depends on that asynchrony must use the
+//     JUCE backend (see the virtual-cable scenarios in xpl_tests_midi_juce).
+//   * Every message sent to an output is CAPTURED, so a test asserts on the
+//     exact byte sequence the controller produced.
+//   * An output can be LOOPED BACK to an input (connectLoopback), which is how
+//     a full request/response exchange with a simulated synth is tested.
+//
+// Device names are the identity: openInput/openOutput fail for a name that was
+// not registered with addInputDevice/addOutputDevice first, mirroring the real
+// backend's behaviour when a device is absent.
 #include "xpl/midi/MockMidiBackend.hpp"
 
 #include <algorithm>
@@ -22,8 +42,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 namespace xpl::midi
 {
-    // Shared mutable state outliving the backend from the ports' viewpoint:
-    // ports hold a shared_ptr so a port destroyed after the backend is safe.
+    // All mutable state lives here, behind a shared_ptr held by the backend AND
+    // by every port it opened. That is what makes destruction order irrelevant:
+    // a test may drop the backend while a port is still alive, and the port's
+    // own destructor still finds the registry it must remove itself from.
+    // Owning the state from the backend alone would leave those destructors
+    // dereferencing freed memory.
     struct MockMidiBackend::State
     {
         std::mutex mutex;
@@ -34,6 +58,10 @@ namespace xpl::midi
         std::map<std::string, std::vector<MidiMessage>> captured;
         std::map<std::string, std::string> loopbacks; // output name -> input name
 
+        // Both fan a message out to every port currently open on `inputName`.
+        // "Every port", plural, on purpose: a test may open the same device
+        // twice to check that the controller's hot-swap really closed the
+        // previous handle (openInputPortCount is what asserts it).
         void deliver(const std::string& inputName, const MidiMessage& message);
         void deliverError(const std::string& inputName, const std::string& description);
     };
@@ -61,6 +89,11 @@ namespace xpl::midi
         void stop() override { _started = false; }
         [[nodiscard]] bool isStarted() const override { return _started; }
 
+        // Fans one message out to whichever callback matches its type. A port
+        // that has been stopped drops the message entirely rather than queueing
+        // it, which is what lets a test assert that stop() really silences a
+        // device -- the controller relies on that when it stops the ports while
+        // the settings dialog is open.
         void receive(const MidiMessage& message)
         {
             if (!_started)
@@ -120,6 +153,11 @@ namespace xpl::midi
 
         [[nodiscard]] std::string deviceName() const override { return _name; }
 
+        // Capture first, then loop back -- and the loopback call happens with
+        // the mutex RELEASED (note the scope around the lock). Delivery runs
+        // arbitrary test callbacks that may re-enter this backend, so holding
+        // the lock across them would deadlock the moment a callback sends
+        // anything back.
         void send(const MidiMessage& message) override
         {
             std::string loopbackTarget;
@@ -142,6 +180,16 @@ namespace xpl::midi
         std::string _name;
     };
 
+    // Snapshot the target list under the lock, then call out with the lock
+    // released -- same reason as MockOutputPort::send above: a callback is free
+    // to re-enter the backend.
+    //
+    // TODO: the snapshot holds raw pointers, so a port destroyed on another
+    // thread between the snapshot and the receive() call below leaves a
+    // dangling pointer. The mutex makes this class look thread-safe and this
+    // path is not. Harmless today because every test drives port lifetime from
+    // its own thread, but nothing enforces that. A weak_ptr registry, or
+    // holding the lock and forbidding re-entrant sends, would close it.
     void MockMidiBackend::State::deliver(const std::string& inputName, const MidiMessage& message)
     {
         std::vector<MockInputPort*> targets;
@@ -158,6 +206,7 @@ namespace xpl::midi
         }
     }
 
+    // Same snapshot-then-call-out shape as deliver(), and the same caveat.
     void MockMidiBackend::State::deliverError(const std::string& inputName, const std::string& description)
     {
         std::vector<MockInputPort*> targets;
@@ -231,6 +280,9 @@ namespace xpl::midi
         return std::make_unique<MockOutputPort>(_state, deviceName);
     }
 
+    // The test's way of playing the synth: a message appears on an input device
+    // exactly as if hardware had sent it. Synchronous, so the assertion can
+    // follow the call directly.
     void MockMidiBackend::injectIncoming(const std::string& inputDeviceName, const MidiMessage& message)
     {
         _state->deliver(inputDeviceName, message);
@@ -257,12 +309,19 @@ namespace xpl::midi
         _state->captured.clear();
     }
 
+    // Wires an output straight back to an input, so a controller request
+    // produces its own reply. Used to exercise round-trips (program change ->
+    // dump request -> dump) without hardware. One target per output; calling
+    // again re-points it.
     void MockMidiBackend::connectLoopback(const std::string& outputDeviceName, const std::string& inputDeviceName)
     {
         const std::lock_guard lock(_state->mutex);
         _state->loopbacks[outputDeviceName] = inputDeviceName;
     }
 
+    // How many handles are open on a device right now. This is what proves the
+    // controller's device hot-swap closed the old port instead of leaking it:
+    // assign twice, expect 1. [RQ-MID-003]
     int MockMidiBackend::openInputPortCount(const std::string& deviceName) const
     {
         const std::lock_guard lock(_state->mutex);

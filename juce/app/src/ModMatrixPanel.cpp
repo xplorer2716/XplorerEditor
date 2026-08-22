@@ -1,3 +1,19 @@
+// The 20-row modulation matrix panel: source, amount, quantize, destination
+// per row. [RQ-GUI-017, RQ-GUI-052]
+//
+// WHY THESE ROWS ARE NOT PARAMETER-BOUND, unlike every other control in the
+// application. A knob elsewhere edits one parameter and goes through
+// ParameterBindingRegistry. A matrix row does not: changing a source is a
+// COMPOSITE controller operation (allocate or release a synth-side slot, emit
+// add/change/delete commands, then sign and amount and quantize) with no single
+// parameter behind it. So these widgets talk to the controller directly and
+// this panel refreshes them explicitly.
+//
+// The consequence to remember: nothing repaints these rows for you. Every
+// external change -- patch load, an edit made on the instrument, a full-tone
+// reload -- reaches them through refreshRow/refreshAll and nowhere else. That
+// is also why the combo boxes are the hover-repainting variants: no registry
+// update would otherwise clear a stale hover state.
 #include "ModMatrixPanel.hpp"
 
 #include "xplorer/app/ControlMetadata.hpp"
@@ -30,6 +46,8 @@ namespace xplorer::app
         return nullptr;
     }
 
+    // Builds one row. Entry numbers are 1-based throughout the matrix API, as
+    // in the model -- see the numbering note in XpanderToneModulationMatrix.cpp.
     void ModMatrixPanel::buildRow(juce::Component& parent, int entryNumber)
     {
         auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
@@ -94,6 +112,13 @@ namespace xplorer::app
         }
     }
 
+    // Pulls one row's four widgets back into agreement with the model. This is
+    // the single inbound path for the matrix (see the file header), so it runs
+    // after any change the panel did not itself originate.
+    //
+    // Values are written with juce::dontSendNotification: these widgets' change
+    // callbacks invoke controller operations, so notifying would turn a refresh
+    // into a fresh edit sent back to the synth.
     void ModMatrixPanel::refreshRow(int entryNumber)
     {
         if (entryNumber < 1 || entryNumber > 20)

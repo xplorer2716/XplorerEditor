@@ -1,3 +1,25 @@
+// The Settings dialog: three tabbed pages (MIDI, User interface, Randomizer)
+// in one modal window. [RQ-GUI-025]
+//
+// LIFETIME AND OWNERSHIP -- the part that surprises people. The dialog is
+// launched ASYNCHRONOUSLY (juce::DialogWindow::LaunchOptions::launchAsync at
+// the bottom of this file), so showSettingsDialog returns immediately, long
+// before the user has decided anything. The window owns its content
+// (content.setOwned), which means SettingsContent's DESTRUCTOR is the only
+// place guaranteed to run on every close path -- OK, Cancel, Escape and the
+// title-bar close alike.
+//
+// That destructor is therefore this file's `finally`, and it carries three
+// obligations, none of which can live after the launchAsync call:
+//   * restart the controller that the constructor stopped  [ADR-BUG-002]
+//   * resynchronize with the synth, but only if the dialog was accepted
+//   * restore the colour snapshots if it was not          [DEC-JUC-038/113]
+//
+// LIVE PREVIEW. Colour changes apply to the real window while the picker is
+// open, so the user judges them on the actual interface rather than on a
+// swatch. The snapshots taken in the constructor are what makes Cancel able to
+// undo that. Accepting simply commits what is already applied -- which is why
+// accept() sets _accepted before closing and the destructor keys off it.
 #include "SettingsDialog.hpp"
 
 #include "BlockPalette.hpp"
@@ -43,6 +65,11 @@ namespace xplorer::app
 
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
+        // [RQ-GUI-036, ADR-JUC-012]
+        // Backs the MIDI page's CC-assignment table. juce::TableListBoxModel is
+        // a pull model: the table asks for cell contents on demand rather than
+        // being populated, so this class holds the rows and the widget holds
+        // nothing. Editing a mapping mutates the rows here and repaints.
         // [RQ-GUI-036, ADR-JUC-012]
         class AutomationTableModel final : public juce::TableListBoxModel
         {
@@ -188,6 +215,14 @@ namespace xplorer::app
         }
 
         // ---- MIDI page -----------------------------------------------------
+        // Ports, channel, SysEx delay, default patch number, synth type, smart
+        // all-notes-off, and the CC automation table.
+        //
+        // Nothing here is applied as it is edited: every page in this dialog is
+        // a pure editing surface over a COPY of the settings, and only
+        // SettingsContent::accept() writes them back through the service. The
+        // one exception is the colour live preview on the page below, which is
+        // visual only and reverted on a non-accept close.
         class MidiSettingsPage final : public juce::Component
         {
         public:
@@ -412,6 +447,16 @@ namespace xplorer::app
         // colour in the group — knob LED included — previews live through the
         // LookAndFeel; the dialog owns the cancel-restore snapshots.
         // [RQ-GUI-046, RQ-GUI-073, RQ-DSN-095, ADR-JUC-020 (DEC-JUC-038/039/113)]
+        // The knob LED colour and the eight functional-block colours.
+        //
+        // Inherits ChangeListener to follow juce::ColourSelector, which reports
+        // continuously as the user drags -- that stream is what drives the live
+        // preview through the two callbacks this page is constructed with.
+        //
+        // A block left at its default stores NO entry rather than its literal
+        // colour, so a user who never customised keeps following future palette
+        // revisions instead of being frozen on today's values.
+        // [RQ-GUI-046, RQ-GUI-073, RQ-SET-007, ADR-JUC-020 (DEC-JUC-039)]
         class UiSettingsPage final : public juce::Component, private juce::ChangeListener
         {
         public:
@@ -655,6 +700,11 @@ namespace xplorer::app
         };
 
         // ---- Randomizer page ----------------------------------------------
+        // Constraints for the Randomize command. These do not randomize
+        // anything: they decide what the randomizer is ALLOWED to change, which
+        // matters because an unconstrained random patch on this instrument is
+        // usually silent. In particular the VCA2 envelope option is what
+        // guarantees an audible result. [RQ-CTL-050, RQ-MOD-033]
         class RandomizerSettingsPage final : public juce::Component
         {
         public:
@@ -811,6 +861,10 @@ namespace xplorer::app
         };
 
         // ---- Dialog content ------------------------------------------------
+        // Hosts the three pages and owns the accept/cancel semantics described
+        // in the file header. Read its constructor and destructor together --
+        // they are a matched pair (stop/start, snapshot/restore) split across
+        // the asynchronous life of the window.
         class SettingsContent final : public juce::Component
         {
         public:

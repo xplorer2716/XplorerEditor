@@ -120,6 +120,16 @@ namespace xplorer::settings
         };
 
         // --- element helpers ----------------------------------------------
+        //
+        // All four return std::optional, and the empty case means "the element
+        // is not in the file" -- never "the value is zero". That distinction is
+        // what makes the schema tolerant in both directions: a file written by
+        // an older version simply lacks the newer elements and every reader
+        // falls back to its default (see the value_or() calls in
+        // parseSettings), while an element this version no longer reads is
+        // ignored rather than rejected. Both are relied upon -- by settings
+        // files predating a feature, and by files imported from the archived
+        // .NET implementation. [RQ-SET-006, RQ-SET-007]
 
         std::optional<juce::String> childText(const juce::XmlElement& parent, const char* name)
         {
@@ -134,6 +144,10 @@ namespace xplorer::settings
             return text.has_value() ? std::make_optional(text->getIntValue()) : std::nullopt;
         }
 
+        // Case-sensitive comparison against "true" on purpose: that is exactly
+        // what .NET's XmlSerializer emits, and anything else -- including
+        // "True" -- is therefore treated as false rather than silently
+        // accepted. addChildText below writes the same lowercase form back.
         std::optional<bool> childBool(const juce::XmlElement& parent, const char* name)
         {
             const auto text = childText(parent, name);
@@ -270,11 +284,23 @@ namespace xplorer::settings
         }
     }
 
+    // Pimpl, so juce::File and juce::XmlElement stay out of the public header
+    // and the settings library imposes no JUCE dependency on its consumers.
+    //
+    // The whole settings file is cached in memory after the first read. Reads
+    // are frequent (the controller consults settings on nearly every MIDI
+    // operation) and the file is only ever written by this process, so a
+    // re-read per access would be pure cost. The cache is refreshed on save and
+    // dropped on reset.
     struct XmlSettingsService::Impl
     {
         juce::File file;
         std::optional<AllUsersSettings> cache;
 
+        // Returns nullopt for every failure mode alike -- absent file,
+        // unparseable XML, wrong root element, missing sections -- because the
+        // caller's response is the same in all of them: fall back to defaults.
+        // Distinguishing them would add no behaviour.
         std::optional<AllUsersSettings> load() const
         {
             if (!file.existsAsFile())
@@ -305,6 +331,15 @@ namespace xplorer::settings
 
     XmlSettingsService::~XmlSettingsService() = default;
 
+    // Lazy load with a three-step fallback: read the file; if that fails write
+    // the defaults and read them back; if THAT fails too (read-only
+    // filesystem), keep the defaults in memory for this run.
+    //
+    // TODO: this returns a NON-CONST reference into the cache, so a caller can
+    // mutate settings in place and the change survives for the process lifetime
+    // without ever being written to disk. The intended usage is copy - mutate -
+    // saveSettings(), which is what the settings dialog does; nothing enforces
+    // it. A const accessor plus an explicit mutating API would remove the trap.
     AllUsersSettings& XmlSettingsService::allUsersSettings()
     {
         if (!_impl->cache.has_value())
@@ -329,12 +364,19 @@ namespace xplorer::settings
         return *_impl->cache;
     }
 
+    // The cache is updated from the ARGUMENT, not by re-reading the file just
+    // written. Deliberate: a re-read would be slower and would silently mask a
+    // failed write by leaving the previous values in place, where this way the
+    // caller's own values are what everyone subsequently sees.
     void XmlSettingsService::saveSettings(const AllUsersSettings& settings)
     {
         _impl->save(settings);
         _impl->cache = settings;
     }
 
+    // Clears the cache rather than filling it with the defaults just written,
+    // so the next read goes through load() and reflects what actually reached
+    // the disk. [RQ-SET-004]
     void XmlSettingsService::resetSettings()
     {
         _impl->save(defaultAllUsersSettings());

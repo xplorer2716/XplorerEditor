@@ -2,6 +2,33 @@
 // clipboard, synth utilities, display messages, transmit worker.
 // Port of XpanderController.cs / .WorkerThread.cs / .Clipboard.cs /
 // .ModulationMatrix.cs / Events.
+//
+// TWO RECURRING SHAPES IN THIS FILE, worth knowing before reading any single
+// method, because almost every non-trivial operation uses one or both:
+//
+//  1. stop() / ... / start() brackets a bulk mutation of the tone.
+//     stop() halts the transmit worker, so the scan loop cannot pick up the
+//     dozens of parameters the mutation is about to touch and dribble them out
+//     one frame at a time. The full tone is sent in one piece instead, and the
+//     trailing start() resumes normal per-parameter transmission. Removing a
+//     bracket does not break compilation -- it floods the synth.
+//
+//  2. setSetParameterEnabled(false) / ... / setSetParameterEnabled(true)
+//     suppresses the UI-edit path while the tone is being written from an
+//     external source (a file, the synth, the randomizer). Without it, every
+//     value written would look like a user edit and be echoed straight back to
+//     the instrument that just sent it.
+//
+// Ordering inside those brackets is load-bearing and reference-derived: the
+// full-tone send happens BEFORE clearAllChangedFlags(), never after. Clearing
+// first would mark the tone unchanged while the frames were still queued.
+//
+// THREAD AFFINITY: nothing here is thread-safe by itself. Menu-driven
+// operations run on the JUCE message thread; restoreAllDataDumpToSynth runs on
+// a ThreadWithProgressWindow worker; workerThreadProc runs on the transmit
+// thread. The sleeps below are therefore reachable from the message thread and
+// will freeze the UI for their duration -- see the note on
+// storeSinglePatchToSynth.
 #include "xplorer/controller/XpanderController.hpp"
 
 #include "midiapp/service/FileUtils.hpp"
@@ -26,6 +53,10 @@ namespace xplorer::controller
 
     namespace
     {
+        // Blocks the CALLING thread, which is the message thread for anything
+        // reached from a menu. These delays are the synth's own pacing
+        // requirement, not a convenience: the Xpander drops SysEx it receives
+        // faster than it can parse. See the file header on thread affinity.
         void sleepMs(int milliseconds)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
@@ -135,6 +166,12 @@ namespace xplorer::controller
         clearClipboard();
     }
 
+    // Reads a tone from disk into the live editing buffer and pushes it to the
+    // synth. Both bracket shapes from the file header apply here, and the
+    // sequence is the reference's: all-notes-off (if enabled) so nothing hangs
+    // from the outgoing patch, worker stopped, UI-edit path suppressed, tone
+    // replaced, full tone transmitted, THEN the changed flags cleared, then
+    // both brackets released. [RQ-CTL-001]
     void XpanderController::loadTone(const std::string& filename, midiapp::model::IToneReader& reader)
     {
         if (settings().midiConfig.smartAllNotesOff)
@@ -178,6 +215,16 @@ namespace xplorer::controller
         return tones; // [RQ-CTL-003]
     }
 
+    // Asks the synth for its entire memory and writes it to one file. The reply
+    // does not arrive here: it lands asynchronously in the SysEx handler, which
+    // accumulates frames into _allDataDumpRequestState until the dump is
+    // complete. That is why this method returns immediately after sending the
+    // request, and why a second call while one is in flight is refused rather
+    // than queued -- the state machine holds exactly one dump.
+    //
+    // The bare stop()/start() pair below is not a no-op: it restarts the
+    // transmit worker, which clears its pending queue, so no leftover parameter
+    // frame interleaves with the dump exchange. [RQ-CTL-005]
     void XpanderController::backupAllDataDumpToFile(const std::string& fileName)
     {
         if (_allDataDumpRequestState.isWaitingForAllDataDumpRequest())
@@ -198,6 +245,10 @@ namespace xplorer::controller
         }
     }
 
+    // Same all-data-dump request as backupAllDataDumpToFile, but the state
+    // machine is told to split the reply into one .syx file per patch instead
+    // of writing a single bank file. The only difference is the Mode passed to
+    // initialize(). [RQ-CTL-004]
     void XpanderController::getSingleTonesFromSynth(const std::string& destinationFolder)
     {
         if (!verifySynthOutputDevice())
@@ -207,6 +258,9 @@ namespace xplorer::controller
         }
         if (!std::filesystem::is_directory(destinationFolder))
         {
+            // TODO: user-facing typos in this message ("Destionation", "does
+            // not exists"). Left as-is here because this pass changes comments
+            // only; fixing it is a one-line string change.
             throw ToneException("Destionation folder " + destinationFolder + " does not exists.");
         }
         if (_allDataDumpRequestState.isWaitingForAllDataDumpRequest())
@@ -227,6 +281,17 @@ namespace xplorer::controller
         }
     }
 
+    // Streams a previously backed-up bank file to the synth, frame by frame,
+    // pacing each with DELAY_BETWEEN_ALL_DATA_DUMP_SEND_SINGLE_PATCH.
+    //
+    // This BLOCKS for the whole transfer -- hundreds of frames, so tens of
+    // seconds -- and must therefore never be called on the message thread. The
+    // UI runs it on a ThreadWithProgressWindow and receives `progressionAction`
+    // callbacks to drive the progress bar. [RQ-CTL-005, RQ-GUI-026]
+    //
+    // The trailing resync matters: the synth has just had its memory rewritten
+    // underneath the editor, so the editing buffer is stale until the current
+    // patch is re-read.
     void XpanderController::restoreAllDataDumpToSynth(const std::string& fileName,
                                                       const std::function<void(int, int)>& progressionAction)
     {
@@ -244,6 +309,16 @@ namespace xplorer::controller
         sendProgramChangeAndGetSinglePatchFromSynth(currentProgramNumber());
     }
 
+    // Writes the edited patch into one of the synth's 100 memory slots -- the
+    // only operation here that changes the instrument permanently.
+    //
+    // The clone is not defensive copying for its own sake: toByteArray() stamps
+    // the tone's EDITING program number into the dump, so the destination slot
+    // has to be set on a copy. Setting it on the live tone would move the
+    // user's editing target as a side effect of saving.
+    //
+    // Blocks on the message thread for DELAY_BETWEEN_MESSAGES plus the resync
+    // that follows (see the file header). [RQ-CTL-006]
     void XpanderController::storeSinglePatchToSynth(int programNumber)
     {
         if (!verifySynthOutputDevice())
@@ -261,6 +336,20 @@ namespace xplorer::controller
         sendProgramChangeAndGetSinglePatchFromSynth(programNumber);
     }
 
+    // THE synchronization primitive: select a patch on the synth, then ask it
+    // to send that patch back. Every caller that needs the editor and the
+    // instrument to agree goes through here -- Patch > Synchronize, Goto,
+    // Store, previous/next, the first start() of the session, and the resync
+    // after accepted MIDI settings.
+    //
+    // The reply is asynchronous: it arrives later in the SysEx handler, which
+    // reloads the tone wholesale. This method only ASKS. The
+    // setCurrentProgramNumber below therefore records intent, not a confirmed
+    // state -- the tone is not yet the synth's until that reply lands.
+    //
+    // clearClipboard() is reference behaviour: a copied modulation entry
+    // belongs to the patch it was taken from, so changing patch invalidates it.
+    // [RQ-CTL-006]
     void XpanderController::sendProgramChangeAndGetSinglePatchFromSynth(int programNumber)
     {
         if (settings().midiConfig.smartAllNotesOff)
@@ -736,6 +825,26 @@ namespace xplorer::controller
 
     // --- transmit worker [RQ-CTL-020, ADR-JUC-005] ---------------------------------------------
 
+    // The transmit loop, and the only place in the application that sends a
+    // parameter edit to the synth. Runs on its own std::jthread; every wait is
+    // bound to `stopToken`, so stop() interrupts it immediately instead of
+    // waiting out the current delay. [RQ-CTL-020, ADR-JUC-005]
+    //
+    // ONE parameter per tick, deliberately. The delay between ticks is the
+    // user's configured SysEx pacing, and the Xpander needs it: sending a
+    // burst at wire speed makes it drop frames or hang.
+    //
+    // The page-select branch is the Xpander's addressing model, not an
+    // optimisation. A parameter frame carries only a parameter id, valid
+    // within whatever page the synth is currently showing, so the page must be
+    // selected first whenever it differs from the last one sent.
+    // _pageSubPageHelper is what remembers that, which is why a page select is
+    // skipped when consecutive parameters share a page -- and why a stale
+    // helper would silently write parameters into the wrong page.
+    //
+    // The second waitForTransmitDelay() after a page select is not redundant:
+    // the synth needs the same pacing between the page select and the
+    // parameter frame as between any two frames.
     void XpanderController::workerThreadProc(std::stop_token stopToken)
     {
         while (waitForTransmitDelay(stopToken))
