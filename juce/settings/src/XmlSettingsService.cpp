@@ -335,12 +335,10 @@ namespace xplorer::settings
     // the defaults and read them back; if THAT fails too (read-only
     // filesystem), keep the defaults in memory for this run.
     //
-    // TODO: this returns a NON-CONST reference into the cache, so a caller can
-    // mutate settings in place and the change survives for the process lifetime
-    // without ever being written to disk. The intended usage is copy - mutate -
-    // saveSettings(), which is what the settings dialog does; nothing enforces
-    // it. A const accessor plus an explicit mutating API would remove the trap.
-    AllUsersSettings& XmlSettingsService::allUsersSettings()
+    // Returns const: see the contract on the interface declaration. Mutating
+    // the cache in place would be invisible to disk, so the type refuses it.
+    // [RQ-BUG-004, ADR-BUG-003 (DEC-BUG-010)]
+    const AllUsersSettings& XmlSettingsService::allUsersSettings()
     {
         if (!_impl->cache.has_value())
         {

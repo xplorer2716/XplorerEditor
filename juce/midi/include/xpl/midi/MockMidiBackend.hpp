@@ -70,6 +70,7 @@ namespace xpl::midi
         [[nodiscard]] int openOutputPortCount(const std::string& deviceName) const;
 
     private:
+        struct InputPortBody;
         class MockInputPort;
         class MockOutputPort;
         struct State;

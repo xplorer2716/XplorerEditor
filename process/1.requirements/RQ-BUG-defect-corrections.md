@@ -131,6 +131,75 @@ each departure SHALL be justified by an ADR — see ADR-BUG-001.
 - **Dependencies**: RQ-BUG-002, RQ-CTL-001, RQ-CTL-005, RQ-CTL-021, RQ-CTL-050,
   RQ-CTL-060, RQ-FMW-041, RQ-GUI-025, RQ-MID-006; ADR-BUG-002, ADR-JUC-005
 
+### RQ-BUG-004: A settings read accessor cannot be used to mutate settings
+- **Category**: Functional
+- **EARS Type**: Unwanted-behavior
+- **Statement**: IF a caller attempts to modify the settings object returned by
+  the settings service's read accessor, THEN the attempt SHALL fail to compile.
+- **Rationale**: `ISettingsService::allUsersSettings()` returns a non-const
+  reference into the service's own cache. A caller can therefore mutate settings
+  in place; the change is visible to every subsequent reader for the lifetime of
+  the process and is **never written to disk**, so it silently disappears on
+  restart. The intended protocol is copy → mutate → `saveSettings()`, which the
+  Settings dialog follows, but nothing enforces it. Every current call site is
+  read-only, so the accessor's contract is already what the type should say.
+- **Priority**: Should
+- **Acceptance Criteria** (Gherkin):
+  - **Given** the settings service interface, **When** its read accessor is
+    called, **Then** the returned reference is `const`
+  - **Given** any existing caller, **When** the project is built, **Then** it
+    compiles unchanged — no call site relied on the mutability
+  - **Given** a caller that needs to change settings, **When** it does so,
+    **Then** it goes through `saveSettings()`, which both persists and refreshes
+    the cache
+- **Dependencies**: RQ-SET-001, RQ-SET-004, RQ-SET-005; ADR-BUG-003
+
+### RQ-BUG-005: Mock MIDI delivery never dereferences a released port
+- **Category**: Non-Functional
+- **NFR Type**: Reliability
+- **EARS Type**: Unwanted-behavior
+- **Statement**: IF an input port of the mock MIDI backend is released while a
+  message is being delivered to the device it belongs to, THEN the delivery
+  SHALL NOT dereference the released port.
+- **Metric**: Zero use-after-free reachable in the delivery path.
+- **Measurement Method**: Structural — the delivery snapshot holds shared
+  ownership of every port body it will call, so no body can be freed while the
+  snapshot exists. Inspection of `MockMidiBackend::State::deliver`.
+- **Rationale**: `deliver()` copies the target list under the mutex and then
+  calls out with the mutex released — correct, because delivery runs test
+  callbacks that re-enter the backend, and holding the lock across them would
+  deadlock (the controller's dump handler calls `stop()`, which joins the
+  transmit worker, which may itself be blocked sending). But the snapshot holds
+  **raw pointers**, so a port released in that window leaves a dangling
+  pointer. The class's mutex makes it look thread-safe while this path is not.
+- **Priority**: Should
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a delivery snapshot, **When** the port it refers to is released
+    before the callback runs, **Then** the port body remains alive until the
+    snapshot is discarded
+  - **Given** a released port, **When** a message is injected for its device,
+    **Then** the port receives nothing
+  - **Given** the delivery path, **When** it is read, **Then** it holds no lock
+    while invoking a callback
+- **Dependencies**: RQ-MID-002, RQ-MID-003, RQ-MID-005, RQ-MID-041, RQ-TST-004
+
+### RQ-BUG-006: User-facing messages are correct English
+- **Category**: Non-Functional
+- **NFR Type**: Usability
+- **EARS Type**: Ubiquitous
+- **Statement**: The application SHALL present error and status messages in
+  correct English.
+- **Metric**: No spelling or grammatical error in a string the user can see.
+- **Measurement Method**: Review of user-visible string literals.
+- **Rationale**: The extract-single-patches error reads "Destionation folder …
+  does not exists." — two errors in one sentence shown to the user.
+- **Priority**: Could
+- **Acceptance Criteria** (Gherkin):
+  - **Given** an invalid destination folder, **When** single patches are
+    extracted from the synth, **Then** the message reads "Destination folder …
+    does not exist."
+- **Dependencies**: RQ-CTL-004
+
 ---
 
 ## Traceability note

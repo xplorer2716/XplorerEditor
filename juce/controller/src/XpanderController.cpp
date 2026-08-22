@@ -94,7 +94,7 @@ namespace xplorer::controller
         return static_cast<const XpanderTone&>(tone());
     }
 
-    settings::AllUsersSettings& XpanderController::settings() const
+    const settings::AllUsersSettings& XpanderController::settings() const
     {
         return _settingsService.allUsersSettings();
     }
@@ -201,7 +201,7 @@ namespace xplorer::controller
     {
         if (!std::filesystem::exists(bankFilename) || !std::filesystem::is_directory(directoryName))
         {
-            throw ToneException("File or directory does not exists.");
+            throw ToneException("File or directory does not exist."); // [RQ-BUG-006]
         }
         model::XpanderToneReader reader;
         auto tones = reader.readTones(bankFilename);
@@ -258,10 +258,7 @@ namespace xplorer::controller
         }
         if (!std::filesystem::is_directory(destinationFolder))
         {
-            // TODO: user-facing typos in this message ("Destionation", "does
-            // not exists"). Left as-is here because this pass changes comments
-            // only; fixing it is a one-line string change.
-            throw ToneException("Destionation folder " + destinationFolder + " does not exists.");
+            throw ToneException("Destination folder " + destinationFolder + " does not exist."); // [RQ-BUG-006]
         }
         if (_allDataDumpRequestState.isWaitingForAllDataDumpRequest())
         {
