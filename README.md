@@ -1,6 +1,7 @@
 # Xplorer
 
 ![Platform](https://img.shields.io/badge/platform-JUCE%20%2F%20C%2B%2B20-blue)
+[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=xplorer2716_XplorerEditor&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=xplorer2716_XplorerEditor)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-green.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
 ![Xplorer UI](README.XplorerFullScreen.jpg)

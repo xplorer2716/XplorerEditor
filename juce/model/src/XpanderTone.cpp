@@ -36,6 +36,14 @@ namespace xplorer::model
         }
     }
 
+    // A tone is the editor's live patch buffer: the 227 parameters of one
+    // Xpander voice plus its 20-row modulation matrix. One instance exists per
+    // controller and is mutated in place -- loading a file, receiving a dump or
+    // randomizing all rewrite THIS object rather than replacing it, which is
+    // why the UI can hold long-lived bindings to parameter names.
+    //
+    // "XPLORER" as the initial name is the reference's, and it is what the VFD
+    // shows before the first patch arrives from the synth.
     XpanderTone::XpanderTone()
     {
         initializeParameterMap();
@@ -43,6 +51,14 @@ namespace xplorer::model
         clearModulationMatrix();
     }
 
+    // Patch names are FIXED-WIDTH on the wire: exactly TONE_NAME_LENGTH
+    // characters, space-padded. The padding is not cosmetic -- toByteArray
+    // writes the string straight into the dump, so a short name would shift
+    // every following byte. [RQ-MOD-023]
+    //
+    // Note this is the plain model setter. The controller's own setToneName
+    // override adds the heavy side effect (full retransmission + resync) that
+    // the rename dialog depends on.
     void XpanderTone::setToneName(const std::string& name)
     {
         // Reference: truncate to 8 or pad right with spaces to 8.
@@ -57,6 +73,10 @@ namespace xplorer::model
         }
     }
 
+    // Wraps rather than clamps: stepping past patch 99 lands on 0 and vice
+    // versa, which is what makes the previous/next buttons cycle endlessly the
+    // way the instrument's own do. A clamp would make them stick at the ends.
+    // [RQ-MOD-021, RQ-CTL-007]
     void XpanderTone::setCurrentProgramNumber(int programNumber)
     {
         if (programNumber < MIN_PROGRAM_NUMBER)
@@ -93,6 +113,11 @@ namespace xplorer::model
         return static_cast<XpanderModMatrixParameter&>(parameterMap().at(name));
     }
 
+    // Matrix rows have no dedicated storage: each row's amount and quantize
+    // live in the ordinary parameter map under a generated name. These two
+    // helpers are the single place those names are formed, so the map key and
+    // every lookup can never drift apart. Entry numbers are 1-based here, as
+    // everywhere in the matrix API.
     std::string XpanderTone::amountSourceParameterNameForEntry(int entryNumber)
     {
         return formatStr("MOD_AMNT_SRC_{}", entryNumber);
@@ -105,6 +130,16 @@ namespace xplorer::model
 
     // --- parameter map ----------------------------------------------------
 
+    // Builds all 227 parameters, in the reference's own order -- and that order
+    // is part of the contract, not an implementation detail: the map is
+    // ORDERED, and the transmit worker's scan, the morphing filter and the
+    // full-tone send all iterate it.
+    //
+    // Two sources feed this: the literal (non-family) parameters come from the
+    // generated XpanderToneFixedParameters.inc, and the repeated families
+    // (TRACK x3, ENV x5, LFO x5, RAMP x4, matrix x20) are looped here because
+    // they differ only by index. Do not hand-edit the .inc -- regenerate it
+    // with juce/tools/generate_fixed_parameters.py. [RQ-MOD-020]
     void XpanderTone::initializeParameterMap()
     {
         auto& map = parameterMap();
@@ -554,6 +589,11 @@ namespace xplorer::model
 
     // --- randomizer helpers -------------------------------------------------
 
+    // Spreads the two oscillators apart so a random patch sounds like an
+    // analogue instrument rather than a single stiff tone. The two magnitudes
+    // are the reference's: a barely-there 1 for "digital", a wide 10 for
+    // "analog". Symmetric around centre, so the perceived pitch does not move.
+    // [RQ-CTL-050]
     void XpanderTone::detune(bool detuneAnalog)
     {
         const int detuneValue = detuneAnalog ? 10 : 1;
@@ -561,25 +601,50 @@ namespace xplorer::model
         parameterAt("VCO2_DETUNE").setValue(detuneValue);
     }
 
+    /// Tunes the two oscillators to the interval the randomizer strategy names,
+    /// VCO2 above VCO1. `Free` is the only value that leaves both pitches as the
+    /// randomizer left them.
+    ///
+    /// `Octave` diverges from the reference implementation, which has no `case`
+    /// for it and so lets it behave exactly like `Free` — an option that never
+    /// did anything. [RQ-BUG-001, ADR-BUG-001 (DEC-BUG-001, DEC-BUG-003,
+    /// DEC-BUG-004)]
     void XpanderTone::defineVCOFrequenciesTuning(EnumRandomVCOFreq tuning)
     {
+        // Shared term of the compound intervals: a ninth is a second an octave
+        // up, an eleventh a fourth, a thirteenth a sixth.
+        constexpr int SEMITONES_PER_OCTAVE = 12;
+        // Not an interval, despite holding the same value: the reference parks
+        // both oscillators on this mid-range pitch for "same note". Kept
+        // separate so a later edit to one cannot silently move the other.
+        constexpr int SAME_NOTE_SEMITONE = 12;
+
         auto& vco1 = parameterAt("VCO1_FREQ");
         auto& vco2 = parameterAt("VCO2_FREQ");
         switch (tuning)
         {
-            case EnumRandomVCOFreq::SameNote: vco1.setValue(12); vco2.setValue(vco1.value()); break;
+            case EnumRandomVCOFreq::SameNote: vco1.setValue(SAME_NOTE_SEMITONE); vco2.setValue(vco1.value()); break;
             case EnumRandomVCOFreq::Third:    vco1.setValue(0);  vco2.setValue(4); break;
             case EnumRandomVCOFreq::Fifth:    vco1.setValue(0);  vco2.setValue(7); break;
             case EnumRandomVCOFreq::Seventh:  vco1.setValue(0);  vco2.setValue(11); break;
-            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(12 + 2); break;
-            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(12 + 5); break;
-            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(12 + 9); break;
-            case EnumRandomVCOFreq::Octave: // reference has no case: falls through unchanged
+            case EnumRandomVCOFreq::Octave:   vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE); break;
+            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 2); break;
+            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 5); break;
+            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(SEMITONES_PER_OCTAVE + 9); break;
             case EnumRandomVCOFreq::Free:
                 break;
         }
     }
 
+    // The randomizer's audibility guarantee. A fully random matrix usually
+    // leaves nothing routed to the amplifier, so the patch is silent -- which
+    // is why the user can ask for ENV2 to be forced onto VCA2 and pick the
+    // envelope shape. The four shapes below are the reference's DADSR + volume
+    // presets, not tunable values.
+    //
+    // EnumRandomVCAEnv::Free returns early: the reference asserts on it rather
+    // than handling it, so there is deliberately no shape to apply.
+    // [RQ-MOD-033, RQ-CTL-050]
     void XpanderTone::forceEnv2ModVca2AfterRandomizeMatrix(EnumRandomVCAEnv enveloppe)
     {
         struct EnvelopeShape { int values[6]; }; // DADSR + volume

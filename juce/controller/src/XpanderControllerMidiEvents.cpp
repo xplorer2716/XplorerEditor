@@ -1,5 +1,27 @@
 // XpanderController: MIDI event handling (bidirectional sync).
 // Port of XpanderController.MIDIEvents.cs. [RQ-CTL-021..027]
+//
+// This file is the INBOUND half of the editor: everything the synth or a DAW
+// sends arrives here. It is the counterpart of the transmit worker in
+// XpanderController.cpp, and the two must never fight each other.
+//
+// THREAD: every handler below runs on a MIDI backend callback thread, NOT the
+// message thread. No JUCE component may be touched from here. UI updates leave
+// through notify*Event(), which marshals to the message thread via the injected
+// EventDispatcher -- that indirection is the whole reason it exists.
+//
+// THE ECHO PROBLEM, and the two guards that solve it. A value arriving from the
+// synth must update the model and the UI, but must NOT be sent straight back to
+// the synth that just reported it. Two mechanisms prevent that loop:
+//
+//   * setSetParameterEnabled(false) around any inbound mutation, so the
+//     UI-edit path refuses to re-enter while the model is being written from
+//     outside.
+//   * setValueUnchanged() rather than setValue(), so the parameter's `changed`
+//     flag stays clear and the transmit worker's scan never picks it up.
+//
+// Both are needed: the first stops the UI from re-sending, the second stops the
+// worker from doing it independently. Dropping either reintroduces the echo.
 #include "xplorer/controller/XpanderController.hpp"
 
 #include "midiapp/service/FileUtils.hpp"
@@ -106,6 +128,18 @@ namespace xplorer::controller
         notifyMidiDataSendReceiveEvent(EnumMidiDevice::SynthInputDevice);
     }
 
+    // The synth's SysEx dispatcher: one if/else chain over every frame shape the
+    // Xpander emits. Each is*Sysex() predicate both TESTS the frame and, where
+    // relevant, PARSES its fields into the out-parameters declared at the top --
+    // which is why those locals are declared before the chain rather than in the
+    // branches that use them.
+    //
+    // Order matters only in that the dump cases come first; the remaining shapes
+    // are mutually exclusive by frame layout.
+    //
+    // An unrecognised frame falls through with isMessageHandled false and is
+    // silently ignored -- deliberate, since the instrument emits frames this
+    // editor has no use for, and a warning per frame would flood a log.
     void XpanderController::synthInputDeviceSysExMessageReceived(const MidiMessage& message)
     {
         int page = static_cast<int>(EnumPages::UNKNOWN);
@@ -123,9 +157,20 @@ namespace xplorer::controller
             isMessageHandled = true;
             Logger::writeLine("XpanderController", TraceLevel::Info,
                               "RECV: SingleVoiceProgramDump " + message.toString());
+            // Two very different meanings for the same frame, disambiguated by
+            // state: during an all-data dump this patch is one of a hundred
+            // being collected, so handleAllDataDumpRequest consumes it and
+            // returns true. Outside a dump it is the reply to a single-patch
+            // request, and replaces the editing buffer wholesale.
             if (!handleAllDataDumpRequest(message, true))
             {
                 // Live reload of the edited tone from the synth. [RQ-CTL-021]
+                // Full bracket: the worker is stopped so it cannot transmit
+                // while 227 parameters are replaced under it, and the UI-edit
+                // path is suppressed so the reload is not mistaken for user
+                // input. notifyFullToneChangeEvent tells the UI to re-read
+                // every control at once, which is far cheaper than 227
+                // individual change notifications.
                 stop();
                 setSetParameterEnabled(false);
                 xpanderTone().fromByteArray(message.bytes());
@@ -164,6 +209,10 @@ namespace xplorer::controller
         }
         else if (isPageSubPageSelectSysex(message, page, subPage))
         {
+            // The user turned a page on the instrument's own panel. Tracking it
+            // is mandatory, not cosmetic: the transmit worker decides whether to
+            // emit a page-select from this same helper, so a missed update here
+            // would make it write parameters into the wrong page.
             isMessageHandled = true;
             _pageSubPageHelper.updatePageSubPage(page, subPage);
             if (_pageSubPageHelper.isPageEnvLfoRampTrack())
@@ -173,6 +222,13 @@ namespace xplorer::controller
         }
         else if (isPageEditFollowsSysex(message, buttonId, parameterValue, isRotaryButton))
         {
+            // A control moved on the instrument. The frame identifies the
+            // control only by its position on the CURRENT page, so it has to be
+            // resolved through the page the helper is tracking -- there is no
+            // parameter name on the wire.
+            //
+            // A null parameter here means the page/id pair maps to nothing this
+            // editor models; ignored rather than treated as an error.
             isMessageHandled = true;
             setSetParameterEnabled(false);
             int parameterPage = 0;
@@ -206,6 +262,15 @@ namespace xplorer::controller
 
     // --- all-data dump reception [RQ-CTL-004, RQ-CTL-005] --------------------------
 
+    // Accumulator for an in-flight all-data dump. Returns true when it consumed
+    // the frame, which is what tells the caller not to treat it as a live edit.
+    //
+    // Completion is detected by COUNT, not by an end marker: the Xpander sends
+    // its hundred single patches with nothing to say it has finished, so the
+    // state machine closes when the expected number has arrived. A dump
+    // interrupted midway therefore leaves the state waiting -- which is exactly
+    // why backupAllDataDumpToFile refuses to start a second one.
+    // [RQ-CTL-004, RQ-CTL-005]
     bool XpanderController::handleAllDataDumpRequest(const MidiMessage& message, bool isSinglePatchDataDump)
     {
         if (!_allDataDumpRequestState.isWaitingForAllDataDumpRequest())

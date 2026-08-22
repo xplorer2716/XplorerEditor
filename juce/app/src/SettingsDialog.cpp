@@ -1,3 +1,25 @@
+// The Settings dialog: three tabbed pages (MIDI, User interface, Randomizer)
+// in one modal window. [RQ-GUI-025]
+//
+// LIFETIME AND OWNERSHIP -- the part that surprises people. The dialog is
+// launched ASYNCHRONOUSLY (juce::DialogWindow::LaunchOptions::launchAsync at
+// the bottom of this file), so showSettingsDialog returns immediately, long
+// before the user has decided anything. The window owns its content
+// (content.setOwned), which means SettingsContent's DESTRUCTOR is the only
+// place guaranteed to run on every close path -- OK, Cancel, Escape and the
+// title-bar close alike.
+//
+// That destructor is therefore this file's `finally`, and it carries three
+// obligations, none of which can live after the launchAsync call:
+//   * restart the controller that the constructor stopped  [ADR-BUG-002]
+//   * resynchronize with the synth, but only if the dialog was accepted
+//   * restore the colour snapshots if it was not          [DEC-JUC-038/113]
+//
+// LIVE PREVIEW. Colour changes apply to the real window while the picker is
+// open, so the user judges them on the actual interface rather than on a
+// swatch. The snapshots taken in the constructor are what makes Cancel able to
+// undo that. Accepting simply commits what is already applied -- which is why
+// accept() sets _accepted before closing and the destructor keys off it.
 #include "SettingsDialog.hpp"
 
 #include "BlockPalette.hpp"
@@ -43,6 +65,11 @@ namespace xplorer::app
 
         // Editable CC automation table (reference MidiPage LvAutomation): one
         // row per parameter, CC picked from the reference CC-name list.
+        // [RQ-GUI-036, ADR-JUC-012]
+        // Backs the MIDI page's CC-assignment table. juce::TableListBoxModel is
+        // a pull model: the table asks for cell contents on demand rather than
+        // being populated, so this class holds the rows and the widget holds
+        // nothing. Editing a mapping mutates the rows here and repaints.
         // [RQ-GUI-036, ADR-JUC-012]
         class AutomationTableModel final : public juce::TableListBoxModel
         {
@@ -188,6 +215,14 @@ namespace xplorer::app
         }
 
         // ---- MIDI page -----------------------------------------------------
+        // Ports, channel, SysEx delay, default patch number, synth type, smart
+        // all-notes-off, and the CC automation table.
+        //
+        // Nothing here is applied as it is edited: every page in this dialog is
+        // a pure editing surface over a COPY of the settings, and only
+        // SettingsContent::accept() writes them back through the service. The
+        // one exception is the colour live preview on the page below, which is
+        // visual only and reverted on a non-accept close.
         class MidiSettingsPage final : public juce::Component
         {
         public:
@@ -412,6 +447,16 @@ namespace xplorer::app
         // colour in the group — knob LED included — previews live through the
         // LookAndFeel; the dialog owns the cancel-restore snapshots.
         // [RQ-GUI-046, RQ-GUI-073, RQ-DSN-095, ADR-JUC-020 (DEC-JUC-038/039/113)]
+        // The knob LED colour and the eight functional-block colours.
+        //
+        // Inherits ChangeListener to follow juce::ColourSelector, which reports
+        // continuously as the user drags -- that stream is what drives the live
+        // preview through the two callbacks this page is constructed with.
+        //
+        // A block left at its default stores NO entry rather than its literal
+        // colour, so a user who never customised keeps following future palette
+        // revisions instead of being frozen on today's values.
+        // [RQ-GUI-046, RQ-GUI-073, RQ-SET-007, ADR-JUC-020 (DEC-JUC-039)]
         class UiSettingsPage final : public juce::Component, private juce::ChangeListener
         {
         public:
@@ -426,8 +471,6 @@ namespace xplorer::app
 
                 _coloursGroup.setText("Colours");
                 addAndMakeVisible(_coloursGroup);
-                _knobGroup.setText("Knob behaviour");
-                addAndMakeVisible(_knobGroup);
 
                 // The unity message the owner asked for: one set, one reset.
                 setupHint(_unityHint,
@@ -470,15 +513,11 @@ namespace xplorer::app
                 _resetDefaults.setButtonText("Reset to defaults");
                 _resetDefaults.onClick = [this] { resetToDefaults(); };
                 addAndMakeVisible(_resetDefaults);
-
-                setupRadioPair(_movementLabel, "Knob movement", _linear, "Linear", _circular, "Circular",
-                               MOVEMENT_GROUP, ui.knobMovementIsLinear);
             }
 
             void applyTo(settings::AllUsersSettings::UiConfiguration& ui) const
             {
                 ui.knobLedBorderColor = static_cast<int>(_ledColour.getARGB());
-                ui.knobMovementIsLinear = _linear.getToggleState();
 
                 // A block equal to its default stores NO entry, so users who
                 // never customised (or who reset) keep following future palette
@@ -537,17 +576,9 @@ namespace xplorer::app
                 }
                 _resetDefaults.setBounds(
                     rowBounds(inner).removeFromRight(tokens::semantic::dialogResetWidth));
-
-                // ---- KNOB BEHAVIOUR group.
-                area.removeFromTop(gap);
-                auto knobArea = area.removeFromTop(header + 1 * ROW_HEIGHT + 2 * MARGIN);
-                _knobGroup.setBounds(knobArea);
-                auto knobInner = knobArea.reduced(MARGIN).withTrimmedTop(header);
-                layoutRadioRow(knobInner, _movementLabel, _linear, _circular);
             }
 
         private:
-            static constexpr int MOVEMENT_GROUP = 4001;
             static constexpr int GRID_COLUMNS = 2;    // block-colour grid, mockup 2x4
             static constexpr int LED_TARGET = -1;     // openColourSelector target: knob LED
             static constexpr int SELECTOR_SIZE = 300; // ColourSelector call-out edge
@@ -653,49 +684,27 @@ namespace xplorer::app
                 }
             }
 
-            void setupRadioPair(juce::Label& label, const juce::String& caption, juce::ToggleButton& first,
-                                const juce::String& firstText, juce::ToggleButton& second,
-                                const juce::String& secondText, int group, bool firstSelected)
-            {
-                label.setText(caption, juce::dontSendNotification);
-                label.setFont(dialogControlFont());
-                addAndMakeVisible(label);
-                first.setButtonText(firstText);
-                second.setButtonText(secondText);
-                first.setRadioGroupId(group);
-                second.setRadioGroupId(group);
-                first.setToggleState(firstSelected, juce::dontSendNotification);
-                second.setToggleState(!firstSelected, juce::dontSendNotification);
-                addAndMakeVisible(first);
-                addAndMakeVisible(second);
-            }
-
-            void layoutRadioRow(juce::Rectangle<int>& area, juce::Label& label, juce::ToggleButton& first,
-                                juce::ToggleButton& second)
-            {
-                auto row = rowBounds(area);
-                label.setBounds(row.removeFromLeft(LABEL_WIDTH));
-                first.setBounds(row.removeFromLeft(120));
-                second.setBounds(row.removeFromLeft(120));
-            }
-
             std::function<void(const BlockPalette&)> _onPalettePreview;
             std::function<void(int)> _onLedPreview;
             juce::Colour _ledColour;
             BlockPalette _palette;
             int _editTarget = LED_TARGET;
 
-            juce::GroupComponent _coloursGroup, _knobGroup;
+            juce::GroupComponent _coloursGroup;
             juce::Label _unityHint, _blockHint;
-            juce::Label _ledLabel, _movementLabel;
+            juce::Label _ledLabel;
             Swatch _ledSwatch;
             juce::TextButton _ledChoose, _resetDefaults;
             std::array<BlockRow, BLOCK_COLOUR_COUNT> _blockRows;
             juce::Rectangle<int> _separator;
-            juce::ToggleButton _linear, _circular;
         };
 
         // ---- Randomizer page ----------------------------------------------
+        // Constraints for the Randomize command. These do not randomize
+        // anything: they decide what the randomizer is ALLOWED to change, which
+        // matters because an unconstrained random patch on this instrument is
+        // usually silent. In particular the VCA2 envelope option is what
+        // guarantees an audible result. [RQ-CTL-050, RQ-MOD-033]
         class RandomizerSettingsPage final : public juce::Component
         {
         public:
@@ -852,6 +861,10 @@ namespace xplorer::app
         };
 
         // ---- Dialog content ------------------------------------------------
+        // Hosts the three pages and owns the accept/cancel semantics described
+        // in the file header. Read its constructor and destructor together --
+        // they are a matched pair (stop/start, snapshot/restore) split across
+        // the asynchronous life of the window.
         class SettingsContent final : public juce::Component
         {
         public:
@@ -864,6 +877,16 @@ namespace xplorer::app
                   _onBlockPaletteChanged(std::move(onBlockPaletteChanged)),
                   _tabs(juce::TabbedButtonBar::TabsAtTop)
             {
+                // The reference brackets its settings dialog with
+                // Stop() ... finally { Start(); }. ShowDialog() blocks there;
+                // showSettingsDialog below uses launchAsync and returns at
+                // once, so the restart cannot follow the launch call — it goes
+                // in this object's destructor, which the DialogWindow runs on
+                // every close path. Stopping also keeps incoming MIDI from
+                // mutating the tone underneath the dialog.
+                // [RQ-BUG-003, ADR-BUG-002 (DEC-BUG-007)]
+                _controller.stop();
+
                 // Both colour snapshots are taken on open and restored on any
                 // non-accept close (Cancel, Esc, title bar).
                 // [DEC-JUC-038, DEC-JUC-113]
@@ -896,11 +919,26 @@ namespace xplorer::app
 
             ~SettingsContent() override
             {
+                // This destructor is the port's `finally`: the DialogWindow
+                // owns the content, so every close path — accept, Cancel, Esc,
+                // title bar — reaches here exactly once. Balances the stop()
+                // in the constructor.
+                // [RQ-BUG-003, ADR-BUG-002 (DEC-BUG-007)]
+                _controller.start();
+
                 // Any close that did not go through accept() reverts the live
                 // preview to the snapshots taken on open — both colour groups.
                 // [DEC-JUC-038, DEC-JUC-113, RQ-GUI-046, RQ-GUI-073]
                 if (_accepted)
                 {
+                    // Accepted settings may have swapped the MIDI ports under
+                    // the controller, so re-read the patch the user is on.
+                    // It has to follow start() above: while the controller is
+                    // stopped its input ports are stopped with it, and the
+                    // synth's reply dump would reach nobody.
+                    // [RQ-BUG-002, ADR-BUG-002 (DEC-BUG-008)]
+                    _controller.sendProgramChangeAndGetSinglePatchFromSynth(
+                        _controller.currentProgramNumber());
                     return;
                 }
                 if (_onBlockPaletteChanged)
@@ -931,6 +969,11 @@ namespace xplorer::app
                 _uiPage->applyTo(settings.uiConfig);
                 _randomPage->applyTo(settings.randomizerConfig);
                 _settingsService.saveSettings(settings);
+                // No isRunning() guard around this call: the constructor
+                // stopped the controller and the destructor restarts it, so
+                // it is always stopped here. The reference guards its own
+                // equivalent only because its call ordering can reach it
+                // running. [ADR-BUG-002 (DEC-BUG-009)]
                 applyMidiSettings(_controller, _settingsService, _backend);
 
                 // Commit the accepted colours as the live ones; the destructor

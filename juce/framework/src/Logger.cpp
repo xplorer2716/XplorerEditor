@@ -1,3 +1,18 @@
+// Level-filtered diagnostic log with a file sink. [RQ-FMW-070, RQ-NFR-008]
+//
+// TODO: THIS LOGGER IS NEVER ENABLED IN THE APPLICATION. Neither configure()
+// nor setLevel() is called anywhere outside juce/tests/ -- so g_sink is never
+// opened, g_level stays TraceLevel::Off, and writeLine() returns at its first
+// two guards for every call site in the product. No log file is written and no
+// message at any severity is ever emitted, including the Error-level ones in
+// XpanderControllerMidiEvents. A user's field problem therefore cannot be
+// diagnosed from a log, which is what RQ-FMW-070 and RQ-NFR-008 require.
+// Wiring it needs two decisions: WHERE the file goes (the settings directory
+// resolution in XmlSettingsService already handles the non-writable
+// per-machine case) and HOW the level is configured -- the reference used a
+// .NET .config TraceSwitch, which has no C++ equivalent, so the level needs a
+// new home (settings file, environment variable or command line).
+// Tracked as GitHub issue #68.
 #include "midiapp/service/Logger.hpp"
 
 #include <atomic>
@@ -11,9 +26,17 @@ namespace midiapp::service
 {
     namespace
     {
+        // Process-wide singleton state, deliberately file-local rather than a
+        // class: logging is called from the message thread, the transmit
+        // worker and the MIDI callback threads alike, so there is exactly one
+        // sink and one mutex serialising writes to it.
+        //
+        // g_level is atomic and read OUTSIDE the mutex, so the common case --
+        // a call below the current level -- costs one atomic load and no lock
+        // contention. Only calls that will actually be written take the mutex.
         std::mutex g_mutex;
         std::ofstream g_sink;
-        std::atomic<TraceLevel> g_level{TraceLevel::Off};
+        std::atomic<TraceLevel> g_level{TraceLevel::Off}; // silent until configured — see the TODO above
 
         const char* levelName(TraceLevel level)
         {
@@ -48,6 +71,9 @@ namespace midiapp::service
         return g_level;
     }
 
+    // Releases the file handle. Not merely tidy: on Windows an open handle
+    // prevents the file from being deleted, which is why the tests call this
+    // between scenarios that recreate their log file.
     void Logger::shutdown()
     {
         const std::lock_guard lock(g_mutex);

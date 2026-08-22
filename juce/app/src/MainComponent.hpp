@@ -94,6 +94,11 @@ namespace xplorer::app
         /// Shared by the Patch > Rename menu item and the VFD double-click so
         /// the two triggers can never diverge in what they do. [RQ-GUI-025]
         void showRenameDialogForCurrentTone();
+        /// Shared by the shortcut button and the Patch menu item, following the
+        /// rename idiom above: one implementation per action, two triggers.
+        /// [RQ-QLT-005]
+        void showGotoPatchDialog();
+        void showStorePatchDialog();
 
         // Forwards knob/selector hover to the matrix highlight. A dedicated
         // MouseListener (not MainComponent itself) avoids clashing with the
@@ -162,6 +167,13 @@ namespace xplorer::app
 
         private:
             static constexpr int LED_COUNT = 3;
+            /// Lamp order, left to right, as the reference LedPanelControl has
+            /// it. flash()'s device mapping and paint()'s colour array are both
+            /// indexed by these, which is what keeps the two orderings aligned.
+            /// [RQ-GUI-022, RQ-GUI-056, RQ-QLT-007]
+            static constexpr std::size_t LED_INDEX_AUTOMATION_IN = 0;
+            static constexpr std::size_t LED_INDEX_SYNTH_IN = 1;
+            static constexpr std::size_t LED_INDEX_SYNTH_OUT = 2;
             static constexpr int HOLD_MILLISECONDS = tokens::semantic::indicatorHoldMs;
             static constexpr int TICK_MILLISECONDS = 30;
 

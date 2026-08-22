@@ -151,7 +151,9 @@ namespace xplorer::controller
 
         [[nodiscard]] model::XpanderTone& xpanderTone();
         [[nodiscard]] const model::XpanderTone& xpanderTone() const;
-        [[nodiscard]] settings::AllUsersSettings& settings() const;
+        /// Forwards the settings service's read accessor, and is const for the
+        /// same reason it is. [RQ-BUG-004, ADR-BUG-003 (DEC-BUG-010)]
+        [[nodiscard]] const settings::AllUsersSettings& settings() const;
         [[nodiscard]] std::uint8_t displayControlCommand() const;
 
         // guarded send + MIDI-activity notification (reference SendDataToSynthOutputDevice)

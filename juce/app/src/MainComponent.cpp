@@ -10,6 +10,7 @@
 #include "midiapp/service/FileUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
+#include "xplorer/app/MenuIds.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/XpanderConstants.hpp"
 
@@ -49,6 +50,56 @@ namespace xplorer::app
 
     namespace
     {
+        // Shortcut-button control ids, from the reference control table. Each
+        // is a key into _shortcutActions AND the id matched against the control
+        // table for geometry, so a typo at one site yields a
+        // default-constructed empty action and a button that silently does
+        // nothing. Declared once for all three uses. [RQ-QLT-004]
+        constexpr const char* SHORTCUT_ID_PATCH_MINUS = "btPatchMinus";
+        constexpr const char* SHORTCUT_ID_PATCH_PLUS = "btPatchPlus";
+        constexpr const char* SHORTCUT_ID_PATCH_GOTO = "btPatchGoto";
+        constexpr const char* SHORTCUT_ID_PATCH_RANDOM = "btPatchRandom";
+        constexpr const char* SHORTCUT_ID_PATCH_LOAD = "btPatchLoad";
+        constexpr const char* SHORTCUT_ID_PATCH_SAVE = "btPatchSave";
+        constexpr const char* SHORTCUT_ID_PATCH_STORE = "btPatchStore";
+        constexpr const char* SHORTCUT_ID_SETTINGS = "btSettings";
+
+        // Titles of the two program-number dialogs, each shown from both a
+        // shortcut button and a menu item. [RQ-QLT-005]
+        constexpr const char* GOTO_PATCH_DIALOG_TITLE = "Go to patch";
+        constexpr const char* STORE_PATCH_DIALOG_TITLE = "Store";
+
+        // File-dialog wildcard for sysex files, derived from the extension
+        // constant the same file already uses for matching, rather than spelled
+        // out again at each of the four chooser sites. [RQ-QLT-006]
+        const juce::String SYSEX_FILE_FILTER =
+            juce::String("*") + midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT;
+
+        // The settings directory is <data root>/Xplorer/Xplorer — the vendor
+        // folder and the application folder happen to carry the same name, so
+        // the nesting reads as a typo unless the component is named.
+        // [RQ-SET-001, RQ-QLT-007]
+        constexpr const char* SETTINGS_DIRECTORY_NAME = "Xplorer";
+
+        // juce::AlertWindow::showOkCancelBox reports the first (OK) button as
+        // 1 and the cancel button as 0. [RQ-QLT-007]
+        constexpr int MODAL_RESULT_FIRST_BUTTON = 1;
+
+        // Base of the JUCE radio-group ids handed to the page-family blocks,
+        // one per family. Any value clear of the groups other components use
+        // works; 100 is the one in service. [RQ-QLT-007]
+        constexpr int PAGE_FAMILY_RADIO_GROUP_BASE = 100;
+
+        // A page-family selector id is the family prefix plus one instance
+        // digit ("ENV_1".."ENV_5"), so the suffix is bounded by these.
+        // [RQ-GUI-012, RQ-QLT-007]
+        constexpr char SELECTOR_FIRST_INSTANCE_DIGIT = '1';
+        constexpr char SELECTOR_LAST_INSTANCE_DIGIT = '9';
+
+        // Control-table id of the VFD area, whose spec supplies the display
+        // panel's geometry. [RQ-GUI-050, RQ-QLT-007]
+        constexpr const char* VFD_DISPLAY_CONTROL_ID = "_vfdDisplay";
+
         // Fixed (non page-family) blocks handled in TASK-JUC-063.
         bool isFixedBlockTag(const std::string& tag)
         {
@@ -69,8 +120,8 @@ namespace xplorer::app
         juce::String preferredSettingsDirectory()
         {
             return juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory)
-                .getChildFile("Xplorer")
-                .getChildFile("Xplorer")
+                .getChildFile(SETTINGS_DIRECTORY_NAME)
+                .getChildFile(SETTINGS_DIRECTORY_NAME)
                 .getFullPathName();
         }
 
@@ -81,8 +132,8 @@ namespace xplorer::app
         juce::String fallbackSettingsDirectory()
         {
             return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-                .getChildFile("Xplorer")
-                .getChildFile("Xplorer")
+                .getChildFile(SETTINGS_DIRECTORY_NAME)
+                .getChildFile(SETTINGS_DIRECTORY_NAME)
                 .getFullPathName();
         }
 
@@ -202,10 +253,28 @@ namespace xplorer::app
 
         // Apply persisted MIDI device/channel/delay settings at startup. [RQ-GUI-025]
         applyMidiSettings(*_controller, *_settingsService, _backend);
+        // ...then run the controller, exactly where the reference's
+        // MainForm.OnLoad does. This starts the transmit worker — without it
+        // panel edits are queued and never sent — and consumes the once-only
+        // first-start branch, which aligns the current program number on the
+        // editing one and asks the synth for that patch, so the editor opens
+        // in step with it. Leaving that branch unconsumed is what let the
+        // session's first load or randomize be overwritten by a late patch
+        // request. Balanced by stop() in the destructor.
+        // [RQ-BUG-002, RQ-BUG-003, ADR-BUG-002 (DEC-BUG-005, DEC-BUG-006)]
+        _controller->start();
     }
 
     MainComponent::~MainComponent()
     {
+        // Balances start() above, and has to be here rather than left to
+        // ~XpanderController: this body runs before _controller is destroyed,
+        // so the synth output device is still open and the smart all-notes-off
+        // stop() sends actually goes out. ~AbstractController runs after, and
+        // only stops the worker and closes the devices — it sends nothing, so
+        // relying on it alone would leave a held note sounding.
+        // [RQ-CTL-060, RQ-BUG-003, ADR-BUG-002 (DEC-BUG-005)]
+        _controller->stop();
         juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     }
 
@@ -323,7 +392,7 @@ namespace xplorer::app
 
     void MainComponent::createPageFamilyBlocks()
     {
-        int radioGroup = 100;
+        int radioGroup = PAGE_FAMILY_RADIO_GROUP_BASE;
         for (const auto& family : pageFamilies())
         {
             std::vector<ControlSpec> controlSpecs;
@@ -341,7 +410,8 @@ namespace xplorer::app
                 else if (spec.kind == ControlKind::RadioButton
                          && id.rfind(selectorPrefix, 0) == 0
                          && id.size() == selectorPrefix.size() + 1
-                         && id.back() >= '1' && id.back() <= '9')
+                         && id.back() >= SELECTOR_FIRST_INSTANCE_DIGIT
+                         && id.back() <= SELECTOR_LAST_INSTANCE_DIGIT)
                 {
                     selectorSpecs.push_back(spec); // "ENV_1".."ENV_5"
                 }
@@ -376,7 +446,7 @@ namespace xplorer::app
             {
                 for (const auto& s : controlTable())
                 {
-                    if (std::string(s.id) == "_vfdDisplay")
+                    if (std::string(s.id) == VFD_DISPLAY_CONTROL_ID)
                     {
                         return &s;
                     }
@@ -420,19 +490,18 @@ namespace xplorer::app
 
         // 8 shortcut buttons using the reference GIF triples (normal/hover/down).
         // [RQ-GUI-021, RQ-GUI-031]
-        _shortcutActions["btPatchMinus"] = [this] { _controller->decreaseCurrentProgramNumber(); };
-        _shortcutActions["btPatchPlus"] = [this] { _controller->increaseCurrentProgramNumber(); };
-        _shortcutActions["btPatchGoto"] = [this]
-        {
-            showStoreOrGotoDialog("Go to patch", _controller->currentProgramNumber(),
-                                  [this](int program)
-                                  { _controller->sendProgramChangeAndGetSinglePatchFromSynth(program); });
-        };
-        _shortcutActions["btPatchRandom"] = [this]
+        _shortcutActions[SHORTCUT_ID_PATCH_MINUS] = [this]
+        { _controller->decreaseCurrentProgramNumber(); };
+        _shortcutActions[SHORTCUT_ID_PATCH_PLUS] = [this]
+        { _controller->increaseCurrentProgramNumber(); };
+        // One implementation shared with the Patch menu item, like rename
+        // already is. [RQ-QLT-005]
+        _shortcutActions[SHORTCUT_ID_PATCH_GOTO] = [this] { showGotoPatchDialog(); };
+        _shortcutActions[SHORTCUT_ID_PATCH_RANDOM] = [this]
         { _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{}); };
-        _shortcutActions["btPatchLoad"] = [this]
+        _shortcutActions[SHORTCUT_ID_PATCH_LOAD] = [this]
         {
-            _fileChooser = std::make_unique<juce::FileChooser>("Load patch", juce::File(), "*.syx");
+            _fileChooser = std::make_unique<juce::FileChooser>("Load patch", juce::File(), SYSEX_FILE_FILTER);
             _fileChooser->launchAsync(
                 juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                 [this](const juce::FileChooser& chooser)
@@ -444,7 +513,7 @@ namespace xplorer::app
                     }
                 });
         };
-        _shortcutActions["btPatchSave"] = [this]
+        _shortcutActions[SHORTCUT_ID_PATCH_SAVE] = [this]
         {
             // Default the file name to the tone's own name, sanitized and
             // made unique the same way RQ-CTL-003's bank extraction already
@@ -463,7 +532,7 @@ namespace xplorer::app
                 trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
                 documentsDirectory.getFullPathName().toStdString());
             _fileChooser = std::make_unique<juce::FileChooser>(
-                "Save patch", documentsDirectory.getChildFile(defaultFileName), "*.syx");
+                "Save patch", documentsDirectory.getChildFile(defaultFileName), SYSEX_FILE_FILTER);
             _fileChooser->launchAsync(
                 juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
                 [this](const juce::FileChooser& chooser)
@@ -475,26 +544,24 @@ namespace xplorer::app
                     }
                 });
         };
-        _shortcutActions["btPatchStore"] = [this]
-        {
-            showStoreOrGotoDialog("Store", _controller->currentProgramNumber(),
-                                  [this](int program) { _controller->storeSinglePatchToSynth(program); });
-        };
-        _shortcutActions["btSettings"] = [this] { openSettingsDialog(); };
+        // One implementation shared with the Patch menu item. [RQ-QLT-005]
+        _shortcutActions[SHORTCUT_ID_PATCH_STORE] = [this] { showStorePatchDialog(); };
+        _shortcutActions[SHORTCUT_ID_SETTINGS] = [this] { openSettingsDialog(); };
 
         // Vector keys, replacing the eight .NET ImageButtons and their 24 GIFs.
         // The icon is chosen per control id, the geometry comes from the control
         // table, and the action is the one RQ-GUI-021 already assigned.
         // [RQ-GUI-063, RQ-GUI-065, ADR-GUI-001 (DEC-GUI-001-A)]
-        const std::array<std::pair<const char*, ShortcutIcon>, 8> shortcutIcons{{
-            {"btPatchMinus", ShortcutIcon::PreviousProgram},
-            {"btPatchPlus", ShortcutIcon::NextProgram},
-            {"btPatchGoto", ShortcutIcon::GoToProgram},
-            {"btPatchRandom", ShortcutIcon::Randomise},
-            {"btPatchLoad", ShortcutIcon::LoadFile},
-            {"btPatchSave", ShortcutIcon::SaveFile},
-            {"btPatchStore", ShortcutIcon::StoreToSynth},
-            {"btSettings", ShortcutIcon::MidiSettings}}};
+        // Size deduced from the initialiser rather than restated. [RQ-QLT-007]
+        const std::array shortcutIcons{
+            std::pair{SHORTCUT_ID_PATCH_MINUS, ShortcutIcon::PreviousProgram},
+            std::pair{SHORTCUT_ID_PATCH_PLUS, ShortcutIcon::NextProgram},
+            std::pair{SHORTCUT_ID_PATCH_GOTO, ShortcutIcon::GoToProgram},
+            std::pair{SHORTCUT_ID_PATCH_RANDOM, ShortcutIcon::Randomise},
+            std::pair{SHORTCUT_ID_PATCH_LOAD, ShortcutIcon::LoadFile},
+            std::pair{SHORTCUT_ID_PATCH_SAVE, ShortcutIcon::SaveFile},
+            std::pair{SHORTCUT_ID_PATCH_STORE, ShortcutIcon::StoreToSynth},
+            std::pair{SHORTCUT_ID_SETTINGS, ShortcutIcon::MidiSettings}};
 
         for (const auto& [id, icon] : shortcutIcons)
         {
@@ -523,10 +590,14 @@ namespace xplorer::app
 
     void MainComponent::LedPanelComponent::flash(controller::EnumMidiDevice device)
     {
-        // Port of OnMidiDataSendReceive's device -> LED index mapping.
-        const std::size_t index = device == controller::EnumMidiDevice::AutomationInputDevice ? 0
-                                  : device == controller::EnumMidiDevice::SynthInputDevice    ? 1
-                                                                                              : 2;
+        // Port of OnMidiDataSendReceive's device -> LED index mapping. The
+        // indices are named because paint()'s colour array is ordered to match
+        // them: the two orderings must agree, and neither said so.
+        // [RQ-QLT-007]
+        const std::size_t index =
+            device == controller::EnumMidiDevice::AutomationInputDevice ? LED_INDEX_AUTOMATION_IN
+            : device == controller::EnumMidiDevice::SynthInputDevice    ? LED_INDEX_SYNTH_IN
+                                                                        : LED_INDEX_SYNTH_OUT;
         _litUntil[index] = juce::Time::currentTimeMillis() + HOLD_MILLISECONDS;
         if (!isTimerRunning())
         {
@@ -563,9 +634,15 @@ namespace xplorer::app
         // a control one (DEC-JUC-095): a check box/radio says "you may set
         // this", an LED reports state the user cannot set.
         // [RQ-GUI-056, ADR-JUC-031]
-        static const std::array<juce::Colour, LED_COUNT> onColours = {
-            tokens::semantic::indicatorAutomation, tokens::semantic::indicatorSynthIn,
-            tokens::semantic::indicatorSynthOut};
+        // Indexed by the LED_INDEX_* constants, so this ordering and flash()'s
+        // device mapping stay tied together. [RQ-QLT-007]
+        static const std::array<juce::Colour, LED_COUNT> onColours = [] {
+            std::array<juce::Colour, LED_COUNT> colours{};
+            colours[LED_INDEX_AUTOMATION_IN] = tokens::semantic::indicatorAutomation;
+            colours[LED_INDEX_SYNTH_IN] = tokens::semantic::indicatorSynthIn;
+            colours[LED_INDEX_SYNTH_OUT] = tokens::semantic::indicatorSynthOut;
+            return colours;
+        }();
         const auto offColour = tokens::semantic::indicatorOffFill;
         const auto borderColour = tokens::semantic::indicatorOffBorder;
 
@@ -643,11 +720,11 @@ namespace xplorer::app
 
     namespace
     {
-        // View-menu item ids. Kept clear of every existing range because
-        // menuItemSelected dispatches by id, which is what lets "View" be
-        // inserted mid-bar without disturbing Patch/Tools/Help. [DEC-JUC-065]
-        constexpr int VIEW_SCALE_FIRST_ID = 50;
-        constexpr int VIEW_FULL_SCREEN_ID = 60;
+        // Menu item ids, the top-level order and the View id constants all come
+        // from MenuIds.hpp: one declaration for the three sites below (the
+        // shortcut table, getMenuForIndex and menuItemSelected) that used to
+        // repeat the same raw integers with only a comment relating them.
+        // [RQ-QLT-001, RQ-QLT-003, ADR-QLT-001 (DEC-QLT-001)]
 
         // The three URLs the reference's Help menu opens, verbatim from its
         // XplorerConstants. Opened in the system browser, no networking of our
@@ -695,9 +772,13 @@ namespace xplorer::app
         // Items absent from this table have NO shortcut in the reference (Exit,
         // About, the Single-patches/Backup-Restore submenus) and get none here.
         // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-099)]
+        // Keyed by MenuItem rather than by a raw id: the key and modifier
+        // fields are juce:: types and cannot cross into the UI-framework-free
+        // layer, so the binding stays here while the identity lives in
+        // MenuIds.hpp. [RQ-QLT-001, ADR-QLT-001 (DEC-QLT-003)]
         struct MenuShortcut
         {
-            int menuItemId;
+            MenuItem item;
             int keyCode;
             juce::ModifierKeys::Flags modifiers;
             const char* displayText;
@@ -711,27 +792,29 @@ namespace xplorer::app
 
         // `const`, not `constexpr`: JUCE's KeyPress::F*Key are `static const int`
         // defined in a translation unit, so they are not constant expressions.
-        const std::array<MenuShortcut, 13> MENU_SHORTCUTS = {{
-            {1, 'n', CMD, "Ctrl+N"},                                   // New
-            {2, 'o', CMD, "Ctrl+O"},                                   // Open
-            {3, 's', CMD, "Ctrl+S"},                                   // Save
-            {11, juce::KeyPress::F5Key, NO_MODIFIER, "F5"},            // Previous
-            {10, juce::KeyPress::F6Key, NO_MODIFIER, "F6"},            // Next
-            {12, juce::KeyPress::F7Key, NO_MODIFIER, "F7"},            // Go to patch
-            {15, juce::KeyPress::F8Key, NO_MODIFIER, "F8"},            // Randomize
-            {14, juce::KeyPress::F9Key, NO_MODIFIER, "F9"},            // Rename
-            {13, juce::KeyPress::F10Key, NO_MODIFIER, "F10"},          // Store
-            {16, juce::KeyPress::F12Key, NO_MODIFIER, "F12"},          // Synchronize
-            {20, 'g', CMD, "Ctrl+G"},                                  // Settings
-            {21, juce::KeyPress::F4Key, NO_MODIFIER, "F4"},            // Tune Request
-            {31, juce::KeyPress::F1Key, NO_MODIFIER, "F1"},            // Xplorer help
-        }};
+        // The size is deduced, not restated, so adding a row cannot desync it.
+        // [RQ-QLT-007]
+        const std::array MENU_SHORTCUTS = {
+            MenuShortcut{MenuItem::FileNew, 'n', CMD, "Ctrl+N"},
+            MenuShortcut{MenuItem::FileOpen, 'o', CMD, "Ctrl+O"},
+            MenuShortcut{MenuItem::FileSave, 's', CMD, "Ctrl+S"},
+            MenuShortcut{MenuItem::PatchPrevious, juce::KeyPress::F5Key, NO_MODIFIER, "F5"},
+            MenuShortcut{MenuItem::PatchNext, juce::KeyPress::F6Key, NO_MODIFIER, "F6"},
+            MenuShortcut{MenuItem::PatchGoto, juce::KeyPress::F7Key, NO_MODIFIER, "F7"},
+            MenuShortcut{MenuItem::PatchRandomize, juce::KeyPress::F8Key, NO_MODIFIER, "F8"},
+            MenuShortcut{MenuItem::PatchRename, juce::KeyPress::F9Key, NO_MODIFIER, "F9"},
+            MenuShortcut{MenuItem::PatchStore, juce::KeyPress::F10Key, NO_MODIFIER, "F10"},
+            MenuShortcut{MenuItem::PatchSynchronize, juce::KeyPress::F12Key, NO_MODIFIER, "F12"},
+            MenuShortcut{MenuItem::ToolsSettings, 'g', CMD, "Ctrl+G"},
+            MenuShortcut{MenuItem::ToolsTuneRequest, juce::KeyPress::F4Key, NO_MODIFIER, "F4"},
+            MenuShortcut{MenuItem::HelpUserManual, juce::KeyPress::F1Key, NO_MODIFIER, "F1"},
+        };
 
-        [[nodiscard]] const MenuShortcut* shortcutForItem(int menuItemId)
+        [[nodiscard]] const MenuShortcut* shortcutForItem(MenuItem item)
         {
             for (const auto& entry : MENU_SHORTCUTS)
             {
-                if (entry.menuItemId == menuItemId)
+                if (entry.item == item)
                 {
                     return &entry;
                 }
@@ -743,11 +826,11 @@ namespace xplorer::app
         /// three File items that have one, its reference icon. The explicit
         /// PopupMenu::Item form is required: addItem(id, text) cannot express
         /// either. [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-098, DEC-JUC-099)]
-        void addReferenceItem(juce::PopupMenu& menu, int itemId, const juce::String& text,
+        void addReferenceItem(juce::PopupMenu& menu, MenuItem itemId, const juce::String& text,
                               const void* iconData = nullptr, int iconSize = 0)
         {
             juce::PopupMenu::Item item(text);
-            item.itemID = itemId;
+            item.itemID = menuItemId(itemId);
             if (const auto* shortcut = shortcutForItem(itemId))
             {
                 item.shortcutKeyDescription = shortcut->displayText;
@@ -768,9 +851,39 @@ namespace xplorer::app
         }
     }
 
+    namespace
+    {
+        /// The displayed name of a top-level menu. Built by iterating
+        /// TOP_LEVEL_MENUS so the name list and getMenuForIndex's dispatch come
+        /// from one declaration of the order, rather than being coupled by
+        /// position alone. [RQ-QLT-003, ADR-QLT-001 (DEC-QLT-004)]
+        [[nodiscard]] const char* topLevelMenuName(TopLevelMenu menu)
+        {
+            switch (menu)
+            {
+                case TopLevelMenu::File:
+                    return "File";
+                case TopLevelMenu::Patch:
+                    return "Patch";
+                case TopLevelMenu::View:
+                    return "View";
+                case TopLevelMenu::Tools:
+                    return "Tools";
+                case TopLevelMenu::Help:
+                    return "Help";
+            }
+            return "";
+        }
+    }
+
     juce::StringArray MainComponent::getMenuBarNames()
     {
-        return {"File", "Patch", "View", "Tools", "Help"};
+        juce::StringArray names;
+        for (const auto menu : TOP_LEVEL_MENUS)
+        {
+            names.add(topLevelMenuName(menu));
+        }
+        return names;
     }
 
     int MainComponent::currentWindowWidth() const
@@ -793,38 +906,38 @@ namespace xplorer::app
     juce::PopupMenu MainComponent::getMenuForIndex(int index, const juce::String&)
     {
         juce::PopupMenu menu;
-        switch (index)
+        switch (static_cast<TopLevelMenu>(index))
         {
             // Order, wording and grouping are the reference's own, read from
             // MainForm.Designer.cs's DropDownItems.AddRange calls and the
             // matching .resx strings -- not an approximation.
             // [RQ-GUI-008, ADR-JUC-032]
-            case 0: // File — the only three icons in the whole reference
-                addReferenceItem(menu, 1, "New", BinaryData::menu_new_png,
+            case TopLevelMenu::File: // the only three icons in the whole reference
+                addReferenceItem(menu, MenuItem::FileNew, "New", BinaryData::menu_new_png,
                                  BinaryData::menu_new_pngSize);
-                addReferenceItem(menu, 2, "Open", BinaryData::menu_open_png,
+                addReferenceItem(menu, MenuItem::FileOpen, "Open", BinaryData::menu_open_png,
                                  BinaryData::menu_open_pngSize);
                 menu.addSeparator();
                 // The reference's "Save as" is deliberately absent: our Save
                 // already always prompts for a destination (no current-file
                 // path is tracked), so it IS the reference's Save as.
                 // [RQ-GUI-008, owner-confirmed deviation]
-                addReferenceItem(menu, 3, "Save", BinaryData::menu_save_png,
+                addReferenceItem(menu, MenuItem::FileSave, "Save", BinaryData::menu_save_png,
                                  BinaryData::menu_save_pngSize);
                 menu.addSeparator();
-                addReferenceItem(menu, 4, "Exit"); // no shortcut in the reference
+                addReferenceItem(menu, MenuItem::FileExit, "Exit"); // no shortcut in the reference
                 break;
-            case 1: // Patch
-                addReferenceItem(menu, 11, "Previous");
-                addReferenceItem(menu, 10, "Next");
-                addReferenceItem(menu, 12, "Go to patch...");
+            case TopLevelMenu::Patch:
+                addReferenceItem(menu, MenuItem::PatchPrevious, "Previous");
+                addReferenceItem(menu, MenuItem::PatchNext, "Next");
+                addReferenceItem(menu, MenuItem::PatchGoto, "Go to patch...");
                 menu.addSeparator();
-                addReferenceItem(menu, 15, "Randomize");
-                addReferenceItem(menu, 14, "Rename");
-                addReferenceItem(menu, 13, "Store");
-                addReferenceItem(menu, 16, "Synchronize");
+                addReferenceItem(menu, MenuItem::PatchRandomize, "Randomize");
+                addReferenceItem(menu, MenuItem::PatchRename, "Rename");
+                addReferenceItem(menu, MenuItem::PatchStore, "Store");
+                addReferenceItem(menu, MenuItem::PatchSynchronize, "Synchronize");
                 break;
-            case 2: // View [RQ-SCL-002, RQ-SCL-003]
+            case TopLevelMenu::View: // [RQ-SCL-002, RQ-SCL-003]
             {
                 // Ticked from the window's ACTUAL width, never from a memory of
                 // the last click: a dragged or OS-clamped window then correctly
@@ -842,33 +955,33 @@ namespace xplorer::app
                              window != nullptr && window->isFullScreen());
                 break;
             }
-            case 3: // Tools
+            case TopLevelMenu::Tools:
             {
-                addReferenceItem(menu, 20, "Settings");
-                addReferenceItem(menu, 21, "Tune Request");
+                addReferenceItem(menu, MenuItem::ToolsSettings, "Settings");
+                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
                 // No reference counterpart -- the second sanctioned JUCE-only
                 // item after the View menu, kept at the owner's decision. No
                 // shortcut, since the reference has none to match.
                 // [RQ-GUI-028, RQ-GUI-008]
-                menu.addItem(22, "Piano keyboard");
+                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
                 juce::PopupMenu singlePatches;
-                singlePatches.addItem(40, "Get all single patches from synth");
-                singlePatches.addItem(41, "Extract all single patches from file");
+                singlePatches.addItem(menuItemId(MenuItem::ToolsGetAllSinglePatches),
+                                      "Get all single patches from synth");
+                singlePatches.addItem(menuItemId(MenuItem::ToolsExtractSinglePatches),
+                                      "Extract all single patches from file");
                 menu.addSubMenu("Single patches...", singlePatches);
                 juce::PopupMenu allDataDump;
-                allDataDump.addItem(42, "Backup all data");
-                allDataDump.addItem(43, "Restore all data");
+                allDataDump.addItem(menuItemId(MenuItem::ToolsBackupAllData), "Backup all data");
+                allDataDump.addItem(menuItemId(MenuItem::ToolsRestoreAllData), "Restore all data");
                 menu.addSubMenu("Backup/Restore...", allDataDump);
                 break;
             }
-            case 4: // Help
-                addReferenceItem(menu, 31, "Xplorer help");
+            case TopLevelMenu::Help:
+                addReferenceItem(menu, MenuItem::HelpUserManual, "Xplorer help");
                 menu.addSeparator();
-                addReferenceItem(menu, 32, "Check for new releases");
-                addReferenceItem(menu, 33, "Go to website");
-                addReferenceItem(menu, 30, "About...");
-                break;
-            default:
+                addReferenceItem(menu, MenuItem::HelpReleases, "Check for new releases");
+                addReferenceItem(menu, MenuItem::HelpWebsite, "Go to website");
+                addReferenceItem(menu, MenuItem::HelpAbout, "About...");
                 break;
         }
         return menu;
@@ -884,7 +997,7 @@ namespace xplorer::app
         {
             if (key == juce::KeyPress(entry.keyCode, entry.modifiers, 0))
             {
-                menuItemSelected(entry.menuItemId, 0);
+                menuItemSelected(menuItemId(entry.item), 0);
                 return true;
             }
         }
@@ -912,11 +1025,27 @@ namespace xplorer::app
                          });
     }
 
-    void MainComponent::menuItemSelected(int menuItemId, int)
+    void MainComponent::showGotoPatchDialog()
+    {
+        showStoreOrGotoDialog(GOTO_PATCH_DIALOG_TITLE, _controller->currentProgramNumber(),
+                              [this](int program)
+                              { _controller->sendProgramChangeAndGetSinglePatchFromSynth(program); });
+    }
+
+    void MainComponent::showStorePatchDialog()
+    {
+        showStoreOrGotoDialog(STORE_PATCH_DIALOG_TITLE, _controller->currentProgramNumber(),
+                              [this](int program) { _controller->storeSinglePatchToSynth(program); });
+    }
+
+    // `selectedId`, not `menuItemId`: the latter is the free function that maps
+    // a MenuItem to the int JUCE hands back here, and a parameter of that name
+    // would shadow it throughout the dispatch below. [RQ-QLT-001]
+    void MainComponent::menuItemSelected(int selectedId, int)
     {
         // View menu, handled before the switch because its scale items are a
         // contiguous id range rather than individual cases. [RQ-SCL-002]
-        const auto scaleIndex = menuItemId - VIEW_SCALE_FIRST_ID;
+        const auto scaleIndex = selectedId - VIEW_SCALE_FIRST_ID;
         if (scaleIndex >= 0 && scaleIndex < static_cast<int>(WINDOW_SCALE_PRESETS.size()))
         {
             if (auto* window = topLevelWindow())
@@ -925,7 +1054,7 @@ namespace xplorer::app
             }
             return;
         }
-        if (menuItemId == VIEW_FULL_SCREEN_ID) // [RQ-SCL-003, DEC-JUC-067]
+        if (selectedId == VIEW_FULL_SCREEN_ID) // [RQ-SCL-003, DEC-JUC-067]
         {
             if (auto* window = topLevelWindow())
             {
@@ -936,12 +1065,13 @@ namespace xplorer::app
             return;
         }
 
-        switch (menuItemId)
+        switch (static_cast<MenuItem>(selectedId))
         {
-            case 1: // New — load the bundled default patch, like the reference's
-                    // FileOperationsManager.NewPatch(). Not a blank editor: the
-                    // program number comes from the file's own sysex data.
-                    // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
+            case MenuItem::FileNew:
+                // Load the bundled default patch, like the reference's
+                // FileOperationsManager.NewPatch(). Not a blank editor: the
+                // program number comes from the file's own sysex data.
+                // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-100)]
             {
                 const auto file = defaultToneFile();
                 if (!file.existsAsFile())
@@ -964,49 +1094,47 @@ namespace xplorer::app
                 }
                 break;
             }
-            case 2: // Open — reuse the load action
-                _shortcutActions["btPatchLoad"]();
+            case MenuItem::FileOpen: // reuse the load action
+                _shortcutActions[SHORTCUT_ID_PATCH_LOAD]();
                 break;
-            case 3: // Save
-                _shortcutActions["btPatchSave"]();
+            case MenuItem::FileSave:
+                _shortcutActions[SHORTCUT_ID_PATCH_SAVE]();
                 break;
-            case 4:
+            case MenuItem::FileExit:
                 juce::JUCEApplication::getInstance()->systemRequestedQuit();
                 break;
-            case 10:
+            case MenuItem::PatchNext:
                 _controller->increaseCurrentProgramNumber();
                 break;
-            case 11:
+            case MenuItem::PatchPrevious:
                 _controller->decreaseCurrentProgramNumber();
                 break;
-            case 12:
-                showStoreOrGotoDialog("Go to patch", _controller->currentProgramNumber(),
-                                      [this](int program)
-                                      { _controller->sendProgramChangeAndGetSinglePatchFromSynth(program); });
+            case MenuItem::PatchGoto:
+                showGotoPatchDialog();
                 break;
-            case 13:
-                showStoreOrGotoDialog("Store", _controller->currentProgramNumber(),
-                                      [this](int program) { _controller->storeSinglePatchToSynth(program); });
+            case MenuItem::PatchStore:
+                showStorePatchDialog();
                 break;
-            case 14:
+            case MenuItem::PatchRename:
                 showRenameDialogForCurrentTone();
                 break;
-            case 15:
+            case MenuItem::PatchRandomize:
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
                 break;
-            case 16: // Synchronize — re-fetch the current patch from the synth,
-                     // the same call Go to / Store already make.
-                     // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
+            case MenuItem::PatchSynchronize:
+                // Re-fetch the current patch from the synth, the same call
+                // Go to / Store already make.
+                // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
                 _controller->sendProgramChangeAndGetSinglePatchFromSynth(
                     _controller->currentProgramNumber());
                 break;
-            case 20:
+            case MenuItem::ToolsSettings:
                 openSettingsDialog();
                 break;
-            case 21:
+            case MenuItem::ToolsTuneRequest:
                 _controller->sendTuneRequestToSynth();
                 break;
-            case 22: // [RQ-GUI-028]
+            case MenuItem::ToolsPianoKeyboard: // [RQ-GUI-028]
                 if (_pianoWindow == nullptr)
                 {
                     _pianoWindow = std::make_unique<PianoWindow>(*_controller);
@@ -1017,7 +1145,7 @@ namespace xplorer::app
                     _pianoWindow->toFront(true);
                 }
                 break;
-            case 30:
+            case MenuItem::HelpAbout:
                 // Name and version from the build, not from a literal: this
                 // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
                 // root. [RQ-BLD-015, RQ-BLD-016]
@@ -1032,27 +1160,29 @@ namespace xplorer::app
             // The three Help URLs, opened in the system browser exactly as the
             // reference's OpenBrowserWithUrl does — no update check of our own.
             // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
-            case 31:
+            case MenuItem::HelpUserManual:
                 juce::URL(USER_MANUAL_URL).launchInDefaultBrowser();
                 break;
-            case 32:
+            case MenuItem::HelpReleases:
                 juce::URL(RELEASES_URL).launchInDefaultBrowser();
                 break;
-            case 33:
+            case MenuItem::HelpWebsite:
                 juce::URL(WEBSITE_URL).launchInDefaultBrowser();
                 break;
-            case 40:
+            case MenuItem::ToolsGetAllSinglePatches:
                 getAllSinglePatchesFromSynth();
                 break;
-            case 41:
+            case MenuItem::ToolsExtractSinglePatches:
                 showExtractSingleTonesDialog(*_controller);
                 break;
-            case 42:
+            case MenuItem::ToolsBackupAllData:
                 backupAllData();
                 break;
-            case 43:
+            case MenuItem::ToolsRestoreAllData:
                 restoreAllData();
                 break;
+            // Ids outside the enumeration reach here only if JUCE reports an
+            // item this component never added; ignored, as before.
             default:
                 break;
         }
@@ -1094,7 +1224,7 @@ namespace xplorer::app
 
     void MainComponent::backupAllData()
     {
-        _fileChooser = std::make_unique<juce::FileChooser>("Backup all data", juce::File(), "*.syx");
+        _fileChooser = std::make_unique<juce::FileChooser>("Backup all data", juce::File(), SYSEX_FILE_FILTER);
         _fileChooser->launchAsync(
             juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
             [this](const juce::FileChooser& chooser)
@@ -1119,7 +1249,7 @@ namespace xplorer::app
 
     void MainComponent::restoreAllData()
     {
-        _fileChooser = std::make_unique<juce::FileChooser>("Restore all data", juce::File(), "*.syx");
+        _fileChooser = std::make_unique<juce::FileChooser>("Restore all data", juce::File(), SYSEX_FILE_FILTER);
         _fileChooser->launchAsync(
             juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
             [this](const juce::FileChooser& chooser)
@@ -1186,7 +1316,7 @@ namespace xplorer::app
                     juce::ModalCallbackFunction::create(
                         [this, path](int result)
                         {
-                            if (result == 1)
+                            if (result == MODAL_RESULT_FIRST_BUTTON)
                             {
                                 runRestoreAllDataWithProgress(*_controller, path);
                             }
