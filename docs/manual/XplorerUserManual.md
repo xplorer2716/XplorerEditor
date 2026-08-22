@@ -4,75 +4,41 @@
 
 ## Table of contents
 
-[Release history](#release-history)
-
-[Notice](#notice)
-
-[License](#license)
-
-[System requirements](#system-requirements)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[Computer](#computer)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[MIDI interface](#midi-interface)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[Synthesizer](#synthesizer)
-
-[Introduction](#introduction)
-
-[Installation](#installation)
-
-[Overview](#overview)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[Menus](#menus)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[File](#file)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Patch](#patch)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Tools](#tools)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Help](#help)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[The Quick Buttons](#the-quick-buttons)
-
-[Settings](#settings)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[MIDI page](#midi-page)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[MIDI Ports](#midi-ports)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Output port to synthesizer](#output-port-to-synthesizer)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Input port from synthesizer](#input-port-from-synthesizer)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Controller or DAW input port](#controller-or-daw-input-port)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Connecting a hardware controller to Xplorer](#connecting-a-hardware-controller-to-xplorer)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Connecting a DAW to Xplorer](#connecting-a-daw-to-xplorer)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Using a hardware controller and a DAW](#using-a-hardware-controller-and-a-daw)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[MIDI communication](#midi-communication)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Output MIDI channel](#output-midi-channel)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Smart “all notes off”](#smart-all-notes-off)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[SysEx Delay](#sysex-delay)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Default patch number](#default-patch-number)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Synthesizer type](#synthesizer-type)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[MIDI Automation](#midi-automation)
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[Understanding Xpander/Matrix-12 parameter pages](#understanding-xpandermatrix-12-parameter-pages)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[User interface page](#user-interface-page)
-
-&nbsp;&nbsp;&nbsp;&nbsp;[Randomizer page](#randomizer-page)
+- [Release history](#release-history)
+- [Notice](#notice)
+- [License](#license)
+- [System requirements](#system-requirements)
+  - [Computer](#computer)
+  - [MIDI interface](#midi-interface)
+  - [Synthesizer](#synthesizer)
+- [Introduction](#introduction)
+- [Installation](#installation)
+- [Overview](#overview)
+  - [Menus](#menus)
+    - [File](#file)
+    - [Patch](#patch)
+    - [Tools](#tools)
+    - [Help](#help)
+  - [The Quick Buttons](#the-quick-buttons)
+- [Settings](#settings)
+  - [MIDI page](#midi-page)
+  - [MIDI Ports](#midi-ports)
+    - [Output port to synthesizer](#output-port-to-synthesizer)
+    - [Input port from synthesizer](#input-port-from-synthesizer)
+    - [Controller or DAW input port](#controller-or-daw-input-port)
+    - [Connecting a hardware controller to Xplorer](#connecting-a-hardware-controller-to-xplorer)
+    - [Connecting a DAW to Xplorer](#connecting-a-daw-to-xplorer)
+    - [Using a hardware controller and a DAW](#using-a-hardware-controller-and-a-daw)
+  - [MIDI communication](#midi-communication)
+    - [Output MIDI channel](#output-midi-channel)
+    - [Smart “all notes off”](#smart-all-notes-off)
+    - [SysEx Delay](#sysex-delay)
+    - [Default patch number](#default-patch-number)
+    - [Synthesizer type](#synthesizer-type)
+  - [MIDI Automation](#midi-automation)
+    - [Understanding Xpander/Matrix-12 parameter pages](#understanding-xpandermatrix-12-parameter-pages)
+  - [User interface page](#user-interface-page)
+  - [Randomizer page](#randomizer-page)
 
 
 
