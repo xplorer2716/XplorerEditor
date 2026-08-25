@@ -522,7 +522,8 @@ namespace xplorer::app
                         juce::AlertWindow::showMessageBoxAsync(
                             juce::MessageBoxIconType::InfoIcon, "Single patches",
                             juce::String(static_cast<int>(tones.size()))
-                                + " files extracted successfully to folder "
+                                + " files extracted successfully to folder"
+                                + juce::newLine
                                 + folder.getFullPathName());
                     }
                 }
