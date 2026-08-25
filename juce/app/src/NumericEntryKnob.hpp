@@ -21,7 +21,18 @@ namespace xplorer::app
     class NumericEntryKnob : public juce::Slider
     {
     public:
-        using juce::Slider::Slider;
+        NumericEntryKnob() : NumericEntryKnob(RotaryHorizontalVerticalDrag, NoTextBox) {}
+
+        NumericEntryKnob(SliderStyle style, TextEntryBoxPosition textBoxPosition)
+            : juce::Slider(style, textBoxPosition)
+        {
+            // Transient value bubble while dragging (RQ-GUI-034) lives here,
+            // not on a specific consumer, so BoundKnob (parameter knobs) and
+            // the modulation-matrix amount knob (RQ-GUI-015) get it from the
+            // same one implementation the double-click entry already shares.
+            // [RQ-GUI-034, RQ-GUI-015, PLAN-GUI-009 (TASK-GUI-043)]
+            setPopupDisplayEnabled(true, true, nullptr);
+        }
 
         void mouseDoubleClick(const juce::MouseEvent&) override { openNumericEntry(); }
 

@@ -10,10 +10,10 @@ namespace xplorer::app
     {
         setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         // No permanent text box: the value is on the VFD (RQ-GUI-020); the
-        // rotary fills its full bounds. A bubble shows the value while turning,
-        // and a double-click opens an inline entry. [RQ-GUI-034]
+        // rotary fills its full bounds. A bubble shows the value while turning
+        // (NumericEntryKnob's constructor, shared with the modulation-matrix
+        // amount knob), and a double-click opens an inline entry. [RQ-GUI-034]
         setTextBoxStyle(juce::Slider::NoTextBox, true, 0, 0);
-        setPopupDisplayEnabled(true, true, nullptr); // desktop bubble (crisp under the canvas scale)
         setRange(minValue, maxValue, juce::jmax(1, step));
 
         onDragStart = [this] { _registry.onControlEditBegan(_parameterName); };

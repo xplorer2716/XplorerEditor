@@ -44,6 +44,33 @@ on `BoundKnob`, the parameter-knob wrapper class the matrix row does not use
 - **Dependencies**: None
 - **Assignee**: AI
 
+### TASK-GUI-043: Unify the drag-time value bubble the same way as the double-click entry
+- **Tier**: M
+- **Status**: Done (2026-08-26)
+- **Description**: TASK-GUI-036 unified the double-click → inline numeric
+  entry behaviour into `NumericEntryKnob`, but `setPopupDisplayEnabled(true,
+  true, nullptr)` — the transient value bubble shown while a knob is dragged
+  (RQ-GUI-034's other clause) — was left called only from `BoundKnob`'s own
+  constructor (`BoundControls.cpp`), so the modulation-matrix amount knob
+  (`ModMatrixPanel::buildRow`, built directly as a `NumericEntryKnob`) never
+  got it — the identical gap shape TASK-GUI-036 closed for the double-click,
+  reappearing for the bubble because the fix was applied to one consumer
+  instead of the shared base. Fixed by moving the call into
+  `NumericEntryKnob`'s own constructor (delegating the no-arg overload to the
+  `(SliderStyle, TextEntryBoxPosition)` one, so it runs exactly once) and
+  removing the now-redundant call from `BoundKnob`.
+- **Requirement refs**: RQ-GUI-034, RQ-GUI-015
+- **ADR refs**: None
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a modulation-matrix amount knob, **When** the user drags it,
+    **Then** a transient popup bubble shows its current value, identical to
+    a parameter `BoundKnob`
+  - **Given** `NumericEntryKnob`'s two constructors, **When** either is used,
+    **Then** the popup bubble is enabled — one implementation, not one per
+    consumer
+- **Dependencies**: TASK-GUI-036
+- **Assignee**: AI
+
 ---
 
 ## Note on testing
