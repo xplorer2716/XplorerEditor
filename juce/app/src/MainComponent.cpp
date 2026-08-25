@@ -525,7 +525,7 @@ namespace xplorer::app
             // format), which are meaningless trailing characters in a file
             // name and not caught by the sanitizer (space is a legal file-name
             // character everywhere else in a name).
-            const auto trimmedToneName = juce::String(_controller->toneName()).trimEnd().toStdString();
+            const auto trimmedToneName = midiapp::service::trimTrailingSpaces(_controller->toneName());
             const auto documentsDirectory =
                 juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
             const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(

@@ -37,4 +37,10 @@ namespace midiapp::service
         }
         return candidate + extension;
     }
+
+    std::string trimTrailingSpaces(const std::string& value)
+    {
+        const auto lastNonSpace = value.find_last_not_of(' ');
+        return lastNonSpace == std::string::npos ? std::string{} : value.substr(0, lastNonSpace + 1);
+    }
 }

@@ -288,8 +288,13 @@ namespace xplorer::controller
                 _allDataDumpRequestState.setWaitingForAllDataDumpRequest(false);
                 for (const auto& [name, bytes] : _allDataDumpRequestState.singlePatches())
                 {
+                    // Trailing spaces trimmed first: the name comes straight off
+                    // the synth's fixed-width on-wire tone-name storage, same
+                    // padding the save-patch dialog's default file name already
+                    // trims via the same shared helper. [RQ-GUI-077]
                     const auto filename = midiapp::service::makeUniqueFilenameFromString(
-                        name, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+                        midiapp::service::trimTrailingSpaces(name),
+                        midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
                         _allDataDumpRequestState.destination());
                     writeAllBytes(std::filesystem::path(_allDataDumpRequestState.destination()) / filename,
                                   bytes);
