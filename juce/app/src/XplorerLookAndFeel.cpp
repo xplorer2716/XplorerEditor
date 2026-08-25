@@ -77,11 +77,15 @@ namespace xplorer::app
     void XplorerLookAndFeel::setLedColour(juce::Colour colour)
     {
         _ledColour = colour;
-        // The one JUCE colour ID baked from the accent rather than read from
-        // _ledColour at paint time; re-seeding it here is what makes the
+        // The JUCE colour IDs baked from the accent rather than read from
+        // _ledColour at paint time; re-seeding them here is what makes the
         // in-place retune equivalent to the rebuild it replaces.
         // [RQ-GUI-068, RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]
         setColour(juce::PopupMenu::highlightedBackgroundColourId, colour);
+        // Backup/get-all-single-patches' ProgressWindow and restore's
+        // ThreadWithProgressWindow both resolve this ID against the default
+        // LookAndFeel, so one seed colours both. [RQ-GUI-078, ADR-JUC-011]
+        setColour(juce::ProgressBar::foregroundColourId, colour);
     }
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
