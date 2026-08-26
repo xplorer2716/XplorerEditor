@@ -150,6 +150,24 @@ second consumer by extending its position table.
 - **Dependencies**: TASK-GUI-047, TASK-GUI-049
 - **Assignee**: AI
 
+### TASK-GUI-052: Document the gesture in the user manual
+- **Tier**: S
+- **Status**: Done
+- **Description**: Add the number-row presets to the manual's `## Shortcuts`
+  section: the gesture itself, the centre-on-zero behaviour of bipolar knobs,
+  the oscillator interval table, and a note that the keys are identified by
+  position rather than by their printed character.
+- **Requirement refs**: RQ-GUI-079, RQ-GUI-080
+- **ADR refs**: ADR-JUC-037 (DEC-JUC-127, DEC-JUC-128, DEC-JUC-130)
+- **Acceptance Criteria**: *Given* a musician reading the manual, *When* they
+  reach `## Shortcuts`, *Then* the gesture is described without reference to
+  scancodes, layouts-as-code, or any implementation term, and the oscillator
+  intervals are given musically (fifth, octave) as well as in semitones.
+  *Given* a reader on an AZERTY keyboard, *When* they read the note, *Then*
+  they are told which keys to press on their own keyboard.
+- **Dependencies**: TASK-GUI-050
+- **Assignee**: AI
+
 ---
 
 ## Verification record (2026-08-27)
