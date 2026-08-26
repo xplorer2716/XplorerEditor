@@ -79,6 +79,19 @@ namespace xplorer::app
         // spinner. [RQ-GUI-058]
         juce::Label* createSliderTextBox(juce::Slider& slider) override;
 
+        // The percentage label must stay legible wherever the bar's own fill
+        // happens to reach it, not just averaged across the whole bar: JUCE's
+        // default LookAndFeel_V4::drawLinearProgressBar picks the label's
+        // colour with Colour::contrasting(background, foreground) -- a single
+        // colour compromised between both -- which reads as near-invisible
+        // once the (bright, user-tunable) ledColour fill passes under the
+        // label. Draws the bar itself unchanged via the base class, then
+        // draws the label twice, each pass clipped to its own region and
+        // contrasted against that region's own colour specifically.
+        // [RQ-GUI-078, ADR-JUC-011]
+        void drawProgressBar(juce::Graphics& g, juce::ProgressBar& progressBar, int width, int height,
+                             double progress, const juce::String& textToShow) override;
+
     private:
         // Circular counterpart of drawTickBox for radio-group toggles (a
         // ToggleButton with a non-zero radio group id), so two-way choices
