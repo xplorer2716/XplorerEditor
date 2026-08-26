@@ -22,11 +22,20 @@ namespace xplorer::app
         const std::map<char, CGKeyCode>& referenceKeyCodes()
         {
             static const std::map<char, CGKeyCode> table = {
+                // Piano note positions [RQ-GUI-074]
                 {'a', kVK_ANSI_A}, {'w', kVK_ANSI_W}, {'s', kVK_ANSI_S}, {'e', kVK_ANSI_E},
                 {'d', kVK_ANSI_D}, {'f', kVK_ANSI_F}, {'t', kVK_ANSI_T}, {'g', kVK_ANSI_G},
                 {'y', kVK_ANSI_Y}, {'h', kVK_ANSI_H}, {'u', kVK_ANSI_U}, {'j', kVK_ANSI_J},
                 {'k', kVK_ANSI_K}, {'o', kVK_ANSI_O}, {'l', kVK_ANSI_L}, {'p', kVK_ANSI_P},
                 {';', kVK_ANSI_Semicolon},
+                // Knob preset-value positions: the number row, plus the two
+                // candidates for the eleventh slot — Minus (right of '0') and
+                // LeftBracket (after 'P'). SDK constants again, for the same
+                // reason as the letters above. [RQ-GUI-080, ADR-JUC-037]
+                {'1', kVK_ANSI_1}, {'2', kVK_ANSI_2}, {'3', kVK_ANSI_3}, {'4', kVK_ANSI_4},
+                {'5', kVK_ANSI_5}, {'6', kVK_ANSI_6}, {'7', kVK_ANSI_7}, {'8', kVK_ANSI_8},
+                {'9', kVK_ANSI_9}, {'0', kVK_ANSI_0}, {'-', kVK_ANSI_Minus},
+                {'[', kVK_ANSI_LeftBracket},
             };
             return table;
         }
@@ -60,9 +69,15 @@ namespace xplorer::app
                 // No modifiers: the unshifted base character, matching the
                 // lowercase reference letters this table names positions
                 // after. kUCKeyTranslateNoDeadKeysBit trades full dead-key
-                // composition for a single call — acceptable here, since none
-                // of these seventeen positions is a dead key on any layout
-                // this feature targets.
+                // composition for a single call.
+                //
+                // One position added by RQ-GUI-080 IS a dead key on some
+                // layouts ('[' is AZERTY's '^'), where this flag yields the
+                // base character instead of the nullopt the Windows path
+                // reports. Harmless by construction: that position shares its
+                // preset slot with '-' (DEC-JUC-127), so the slot is reachable
+                // either way and a spurious binding can only select the preset
+                // it was already going to select. [RQ-GUI-080, ADR-JUC-037]
                 const OSStatus status = UCKeyTranslate(
                     _layout, it->second, kUCKeyActionDown, 0, LMGetKbdType(),
                     kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 4, &actualLength, unicodeString);

@@ -30,9 +30,16 @@ namespace xplorer::app
         {
             // evdev keycode = KEY_<X11 letter> scancode + 8.
             static const std::map<char, unsigned int> table = {
+                // Piano note positions [RQ-GUI-074]
                 {'a', 38}, {'w', 25}, {'s', 39}, {'e', 26}, {'d', 40}, {'f', 41}, {'t', 28},
                 {'g', 42}, {'y', 29}, {'h', 43}, {'u', 30}, {'j', 44}, {'k', 45}, {'o', 32},
                 {'l', 46}, {'p', 33}, {';', 47},
+                // Knob preset-value positions: KEY_1..KEY_0 are kernel
+                // scancodes 2..11, so evdev keycodes 10..19; KEY_MINUS (12) is
+                // 20 and KEY_LEFTBRACE (26) is 34 — the two candidates for the
+                // eleventh slot. [RQ-GUI-080, ADR-JUC-037]
+                {'1', 10}, {'2', 11}, {'3', 12}, {'4', 13}, {'5', 14}, {'6', 15},
+                {'7', 16}, {'8', 17}, {'9', 18}, {'0', 19}, {'-', 20}, {'[', 34},
             };
             return table;
         }
