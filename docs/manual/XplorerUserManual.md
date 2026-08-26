@@ -223,6 +223,7 @@ The quick buttons sit under the display. They give you direct access to the most
 
 
 ## Shortcuts
+
 Also please note that a few shortcuts are worth knowing:
 
 * double-click a knob to type an exact value instead of dialling it;
