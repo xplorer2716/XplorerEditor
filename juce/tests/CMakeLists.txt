@@ -81,7 +81,11 @@ add_executable(xpl_tests_app
     app/PianoKeyMappingTests.cpp
     # Key-label decision logic, measurer injected (ComboBoxSizing's own
     # pattern) so it stays JUCE-free too. [RQ-GUI-075, RQ-BLD-025]
-    app/PianoKeyLabelPlanTests.cpp)
+    app/PianoKeyLabelPlanTests.cpp
+    # Knob preset values and the preset keymap: both halves are OS-free and
+    # JUCE-free, resolved against a fake KeyboardLayoutQuery exactly as the
+    # piano mapping is. [RQ-GUI-079, RQ-GUI-080, RQ-BLD-025]
+    app/KnobPresetValuesTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)
