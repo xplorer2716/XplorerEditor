@@ -12,11 +12,12 @@ single-patch extraction (RQ-CTL-003). This reuses it rather than adding a
 second implementation of the same rule.
 
 ## References
-- **Requirements**: RQ-GUI-077 (new), RQ-CTL-004
+- **Requirements**: RQ-GUI-077 (new), RQ-CTL-003, RQ-CTL-004
 - **ADRs**: None. Reuses/extends an existing utility module (`FileUtils`)
   through its existing public signature style; no new architectural
-  decision. TASK-GUI-038 is Tier S; TASK-GUI-041 is Tier M (adds one shared
-  method, `trimTrailingSpaces`, used by two modules).
+  decision. TASK-GUI-038 and TASK-GUI-044 are Tier S; TASK-GUI-041 is Tier M
+  (adds one shared method, `trimTrailingSpaces`, used by all three call
+  sites).
 
 ---
 
@@ -84,6 +85,31 @@ second implementation of the same rule.
     `trimTrailingSpaces` helper as the bulk-extraction path, not a separate
     implementation
 - **Dependencies**: TASK-GUI-038
+- **Assignee**: AI
+
+### TASK-GUI-044: Trim trailing spaces in the file-based bulk extraction path too
+- **Tier**: S
+- **Status**: Done (2026-08-26)
+- **Description**: `extractSinglePatchesFromAllDataDumpFileToDirectory`
+  (`XpanderController.cpp`, RQ-CTL-003 — the "Extract all single patches
+  from file" menu action) built each extracted patch's file name from
+  `XpanderToneReader::readTones`'s parsed `tone->toneName()` — the same
+  fixed-width, space-padded storage form TASK-GUI-041 already found and
+  trimmed for the synth-reception path — without trimming it, so short
+  patch names in a bank sysex file produced file names with meaningless
+  trailing spaces. Fixed by calling the existing `midiapp::service::
+  trimTrailingSpaces` helper at this third call site (owner report:
+  "Extract all single patches" still had the bug that "Get all single
+  patch from synth" had already fixed).
+- **Requirement refs**: RQ-GUI-077, RQ-CTL-003
+- **ADR refs**: None
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a bank (all-data-dump) sysex file containing a patch named
+    "LEAD 1" (shorter than the fixed on-device width, hence space-padded
+    internally), **When** "Extract all single patches from file" extracts
+    it, **Then** the written file is named "LEAD 1.syx" with no trailing
+    spaces
+- **Dependencies**: TASK-GUI-041
 - **Assignee**: AI
 
 ---
