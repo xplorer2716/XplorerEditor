@@ -6,6 +6,7 @@
 #include "BinaryData.h"
 #include "DesignTokens.hpp"
 #include "Dialogs.hpp"
+#include "PianoKeyboardLayoutQuery.hpp"
 #include "SettingsDialog.hpp"
 #include "midiapp/service/FileUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
@@ -234,6 +235,17 @@ namespace xplorer::app
         // Modulation-matrix hover highlight: the colour is derived from the
         // LookAndFeel (single source of truth, ADR-JUC-011); knobs and page-family
         // selectors forward their hover. [RQ-GUI-018]
+        // Which characters the preset keys produce on this machine's layout,
+        // resolved once at startup through the ADR-JUC-035 seam. Same
+        // "resolve once" call the piano window makes (DEC-JUC-117), and the
+        // same degradation: no query means no bindings, so the gesture is
+        // silently off rather than firing the wrong preset.
+        // [RQ-GUI-080, ADR-JUC-037 (DEC-JUC-126)]
+        {
+            const auto layoutQuery = makeNativeKeyboardLayoutQuery();
+            _presetKeys = resolvePresetKeyMapping(layoutQuery.get());
+        }
+
         _hover.onEnter = [this](juce::Component* component) { onControlHovered(component); };
         _hover.onExit = [this]
         {
@@ -301,6 +313,15 @@ namespace xplorer::app
                     }
                     auto knob = std::make_unique<BoundKnob>(*_registry, tag, parameter->minValue(),
                                                             parameter->maxValue(), parameter->step());
+                    // The VCO frequency knobs step through harmonic semitones
+                    // rather than the tenths their 0..63 range would derive
+                    // (reference MainForm.Overrides.cs). Every other knob is
+                    // left to derive its own presets from its range, lazily.
+                    // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-130)]
+                    if (const auto* harmonics = harmonicPresetValuesFor(tag))
+                    {
+                        knob->setPresetValues(*harmonics);
+                    }
                     bound = knob.get();
                     component = std::move(knob);
                     break;
@@ -987,8 +1008,51 @@ namespace xplorer::app
         return menu;
     }
 
+    bool MainComponent::applyPresetKeyToHoveredKnob(const juce::KeyPress& key)
+    {
+        // An unmodified press is the whole gesture, so the modifier test comes
+        // first: it keeps every Ctrl/Alt/Shift combination free for the menu
+        // table below and for anything a child handles, before this even looks
+        // at what is under the pointer. [RQ-GUI-079]
+        if (key.getModifiers().isAnyModifierKeyDown())
+        {
+            return false;
+        }
+        // The hovered component is READ LIVE from the mouse source rather than
+        // cached on enter/exit — the same "read, never cache" rule the LookAndFeel
+        // follows for hover (RQ-DSN-062). A cached pointer would outlive the
+        // knob it names when a page-family block retargets its controls, and
+        // would miss every exit the OS does not report.
+        // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-125)]
+        auto* knob = dynamic_cast<NumericEntryKnob*>(
+            juce::Desktop::getInstance().getMainMouseSource().getComponentUnderMouse());
+        if (knob == nullptr)
+        {
+            return false;
+        }
+        // getKeyCode() carries the character the pressed POSITION produces on
+        // the active layout — the very value the KeyboardLayoutQuery resolved
+        // for that position — so this comparison is layout-independent without
+        // either side knowing which layout is active. [RQ-GUI-080]
+        const auto index = presetIndexForCharacter(_presetKeys, static_cast<char32_t>(key.getKeyCode()));
+        if (!index)
+        {
+            return false;
+        }
+        return knob->applyPresetValue(*index);
+    }
+
     bool MainComponent::keyPressed(const juce::KeyPress& key)
     {
+        // A knob under the pointer claims the number row first. No menu
+        // shortcut is an unmodified character key (they are all Ctrl+letter or
+        // F-keys), so the two tables cannot contend -- and this one declines
+        // whenever no knob is hovered, which is every press elsewhere.
+        // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-125)]
+        if (applyPresetKeyToHoveredKnob(key))
+        {
+            return true;
+        }
         // Same dispatcher a menu click uses, so the two cannot diverge. Keys
         // outside the table return false and keep travelling -- that is what
         // leaves PageSelectorButton's Ctrl+C/Ctrl+V (RQ-GUI-027) and any
