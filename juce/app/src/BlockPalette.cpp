@@ -2,6 +2,8 @@
 
 #include "DesignTokens.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 namespace xplorer::app
 {
     const std::array<BlockColourDescriptor, BLOCK_COLOUR_COUNT>& blockColourDescriptors()
@@ -35,7 +37,7 @@ namespace xplorer::app
 
     juce::Colour blockColourOf(const BlockPalette& palette, BlockId id)
     {
-        const auto& descriptor = blockColourDescriptors()[static_cast<std::size_t>(id)];
+        const auto& descriptor = blockColourDescriptors()[xpl::util::toUnderlying(id)];
         jassert(descriptor.id == id); // table order is the BlockId contract
         return palette.*(descriptor.member);
     }

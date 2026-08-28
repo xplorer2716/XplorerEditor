@@ -5,6 +5,7 @@
 
 #include <juce_graphics/juce_graphics.h>
 
+#include <array>
 #include <cmath>
 #include <vector>
 #include <map>
@@ -667,7 +668,7 @@ SCENARIO("Every printable character renders, and no two render alike",
     // Scale 1 is the demanding case, not the easy one: it is the reference's
     // own 12x16 cell, where two shapes have the fewest pixels to differ in. If
     // distinctness holds here it holds at every larger scale.
-    const float scales[] = {1.0F, 4.0F};
+    constexpr auto scales = std::to_array<float>({1.0F, 4.0F});
 
     for (const auto scale : scales)
     {

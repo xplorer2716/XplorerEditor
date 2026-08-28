@@ -4,6 +4,7 @@
 // page/sub-page and knows which rotary encoders may edit on it. [RQ-CTL-020, RQ-CTL-022]
 
 #include "xplorer/model/XpanderConstants.hpp"
+#include "xpl/util/EnumUtils.hpp"
 
 #include <map>
 #include <mutex>
@@ -29,8 +30,8 @@ namespace xplorer::controller
         void initializeAuthorizedEditingRotaryEvents();
 
         mutable std::mutex _mutex;
-        int _lastPageSelected = static_cast<int>(model::EnumPages::UNKNOWN);
-        int _lastSubPageSelected = static_cast<int>(model::EnumPages::UNKNOWN);
+        int _lastPageSelected = xpl::util::toUnderlying(model::EnumPages::UNKNOWN);
+        int _lastSubPageSelected = xpl::util::toUnderlying(model::EnumPages::UNKNOWN);
         std::map<std::pair<int, int>, std::set<model::EnumRotaryEncoders>> _authorizedRotaryEvents;
     };
 }

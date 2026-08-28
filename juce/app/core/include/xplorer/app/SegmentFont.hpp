@@ -13,6 +13,8 @@
 // in design tokens (RQ-DSN-097), never here.
 // [RQ-GUI-033, RQ-GUI-049, ADR-JUC-023]
 
+#include "xpl/util/EnumUtils.hpp"
+
 #include <cstdint>
 
 namespace xplorer::app
@@ -57,6 +59,6 @@ namespace xplorer::app
     /// Whether `segment` is lit in `mask`.
     [[nodiscard]] constexpr bool isLit(std::uint16_t mask, Segment segment) noexcept
     {
-        return ((mask >> static_cast<int>(segment)) & 1U) != 0U;
+        return ((mask >> xpl::util::toUnderlying(segment)) & 1U) != 0U;
     }
 }

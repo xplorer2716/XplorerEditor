@@ -1,5 +1,7 @@
 #include "xplorer/settings/AllUsersSettings.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 #include <cstdint>
 
 namespace xplorer::settings
@@ -23,14 +25,14 @@ namespace xplorer::settings
         config.vcoFreq = EnumRandomVCOFreq::Free;
         config.vcoDetune = EnumRandomVCODetune::Free;
         config.vco2FmNoiseSync = static_cast<EnumRandomVCO2>(
-            static_cast<int>(EnumRandomVCO2::EnableFM)
-            | static_cast<int>(EnumRandomVCO2::EnableNoise)
-            | static_cast<int>(EnumRandomVCO2::EnableSync));
+            static_cast<int>(xpl::util::toUnderlying(EnumRandomVCO2::EnableFM))
+            | static_cast<int>(xpl::util::toUnderlying(EnumRandomVCO2::EnableNoise))
+            | static_cast<int>(xpl::util::toUnderlying(EnumRandomVCO2::EnableSync)));
         config.vca2Env = EnumRandomVCAEnv::Free;
         config.modulationMatrix = static_cast<EnumRandomModMatrix>(
-            static_cast<int>(EnumRandomModMatrix::EnableAmount)
-            | static_cast<int>(EnumRandomModMatrix::EnableSourcesAndDestinations)
-            | static_cast<int>(EnumRandomModMatrix::EnableQuantize));
+            static_cast<int>(xpl::util::toUnderlying(EnumRandomModMatrix::EnableAmount))
+            | static_cast<int>(xpl::util::toUnderlying(EnumRandomModMatrix::EnableSourcesAndDestinations))
+            | static_cast<int>(xpl::util::toUnderlying(EnumRandomModMatrix::EnableQuantize)));
         return config;
     }
 

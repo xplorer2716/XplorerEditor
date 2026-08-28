@@ -20,7 +20,7 @@ namespace xplorer::app
         void setStatus(const juce::String& status, int value);
         [[nodiscard]] int maxValue() const { return _maxValue; }
 
-        void closeButtonPressed() override {} // non-cancellable, like the reference
+        void closeButtonPressed() override {/* non-cancellable, like the reference [RQ-QLT-012] */}
 
     private:
         class Content;

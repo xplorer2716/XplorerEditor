@@ -1,5 +1,7 @@
 #include "xplorer/controller/PageSubPageHelper.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 namespace xplorer::controller
 {
     using model::EnumPages;
@@ -37,25 +39,25 @@ namespace xplorer::controller
     {
         // Reference condition kept verbatim (it compares the sub-page against
         // LFO_5, faithfully preserved).
-        const bool isPageLfo = parameterPage >= static_cast<int>(EnumPages::LFO_1)
-                               && parameterSubPage <= static_cast<int>(EnumPages::LFO_5);
+        const bool isPageLfo = parameterPage >= xpl::util::toUnderlying(EnumPages::LFO_1)
+                               && parameterSubPage <= xpl::util::toUnderlying(EnumPages::LFO_5);
         const bool isRetrig = parameterSubPage == 0x01
-                              && buttonId == static_cast<int>(EnumRotaryEncoders::THIRD);
+                              && buttonId == xpl::util::toUnderlying(EnumRotaryEncoders::THIRD);
         return isPageLfo && isRetrig;
     }
 
     bool PageSubPageHelper::isPageEnvLfoRampTrack() const
     {
         const std::lock_guard lock(_mutex);
-        return _lastPageSelected >= static_cast<int>(EnumPages::ENV_1)
-               && _lastPageSelected <= static_cast<int>(EnumPages::RAMP_4);
+        return _lastPageSelected >= xpl::util::toUnderlying(EnumPages::ENV_1)
+               && _lastPageSelected <= xpl::util::toUnderlying(EnumPages::RAMP_4);
     }
 
     bool PageSubPageHelper::isPageLfo() const
     {
         const std::lock_guard lock(_mutex);
-        return _lastPageSelected >= static_cast<int>(EnumPages::LFO_1)
-               && _lastPageSelected <= static_cast<int>(EnumPages::LFO_5);
+        return _lastPageSelected >= xpl::util::toUnderlying(EnumPages::LFO_1)
+               && _lastPageSelected <= xpl::util::toUnderlying(EnumPages::LFO_5);
     }
 
     void PageSubPageHelper::initializeAuthorizedEditingRotaryEvents()
@@ -65,19 +67,19 @@ namespace xplorer::controller
         { _authorizedRotaryEvents.emplace(std::make_pair(page, subPage), std::move(authorized)); };
         auto addRange = [&add](EnumPages first, EnumPages last, int subPage, const std::set<E>& authorized)
         {
-            for (int page = static_cast<int>(first); page <= static_cast<int>(last); ++page)
+            for (int page = xpl::util::toUnderlying(first); page <= xpl::util::toUnderlying(last); ++page)
             {
                 add(page, subPage, authorized);
             }
         };
 
-        add(static_cast<int>(EnumPages::VCO_1_X), 0, {E::FIRST, E::SECOND, E::FOURTH, E::SIXTH});
-        add(static_cast<int>(EnumPages::VCO_2_X), 0, {E::FIRST, E::SECOND, E::FOURTH, E::SIXTH});
-        add(static_cast<int>(EnumPages::FM_LAG_X), 0, {E::FIRST, E::SECOND, E::FOURTH, E::FIFTH});
-        add(static_cast<int>(EnumPages::FM_LAG_X), 1, {E::FIRST});
+        add(xpl::util::toUnderlying(EnumPages::VCO_1_X), 0, {E::FIRST, E::SECOND, E::FOURTH, E::SIXTH});
+        add(xpl::util::toUnderlying(EnumPages::VCO_2_X), 0, {E::FIRST, E::SECOND, E::FOURTH, E::SIXTH});
+        add(xpl::util::toUnderlying(EnumPages::FM_LAG_X), 0, {E::FIRST, E::SECOND, E::FOURTH, E::FIFTH});
+        add(xpl::util::toUnderlying(EnumPages::FM_LAG_X), 1, {E::FIRST});
         addRange(EnumPages::TRACK_1, EnumPages::TRACK_3, 0,
                  {E::FIRST, E::SECOND, E::THIRD, E::FOURTH, E::FIFTH, E::SIXTH});
-        add(static_cast<int>(EnumPages::VCF_VCA_X), 0, {E::FIRST, E::SECOND, E::THIRD, E::FIFTH, E::SIXTH});
+        add(xpl::util::toUnderlying(EnumPages::VCF_VCA_X), 0, {E::FIRST, E::SECOND, E::THIRD, E::FIFTH, E::SIXTH});
         addRange(EnumPages::ENV_1, EnumPages::ENV_5, 0,
                  {E::FIRST, E::SECOND, E::THIRD, E::FOURTH, E::FIFTH, E::SIXTH});
         addRange(EnumPages::ENV_1, EnumPages::ENV_5, 1, {E::SECOND, E::FIFTH});

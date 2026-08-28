@@ -27,6 +27,7 @@
 #include "DialogIcons.hpp"
 #include "Dialogs.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
@@ -747,17 +748,17 @@ namespace xplorer::app
                 cfg.vca2Env = static_cast<model::EnumRandomVCAEnv>(_env.getSelectedId() - 1);
 
                 unsigned vco2 = 0;
-                if (_fm.getToggleState()) vco2 |= static_cast<unsigned>(EnumRandomVCO2::EnableFM);
-                if (_noise.getToggleState()) vco2 |= static_cast<unsigned>(EnumRandomVCO2::EnableNoise);
-                if (_sync.getToggleState()) vco2 |= static_cast<unsigned>(EnumRandomVCO2::EnableSync);
+                if (_fm.getToggleState()) vco2 |= xpl::util::toUnderlying(EnumRandomVCO2::EnableFM);
+                if (_noise.getToggleState()) vco2 |= xpl::util::toUnderlying(EnumRandomVCO2::EnableNoise);
+                if (_sync.getToggleState()) vco2 |= xpl::util::toUnderlying(EnumRandomVCO2::EnableSync);
                 cfg.vco2FmNoiseSync = static_cast<EnumRandomVCO2>(vco2);
 
                 unsigned matrix = 0;
-                if (_amount.getToggleState()) matrix |= static_cast<unsigned>(EnumRandomModMatrix::EnableAmount);
+                if (_amount.getToggleState()) matrix |= xpl::util::toUnderlying(EnumRandomModMatrix::EnableAmount);
                 if (_quantize.getToggleState())
-                    matrix |= static_cast<unsigned>(EnumRandomModMatrix::EnableQuantize);
+                    matrix |= xpl::util::toUnderlying(EnumRandomModMatrix::EnableQuantize);
                 if (_srcDest.getToggleState())
-                    matrix |= static_cast<unsigned>(EnumRandomModMatrix::EnableSourcesAndDestinations);
+                    matrix |= xpl::util::toUnderlying(EnumRandomModMatrix::EnableSourcesAndDestinations);
                 cfg.modulationMatrix = static_cast<EnumRandomModMatrix>(matrix);
             }
 
@@ -831,26 +832,26 @@ namespace xplorer::app
             {
                 using model::EnumRandomModMatrix;
                 using model::EnumRandomVCO2;
-                _freq.setSelectedId(static_cast<int>(cfg.vcoFreq) + 1, juce::dontSendNotification);
-                _detune.setSelectedId(static_cast<int>(cfg.vcoDetune) + 1, juce::dontSendNotification);
-                _env.setSelectedId(static_cast<int>(cfg.vca2Env) + 1, juce::dontSendNotification);
+                _freq.setSelectedId(xpl::util::toUnderlying(cfg.vcoFreq) + 1, juce::dontSendNotification);
+                _detune.setSelectedId(xpl::util::toUnderlying(cfg.vcoDetune) + 1, juce::dontSendNotification);
+                _env.setSelectedId(xpl::util::toUnderlying(cfg.vca2Env) + 1, juce::dontSendNotification);
 
-                const auto vco2 = static_cast<unsigned>(cfg.vco2FmNoiseSync);
-                _fm.setToggleState((vco2 & static_cast<unsigned>(EnumRandomVCO2::EnableFM)) != 0,
+                const auto vco2 = xpl::util::toUnderlying(cfg.vco2FmNoiseSync);
+                _fm.setToggleState((vco2 & xpl::util::toUnderlying(EnumRandomVCO2::EnableFM)) != 0,
                                    juce::dontSendNotification);
-                _noise.setToggleState((vco2 & static_cast<unsigned>(EnumRandomVCO2::EnableNoise)) != 0,
+                _noise.setToggleState((vco2 & xpl::util::toUnderlying(EnumRandomVCO2::EnableNoise)) != 0,
                                       juce::dontSendNotification);
-                _sync.setToggleState((vco2 & static_cast<unsigned>(EnumRandomVCO2::EnableSync)) != 0,
+                _sync.setToggleState((vco2 & xpl::util::toUnderlying(EnumRandomVCO2::EnableSync)) != 0,
                                      juce::dontSendNotification);
 
-                const auto matrix = static_cast<unsigned>(cfg.modulationMatrix);
-                _amount.setToggleState((matrix & static_cast<unsigned>(EnumRandomModMatrix::EnableAmount)) != 0,
+                const auto matrix = xpl::util::toUnderlying(cfg.modulationMatrix);
+                _amount.setToggleState((matrix & xpl::util::toUnderlying(EnumRandomModMatrix::EnableAmount)) != 0,
                                        juce::dontSendNotification);
                 _quantize.setToggleState(
-                    (matrix & static_cast<unsigned>(EnumRandomModMatrix::EnableQuantize)) != 0,
+                    (matrix & xpl::util::toUnderlying(EnumRandomModMatrix::EnableQuantize)) != 0,
                     juce::dontSendNotification);
                 _srcDest.setToggleState(
-                    (matrix & static_cast<unsigned>(EnumRandomModMatrix::EnableSourcesAndDestinations)) != 0,
+                    (matrix & xpl::util::toUnderlying(EnumRandomModMatrix::EnableSourcesAndDestinations)) != 0,
                     juce::dontSendNotification);
             }
 
@@ -893,17 +894,19 @@ namespace xplorer::app
                 _originalLedColour = settingsService.allUsersSettings().uiConfig.knobLedBorderColor;
                 _originalPalette = resolveBlockPalette(settingsService.allUsersSettings().uiConfig);
 
-                auto* midiPage = new MidiSettingsPage(settingsService, backend);
-                auto* uiPage = new UiSettingsPage(settingsService, _onBlockPaletteChanged, _onLedColourChanged);
-                auto* randomPage = new RandomizerSettingsPage(settingsService);
-                _midiPage = midiPage;
-                _uiPage = uiPage;
-                _randomPage = randomPage;
+                // [RQ-QLT-014] Held in a smart pointer until the moment
+                // addTab(..., true) takes ownership.
+                auto midiPage = std::make_unique<MidiSettingsPage>(settingsService, backend);
+                auto uiPage = std::make_unique<UiSettingsPage>(settingsService, _onBlockPaletteChanged, _onLedColourChanged);
+                auto randomPage = std::make_unique<RandomizerSettingsPage>(settingsService);
+                _midiPage = midiPage.get();
+                _uiPage = uiPage.get();
+                _randomPage = randomPage.get();
 
                 const auto bg = tokens::semantic::surfaceRecessed;
-                _tabs.addTab("MIDI", bg, midiPage, true);
-                _tabs.addTab("User interface", bg, uiPage, true);
-                _tabs.addTab("Randomizer", bg, randomPage, true);
+                _tabs.addTab("MIDI", bg, midiPage.release(), true);
+                _tabs.addTab("User interface", bg, uiPage.release(), true);
+                _tabs.addTab("Randomizer", bg, randomPage.release(), true);
                 addAndMakeVisible(_tabs);
 
                 _ok.setButtonText("OK");

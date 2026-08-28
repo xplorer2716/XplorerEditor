@@ -150,13 +150,13 @@ namespace midiapp::controller
         sendToSynthOutput(message); // [RQ-FMW-052]
     }
 
-    void AbstractController::automationInputDeviceError(const std::string&) {}
+    void AbstractController::automationInputDeviceError(const std::string&) {/* no error surface exists yet, as the reference [RQ-QLT-012] */}
 
     // --- synth input defaults: do nothing, as the reference ---------------
 
-    void AbstractController::synthInputDeviceChannelMessageReceived(const MidiMessage&) {}
-    void AbstractController::synthInputDeviceSysExMessageReceived(const MidiMessage&) {}
-    void AbstractController::synthInputDeviceSysCommonMessageReceived(const MidiMessage&) {}
-    void AbstractController::synthInputDeviceSysRealtimeMessageReceived(const MidiMessage&) {}
-    void AbstractController::synthInputDeviceError(const std::string&) {}
+    void AbstractController::synthInputDeviceChannelMessageReceived(const MidiMessage&) {/* synth input carries no channel messages the controller acts on, as the reference [RQ-QLT-012] */}
+    void AbstractController::synthInputDeviceSysExMessageReceived(const MidiMessage&) {/* handled via the dedicated SysEx dump path, not here, as the reference [RQ-QLT-012] */}
+    void AbstractController::synthInputDeviceSysCommonMessageReceived(const MidiMessage&) {/* synth input carries no SysCommon messages the controller acts on, as the reference [RQ-QLT-012] */}
+    void AbstractController::synthInputDeviceSysRealtimeMessageReceived(const MidiMessage&) {/* synth input carries no SysRealtime messages the controller acts on, as the reference [RQ-QLT-012] */}
+    void AbstractController::synthInputDeviceError(const std::string&) {/* no error surface exists yet, as the reference [RQ-QLT-012] */}
 }

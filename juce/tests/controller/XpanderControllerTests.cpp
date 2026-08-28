@@ -2,6 +2,7 @@
 
 #include "xplorer/controller/XpanderController.hpp"
 #include "xpl/midi/MockMidiBackend.hpp"
+#include "xpl/util/EnumUtils.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -85,7 +86,7 @@ SCENARIO("The worker sends a page select before a parameter of another page", "[
                 REQUIRE(f.waitForSentCount(2));
                 const auto sent = f.backend.sentMessages(SYNTH_OUT);
                 CHECK(sent[0][3] == 0x0B); // page select opcode
-                CHECK(sent[0][4] == static_cast<int>(model::EnumPages::VCF_VCA_X));
+                CHECK(sent[0][4] == xpl::util::toUnderlying(model::EnumPages::VCF_VCA_X));
                 CHECK(sent[1][3] == 0x0A); // parameter edit opcode
                 CHECK(sent[1][9] == 42);
             }
@@ -118,21 +119,21 @@ SCENARIO("Selecting a page directly sends and tracks that page, not a stale one"
 
         WHEN("the UI selects ENV_3 directly, with no prior parameter edit")
         {
-            f.controller.sendPageUpdate(static_cast<int>(model::EnumPages::ENV_3), 0);
+            f.controller.sendPageUpdate(xpl::util::toUnderlying(model::EnumPages::ENV_3), 0);
 
             THEN("the page-select frame targets ENV_3 (the selected page), not VCO_1_X")
             {
                 REQUIRE(f.waitForSentCount(1));
                 const auto sent = f.backend.sentMessages(SYNTH_OUT);
                 CHECK(sent[0][3] == 0x0B); // page select opcode
-                CHECK(sent[0][4] == static_cast<int>(model::EnumPages::ENV_3));
+                CHECK(sent[0][4] == xpl::util::toUnderlying(model::EnumPages::ENV_3));
                 CHECK(sent[0][5] == 0); // sub-page
             }
         }
 
         WHEN("a page is selected and forceSendPageSubPage is called afterwards (e.g. a display resync)")
         {
-            f.controller.sendPageUpdate(static_cast<int>(model::EnumPages::ENV_3), 0);
+            f.controller.sendPageUpdate(xpl::util::toUnderlying(model::EnumPages::ENV_3), 0);
             REQUIRE(f.waitForSentCount(1));
             f.backend.clearSentMessages();
 
@@ -142,7 +143,7 @@ SCENARIO("Selecting a page directly sends and tracks that page, not a stale one"
             {
                 REQUIRE(f.waitForSentCount(1));
                 const auto sent = f.backend.sentMessages(SYNTH_OUT);
-                CHECK(sent[0][4] == static_cast<int>(model::EnumPages::ENV_3));
+                CHECK(sent[0][4] == xpl::util::toUnderlying(model::EnumPages::ENV_3));
             }
         }
     }
@@ -157,7 +158,7 @@ SCENARIO("A single patch dump from the synth reloads the edited tone", "[RQ-CTL-
         int fullToneEvents = 0;
         std::string receivedName;
         f.controller.setFullToneChangeHandler(
-            [&](const controller::FullToneChangeEvent& event)
+            [&fullToneEvents, &receivedName](const controller::FullToneChangeEvent& event) // [RQ-QLT-015]
             {
                 ++fullToneEvents;
                 receivedName = std::string(); // name is not in the map; check via controller
@@ -186,11 +187,11 @@ SCENARIO("Panel edits (page edit follows) update the matching parameter", "[RQ-C
         f.controller.start();
         std::vector<std::pair<std::string, int>> notified;
         f.controller.setAutomationParameterChangeHandler(
-            [&](const std::string& name, int value) { notified.emplace_back(name, value); });
+            [&notified](const std::string& name, int value) { notified.emplace_back(name, value); }); // [RQ-QLT-015]
 
         // synth selects VCF_VCA page, sub-page 0
         const std::vector<std::uint8_t> pageSelect{
-            0xF0, 0x10, 0x02, 0x0B, static_cast<std::uint8_t>(model::EnumPages::VCF_VCA_X), 0x00, 0xF7};
+            0xF0, 0x10, 0x02, 0x0B, static_cast<std::uint8_t>(xpl::util::toUnderlying(model::EnumPages::VCF_VCA_X)), 0x00, 0xF7};
         f.backend.injectIncoming(SYNTH_IN, MidiMessage::sysEx(pageSelect));
 
         WHEN("the synth sends a button edit for VCF_FREQ")
@@ -259,21 +260,21 @@ SCENARIO("Modulation edit follows from the synth updates the local matrix", "[RQ
         f.controller.start();
         std::vector<controller::ModulationEntryChangeEvent> events;
         f.controller.setModulationEntryChangeHandler(
-            [&](const controller::ModulationEntryChangeEvent& event) { events.push_back(event); });
+            [&events](const controller::ModulationEntryChangeEvent& event) { events.push_back(event); }); // [RQ-QLT-015]
 
         const auto pageSubPage = model::PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
-            static_cast<std::size_t>(model::EnumModulationDestinations::VCO1_FRQ)];
+            static_cast<std::size_t>(xpl::util::toUnderlying(model::EnumModulationDestinations::VCO1_FRQ))];
         const std::vector<std::uint8_t> pageSelect{
-            0xF0, 0x10, 0x02, 0x0B, static_cast<std::uint8_t>(pageSubPage.page),
+            0xF0, 0x10, 0x02, 0x0B, static_cast<std::uint8_t>(xpl::util::toUnderlying(pageSubPage.page)),
             static_cast<std::uint8_t>(pageSubPage.subPage), 0xF7};
         f.backend.injectIncoming(SYNTH_IN, MidiMessage::sysEx(pageSelect));
 
         WHEN("the synth adds LFO1 as source")
         {
-            const auto lfo1 = static_cast<std::uint8_t>(model::EnumModulationSourcesModMatrix::LFO1);
+            const auto lfo1 = static_cast<std::uint8_t>(xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::LFO1));
             const std::vector<std::uint8_t> addSource{
                 0xF0, 0x10, 0x02, 0x0F, 0x00, 0x00, 0x00,
-                static_cast<std::uint8_t>(model::EnumModulationEditCommands::ADDSOURCE), 0x00,
+                static_cast<std::uint8_t>(xpl::util::toUnderlying(model::EnumModulationEditCommands::ADDSOURCE)), 0x00,
                 lfo1, 0x00, 0xF7};
             f.backend.injectIncoming(SYNTH_IN, MidiMessage::sysEx(addSource));
 
@@ -473,17 +474,17 @@ SCENARIO("Modulation-matrix source/destination availability follows the 6-source
         for (int entryNumber = 1; entryNumber <= 6; ++entryNumber)
         {
             f.controller.changeModulationSource(
-                static_cast<int>(model::EnumModulationSourcesModMatrix::LFO1), 10, 0,
-                static_cast<int>(model::EnumModulationDestinations::VCF_FRQ), entryNumber);
+                xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::LFO1), 10, 0,
+                xpl::util::toUnderlying(model::EnumModulationDestinations::VCF_FRQ), entryNumber);
         }
         // Entry 7 already targets the now-saturated destination but has no
         // source of its own -- the real shape of "this row can't add a 7th"
         // (sourceAvailabilityForEntry reads the ROW'S OWN destination, not
         // just "is anything, anywhere, saturated").
         f.controller.changeModulationDestination(
-            static_cast<int>(model::EnumModulationSourcesModMatrix::NONE), 0, 0,
-            static_cast<int>(model::EnumModulationDestinations::VCO1_FRQ),
-            static_cast<int>(model::EnumModulationDestinations::VCF_FRQ), 7);
+            xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::NONE), 0, 0,
+            xpl::util::toUnderlying(model::EnumModulationDestinations::VCO1_FRQ),
+            xpl::util::toUnderlying(model::EnumModulationDestinations::VCF_FRQ), 7);
         // Entry 8 stays untouched (default destination, no source): the
         // control for "excluded from a row that is NOT itself pointed at
         // the saturated destination".
@@ -602,7 +603,7 @@ SCENARIO("Restore all-data dump paces frames and reports progression", "[RQ-CTL-
         {
             std::vector<std::pair<int, int>> progression;
             f.controller.restoreAllDataDumpToSynth(file.string(),
-                                                   [&](int index, int count)
+                                                   [&progression](int index, int count) // [RQ-QLT-015]
                                                    { progression.emplace_back(index, count); });
 
             THEN("both frames were sent and progression reported 0/2 then 1/2")
@@ -630,7 +631,7 @@ SCENARIO("Get-all-patches writes one file per received dump", "[RQ-CTL-004]")
         std::filesystem::create_directories(dir);
         int progressionEvents = 0;
         f.controller.setAllDataDumpProgressionHandler(
-            [&](const controller::AllDataDumpProgressionEvent&) { ++progressionEvents; });
+            [&progressionEvents](const controller::AllDataDumpProgressionEvent&) { ++progressionEvents; }); // [RQ-QLT-015]
 
         WHEN("the synth answers with 100 single patch dumps")
         {

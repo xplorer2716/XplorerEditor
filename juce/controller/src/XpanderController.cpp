@@ -34,6 +34,7 @@
 #include "midiapp/service/FileUtils.hpp"
 #include "midiapp/service/Logger.hpp"
 #include "xpl/midi/SysexStreamIterator.hpp"
+#include "xpl/util/EnumUtils.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -403,17 +404,17 @@ namespace xplorer::controller
 
         auto excluded = arguments.excludedParameters;
         const auto& randomizerConfig = settings().randomizerConfig;
-        const auto vco2Flags = static_cast<unsigned>(randomizerConfig.vco2FmNoiseSync);
-        if ((vco2Flags & static_cast<unsigned>(model::EnumRandomVCO2::EnableFM)) == 0)
+        const auto vco2Flags = xpl::util::toUnderlying(randomizerConfig.vco2FmNoiseSync);
+        if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableFM)) == 0)
         {
             excluded.insert("FM_AMP");
             excluded.insert("FM_DESTINATION");
         }
-        if ((vco2Flags & static_cast<unsigned>(model::EnumRandomVCO2::EnableNoise)) == 0)
+        if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableNoise)) == 0)
         {
             excluded.insert("VCO2_WAVESHAPE_NOISE");
         }
-        if ((vco2Flags & static_cast<unsigned>(model::EnumRandomVCO2::EnableSync)) == 0)
+        if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableSync)) == 0)
         {
             excluded.insert("VCO2_WAVE_SYNC");
         }
@@ -433,11 +434,11 @@ namespace xplorer::controller
 
         tone().randomizeToneParameters(excluded, arguments.humanizeRatio, arguments.seed);
 
-        const auto matrixFlags = static_cast<unsigned>(randomizerConfig.modulationMatrix);
+        const auto matrixFlags = xpl::util::toUnderlying(randomizerConfig.modulationMatrix);
         xpanderTone().randomizeModulationMatrix(
-            (matrixFlags & static_cast<unsigned>(model::EnumRandomModMatrix::EnableAmount)) != 0,
-            (matrixFlags & static_cast<unsigned>(model::EnumRandomModMatrix::EnableQuantize)) != 0,
-            (matrixFlags & static_cast<unsigned>(model::EnumRandomModMatrix::EnableSourcesAndDestinations)) != 0,
+            (matrixFlags & xpl::util::toUnderlying(model::EnumRandomModMatrix::EnableAmount)) != 0,
+            (matrixFlags & xpl::util::toUnderlying(model::EnumRandomModMatrix::EnableQuantize)) != 0,
+            (matrixFlags & xpl::util::toUnderlying(model::EnumRandomModMatrix::EnableSourcesAndDestinations)) != 0,
             arguments.humanizeRatio, arguments.seed);
         if (randomizerConfig.vca2Env != model::EnumRandomVCAEnv::Free)
         {
@@ -564,7 +565,7 @@ namespace xplorer::controller
     {
         std::vector<model::EnumModulationDestinations> destinations;
         const auto& entry = getModulationEntryByNumber(entryNumber);
-        constexpr int destinationCount = static_cast<int>(model::EnumModulationDestinations::LAG_RATE) + 1;
+        constexpr int destinationCount = xpl::util::toUnderlying(model::EnumModulationDestinations::LAG_RATE) + 1;
         for (int i = 0; i < destinationCount; ++i)
         {
             const auto destination = static_cast<model::EnumModulationDestinations>(i);
@@ -773,7 +774,7 @@ namespace xplorer::controller
             sendDataToSynthOutputDevice(MidiMessage::channelMessage(
                 ChannelCommand::ProgramChange, tone().midiChannel(), programNumber));
             sleepMs(DELAY_BETWEEN_MESSAGES);
-            sendPageSubPageAndUpdatePageSubPage(static_cast<int>(EnumPages::VCO_1_X), 0x00);
+            sendPageSubPageAndUpdatePageSubPage(xpl::util::toUnderlying(EnumPages::VCO_1_X), 0x00);
         }
     }
 

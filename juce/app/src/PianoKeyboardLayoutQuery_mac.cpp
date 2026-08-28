@@ -2,6 +2,7 @@
 
 #include <Carbon/Carbon.h>
 
+#include <array>
 #include <map>
 
 // macOS implementation of the DEC-JUC-116 seam. [RQ-GUI-074]
@@ -63,7 +64,7 @@ namespace xplorer::app
                 }
 
                 UniCharCount actualLength = 0;
-                UniChar unicodeString[4] = {};
+                std::array<UniChar, 4> unicodeString = {};
                 UInt32 deadKeyState = 0;
 
                 // No modifiers: the unshifted base character, matching the
@@ -80,7 +81,7 @@ namespace xplorer::app
                 // it was already going to select. [RQ-GUI-080, ADR-JUC-037]
                 const OSStatus status = UCKeyTranslate(
                     _layout, it->second, kUCKeyActionDown, 0, LMGetKbdType(),
-                    kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 4, &actualLength, unicodeString);
+                    kUCKeyTranslateNoDeadKeysBit, &deadKeyState, 4, &actualLength, unicodeString.data());
 
                 if (status != noErr || actualLength == 0)
                 {
