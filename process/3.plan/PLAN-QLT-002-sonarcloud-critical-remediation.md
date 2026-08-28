@@ -30,7 +30,7 @@ Established 2026-08-29, same toolchain as PLAN-QLT-001.
 
 ### TASK-QLT-007: Qualify the destructor's `closeMidiDevices()` call
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: In `~AbstractController()`, qualify the call as
   `AbstractController::closeMidiDevices()`.
 - **Requirement refs**: RQ-QLT-011
