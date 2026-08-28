@@ -71,8 +71,18 @@ Owner review of the M2/M3 build flagged the rotary knobs (`BoundKnob` +
   never did anything.
 
 ## Not in scope / deferred
-- The reference keyboard **preset-value** entry (number keys while hovering a
-  knob) is a separate feature, not requested here.
+- ~~The reference keyboard **preset-value** entry (number keys while hovering a
+  knob) is a separate feature, not requested here.~~
+  **Closed 2026-08-27 by ADR-JUC-037** (RQ-GUI-079, RQ-GUI-080, owner request,
+  session GUI). It was indeed a separate feature and it has now been specified
+  and built as one. Two decisions there bear directly on this ADR and are noted
+  so a reader of the knobs' presentation finds them: the gesture takes **no
+  keyboard focus** (DEC-JUC-125), because decision 2's hover brighten is the
+  only state this ADR ever renders and ADR-JUC-029 later removed focus
+  rendering entirely; and the value it sets travels the **same path as
+  decision 3's double-click entry** (one shared `applyValue()` on
+  `NumericEntryKnob`), so the two ways of setting an exact value cannot diverge
+  in what they notify. Nothing in decisions 1–4 changes.
 - ~~The knob "Standard vs vintage" style switch (UiConfiguration) is unaffected;
   only the pointer removal and hover brighten apply to the current default.~~
   **Closed 2026-08-06 by DEC-JUC-106** — see Decision below.

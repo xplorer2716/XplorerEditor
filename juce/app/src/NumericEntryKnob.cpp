@@ -1,5 +1,10 @@
 #include "NumericEntryKnob.hpp"
 
+#include "xplorer/app/KnobPresetValues.hpp"
+
+#include <cstddef>
+#include <utility>
+
 namespace xplorer::app
 {
     void NumericEntryKnob::openNumericEntry()
@@ -27,11 +32,42 @@ namespace xplorer::app
     {
         if (_entryEditor != nullptr)
         {
-            // setValue fires onValueChange, so callers' own wiring (parameter
-            // send + VFD, or the matrix's controller call) runs unchanged.
-            setValue(_entryEditor->getText().getIntValue(), juce::sendNotificationSync);
+            applyValue(_entryEditor->getText().getIntValue());
         }
         dismissTextEntry();
+    }
+
+    void NumericEntryKnob::applyValue(int value)
+    {
+        // setValue fires onValueChange, so callers' own wiring (parameter
+        // send + VFD, or the matrix's controller call) runs unchanged.
+        setValue(value, juce::sendNotificationSync);
+    }
+
+    void NumericEntryKnob::setPresetValues(std::vector<int> values)
+    {
+        _presetValues = std::move(values);
+    }
+
+    const std::vector<int>& NumericEntryKnob::presetValues()
+    {
+        if (_presetValues.empty())
+        {
+            _presetValues = presetValuesForRange(static_cast<int>(getMinimum()),
+                                                 static_cast<int>(getMaximum()));
+        }
+        return _presetValues;
+    }
+
+    bool NumericEntryKnob::applyPresetValue(int index)
+    {
+        const auto& values = presetValues();
+        if (index < 0 || index >= static_cast<int>(values.size()))
+        {
+            return false;
+        }
+        applyValue(values[static_cast<std::size_t>(index)]);
+        return true;
     }
 
     void NumericEntryKnob::dismissTextEntry()

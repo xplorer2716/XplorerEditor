@@ -208,8 +208,13 @@ namespace xplorer::controller
         model::XpanderToneWriter writer;
         for (const auto& [name, extractedTone] : tones)
         {
+            // Trailing spaces trimmed first: readTones() returns the tone's
+            // fixed-width, space-padded storage name, same padding the
+            // synth-reception path (handleAllDataDumpRequest) already trims
+            // via the same shared helper. [RQ-GUI-077]
             const auto filename = midiapp::service::makeUniqueFilenameFromString(
-                name, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT, directoryName);
+                midiapp::service::trimTrailingSpaces(name), midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+                directoryName);
             writer.writeTone((std::filesystem::path(directoryName) / filename).string(), *extractedTone);
         }
         return tones; // [RQ-CTL-003]

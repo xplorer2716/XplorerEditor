@@ -12,9 +12,12 @@ single-patch extraction (RQ-CTL-003). This reuses it rather than adding a
 second implementation of the same rule.
 
 ## References
-- **Requirements**: RQ-GUI-077 (new)
-- **ADRs**: None. Reuses an existing utility function through its existing
-  public signature; no new architectural decision. Tier S.
+- **Requirements**: RQ-GUI-077 (new), RQ-CTL-003, RQ-CTL-004
+- **ADRs**: None. Reuses/extends an existing utility module (`FileUtils`)
+  through its existing public signature style; no new architectural
+  decision. TASK-GUI-038 and TASK-GUI-044 are Tier S; TASK-GUI-041 is Tier M
+  (adds one shared method, `trimTrailingSpaces`, used by all three call
+  sites).
 
 ---
 
@@ -54,6 +57,60 @@ second implementation of the same rule.
     sanitizer call — at the call site, not inside the shared sanitizer, so
     RQ-CTL-003's bank extraction (which reads already-unpadded names) is
     untouched.
+
+### TASK-GUI-041: Trim trailing spaces in bulk single-tone extraction file names too
+- **Tier**: M
+- **Status**: Done (2026-08-26)
+- **Description**: `getSingleTonesFromSynth`'s reception handler
+  (`XpanderControllerMidiEvents.cpp`, `handleAllDataDumpRequest`,
+  `SinglePatch` mode) built each extracted patch's file name from
+  `XpanderTone::getNameFromByteArray` — the same fixed-width, space-padded
+  storage form TASK-GUI-038 already found and trimmed for the save-patch
+  dialog — without trimming it, so short patch names produced file names
+  with meaningless trailing spaces. The controller module has no JUCE
+  dependency (ADR-JUC-004), so it cannot call `juce::String::trimEnd()` as
+  the save-patch call site does; the trim step is instead extracted into a
+  new shared helper, `midiapp::service::trimTrailingSpaces` (`FileUtils.hpp`/
+  `.cpp`), called from both this call site and the save-patch dialog's — one
+  implementation of the trim rule, not one per layer.
+- **Requirement refs**: RQ-GUI-077, RQ-CTL-004
+- **ADR refs**: None
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a synth patch named "LEAD 1" (shorter than the fixed on-device
+    width, hence space-padded internally), **When** "Get all single patches
+    from synth" extracts it, **Then** the written file is named "LEAD 1.syx"
+    with no trailing spaces
+  - **Given** the save-patch dialog's default file name (TASK-GUI-038),
+    **When** it is computed, **Then** it uses the same
+    `trimTrailingSpaces` helper as the bulk-extraction path, not a separate
+    implementation
+- **Dependencies**: TASK-GUI-038
+- **Assignee**: AI
+
+### TASK-GUI-044: Trim trailing spaces in the file-based bulk extraction path too
+- **Tier**: S
+- **Status**: Done (2026-08-26)
+- **Description**: `extractSinglePatchesFromAllDataDumpFileToDirectory`
+  (`XpanderController.cpp`, RQ-CTL-003 — the "Extract all single patches
+  from file" menu action) built each extracted patch's file name from
+  `XpanderToneReader::readTones`'s parsed `tone->toneName()` — the same
+  fixed-width, space-padded storage form TASK-GUI-041 already found and
+  trimmed for the synth-reception path — without trimming it, so short
+  patch names in a bank sysex file produced file names with meaningless
+  trailing spaces. Fixed by calling the existing `midiapp::service::
+  trimTrailingSpaces` helper at this third call site (owner report:
+  "Extract all single patches" still had the bug that "Get all single
+  patch from synth" had already fixed).
+- **Requirement refs**: RQ-GUI-077, RQ-CTL-003
+- **ADR refs**: None
+- **Acceptance Criteria** (Gherkin):
+  - **Given** a bank (all-data-dump) sysex file containing a patch named
+    "LEAD 1" (shorter than the fixed on-device width, hence space-padded
+    internally), **When** "Extract all single patches from file" extracts
+    it, **Then** the written file is named "LEAD 1.syx" with no trailing
+    spaces
+- **Dependencies**: TASK-GUI-041
+- **Assignee**: AI
 
 ---
 

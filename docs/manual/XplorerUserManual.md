@@ -221,10 +221,35 @@ The “New” (Ctrl-N) command is a bit different. It will load the default “O
 
 The quick buttons sit under the display. They give you direct access to the most-used menu commands, without opening a menu: previous and next patch, randomizer, save patch as file, store patch, midi settings.
 
-Also please note that two shortcuts are worth knowing:
+
+## Shortcuts
+
+Also please note that a few shortcuts are worth knowing:
 
 * double-click a knob to type an exact value instead of dialling it;
-* double-click the display to rename the current patch.
+* double-click the display to rename the current patch;
+* hover a knob and press a key on the number row to jump straight to a preset value.
+
+### Preset values from the number row
+
+Put the mouse pointer over any knob - don't click, just hover - and press one of the keys along the top number row. The knob jumps to that value at once. It works on every knob, including the modulation matrix amounts.
+
+The keys step through the knob's range from left to right, so the leftmost key is the minimum and the rightmost is the maximum. On a knob that goes both ways (the detune knobs, the modulation amounts), one extra key is used so that the middle key lands exactly on zero - handy for cancelling a modulation or zeroing a detune without hunting for it.
+
+The two oscillator **FREQ** knobs are the interesting ones. There, the keys don't step evenly: they follow musical intervals, so you can tune an oscillator by ear-friendly steps rather than by numbers:
+
+| Key (1st to 10th) | Interval | Semitones |
+|---|---|---|
+| 1st | root | 0 |
+| 2nd | major third | 4 |
+| 3rd | fifth | 7 |
+| 4th | octave | 12 |
+| 5th, 6th, 7th | octave + third, + fifth, two octaves | 16, 19, 24 |
+| 8th, 9th, 10th | two octaves + third, + fifth, three octaves | 28, 31, 36 |
+
+So hovering VCO2 FREQ and pressing the 3rd key sets it a fifth above VCO1 - a classic starting point. Higher settings are still available by dialling the knob as usual.
+
+One note if your keyboard is not a US one: what matters is *where* the key sits, not what is printed on it. On a French AZERTY keyboard the number row types `& é " ' ( - è _ ç à`, and those are the keys to use - the leftmost is still the first preset. Xplorer works this out from your keyboard layout when it starts.
 
 # Settings
 
