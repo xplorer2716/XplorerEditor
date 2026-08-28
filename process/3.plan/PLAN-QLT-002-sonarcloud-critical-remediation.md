@@ -92,7 +92,7 @@ Established 2026-08-29, same toolchain as PLAN-QLT-001.
 
 ### TASK-QLT-011: Explicit lambda captures in the 6 flagged test sites
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Replace `[&]` with a named capture list at the 6 flagged
   sites in `ParameterBindingRegistryTests.cpp` and
   `XpanderControllerTests.cpp`.

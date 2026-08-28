@@ -157,7 +157,7 @@ SCENARIO("A single patch dump from the synth reloads the edited tone", "[RQ-CTL-
         int fullToneEvents = 0;
         std::string receivedName;
         f.controller.setFullToneChangeHandler(
-            [&](const controller::FullToneChangeEvent& event)
+            [&fullToneEvents, &receivedName](const controller::FullToneChangeEvent& event) // [RQ-QLT-015]
             {
                 ++fullToneEvents;
                 receivedName = std::string(); // name is not in the map; check via controller
@@ -186,7 +186,7 @@ SCENARIO("Panel edits (page edit follows) update the matching parameter", "[RQ-C
         f.controller.start();
         std::vector<std::pair<std::string, int>> notified;
         f.controller.setAutomationParameterChangeHandler(
-            [&](const std::string& name, int value) { notified.emplace_back(name, value); });
+            [&notified](const std::string& name, int value) { notified.emplace_back(name, value); }); // [RQ-QLT-015]
 
         // synth selects VCF_VCA page, sub-page 0
         const std::vector<std::uint8_t> pageSelect{
@@ -259,7 +259,7 @@ SCENARIO("Modulation edit follows from the synth updates the local matrix", "[RQ
         f.controller.start();
         std::vector<controller::ModulationEntryChangeEvent> events;
         f.controller.setModulationEntryChangeHandler(
-            [&](const controller::ModulationEntryChangeEvent& event) { events.push_back(event); });
+            [&events](const controller::ModulationEntryChangeEvent& event) { events.push_back(event); }); // [RQ-QLT-015]
 
         const auto pageSubPage = model::PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
             static_cast<std::size_t>(model::EnumModulationDestinations::VCO1_FRQ)];
@@ -602,7 +602,7 @@ SCENARIO("Restore all-data dump paces frames and reports progression", "[RQ-CTL-
         {
             std::vector<std::pair<int, int>> progression;
             f.controller.restoreAllDataDumpToSynth(file.string(),
-                                                   [&](int index, int count)
+                                                   [&progression](int index, int count) // [RQ-QLT-015]
                                                    { progression.emplace_back(index, count); });
 
             THEN("both frames were sent and progression reported 0/2 then 1/2")
@@ -630,7 +630,7 @@ SCENARIO("Get-all-patches writes one file per received dump", "[RQ-CTL-004]")
         std::filesystem::create_directories(dir);
         int progressionEvents = 0;
         f.controller.setAllDataDumpProgressionHandler(
-            [&](const controller::AllDataDumpProgressionEvent&) { ++progressionEvents; });
+            [&progressionEvents](const controller::AllDataDumpProgressionEvent&) { ++progressionEvents; }); // [RQ-QLT-015]
 
         WHEN("the synth answers with 100 single patch dumps")
         {
