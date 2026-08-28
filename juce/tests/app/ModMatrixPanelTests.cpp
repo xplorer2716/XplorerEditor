@@ -6,6 +6,7 @@
 #include "xplorer/settings/SettingsService.hpp"
 
 #include "xpl/midi/MockMidiBackend.hpp"
+#include "xpl/util/EnumUtils.hpp"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
@@ -78,17 +79,17 @@ SCENARIO("A row with no source of its own offers only NONE once its destination 
         for (int entryNumber = 1; entryNumber <= 6; ++entryNumber)
         {
             f.controller.changeModulationSource(
-                static_cast<int>(model::EnumModulationSourcesModMatrix::LFO1), 10, 0,
-                static_cast<int>(model::EnumModulationDestinations::VCF_FRQ), entryNumber);
+                xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::LFO1), 10, 0,
+                xpl::util::toUnderlying(model::EnumModulationDestinations::VCF_FRQ), entryNumber);
         }
         // Entry 7 already targets the now-saturated destination but has no
         // source of its own -- sourceAvailabilityForEntry reads the ROW'S
         // OWN destination, so this is the real shape of "can't add a 7th",
         // not merely "something, somewhere, is saturated".
         f.controller.changeModulationDestination(
-            static_cast<int>(model::EnumModulationSourcesModMatrix::NONE), 0, 0,
-            static_cast<int>(model::EnumModulationDestinations::VCO1_FRQ),
-            static_cast<int>(model::EnumModulationDestinations::VCF_FRQ), 7);
+            xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::NONE), 0, 0,
+            xpl::util::toUnderlying(model::EnumModulationDestinations::VCO1_FRQ),
+            xpl::util::toUnderlying(model::EnumModulationDestinations::VCF_FRQ), 7);
         f.panel.refreshAll();
 
         const auto* sourceSpec = specFor("MOD_SRC_7");
@@ -100,7 +101,7 @@ SCENARIO("A row with no source of its own offers only NONE once its destination 
         {
             CHECK(sourceCombo->getNumItems() == 1);
             CHECK(sourceCombo->getSelectedId() - 1
-                  == static_cast<int>(model::EnumModulationSourcesModMatrix::NONE));
+                  == xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::NONE));
         }
 
         // Entry 8 stays untouched (default destination, no source): the
@@ -113,7 +114,7 @@ SCENARIO("A row with no source of its own offers only NONE once its destination 
 
         THEN("the saturated destination is absent from entry 8's destination list")
         {
-            const int saturatedId = static_cast<int>(model::EnumModulationDestinations::VCF_FRQ) + 1;
+            const int saturatedId = xpl::util::toUnderlying(model::EnumModulationDestinations::VCF_FRQ) + 1;
             CHECK_FALSE(comboOffersId(*destCombo, saturatedId));
         }
 
@@ -134,7 +135,7 @@ SCENARIO("A row with no source of its own offers only NONE once its destination 
 
         THEN("the saturated destination stays offered to one of the six entries that already targets it")
         {
-            const int saturatedId = static_cast<int>(model::EnumModulationDestinations::VCF_FRQ) + 1;
+            const int saturatedId = xpl::util::toUnderlying(model::EnumModulationDestinations::VCF_FRQ) + 1;
             CHECK(comboOffersId(*destCombo1, saturatedId));
         }
     }

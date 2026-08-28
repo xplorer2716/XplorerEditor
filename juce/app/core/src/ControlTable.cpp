@@ -7,9 +7,9 @@ namespace xplorer::app
 {
     namespace
     {
-        constexpr ControlSpec CONTROL_TABLE[] = {
+        constexpr auto CONTROL_TABLE = std::to_array<ControlSpec>({
 #include "GeneratedControlTable.inc"
-        };
+        });
 
         int roundToPixels(double value)
         {

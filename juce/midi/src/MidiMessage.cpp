@@ -17,6 +17,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "xpl/midi/MidiMessage.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 #include <sstream>
 #include <stdexcept>
 
@@ -51,7 +53,7 @@ namespace xpl::midi
         }
         requireDataByte(data1, "data1");
 
-        const auto status = static_cast<std::uint8_t>(static_cast<std::uint8_t>(command)
+        const auto status = static_cast<std::uint8_t>(xpl::util::toUnderlying(command)
                                                       | static_cast<std::uint8_t>(channel));
         if (isTwoByteCommand(command))
         {

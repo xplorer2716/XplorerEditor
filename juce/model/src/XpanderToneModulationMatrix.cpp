@@ -33,7 +33,9 @@
 #include "xplorer/model/XpanderTone.hpp"
 
 #include "midiapp/service/Logger.hpp"
+#include "xpl/util/EnumUtils.hpp"
 
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <random>
@@ -52,14 +54,14 @@ namespace xplorer::model
             const std::string& name, EnumModulationEditCommands command, std::uint8_t valueByte, int value)
         {
             const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
-                static_cast<std::size_t>(EnumModulationDestinations::VCO1_FRQ)];
+                static_cast<std::size_t>(xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ))];
             return std::make_unique<XpanderModMatrixParameter>(
-                name, static_cast<int>(pages.page), pages.subPage,
-                static_cast<int>(EnumModulationSourcesModMatrix::KBD),
-                static_cast<int>(EnumModulationSourcesModMatrix::NONE), 1,
+                name, xpl::util::toUnderlying(pages.page), pages.subPage,
+                xpl::util::toUnderlying(EnumModulationSourcesModMatrix::KBD),
+                xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE), 1,
                 MidiMessage::sysEx(std::vector<std::uint8_t>{
                     0xF0, 0x10, 0x02, 0x0F, 0x00, 0x00, 0x00,
-                    static_cast<std::uint8_t>(command), 0x00, valueByte, 0x00, 0xF7}),
+                    static_cast<std::uint8_t>(xpl::util::toUnderlying(command)), 0x00, valueByte, 0x00, 0xF7}),
                 value);
         }
 
@@ -71,8 +73,8 @@ namespace xplorer::model
         std::unique_ptr<XpanderModMatrixParameter> makeAddSourceParameter()
         {
             return makeCommandParameter("ADD_MOD_SRC", EnumModulationEditCommands::ADDSOURCE,
-                                        static_cast<std::uint8_t>(EnumModulationSourcesModMatrix::NONE),
-                                        static_cast<int>(EnumModulationSourcesModMatrix::NONE));
+                                        static_cast<std::uint8_t>(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE)),
+                                        xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE));
         }
 
         std::unique_ptr<XpanderModMatrixParameter> makeChangeSourceParameter()
@@ -110,7 +112,7 @@ namespace xplorer::model
             0, 1, 1,
             MidiMessage::sysEx(std::vector<std::uint8_t>{
                 0xF0, 0x10, 0x02, 0x0F, 0x00, static_cast<std::uint8_t>(amountParameter.idSource()),
-                0x00, static_cast<std::uint8_t>(EnumModulationEditCommands::SETSIGN), 0x00, 0x00, 0x00, 0xF7}),
+                0x00, static_cast<std::uint8_t>(xpl::util::toUnderlying(EnumModulationEditCommands::SETSIGN)), 0x00, 0x00, 0x00, 0xF7}),
             0x00);
         if (amountParameter.value() < 0)
         {
@@ -138,7 +140,7 @@ namespace xplorer::model
         auto& entry = _modulationMatrix[static_cast<std::size_t>(entryNumber - 1)];
         if (entry.idSource != UNDEFINED_MODULATION_SOURCE_NUMBER)
         {
-            if (newModulationSource == static_cast<int>(EnumModulationSourcesModMatrix::NONE))
+            if (newModulationSource == xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE))
             {
                 deleteIdSource(static_cast<EnumModulationDestinations>(modulationDestination),
                                entryNumber, update);
@@ -148,7 +150,7 @@ namespace xplorer::model
                 auto changeSource = makeChangeSourceParameter();
                 const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
                     static_cast<std::size_t>(modulationDestination)];
-                changeSource->setPage(static_cast<int>(pages.page));
+                changeSource->setPage(xpl::util::toUnderlying(pages.page));
                 changeSource->setSubPage(pages.subPage);
                 changeSource->setIdSource(entry.idSource);
                 changeSource->setValue(newModulationSource); // value is the new source
@@ -160,7 +162,7 @@ namespace xplorer::model
                 }
             }
         }
-        else if (newModulationSource != static_cast<int>(EnumModulationSourcesModMatrix::NONE))
+        else if (newModulationSource != xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE))
         {
             addModulationSource(newModulationSource, modulationSourceAmount, modulationQuantize,
                                 modulationDestination, entryNumber, update);
@@ -171,7 +173,7 @@ namespace xplorer::model
                                                    int modulationDestination, int entryNumber,
                                                    const UpdateModulationParameterDelegate& update)
     {
-        if (modulationSource == static_cast<int>(EnumModulationSourcesModMatrix::NONE))
+        if (modulationSource == xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE))
         {
             return;
         }
@@ -184,14 +186,14 @@ namespace xplorer::model
         const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
             static_cast<std::size_t>(modulationDestination)];
         // do not resend the same value
-        if (amountParameter.page() == static_cast<int>(pages.page)
+        if (amountParameter.page() == xpl::util::toUnderlying(pages.page)
             && amountParameter.subPage() == pages.subPage
             && amountParameter.idSource() == entry.idSource
             && amountParameter.value() == modulationSourceAmount)
         {
             return;
         }
-        amountParameter.setPage(static_cast<int>(pages.page));
+        amountParameter.setPage(xpl::util::toUnderlying(pages.page));
         amountParameter.setSubPage(pages.subPage);
         amountParameter.setIdSource(entry.idSource);
         amountParameter.setValue(modulationSourceAmount);
@@ -211,7 +213,7 @@ namespace xplorer::model
                                                      int modulationQuantize, int entryNumber,
                                                      const UpdateModulationParameterDelegate& update)
     {
-        if (modulationSource == static_cast<int>(EnumModulationSourcesModMatrix::NONE))
+        if (modulationSource == xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE))
         {
             return;
         }
@@ -223,7 +225,7 @@ namespace xplorer::model
         auto& quantizeParameter = modMatrixParameterAt(quantizeSourceParameterNameForEntry(entryNumber));
         const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
             static_cast<std::size_t>(modulationDestination)];
-        quantizeParameter.setPage(static_cast<int>(pages.page));
+        quantizeParameter.setPage(xpl::util::toUnderlying(pages.page));
         quantizeParameter.setSubPage(pages.subPage);
         quantizeParameter.setIdSource(entry.idSource);
         quantizeParameter.setValue(modulationQuantize);
@@ -303,7 +305,7 @@ namespace xplorer::model
                 static_cast<std::size_t>(newModulationDestination)];
 
             auto addSource = makeAddSourceParameter();
-            addSource->setPage(static_cast<int>(pages.page));
+            addSource->setPage(xpl::util::toUnderlying(pages.page));
             addSource->setSubPage(pages.subPage);
             addSource->setIdSource(0x00);
             addSource->setValue(modulationSource);
@@ -314,7 +316,7 @@ namespace xplorer::model
             }
 
             auto& amountParameter = modMatrixParameterAt(amountSourceParameterNameForEntry(entryNumber));
-            amountParameter.setPage(static_cast<int>(pages.page));
+            amountParameter.setPage(xpl::util::toUnderlying(pages.page));
             amountParameter.setSubPage(pages.subPage);
             amountParameter.setIdSource(modIdSource);
             amountParameter.setValue(modulationSourceAmount);
@@ -328,7 +330,7 @@ namespace xplorer::model
             }
 
             auto& quantizeParameter = modMatrixParameterAt(quantizeSourceParameterNameForEntry(entryNumber));
-            quantizeParameter.setPage(static_cast<int>(pages.page));
+            quantizeParameter.setPage(xpl::util::toUnderlying(pages.page));
             quantizeParameter.setSubPage(pages.subPage);
             quantizeParameter.setIdSource(modIdSource);
             quantizeParameter.setValue(modulationQuantize);
@@ -352,8 +354,8 @@ namespace xplorer::model
                                      const UpdateModulationParameterDelegate& update)
     {
         auto deleteSource = makeDeleteSourceParameter();
-        const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[static_cast<std::size_t>(oldDestination)];
-        deleteSource->setPage(static_cast<int>(pages.page));
+        const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[static_cast<std::size_t>(xpl::util::toUnderlying(oldDestination))];
+        deleteSource->setPage(xpl::util::toUnderlying(pages.page));
         deleteSource->setSubPage(pages.subPage);
         auto& entry = _modulationMatrix[static_cast<std::size_t>(entryNumber - 1)];
         if (entry.idSource != UNDEFINED_MODULATION_SOURCE_NUMBER)
@@ -383,7 +385,7 @@ namespace xplorer::model
 
     int XpanderTone::getNextAvailableModIdSourceForDest(EnumModulationDestinations destination) const
     {
-        bool usedSources[constants::MAX_MODULATION_SOURCE] = {};
+        std::array<bool, constants::MAX_MODULATION_SOURCE> usedSources = {};
         for (const auto& entry : _modulationMatrix)
         {
             if (entry.destination == destination && entry.idSource != UNDEFINED_MODULATION_SOURCE_NUMBER)
@@ -438,15 +440,15 @@ namespace xplorer::model
                 {
                     destination = static_cast<EnumModulationDestinations>(
                         std::uniform_int_distribution<int>(
-                            static_cast<int>(EnumModulationDestinations::VCO1_FRQ),
-                            static_cast<int>(EnumModulationDestinations::LAG_RATE))(randomizer));
+                            xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ),
+                            xpl::util::toUnderlying(EnumModulationDestinations::LAG_RATE))(randomizer));
                     nextAvailableIdSource = getNextAvailableModIdSourceForDest(destination);
                 }
                 entry.destination = destination;
                 entry.source = static_cast<EnumModulationSourcesModMatrix>(
                     std::uniform_int_distribution<int>(
-                        static_cast<int>(EnumModulationSourcesModMatrix::KBD),
-                        static_cast<int>(EnumModulationSourcesModMatrix::NONE))(randomizer));
+                        xpl::util::toUnderlying(EnumModulationSourcesModMatrix::KBD),
+                        xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE))(randomizer));
             }
             if (enableAmount)
             {
@@ -466,9 +468,9 @@ namespace xplorer::model
                                       : ModulationMatrixEntry::MIN_QUANTIZE);
             }
             // synchronize the amount/quantize parameters of the map
-            const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[static_cast<std::size_t>(destination)];
+            const auto& pages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[static_cast<std::size_t>(xpl::util::toUnderlying(destination))];
             auto& amountParameter = modMatrixParameterAt(amountSourceParameterNameForEntry(entryIndex + 1));
-            amountParameter.setPage(static_cast<int>(pages.page));
+            amountParameter.setPage(xpl::util::toUnderlying(pages.page));
             amountParameter.setSubPage(pages.subPage);
             amountParameter.setValue(entry.amount());
             modMatrixParameterAt(quantizeSourceParameterNameForEntry(entryIndex + 1)).setValue(entry.quantize());

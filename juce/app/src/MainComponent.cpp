@@ -9,6 +9,7 @@
 #include "PianoKeyboardLayoutQuery.hpp"
 #include "SettingsDialog.hpp"
 #include "midiapp/service/FileUtils.hpp"
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/app/MenuIds.hpp"
@@ -446,7 +447,7 @@ namespace xplorer::app
     {
         // Map the synth page to a family + instance and activate the selector,
         // via the same family/page table selectInstance() uses to send. [RQ-GUI-012, RQ-CTL-028]
-        const auto familyPage = familyPageFor(static_cast<int>(event.page));
+        const auto familyPage = familyPageFor(xpl::util::toUnderlying(event.page));
         if (!familyPage)
         {
             return;
@@ -1337,7 +1338,7 @@ namespace xplorer::app
         {
             if (const auto destination = modulationDestinationForParameter(bound->parameterName()))
             {
-                _matrixPanel->highlightDestinations(static_cast<int>(*destination));
+                _matrixPanel->highlightDestinations(xpl::util::toUnderlying(*destination));
             }
             return;
         }
@@ -1347,7 +1348,7 @@ namespace xplorer::app
         {
             if (const auto source = modulationSourceForSelector(found->second))
             {
-                _matrixPanel->highlightSources(static_cast<int>(*source));
+                _matrixPanel->highlightSources(xpl::util::toUnderlying(*source));
             }
         }
     }

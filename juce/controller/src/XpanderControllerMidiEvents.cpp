@@ -26,6 +26,7 @@
 
 #include "midiapp/service/FileUtils.hpp"
 #include "midiapp/service/Logger.hpp"
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/model/XpanderSinglePatch.hpp"
 
 #include <cmath>
@@ -142,8 +143,8 @@ namespace xplorer::controller
     // editor has no use for, and a warning per frame would flood a log.
     void XpanderController::synthInputDeviceSysExMessageReceived(const MidiMessage& message)
     {
-        int page = static_cast<int>(EnumPages::UNKNOWN);
-        int subPage = static_cast<int>(EnumPages::UNKNOWN);
+        int page = xpl::util::toUnderlying(EnumPages::UNKNOWN);
+        int subPage = xpl::util::toUnderlying(EnumPages::UNKNOWN);
         int buttonId = 0;
         int parameterValue = 0;
         bool isRotaryButton = false;
@@ -344,7 +345,7 @@ namespace xplorer::controller
             if (entryNumber != XpanderTone::NO_AVAILABLE_MOD_ENTRY)
             {
                 xTone.addModulationSource(value, 0, ModulationMatrixEntry::MIN_QUANTIZE,
-                                          static_cast<int>(destination), entryNumber + 1, nullptr);
+                                          xpl::util::toUnderlying(destination), entryNumber + 1, nullptr);
                 notifyModulationEntryChangeEvent(xTone.modulationMatrix()[static_cast<std::size_t>(entryNumber)],
                                                  entryNumber + 1, EnumModulationParameter::ALL);
             }
@@ -360,31 +361,31 @@ namespace xplorer::controller
                 {
                     case EnumModulationEditCommands::CHANGESOURCE:
                         xTone.changeModulationSource(value, entry.amount(), entry.quantize(),
-                                                     static_cast<int>(entry.destination), entryNumber + 1,
+                                                     xpl::util::toUnderlying(entry.destination), entryNumber + 1,
                                                      nullptr);
                         notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                          EnumModulationParameter::MODULATIONSOURCE);
                         break;
                     case EnumModulationEditCommands::DELETESOURCE:
                         // setting NONE resets the entry
-                        xTone.changeModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::NONE),
+                        xTone.changeModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE),
                                                      entry.amount(), entry.quantize(),
-                                                     static_cast<int>(entry.destination), entryNumber + 1,
+                                                     xpl::util::toUnderlying(entry.destination), entryNumber + 1,
                                                      nullptr);
                         notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                          EnumModulationParameter::MODULATIONSOURCE);
                         break;
                     case EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE:
-                        xTone.changeModulationSourceAmount(static_cast<int>(entry.source),
+                        xTone.changeModulationSourceAmount(xpl::util::toUnderlying(entry.source),
                                                            entry.amount() + value,
-                                                           static_cast<int>(entry.destination),
+                                                           xpl::util::toUnderlying(entry.destination),
                                                            entryNumber + 1, nullptr);
                         notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                          EnumModulationParameter::MODULATIONAMOUNT);
                         break;
                     case EnumModulationEditCommands::SETQUANTIZE:
-                        xTone.changeModulationSourceQuantize(static_cast<int>(entry.source),
-                                                             static_cast<int>(entry.destination), value,
+                        xTone.changeModulationSourceQuantize(xpl::util::toUnderlying(entry.source),
+                                                             xpl::util::toUnderlying(entry.destination), value,
                                                              entryNumber + 1, nullptr);
                         notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                          EnumModulationParameter::MODULATIONQUANTIZE);
@@ -395,9 +396,9 @@ namespace xplorer::controller
                         const int amountSign = entry.amount() < 0 ? -1 : 1;
                         if (amountSign != valueSign)
                         {
-                            xTone.changeModulationSourceAmount(static_cast<int>(entry.source),
+                            xTone.changeModulationSourceAmount(xpl::util::toUnderlying(entry.source),
                                                                entry.amount() * -1,
-                                                               static_cast<int>(entry.destination),
+                                                               xpl::util::toUnderlying(entry.destination),
                                                                entryNumber + 1, nullptr);
                             notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                              EnumModulationParameter::MODULATIONAMOUNT);
@@ -407,9 +408,9 @@ namespace xplorer::controller
                     case EnumModulationEditCommands::SETUNSIGNEDVALUE:
                     {
                         const int amountSign = entry.amount() < 0 ? -1 : 1;
-                        xTone.changeModulationSourceAmount(static_cast<int>(entry.source),
+                        xTone.changeModulationSourceAmount(xpl::util::toUnderlying(entry.source),
                                                            value * amountSign,
-                                                           static_cast<int>(entry.destination),
+                                                           xpl::util::toUnderlying(entry.destination),
                                                            entryNumber + 1, nullptr);
                         notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                          EnumModulationParameter::MODULATIONAMOUNT);
@@ -418,8 +419,8 @@ namespace xplorer::controller
                     case EnumModulationEditCommands::TOGGLEQUANTIZE:
                     {
                         const int toggle = entry.quantize() == 1 ? 0 : 1;
-                        xTone.changeModulationSourceQuantize(static_cast<int>(entry.source),
-                                                             static_cast<int>(entry.destination), toggle,
+                        xTone.changeModulationSourceQuantize(xpl::util::toUnderlying(entry.source),
+                                                             xpl::util::toUnderlying(entry.destination), toggle,
                                                              entryNumber + 1, nullptr);
                         notifyModulationEntryChangeEvent(entry, entryNumber + 1,
                                                          EnumModulationParameter::MODULATIONQUANTIZE);

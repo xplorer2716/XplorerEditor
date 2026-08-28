@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "xpl/midi/SysexStreamIterator.hpp"
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
 #include <algorithm>
@@ -156,9 +157,9 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
         WHEN("a source is assigned to entry 1 via destination change")
         {
             tone.changeModulationDestination(
-                static_cast<int>(EnumModulationSourcesModMatrix::ENV2), 20, 1,
-                static_cast<int>(EnumModulationDestinations::VCO1_FRQ),
-                static_cast<int>(EnumModulationDestinations::VCA2_VOL), 1, capture);
+                xpl::util::toUnderlying(EnumModulationSourcesModMatrix::ENV2), 20, 1,
+                xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ),
+                xpl::util::toUnderlying(EnumModulationDestinations::VCA2_VOL), 1, capture);
 
             THEN("the entry carries source/amount/quantize/destination and id 0")
             {
@@ -184,16 +185,16 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
         {
             for (int entryNumber = 1; entryNumber <= 6; ++entryNumber)
             {
-                tone.addModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::LFO1), 10, 0,
-                                         static_cast<int>(EnumModulationDestinations::VCF_FRQ),
+                tone.addModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO1), 10, 0,
+                                         xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ),
                                          entryNumber, nullptr);
             }
 
             THEN("the 6-source limit is reached and the 7th gets no id")
             {
                 CHECK(tone.isMaxSourceCountForDestinationReached(EnumModulationDestinations::VCF_FRQ));
-                tone.addModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::LFO2), 5, 0,
-                                         static_cast<int>(EnumModulationDestinations::VCF_FRQ), 7, nullptr);
+                tone.addModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO2), 5, 0,
+                                         xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ), 7, nullptr);
                 CHECK(tone.modulationMatrix()[6].idSource == XpanderTone::UNDEFINED_MODULATION_SOURCE_NUMBER);
             }
         }
@@ -202,13 +203,13 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
         {
             for (int entryNumber = 1; entryNumber <= 3; ++entryNumber)
             {
-                tone.addModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::LFO1), 0, 0,
-                                         static_cast<int>(EnumModulationDestinations::VCF_FRQ),
+                tone.addModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO1), 0, 0,
+                                         xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ),
                                          entryNumber, nullptr);
             }
             // delete entry 2 (idSource 1) by setting its source to NONE
-            tone.changeModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::NONE), 0, 0,
-                                        static_cast<int>(EnumModulationDestinations::VCF_FRQ), 2, capture);
+            tone.changeModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE), 0, 0,
+                                        xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ), 2, capture);
 
             THEN("higher source ids of the same destination shift down, entry resets")
             {
@@ -222,9 +223,9 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
 
         WHEN("only the destination changes while the source is NONE")
         {
-            tone.changeModulationDestination(static_cast<int>(EnumModulationSourcesModMatrix::NONE), 0, 0,
-                                             static_cast<int>(EnumModulationDestinations::VCO1_FRQ),
-                                             static_cast<int>(EnumModulationDestinations::LAG_RATE), 5, capture);
+            tone.changeModulationDestination(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE), 0, 0,
+                                             xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ),
+                                             xpl::util::toUnderlying(EnumModulationDestinations::LAG_RATE), 5, capture);
 
             THEN("the matrix reflects it without any synth command")
             {

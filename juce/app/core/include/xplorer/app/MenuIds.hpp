@@ -13,6 +13,7 @@
 //  ADR-QLT-001 (DEC-QLT-001, DEC-QLT-002, DEC-QLT-004)]
 
 #include "xplorer/app/ControlTable.hpp"
+#include "xpl/util/EnumUtils.hpp"
 
 #include <array>
 #include <cstddef>
@@ -122,12 +123,12 @@ namespace xplorer::app
     /// typed enumerator meets PopupMenu's plain `int`.
     [[nodiscard]] inline constexpr int menuItemId(MenuItem item) noexcept
     {
-        return static_cast<int>(item);
+        return xpl::util::toUnderlying(item);
     }
 
     /// The MenuBarModel index of a top-level menu.
     [[nodiscard]] inline constexpr int topLevelMenuIndex(TopLevelMenu menu) noexcept
     {
-        return static_cast<int>(menu);
+        return xpl::util::toUnderlying(menu);
     }
 }

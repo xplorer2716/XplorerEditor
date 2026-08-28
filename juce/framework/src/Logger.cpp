@@ -15,6 +15,8 @@
 // Tracked as GitHub issue #68.
 #include "midiapp/service/Logger.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 #include <atomic>
 #include <chrono>
 #include <ctime>
@@ -82,7 +84,7 @@ namespace midiapp::service
 
     void Logger::writeLine(const std::string& source, TraceLevel level, const std::string& message)
     {
-        if (level == TraceLevel::Off || static_cast<int>(level) > static_cast<int>(g_level.load()))
+        if (level == TraceLevel::Off || xpl::util::toUnderlying(level) > xpl::util::toUnderlying(g_level.load()))
         {
             return;
         }

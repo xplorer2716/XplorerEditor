@@ -1,5 +1,7 @@
 #include "xplorer/app/PageFamilyModel.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 namespace xplorer::app
 {
     // Descriptors and control-tag lists ported verbatim from
@@ -72,14 +74,14 @@ namespace xplorer::app
 
     int pageForInstance(const PageFamilyDescriptor& family, int instance)
     {
-        return static_cast<int>(family.basePage) + instance - 1;
+        return xpl::util::toUnderlying(family.basePage) + instance - 1;
     }
 
     std::optional<FamilyPage> familyPageFor(int page)
     {
         for (const auto& family : pageFamilies())
         {
-            const int first = static_cast<int>(family.basePage);
+            const int first = xpl::util::toUnderlying(family.basePage);
             const int last = first + family.count - 1;
             if (page >= first && page <= last)
             {

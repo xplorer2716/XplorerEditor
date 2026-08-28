@@ -9,6 +9,7 @@
 
 #include <juce_graphics/juce_graphics.h>
 
+#include <array>
 #include <string_view>
 
 // The two things RQ-GUI-051 decided that can silently regress: the stroke-role
@@ -185,7 +186,7 @@ SCENARIO("Every tick row is the row the control table actually puts its controls
             int canvasY;
         };
 
-        const Aim aims[] = {
+        const auto aims = std::to_array<Aim>({
             {"VCO1_FREQ", layout::KNOB_ROW_TOP_CANVAS_Y},
             {"VCO1_DETUNE", layout::KNOB_ROW_TOP_CANVAS_Y},
             {"VCO1_PW", layout::KNOB_ROW_TOP_CANVAS_Y},
@@ -215,7 +216,7 @@ SCENARIO("Every tick row is the row the control table actually puts its controls
             {"TRACK_X_PT3", layout::KNOB_ROW_TRACK_CANVAS_Y},
             {"TRACK_X_PT4", layout::KNOB_ROW_TRACK_CANVAS_Y},
             {"TRACK_X_PT5", layout::KNOB_ROW_TRACK_CANVAS_Y},
-        };
+        });
 
         THEN("each knob really sits on the row its tick is derived from")
         {
@@ -304,7 +305,7 @@ SCENARIO("A knob tick reaches the ring and stops there", "[RQ-GUI-071][RQ-GUI-03
             float centreX;
             int knobCanvasTopY;
         };
-        const Target targets[] = {
+        const auto targets = std::to_array<Target>({
             {432.0F, layout::KNOB_ROW_TOP_CANVAS_Y},        // VCO1_VOLUME — was 1 px short
             {430.0F, layout::KNOB_ROW_VCO2_VCA_CANVAS_Y},   // VCO2_VOLUME — was 3 px short
             {82.0F, layout::KNOB_ROW_TOP_CANVAS_Y},         // VCO1_FREQ   — crossed by 1 px
@@ -318,7 +319,7 @@ SCENARIO("A knob tick reaches the ring and stops there", "[RQ-GUI-071][RQ-GUI-03
             {657.0F, layout::KNOB_ROW_RAMP_CANVAS_Y},       // RAMP_X_RATE
             {126.0F, layout::KNOB_ROW_TRACK_CANVAS_Y},      // TRACK_X_PT1  — crossed by 3 px
             {302.0F, layout::KNOB_ROW_TRACK_CANVAS_Y},      // TRACK_X_PT5
-        };
+        });
 
         THEN("it is still painted a pixel above the ring, and not one below it")
         {

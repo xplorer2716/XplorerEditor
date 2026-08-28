@@ -1,5 +1,6 @@
 #include "xplorer/app/ModulationHighlight.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/PageFamilyModel.hpp"
 
 #include <array>
@@ -95,7 +96,7 @@ namespace xplorer::app
             {
                 if (entry.controlTag == family->controlTag)
                 {
-                    const int value = static_cast<int>(entry.base) + (family->instance - 1) * entry.stride;
+                    const int value = xpl::util::toUnderlying(entry.base) + (family->instance - 1) * entry.stride;
                     return static_cast<model::EnumModulationDestinations>(value);
                 }
             }

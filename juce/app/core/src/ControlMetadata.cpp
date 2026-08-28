@@ -28,9 +28,9 @@ namespace xplorer::app
             std::string_view enumKey;
         };
 
-        constexpr ComboEnum COMBO_ENUM_MAP[] = {
+        constexpr auto COMBO_ENUM_MAP = std::to_array<ComboEnum>({
 #include "GeneratedComboEnumMap.inc"
-        };
+        });
 
         // Every RadioButtonPanel of the control table -- the two fixed-block
         // panels and the two page-family trigger panels. Values are
@@ -65,9 +65,9 @@ namespace xplorer::app
             std::string_view displayName;
         };
 
-        constexpr ParameterName PARAMETER_NAMES[] = {
+        constexpr auto PARAMETER_NAMES = std::to_array<ParameterName>({
 #include "GeneratedParameterNames.inc"
-        };
+        });
     }
 
     std::vector<std::string> comboLabelsForControl(const std::string& controlId)

@@ -11,6 +11,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <algorithm>
+#include <array>
 #include <memory>
 #include <regex>
 
@@ -343,7 +344,7 @@ namespace xplorer::app
                 const juce::Font headerFont{juce::FontOptions{DEP_TEXT_SIZE}};
                 if (result.status == SbomStatus::Loaded)
                 {
-                    const char* const headings[] = {"Component", "Version", "Licence", "Website"};
+                    const auto headings = std::to_array<const char*>({"Component", "Version", "Licence", "Website"});
                     int index = 0;
                     for (auto* header : {&_nameHeader, &_versionHeader, &_licenseHeader, &_websiteHeader})
                     {

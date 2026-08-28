@@ -5,6 +5,7 @@
 
 #include <juce_core/juce_core.h>
 
+#include <array>
 #include <optional>
 #include <utility>
 
@@ -24,36 +25,36 @@ namespace xplorer::settings
             const char* name;
         };
 
-        constexpr EnumName<EnumRandomVCO2> VCO2_NAMES[]{
+        constexpr auto VCO2_NAMES = std::to_array<EnumName<EnumRandomVCO2>>({
             {EnumRandomVCO2::EnableFM, "EnableFM"},
             {EnumRandomVCO2::EnableNoise, "EnableNoise"},
             {EnumRandomVCO2::EnableSync, "EnableSync"},
-        };
-        constexpr EnumName<EnumRandomVCOFreq> VCOFREQ_NAMES[]{
+        });
+        constexpr auto VCOFREQ_NAMES = std::to_array<EnumName<EnumRandomVCOFreq>>({
             {EnumRandomVCOFreq::Free, "Free"}, {EnumRandomVCOFreq::SameNote, "SameNote"},
             {EnumRandomVCOFreq::Third, "Third"}, {EnumRandomVCOFreq::Fifth, "Fifth"},
             {EnumRandomVCOFreq::Seventh, "Seventh"}, {EnumRandomVCOFreq::Octave, "Octave"},
             {EnumRandomVCOFreq::Ninth, "Ninth"}, {EnumRandomVCOFreq::Eleventh, "Eleventh"},
             {EnumRandomVCOFreq::Thirteenth, "Thirteenth"},
-        };
-        constexpr EnumName<EnumRandomVCODetune> VCODETUNE_NAMES[]{
+        });
+        constexpr auto VCODETUNE_NAMES = std::to_array<EnumName<EnumRandomVCODetune>>({
             {EnumRandomVCODetune::Free, "Free"},
             {EnumRandomVCODetune::Digital, "Digital"},
             {EnumRandomVCODetune::Analog, "Analog"},
-        };
-        constexpr EnumName<EnumRandomVCAEnv> VCAENV_NAMES[]{
+        });
+        constexpr auto VCAENV_NAMES = std::to_array<EnumName<EnumRandomVCAEnv>>({
             {EnumRandomVCAEnv::Free, "Free"}, {EnumRandomVCAEnv::Organ, "Organ"},
             {EnumRandomVCAEnv::String, "String"}, {EnumRandomVCAEnv::Percusive, "Percusive"},
             {EnumRandomVCAEnv::PercusiveWithRelease, "PercusiveWithRelease"},
-        };
-        constexpr EnumName<EnumRandomModMatrix> MODMATRIX_NAMES[]{
+        });
+        constexpr auto MODMATRIX_NAMES = std::to_array<EnumName<EnumRandomModMatrix>>({
             {EnumRandomModMatrix::EnableAmount, "EnableAmount"},
             {EnumRandomModMatrix::EnableSourcesAndDestinations, "EnableSourcesAndDestinations"},
             {EnumRandomModMatrix::EnableQuantize, "EnableQuantize"},
-        };
+        });
 
         template <typename Enum, std::size_t N>
-        std::optional<Enum> parseEnum(const EnumName<Enum> (&table)[N], const juce::String& text)
+        std::optional<Enum> parseEnum(const std::array<EnumName<Enum>, N>& table, const juce::String& text)
         {
             for (const auto& entry : table)
             {
@@ -66,7 +67,7 @@ namespace xplorer::settings
         }
 
         template <typename Enum, std::size_t N>
-        juce::String enumToString(const EnumName<Enum> (&table)[N], Enum value)
+        juce::String enumToString(const std::array<EnumName<Enum>, N>& table, Enum value)
         {
             for (const auto& entry : table)
             {
@@ -79,7 +80,7 @@ namespace xplorer::settings
         }
 
         template <typename Enum, std::size_t N>
-        std::optional<Enum> parseFlags(const EnumName<Enum> (&table)[N], const juce::String& text)
+        std::optional<Enum> parseFlags(const std::array<EnumName<Enum>, N>& table, const juce::String& text)
         {
             int combined = 0;
             auto tokens = juce::StringArray::fromTokens(text, " ", "");
@@ -97,7 +98,7 @@ namespace xplorer::settings
         }
 
         template <typename Enum, std::size_t N>
-        juce::String flagsToString(const EnumName<Enum> (&table)[N], Enum value)
+        juce::String flagsToString(const std::array<EnumName<Enum>, N>& table, Enum value)
         {
             juce::StringArray names;
             for (const auto& entry : table)
@@ -114,7 +115,7 @@ namespace xplorer::settings
         // UiConfiguration::blockColours (BlockId order). Only set entries are
         // written; a missing element reads back as "unset". [RQ-SET-007,
         // ADR-JUC-020 (DEC-JUC-039)]
-        constexpr const char* BLOCK_COLOUR_ELEMENTS[AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT]{
+        constexpr std::array<const char*, AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT> BLOCK_COLOUR_ELEMENTS{
             "BlockColorVco", "BlockColorLag", "BlockColorTrack", "BlockColorVcf",
             "BlockColorEnv", "BlockColorLfo", "BlockColorRamp", "BlockColorMatrix",
         };

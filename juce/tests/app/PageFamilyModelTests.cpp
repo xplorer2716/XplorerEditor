@@ -4,6 +4,8 @@
 #include "xplorer/model/XpanderConstants.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 using namespace xplorer::app;
 using xplorer::model::EnumPages;
 
@@ -95,10 +97,10 @@ SCENARIO("An instance resolves to its own concrete synth page", "[RQ-CTL-028]")
 
         THEN("pageForInstance matches the reference page numbering, not just instance 1")
         {
-            CHECK(pageForInstance(families[0], 1) == static_cast<int>(EnumPages::ENV_1));
-            CHECK(pageForInstance(families[0], 3) == static_cast<int>(EnumPages::ENV_3));
-            CHECK(pageForInstance(families[1], 5) == static_cast<int>(EnumPages::LFO_5));
-            CHECK(pageForInstance(families[3], 2) == static_cast<int>(EnumPages::TRACK_2));
+            CHECK(pageForInstance(families[0], 1) == xpl::util::toUnderlying(EnumPages::ENV_1));
+            CHECK(pageForInstance(families[0], 3) == xpl::util::toUnderlying(EnumPages::ENV_3));
+            CHECK(pageForInstance(families[1], 5) == xpl::util::toUnderlying(EnumPages::LFO_5));
+            CHECK(pageForInstance(families[3], 2) == xpl::util::toUnderlying(EnumPages::TRACK_2));
         }
     }
 }
@@ -109,7 +111,7 @@ SCENARIO("A concrete synth page maps back to its family and instance", "[RQ-GUI-
     {
         THEN("familyPageFor resolves the family prefix and 1-based instance")
         {
-            const auto env = familyPageFor(static_cast<int>(EnumPages::ENV_3));
+            const auto env = familyPageFor(xpl::util::toUnderlying(EnumPages::ENV_3));
             REQUIRE(env.has_value());
             CHECK(env->familyPrefix == "ENV_X");
             CHECK(env->instance == 3);
@@ -117,7 +119,7 @@ SCENARIO("A concrete synth page maps back to its family and instance", "[RQ-GUI-
 
         THEN("a page outside every family's range returns nothing")
         {
-            CHECK_FALSE(familyPageFor(static_cast<int>(EnumPages::VCO_1_X)).has_value());
+            CHECK_FALSE(familyPageFor(xpl::util::toUnderlying(EnumPages::VCO_1_X)).has_value());
         }
     }
 }

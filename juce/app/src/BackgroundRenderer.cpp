@@ -4,6 +4,7 @@
 #include "SectionLayout.hpp"
 #include "xplorer/app/ControlTable.hpp"
 
+#include <array>
 #include <functional>
 #include <vector>
 
@@ -514,7 +515,7 @@ namespace xplorer::app
         // Left-aligned with the TRACK_X_IN combo (x=35), same 9 px offset as LAG IN.
         smallLabel(35, 775, "TRACK IN", juce::Justification::left);
         {
-            const int centres[] = {126, 170, 214, 258, 302}; // PT knob centres (table)
+            constexpr auto centres = std::to_array<int>({126, 170, 214, 258, 302}); // PT knob centres (table)
             for (int i = 0; i < 5; ++i)
             {
                 knobTick(static_cast<float>(centres[i]), 736, layout::KNOB_ROW_TRACK_CANVAS_Y);
@@ -565,7 +566,7 @@ namespace xplorer::app
         smallLabel(508, 363, "TRIGGER");
         smallLabel(508, 373, "IN");
         {
-            const int centres[] = {541, 591, 641, 691, 750, 835}; // knob centres (table)
+            constexpr auto centres = std::to_array<int>({541, 591, 641, 691, 750, 835}); // knob centres (table)
             for (int cx : centres)
             {
                 knobTick(static_cast<float>(cx), 268, layout::KNOB_ROW_ENV_CANVAS_Y);
@@ -588,7 +589,7 @@ namespace xplorer::app
         line(793, 488, 804, 488);
         outLabel(867, 488, "LFO", "OUT");
         {
-            const int centres[] = {546, 759, 834}; // SPEED/RETRIG/AMPLITUDE knob centres (table)
+            constexpr auto centres = std::to_array<int>({546, 759, 834}); // SPEED/RETRIG/AMPLITUDE knob centres (table)
             for (int cx : centres)
             {
                 knobTick(static_cast<float>(cx), 501, layout::KNOB_ROW_LFO_CANVAS_Y);
