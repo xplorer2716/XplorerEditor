@@ -200,3 +200,156 @@ ids, across 3 sites.
   - **When** the test suites are built and run
   - **Then** the menu identity tests are among them and pass
 - **Dependencies**: RQ-QLT-001, RQ-BLD-025, ADR-JUC-006
+
+---
+
+## SonarCloud CRITICAL Remediation (2026-08-29)
+
+Origin: SonarCloud Cloud-hosted automated analysis of project
+`xplorer2716_XplorerEditor` (607 open issues at scan time: 75 CRITICAL, 435
+MAJOR, 94 MINOR, 3 INFO). This tranche covers the CRITICAL-severity issues
+that are safe, behaviour-preserving mechanical fixes. Excluded from this
+tranche and triaged separately:
+
+- **Accepted (SonarCloud status `accept`), no code change** — recorded here
+  for traceability since the MCP status-change call carries no comment field:
+  - `cpp:S134` (nesting depth) in the 29 test files under `juce/tests/` —
+    these suites are machine-generated ports of the reference test corpus,
+    not intended for human-maintained readability; the nesting mirrors the
+    reference's own control flow.
+  - `cpp:S5025` at `SettingsDialog.cpp:151,157` — `TableListBoxModel::
+    refreshComponentForCell`'s cell-recycling contract is JUCE's own raw
+    owning-pointer API; there is no RAII-compatible override signature.
+  - `cpp:S5421` at `Logger.cpp:37-39` (`g_mutex`, `g_sink`, `g_level`) —
+    deliberately mutable, mutex-guarded process-wide singleton state (see the
+    file's own header comment); `const` would break the logger.
+- **Deferred to a follow-up plan** (PLAN-QLT-003, out of this session's
+  scope): the remaining 20 CRITICAL issues requiring more invasive
+  refactoring — `cpp:S134` outside test files (5), `cpp:S3776` in C++ and
+  Python (8), `cpp:S3624` rule-of-five (3), `cpp:S3656` (1), `cpp:S5213`
+  `std::function`-to-template (3).
+
+### RQ-QLT-011: Destructor MIDI-device teardown does not rely on virtual dispatch
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: `AbstractController`'s destructor SHALL invoke
+  `closeMidiDevices()` through an explicitly qualified, non-virtual call.
+- **Rationale**: SonarCloud `cpp:S1699` — a virtual call made from a
+  destructor never reaches a derived override (the vtable already points to
+  the base at that point), so the implicit call silently pins itself to
+  `AbstractController::closeMidiDevices` regardless of what the declaration
+  suggests. Qualifying the call states that pinning explicitly instead of
+  leaving it as an accident of destructor semantics.
+- **Priority**: Must
+- **Acceptance Criteria**:
+  - **Given** `~AbstractController()`
+  - **When** it calls `closeMidiDevices()`
+  - **Then** the call is qualified as `AbstractController::closeMidiDevices()`
+  - **And** teardown behaviour is unchanged
+- **Dependencies**: RQ-MID-006, ADR-BUG-002
+
+### RQ-QLT-012: Deliberately empty methods document their own emptiness
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: Every method with a deliberately empty body SHALL carry a
+  comment nested inside its braces explaining why it is empty.
+- **Rationale**: SonarCloud `cpp:S1186` flags 8 sites (`ProgressWindow::
+  closeButtonPressed`, six `AbstractController` synth/automation no-op
+  handlers, `XpanderFullToneParameter::updateMessageFromValue`) whose
+  rationale today sits in a trailing same-line or preceding comment rather
+  than inside the body the rule inspects.
+- **Priority**: Should
+- **Acceptance Criteria**:
+  - **Given** the 8 flagged sites
+  - **When** each method is read
+  - **Then** its body contains a nested comment stating why it is empty
+  - **And** no method's behaviour changes
+- **Dependencies**: None
+
+### RQ-QLT-013: Handle and image-data parameters carry meaningful types
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: `SingleInstanceGuard`'s platform lock handle and
+  `addReferenceItem`'s icon-data parameter SHALL be typed as the concrete
+  type they hold rather than `void*`.
+- **Rationale**: SonarCloud `cpp:S5008` flags both. `SingleInstanceGuard::
+  _handle` stores a Win32 `HANDLE` (already compared against
+  `INVALID_HANDLE_VALUE` and passed to `CloseHandle` in the `.cpp`, which
+  already includes `<windows.h>`; both current includers of the header
+  already include it too, so widening the header's include has no new
+  blast radius). `addReferenceItem`'s `iconData` is always either absent or
+  one of the `BinaryData::*_png` byte arrays (`const char*`), which is what
+  it should be declared as; `juce::Drawable::createFromImageData` still
+  accepts it unchanged since `const char*` converts to `const void*`.
+- **Priority**: Should
+- **Acceptance Criteria**:
+  - **Given** the two sites
+  - **When** their declarations are read
+  - **Then** `_handle` is typed `HANDLE` under `#ifdef _WIN32`
+  - **And** `iconData` is typed `const char*`
+  - **And** all call sites compile unchanged
+- **Dependencies**: None
+
+### RQ-QLT-014: Settings-dialog page ownership is expressed as RAII up to the JUCE handoff
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: Where a `SettingsDialog.cpp` component is constructed only
+  to be immediately handed to a JUCE owning API (`TabbedComponent::addTab`,
+  `LookAndFeel::createSliderTextBox`'s return), construction SHALL go through
+  a smart pointer that is released only at the handoff call.
+- **Rationale**: SonarCloud `cpp:S5025` flags 4 such sites (the three
+  settings-page tabs and `XplorerLookAndFeel::createSliderTextBox`'s label).
+  The bare `new` and the ownership transfer are textually separated today;
+  routing construction through `std::make_unique` and calling `.release()`
+  exactly at the transfer point makes the ownership handoff the only place a
+  raw pointer exists, without changing which object ends up owning what.
+- **Priority**: Should
+- **Acceptance Criteria**:
+  - **Given** the 4 flagged sites
+  - **When** each component is constructed
+  - **Then** it is held in a smart pointer until the JUCE ownership-taking
+    call
+  - **And** that call still receives the same raw pointer type it did before
+- **Dependencies**: None
+
+### RQ-QLT-015: Test lambdas capture only what they use, explicitly
+
+- **Category**: Functional
+- **EARS Type**: Ubiquitous
+- **Statement**: The 6 flagged test lambdas in `ParameterBindingRegistryTests.
+  cpp` and `XpanderControllerTests.cpp` SHALL capture their referenced
+  variables by explicit name rather than by default `[&]`.
+- **Rationale**: SonarCloud `cpp:S3608` — default reference capture pulls in
+  the whole enclosing scope, so a later edit to the test fixture can silently
+  change what a lambda captures. Naming the capture makes the dependency
+  visible at the call site and is a mechanical, non-behavioural edit.
+- **Priority**: Should
+- **Acceptance Criteria**:
+  - **Given** the 6 flagged lambdas
+  - **When** their capture lists are read
+  - **Then** each names its captured variables explicitly
+  - **And** the test suite still passes unchanged
+- **Dependencies**: RQ-TST-*
+
+### RQ-QLT-016: SonarCloud triage decisions are recorded, not silent
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: WHEN a CRITICAL SonarCloud issue is accepted rather than
+  fixed, the rationale SHALL be recorded in this file, since the SonarCloud
+  MCP status-change tool carries no comment field.
+- **Metric**: every issue key accepted in this session is covered by a bullet
+  in the "SonarCloud CRITICAL Remediation" section above
+- **Measurement Method**: manual cross-check between the 34 accepted issue
+  keys and the bullets above at session close
+- **Priority**: Must
+- **Acceptance Criteria**:
+  - **Given** an issue marked `accept` in SonarCloud
+  - **When** this file is read
+  - **Then** its rationale is findable by rule id and location
+- **Dependencies**: None
