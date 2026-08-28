@@ -44,7 +44,7 @@ Established 2026-08-29, same toolchain as PLAN-QLT-001.
 
 ### TASK-QLT-008: Nested-comment the 8 deliberately empty methods
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Add a comment inside the braces of each of the 8 flagged
   empty methods across `ProgressWindow.hpp`, `AbstractControllerDevices.cpp`
   and `XpanderParameter.hpp`, stating why the method is empty.
