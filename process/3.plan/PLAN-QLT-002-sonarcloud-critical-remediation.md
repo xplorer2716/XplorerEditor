@@ -59,7 +59,7 @@ Established 2026-08-29, same toolchain as PLAN-QLT-001.
 
 ### TASK-QLT-009: Type the lock handle and icon-data parameter meaningfully
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: `SingleInstanceGuard::_handle` becomes `HANDLE` (under
   `#ifdef _WIN32`, `<windows.h>` included in the header); `addReferenceItem`'s
   `iconData` parameter becomes `const char*`.

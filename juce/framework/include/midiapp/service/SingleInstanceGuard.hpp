@@ -2,6 +2,10 @@
 
 #include <string>
 
+#ifdef _WIN32
+#include <windows.h> // HANDLE [RQ-QLT-013]
+#endif
+
 namespace midiapp::service
 {
     /// Port of MidiApp FileMutex: ensures a single running instance per user
@@ -21,7 +25,7 @@ namespace midiapp::service
     private:
         bool _acquired = false;
 #ifdef _WIN32
-        void* _handle = nullptr;
+        HANDLE _handle = nullptr; // [RQ-QLT-013]
 #else
         int _fd = -1;
 #endif

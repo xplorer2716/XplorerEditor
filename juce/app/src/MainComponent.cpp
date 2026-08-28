@@ -848,7 +848,7 @@ namespace xplorer::app
         /// PopupMenu::Item form is required: addItem(id, text) cannot express
         /// either. [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-098, DEC-JUC-099)]
         void addReferenceItem(juce::PopupMenu& menu, MenuItem itemId, const juce::String& text,
-                              const void* iconData = nullptr, int iconSize = 0)
+                              const char* iconData = nullptr, int iconSize = 0) // [RQ-QLT-013]
         {
             juce::PopupMenu::Item item(text);
             item.itemID = menuItemId(itemId);
