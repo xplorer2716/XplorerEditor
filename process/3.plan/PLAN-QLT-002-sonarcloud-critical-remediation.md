@@ -75,7 +75,7 @@ Established 2026-08-29, same toolchain as PLAN-QLT-001.
 
 ### TASK-QLT-010: RAII up to the JUCE ownership handoff in SettingsDialog
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: The 3 settings-page constructions in `SettingsContent`'s
   constructor and the `DigitsOnlyLabel` in
   `XplorerLookAndFeel::createSliderTextBox` go through `std::make_unique`,

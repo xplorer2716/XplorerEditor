@@ -7,6 +7,7 @@
 
 #include "xplorer/app/ComboBoxSizing.hpp"
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -409,7 +410,8 @@ namespace xplorer::app
         // this is the only one that needs a text box at all -- knobs and the
         // mod-matrix amount sliders are all NoTextBox) with a digits-only
         // Label swapped in. [RQ-GUI-058]
-        auto* label = new DigitsOnlyLabel();
+        // [RQ-QLT-014] Held in a smart pointer until the return releases it.
+        auto label = std::make_unique<DigitsOnlyLabel>();
         label->setJustificationType(juce::Justification::centred);
         label->setKeyboardType(juce::TextInputTarget::decimalKeyboard);
         label->setColour(juce::Label::textColourId, slider.findColour(juce::Slider::textBoxTextColourId));
@@ -419,7 +421,7 @@ namespace xplorer::app
         label->setColour(juce::TextEditor::backgroundColourId, slider.findColour(juce::Slider::textBoxBackgroundColourId));
         label->setColour(juce::TextEditor::outlineColourId, slider.findColour(juce::Slider::textBoxOutlineColourId));
         label->setColour(juce::TextEditor::highlightColourId, slider.findColour(juce::Slider::textBoxHighlightColourId));
-        return label;
+        return label.release();
     }
 
     void XplorerLookAndFeel::drawProgressBar(juce::Graphics& g, juce::ProgressBar& progressBar, int width,

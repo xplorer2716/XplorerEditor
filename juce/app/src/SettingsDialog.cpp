@@ -893,17 +893,19 @@ namespace xplorer::app
                 _originalLedColour = settingsService.allUsersSettings().uiConfig.knobLedBorderColor;
                 _originalPalette = resolveBlockPalette(settingsService.allUsersSettings().uiConfig);
 
-                auto* midiPage = new MidiSettingsPage(settingsService, backend);
-                auto* uiPage = new UiSettingsPage(settingsService, _onBlockPaletteChanged, _onLedColourChanged);
-                auto* randomPage = new RandomizerSettingsPage(settingsService);
-                _midiPage = midiPage;
-                _uiPage = uiPage;
-                _randomPage = randomPage;
+                // [RQ-QLT-014] Held in a smart pointer until the moment
+                // addTab(..., true) takes ownership.
+                auto midiPage = std::make_unique<MidiSettingsPage>(settingsService, backend);
+                auto uiPage = std::make_unique<UiSettingsPage>(settingsService, _onBlockPaletteChanged, _onLedColourChanged);
+                auto randomPage = std::make_unique<RandomizerSettingsPage>(settingsService);
+                _midiPage = midiPage.get();
+                _uiPage = uiPage.get();
+                _randomPage = randomPage.get();
 
                 const auto bg = tokens::semantic::surfaceRecessed;
-                _tabs.addTab("MIDI", bg, midiPage, true);
-                _tabs.addTab("User interface", bg, uiPage, true);
-                _tabs.addTab("Randomizer", bg, randomPage, true);
+                _tabs.addTab("MIDI", bg, midiPage.release(), true);
+                _tabs.addTab("User interface", bg, uiPage.release(), true);
+                _tabs.addTab("Randomizer", bg, randomPage.release(), true);
                 addAndMakeVisible(_tabs);
 
                 _ok.setButtonText("OK");
