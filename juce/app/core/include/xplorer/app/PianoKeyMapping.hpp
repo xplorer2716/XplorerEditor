@@ -8,6 +8,12 @@
 // stay buildable in the headless configuration (RQ-BLD-025).
 // [RQ-GUI-074, ADR-JUC-035 (DEC-JUC-114, DEC-JUC-116, DEC-JUC-118)]
 
+// The KeyboardLayoutQuery seam this file used to declare itself. It moved to a
+// header of its own when the knob preset-value keys became its second consumer
+// (RQ-GUI-080) — same interface, same contract, no longer piano-specific.
+// [ADR-JUC-037 (DEC-JUC-131)]
+#include "xplorer/app/KeyboardLayoutQuery.hpp"
+
 #include <cstdint>
 #include <optional>
 #include <vector>
@@ -33,19 +39,6 @@ namespace xplorer::app
     /// table is the ENTIRE definition of "what a piano looks like typed on a
     /// keyboard" — it never varies with the user's layout.
     [[nodiscard]] const std::vector<PianoKeyPosition>& pianoKeyPositions();
-
-    /// Answers, for one physical position, which character it currently
-    /// produces under whatever keyboard layout is active. Implementations are
-    /// per-OS and live outside this headless library. A position that cannot
-    /// be resolved to a usable character (dead key, non-printable, query
-    /// failure) SHALL return std::nullopt rather than a guess. [RQ-GUI-074]
-    class KeyboardLayoutQuery
-    {
-    public:
-        virtual ~KeyboardLayoutQuery() = default;
-
-        [[nodiscard]] virtual std::optional<char32_t> characterForPosition(char referenceChar) const = 0;
-    };
 
     /// One resolved binding: a character, bound to the note it plays.
     struct ResolvedPianoKey

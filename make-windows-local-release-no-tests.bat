@@ -1,6 +1,6 @@
 @echo off
 rem Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-rem Copyright (C) 2012-2026 Pascal Schmitt
+rem Copyright (C) 2012-2026 https://github.com/xplorer2716
 rem SPDX-License-Identifier: GPL-3.0-or-later
 rem Local Windows x64 GUI build. [RQ-BLD-002, RQ-BLD-008, TASK-JUC-070]
 rem

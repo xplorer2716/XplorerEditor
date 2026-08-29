@@ -4,7 +4,16 @@
 
 #include <map>
 
-// Windows implementation of the DEC-JUC-116 seam. [RQ-GUI-074]
+// Windows implementation of the DEC-JUC-116 seam, serving TWO features now:
+// the piano window's note mapping (RQ-GUI-074) and the rotary knobs'
+// preset-value keys (RQ-GUI-080). [RQ-GUI-074, RQ-GUI-080, ADR-JUC-037]
+//
+// Why the knob feature can MATCH on what this returns: JUCE's own
+// juce_Windowing_windows.cpp doKeyChar() computes a KeyPress's keyCode with
+// this exact pair — MapVirtualKey(scancode, 1) then MapVirtualKey(vk, 2),
+// LOWORD'd — so a resolved character and the keyCode of a press at that
+// position are the same computation on the same layout, not two things that
+// happen to agree. [ADR-JUC-037 (DEC-JUC-126)]
 //
 // PC/AT Set 1 hardware scancodes are positional and unchanged since the
 // original IBM PC XT — "the key labelled A on a US keyboard" is scancode
@@ -25,9 +34,15 @@ namespace xplorer::app
         const std::map<char, UINT>& referenceScanCodes()
         {
             static const std::map<char, UINT> table = {
+                // Piano note positions [RQ-GUI-074]
                 {'a', 0x1E}, {'w', 0x11}, {'s', 0x1F}, {'e', 0x12}, {'d', 0x20}, {'f', 0x21}, {'t', 0x14},
                 {'g', 0x22}, {'y', 0x15}, {'h', 0x23}, {'u', 0x16}, {'j', 0x24}, {'k', 0x25}, {'o', 0x18},
                 {'l', 0x26}, {'p', 0x19}, {';', 0x27},
+                // Knob preset-value positions: the number row 0x02..0x0B, plus
+                // the two candidates for the eleventh slot — 0x0C (right of
+                // '0') and 0x1A (after 'P'). [RQ-GUI-080, ADR-JUC-037]
+                {'1', 0x02}, {'2', 0x03}, {'3', 0x04}, {'4', 0x05}, {'5', 0x06}, {'6', 0x07},
+                {'7', 0x08}, {'8', 0x09}, {'9', 0x0A}, {'0', 0x0B}, {'-', 0x0C}, {'[', 0x1A},
             };
             return table;
         }

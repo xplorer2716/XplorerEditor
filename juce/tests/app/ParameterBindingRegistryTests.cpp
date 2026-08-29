@@ -113,7 +113,7 @@ SCENARIO("Local edits are fanned out to the display, model refreshes are not", "
         REQUIRE(f.registry.bind("VCF_FREQ", knob));
 
         std::vector<std::string> shown;
-        f.registry.setLocalEditHandler([&](const std::string& name)
+        f.registry.setLocalEditHandler([&shown, &f](const std::string& name) // [RQ-QLT-015]
                                        { shown.push_back(name + "=" + f.registry.displayTextFor(name)); });
 
         WHEN("the user edits the control")

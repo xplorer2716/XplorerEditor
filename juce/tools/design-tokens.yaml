@@ -94,6 +94,7 @@ tiers:
     # ---- motion / timing ----
     hoverBrightenFactor: { kind: float, value: 0.4, note: "knob ring hover brighten" }
     tickBoxBorderAlpha:  { kind: float, value: 0.6, note: "tick-box border vs accent" }
+    progressBarLabelFontRatio: { kind: float, value: 0.6, note: "progress-bar percentage label font height, as a fraction of the bar's own height. Value-preserving from JUCE LookAndFeel_V4::drawLinearProgressBar's own literal, carried into XplorerLookAndFeel's override (RQ-GUI-078) which draws the label itself instead of leaving it to the JUCE default" }
     indicatorHoldMs:     { kind: int,   value: 100, note: "MIDI LED retriggerable hold" }
     indicatorGlowAlpha:  { kind: float, value: 0.55, note: "peak opacity of the radial glow at a lit MIDI LED's centre, fading to fully transparent at its outer edge. Below the accent hover brighten (0.4 is a colour delta, this is an alpha) and deliberately under 1.0: a glow that reaches full opacity reads as a second, larger lamp rather than as light around the first. ADR-JUC-031 (DEC-JUC-095)" }
     indicatorGlowRadius: { kind: float, value: 2.0,  note: "glow outer radius as a MULTIPLE of the lamp's own radius (indicatorSize/2), not of its diameter -- at 2.0 the glow reaches exactly one lamp-radius past the visible dot's edge (3.5 px at the 7 px first version), so retuning indicatorSize scales the halo with it. Checked against the real clearance around _ledPanelControl (11 px to the VFD glass, 14+ px to the button row): a diameter-multiple reading would have reached 14 px and left only 0.5 px before touching the glass -- deliberately kept well inside instead. Also sets how far LedPanelComponent inflates its painting bounds past the extracted panel rect, since the 8 px-high panel has no room for a halo (DEC-JUC-097). ADR-JUC-031 (DEC-JUC-095)" }
@@ -361,6 +362,7 @@ tiers:
     pianoKeyLabelOnWhite: { alias: global.darkGrey, note: "piano-window key-mapping character on a white key — darker than the black-key value for contrast against the light key" }
     pianoKeyLabelOnBlack: { alias: global.white, note: "piano-window key-mapping character on a black key — owner report 2026-08-18: the mid grey was unreadable against the near-black key; white matches the white-key surface colour for maximum contrast on its opposite" }
     progressBarHeight: { alias: global.space24, note: "ProgressWindow bar height" }
+    progressBarLabelFontRatio: { alias: global.progressBarLabelFontRatio, note: "percentage-label font height, RQ-GUI-078" }
     controlRowHeight: { alias: global.controlRowHeight, note: "shared control-row height for stacked in-panel controls (BoundRadioGroup rows aligned with sibling check boxes)" }
 
   # -------------------------------------------------------------------

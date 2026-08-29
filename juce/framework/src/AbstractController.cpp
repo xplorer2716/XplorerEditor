@@ -27,7 +27,11 @@ namespace midiapp::controller
     AbstractController::~AbstractController()
     {
         stopWorkerThread();
-        closeMidiDevices();
+        // Explicitly qualified: a destructor's virtual call never reaches a
+        // derived override, so this states that pinning intentionally
+        // instead of leaving it as an accident of destructor semantics.
+        // [RQ-QLT-011]
+        AbstractController::closeMidiDevices();
     }
 
     // --- lifecycle -------------------------------------------------------

@@ -1,9 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "xpl/midi/SysexStreamIterator.hpp"
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
+#include <algorithm>
+#include <array>
 #include <fstream>
+#include <functional>
 #include <vector>
 
 using namespace xplorer::model;
@@ -153,9 +157,9 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
         WHEN("a source is assigned to entry 1 via destination change")
         {
             tone.changeModulationDestination(
-                static_cast<int>(EnumModulationSourcesModMatrix::ENV2), 20, 1,
-                static_cast<int>(EnumModulationDestinations::VCO1_FRQ),
-                static_cast<int>(EnumModulationDestinations::VCA2_VOL), 1, capture);
+                xpl::util::toUnderlying(EnumModulationSourcesModMatrix::ENV2), 20, 1,
+                xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ),
+                xpl::util::toUnderlying(EnumModulationDestinations::VCA2_VOL), 1, capture);
 
             THEN("the entry carries source/amount/quantize/destination and id 0")
             {
@@ -181,16 +185,16 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
         {
             for (int entryNumber = 1; entryNumber <= 6; ++entryNumber)
             {
-                tone.addModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::LFO1), 10, 0,
-                                         static_cast<int>(EnumModulationDestinations::VCF_FRQ),
+                tone.addModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO1), 10, 0,
+                                         xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ),
                                          entryNumber, nullptr);
             }
 
             THEN("the 6-source limit is reached and the 7th gets no id")
             {
                 CHECK(tone.isMaxSourceCountForDestinationReached(EnumModulationDestinations::VCF_FRQ));
-                tone.addModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::LFO2), 5, 0,
-                                         static_cast<int>(EnumModulationDestinations::VCF_FRQ), 7, nullptr);
+                tone.addModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO2), 5, 0,
+                                         xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ), 7, nullptr);
                 CHECK(tone.modulationMatrix()[6].idSource == XpanderTone::UNDEFINED_MODULATION_SOURCE_NUMBER);
             }
         }
@@ -199,13 +203,13 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
         {
             for (int entryNumber = 1; entryNumber <= 3; ++entryNumber)
             {
-                tone.addModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::LFO1), 0, 0,
-                                         static_cast<int>(EnumModulationDestinations::VCF_FRQ),
+                tone.addModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO1), 0, 0,
+                                         xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ),
                                          entryNumber, nullptr);
             }
             // delete entry 2 (idSource 1) by setting its source to NONE
-            tone.changeModulationSource(static_cast<int>(EnumModulationSourcesModMatrix::NONE), 0, 0,
-                                        static_cast<int>(EnumModulationDestinations::VCF_FRQ), 2, capture);
+            tone.changeModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE), 0, 0,
+                                        xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ), 2, capture);
 
             THEN("higher source ids of the same destination shift down, entry resets")
             {
@@ -219,14 +223,92 @@ SCENARIO("Matrix entries are allocated, renumbered and bounded like the synth", 
 
         WHEN("only the destination changes while the source is NONE")
         {
-            tone.changeModulationDestination(static_cast<int>(EnumModulationSourcesModMatrix::NONE), 0, 0,
-                                             static_cast<int>(EnumModulationDestinations::VCO1_FRQ),
-                                             static_cast<int>(EnumModulationDestinations::LAG_RATE), 5, capture);
+            tone.changeModulationDestination(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE), 0, 0,
+                                             xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ),
+                                             xpl::util::toUnderlying(EnumModulationDestinations::LAG_RATE), 5, capture);
 
             THEN("the matrix reflects it without any synth command")
             {
                 CHECK(tone.modulationMatrix()[4].destination == EnumModulationDestinations::LAG_RATE);
                 CHECK(sentCommands.empty());
+            }
+        }
+    }
+}
+
+SCENARIO("The randomizer's Octave strategy tunes VCO2 an octave above VCO1", "[RQ-BUG-001]")
+{
+    // The reference has no case for Octave, so it shared Free's branch and left
+    // both pitches random -- the one strategy in the list that did nothing.
+    // [RQ-BUG-001, ADR-BUG-001 (DEC-BUG-001, DEC-BUG-003)]
+    GIVEN("a tone")
+    {
+        XpanderTone tone;
+
+        WHEN("the Octave strategy is applied")
+        {
+            tone.defineVCOFrequenciesTuning(EnumRandomVCOFreq::Octave);
+
+            THEN("VCO2 sits twelve semitones above VCO1")
+            {
+                CHECK(tone.parameterMap().at("VCO1_FREQ").value() == 0);
+                CHECK(tone.parameterMap().at("VCO2_FREQ").value() == 12);
+            }
+        }
+
+        WHEN("the Free strategy is applied over a known tuning")
+        {
+            tone.defineVCOFrequenciesTuning(EnumRandomVCOFreq::Fifth);
+            tone.defineVCOFrequenciesTuning(EnumRandomVCOFreq::Free);
+
+            THEN("neither oscillator is touched")
+            {
+                // Free stays the only value that leaves the randomizer's
+                // pitches alone -- the branch Octave no longer shares.
+                CHECK(tone.parameterMap().at("VCO1_FREQ").value() == 0);
+                CHECK(tone.parameterMap().at("VCO2_FREQ").value() == 7);
+            }
+        }
+    }
+}
+
+SCENARIO("The randomizer's VCO intervals widen in option order", "[RQ-BUG-001]")
+{
+    GIVEN("the interval strategies in the order the settings page lists them")
+    {
+        constexpr std::array INTERVALS{
+            EnumRandomVCOFreq::SameNote, EnumRandomVCOFreq::Third,
+            EnumRandomVCOFreq::Fifth,    EnumRandomVCOFreq::Seventh,
+            EnumRandomVCOFreq::Octave,   EnumRandomVCOFreq::Ninth,
+            EnumRandomVCOFreq::Eleventh, EnumRandomVCOFreq::Thirteenth};
+
+        WHEN("each is applied to a fresh tone")
+        {
+            std::vector<int> distances;
+            distances.reserve(INTERVALS.size());
+            for (const auto interval : INTERVALS)
+            {
+                XpanderTone tone;
+                tone.defineVCOFrequenciesTuning(interval);
+                distances.push_back(tone.parameterMap().at("VCO2_FREQ").value()
+                                    - tone.parameterMap().at("VCO1_FREQ").value());
+            }
+
+            THEN("each produces the semitone distance its name states")
+            {
+                const std::vector<int> expected{0, 4, 7, 11, 12, 14, 17, 21};
+                CHECK(distances == expected);
+            }
+
+            AND_THEN("the distance grows strictly from one option to the next")
+            {
+                // Octave's list position between Seventh and Ninth is what
+                // fixes its value at 12; this is the check that catches a
+                // later edit putting it back on Free's branch, or anywhere
+                // else in the sequence.
+                CHECK(std::adjacent_find(distances.begin(), distances.end(),
+                                         std::greater_equal<int>{})
+                      == distances.end());
             }
         }
     }

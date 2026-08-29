@@ -71,11 +71,59 @@ Owner review of the M2/M3 build flagged the rotary knobs (`BoundKnob` +
   never did anything.
 
 ## Not in scope / deferred
-- The reference keyboard **preset-value** entry (number keys while hovering a
-  knob) is a separate feature, not requested here.
+- ~~The reference keyboard **preset-value** entry (number keys while hovering a
+  knob) is a separate feature, not requested here.~~
+  **Closed 2026-08-27 by ADR-JUC-037** (RQ-GUI-079, RQ-GUI-080, owner request,
+  session GUI). It was indeed a separate feature and it has now been specified
+  and built as one. Two decisions there bear directly on this ADR and are noted
+  so a reader of the knobs' presentation finds them: the gesture takes **no
+  keyboard focus** (DEC-JUC-125), because decision 2's hover brighten is the
+  only state this ADR ever renders and ADR-JUC-029 later removed focus
+  rendering entirely; and the value it sets travels the **same path as
+  decision 3's double-click entry** (one shared `applyValue()` on
+  `NumericEntryKnob`), so the two ways of setting an exact value cannot diverge
+  in what they notify. Nothing in decisions 1–4 changes.
 - ~~The knob "Standard vs vintage" style switch (UiConfiguration) is unaffected;
   only the pointer removal and hover brighten apply to the current default.~~
   **Closed 2026-08-06 by DEC-JUC-106** — see Decision below.
+
+- **DEC-JUC-124 — Remove the Linear/Circular knob-movement switch too; the
+  `RotaryHorizontalVerticalDrag` mouse mode is the sole, unconditional
+  behaviour.** *(2026-08-21, owner decision, session BUG.)* The sibling of
+  DEC-JUC-106, found the same way and closed the same way. Every consumer of
+  `knobMovementIsLinear` was read before touching anything: `UiSettingsPage`'s
+  "Knob movement" radio pair (`Linear`/`Circular`) read and wrote it,
+  `XmlSettingsService` persisted it, `AllUsersSettingsDefaults` set it to
+  `true`, and `SettingsServiceTests` asserted that default — but no knob ever
+  read it. `BoundKnob`'s constructor calls
+  `setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag)` unconditionally,
+  so the pair had **zero observable effect** since the port.
+
+  Wiring it was possible and cheap — JUCE implements both behaviours natively,
+  `Slider::Rotary` being the angular mode the reference computed by hand with
+  `Math.Atan` and `Slider::RotaryVerticalDrag` its vertical-delta `Linear`
+  mode. It was rejected: the owner confirms `RotaryHorizontalVerticalDrag`
+  meets the need, and a setting nobody asked for is not worth the live-apply
+  machinery it would need (the knobs are built once, so a wired setting would
+  otherwise only take effect after a restart, unlike the colours beside it,
+  which preview live).
+
+  Removed: the `bool knobMovementIsLinear` field
+  (`AllUsersSettings::UiConfiguration`), its XML read/write
+  (`XmlSettingsService`, element `KnobMovementIsLinear`), its default
+  (`AllUsersSettingsDefaults`), the radio pair and its layout row
+  (`UiSettingsPage`), the now-empty "Knob behaviour" `GroupComponent`, and the
+  `setupRadioPair`/`layoutRadioRow` helpers that had no other caller left.
+  With DEC-JUC-106 this empties `UiConfiguration` of everything but colour.
+  **Kept as-is:** the `.NET`-file-import fixture's `<KnobMovementIsLinear>`
+  element, for the same reason DEC-JUC-106 kept `<KnobStyleIsStandard>` — it
+  demonstrates that a real legacy file still imports cleanly once the element
+  is no longer read (RQ-SET-006).
+
+  **Not a divergence to re-litigate:** `RotaryHorizontalVerticalDrag` accepts
+  horizontal drag as well as vertical, where the reference's `Linear` used the
+  vertical delta alone. That is the behaviour the JUCE port has shipped from
+  the start, and it is now the specified one.
 
 - **DEC-JUC-106 — Remove the Standard/vintage (Standard/Flat) knob-style
   switch entirely; the ring-only rendering of decision 1 above is the sole,

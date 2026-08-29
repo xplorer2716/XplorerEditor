@@ -105,6 +105,6 @@ namespace xplorer::model
     private:
         XpanderFullToneParameter(const XpanderFullToneParameter& other);
 
-        void updateMessageFromValue() override {} // value is meaningless here
+        void updateMessageFromValue() override {/* value is meaningless here [RQ-QLT-012] */}
     };
 }

@@ -2,7 +2,11 @@
 
 #include "NumericEntryKnob.hpp"
 
+#include "xplorer/app/KnobPresetValues.hpp"
+
 #include <juce_gui_basics/juce_gui_basics.h>
+
+#include <cstddef>
 
 // RQ-GUI-034's double-click -> inline numeric entry, now shared by BoundKnob
 // and the modulation-matrix amount knob instead of living only on the
@@ -122,6 +126,128 @@ SCENARIO("Committing the inline editor sets the knob's value", "[RQ-GUI-034]")
             THEN("the knob's value is unchanged")
             {
                 REQUIRE(knob.getValue() == 10.0);
+            }
+        }
+    }
+}
+
+// RQ-GUI-079's other half: the knob-side behaviour of the preset keys. The
+// value TABLE is pinned headlessly in KnobPresetValuesTests; what can only be
+// checked against a real juce::Slider is that the presets are derived from the
+// LIVE range (set after construction) and that applying one moves the knob.
+// [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-128, DEC-JUC-130)]
+
+SCENARIO("Preset values are derived from the knob's range, not its construction",
+         "[RQ-GUI-079]")
+{
+    GIVEN("a knob whose range is set after construction, as the matrix amount knob's is")
+    {
+        const juce::ScopedJuceInitialiser_GUI juceInit;
+
+        NumericEntryKnob knob{juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::NoTextBox};
+        knob.setRange(-63, 63, 1);
+
+        WHEN("its presets are asked for")
+        {
+            const auto& values = knob.presetValues();
+
+            THEN("they span the range that was set, not the default one")
+            {
+                REQUIRE(values.size() == static_cast<std::size_t>(BIPOLAR_PRESET_COUNT));
+                CHECK(values.front() == -63);
+                CHECK(values.back() == 63);
+            }
+        }
+
+        WHEN("the eleventh preset is applied")
+        {
+            const bool applied = knob.applyPresetValue(BIPOLAR_PRESET_COUNT - 1);
+
+            THEN("the knob moves to its maximum")
+            {
+                CHECK(applied);
+                CHECK(knob.getValue() == 63.0);
+            }
+        }
+
+        WHEN("the middle preset is applied")
+        {
+            const bool applied = knob.applyPresetValue(BIPOLAR_PRESET_COUNT / 2);
+
+            THEN("the knob lands exactly on zero")
+            {
+                CHECK(applied);
+                CHECK(knob.getValue() == 0.0);
+            }
+        }
+    }
+}
+
+SCENARIO("The eleventh preset key is inert on a knob that has only ten", "[RQ-GUI-079]")
+{
+    GIVEN("a unipolar 0..63 knob, as every volume and PW knob is")
+    {
+        const juce::ScopedJuceInitialiser_GUI juceInit;
+
+        NumericEntryKnob knob{juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::NoTextBox};
+        knob.setRange(0, 63, 1);
+        knob.setValue(17, juce::dontSendNotification);
+
+        WHEN("the tenth preset is applied")
+        {
+            const bool applied = knob.applyPresetValue(UNIPOLAR_PRESET_COUNT - 1);
+
+            THEN("the knob moves to its maximum")
+            {
+                CHECK(applied);
+                CHECK(knob.getValue() == 63.0);
+            }
+        }
+
+        WHEN("the eleventh preset is applied")
+        {
+            knob.setValue(17, juce::dontSendNotification);
+            const bool applied = knob.applyPresetValue(BIPOLAR_PRESET_COUNT - 1);
+
+            THEN("nothing happens and the caller is told so")
+            {
+                CHECK_FALSE(applied);
+                CHECK(knob.getValue() == 17.0);
+            }
+        }
+    }
+}
+
+SCENARIO("An overridden preset table replaces the range-derived one", "[RQ-GUI-079]")
+{
+    GIVEN("a VCO frequency knob carrying the harmonic semitone presets")
+    {
+        const juce::ScopedJuceInitialiser_GUI juceInit;
+
+        NumericEntryKnob knob{juce::Slider::RotaryHorizontalVerticalDrag, juce::Slider::NoTextBox};
+        knob.setRange(0, 63, 1);
+        const auto* harmonics = harmonicPresetValuesFor("VCO1_FREQ");
+        REQUIRE(harmonics != nullptr);
+        knob.setPresetValues(*harmonics);
+
+        WHEN("the fourth preset is applied")
+        {
+            const bool applied = knob.applyPresetValue(3);
+
+            THEN("the knob lands on the octave, not on the linear quarter of its range")
+            {
+                CHECK(applied);
+                CHECK(knob.getValue() == 12.0);
+            }
+        }
+
+        WHEN("its presets are asked for")
+        {
+            const auto& values = knob.presetValues();
+
+            THEN("the override stands, and no range derivation overwrote it")
+            {
+                CHECK(values == *harmonics);
             }
         }
     }

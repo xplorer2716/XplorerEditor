@@ -1,5 +1,22 @@
+// The 20-row modulation matrix panel: source, amount, quantize, destination
+// per row. [RQ-GUI-017, RQ-GUI-052]
+//
+// WHY THESE ROWS ARE NOT PARAMETER-BOUND, unlike every other control in the
+// application. A knob elsewhere edits one parameter and goes through
+// ParameterBindingRegistry. A matrix row does not: changing a source is a
+// COMPOSITE controller operation (allocate or release a synth-side slot, emit
+// add/change/delete commands, then sign and amount and quantize) with no single
+// parameter behind it. So these widgets talk to the controller directly and
+// this panel refreshes them explicitly.
+//
+// The consequence to remember: nothing repaints these rows for you. Every
+// external change -- patch load, an edit made on the instrument, a full-tone
+// reload -- reaches them through refreshRow/refreshAll and nowhere else. That
+// is also why the combo boxes are the hover-repainting variants: no registry
+// update would otherwise clear a stale hover state.
 #include "ModMatrixPanel.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/ModulationMatrixEntry.hpp"
@@ -30,6 +47,8 @@ namespace xplorer::app
         return nullptr;
     }
 
+    // Builds one row. Entry numbers are 1-based throughout the matrix API, as
+    // in the model -- see the numbering note in XpanderToneModulationMatrix.cpp.
     void ModMatrixPanel::buildRow(juce::Component& parent, int entryNumber)
     {
         auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
@@ -94,6 +113,13 @@ namespace xplorer::app
         }
     }
 
+    // Pulls one row's four widgets back into agreement with the model. This is
+    // the single inbound path for the matrix (see the file header), so it runs
+    // after any change the panel did not itself originate.
+    //
+    // Values are written with juce::dontSendNotification: these widgets' change
+    // callbacks invoke controller operations, so notifying would turn a refresh
+    // into a fresh edit sent back to the synth.
     void ModMatrixPanel::refreshRow(int entryNumber)
     {
         if (entryNumber < 1 || entryNumber > 20)
@@ -106,7 +132,7 @@ namespace xplorer::app
         _refreshing = true;
         if (row.source != nullptr)
         {
-            row.source->setSelectedId(static_cast<int>(entry.source) + 1, juce::dontSendNotification);
+            row.source->setSelectedId(xpl::util::toUnderlying(entry.source) + 1, juce::dontSendNotification);
         }
         if (row.amount != nullptr)
         {
@@ -114,7 +140,7 @@ namespace xplorer::app
         }
         if (row.destination != nullptr)
         {
-            row.destination->setSelectedId(static_cast<int>(entry.destination) + 1,
+            row.destination->setSelectedId(xpl::util::toUnderlying(entry.destination) + 1,
                                            juce::dontSendNotification);
         }
         if (row.quantize != nullptr)
@@ -128,7 +154,7 @@ namespace xplorer::app
         // first load and quietly wrong afterwards.
         // [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-082)]
         applyBlockIdentity(entryNumber);
-        _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = static_cast<int>(entry.destination);
+        _currentDestination[static_cast<std::size_t>(entryNumber - 1)] = xpl::util::toUnderlying(entry.destination);
         _refreshing = false;
         // Whatever just changed for this entry can change every OTHER row's
         // combo availability too (shared destinations). Runs once per
@@ -187,7 +213,7 @@ namespace xplorer::app
         row.destination->clear(juce::dontSendNotification);
         for (const auto destination : available)
         {
-            const auto index = static_cast<std::size_t>(destination);
+            const auto index = static_cast<std::size_t>(xpl::util::toUnderlying(destination));
             if (index < labels.size())
             {
                 row.destination->addItem(labels[index], static_cast<int>(index) + 1);
@@ -221,7 +247,8 @@ namespace xplorer::app
             // OnModSourceDropDown "else" branch) -- structurally, not just
             // by convention, so neither a click nor an arrow key can reach
             // anything else. [ADR-JUC-036 (DEC-JUC-122)]
-            const auto noneIndex = static_cast<std::size_t>(model::EnumModulationSourcesModMatrix::NONE);
+            const auto noneIndex =
+                static_cast<std::size_t>(xpl::util::toUnderlying(model::EnumModulationSourcesModMatrix::NONE));
             if (noneIndex < labels.size())
             {
                 row.source->addItem(labels[noneIndex], static_cast<int>(noneIndex) + 1);
@@ -260,7 +287,7 @@ namespace xplorer::app
         {
             const auto& entry = _controller.getModulationEntryByNumber(entryNumber);
             auto& combo = _rows[static_cast<std::size_t>(entryNumber - 1)].source;
-            if (combo != nullptr && static_cast<int>(entry.source) == sourceValue)
+            if (combo != nullptr && xpl::util::toUnderlying(entry.source) == sourceValue)
             {
                 combo->setHighlighted(true);
             }
@@ -273,7 +300,7 @@ namespace xplorer::app
         {
             const auto& entry = _controller.getModulationEntryByNumber(entryNumber);
             auto& combo = _rows[static_cast<std::size_t>(entryNumber - 1)].destination;
-            if (combo != nullptr && static_cast<int>(entry.destination) == destValue
+            if (combo != nullptr && xpl::util::toUnderlying(entry.destination) == destValue
                 && entry.source != model::EnumModulationSourcesModMatrix::NONE)
             {
                 combo->setHighlighted(true);

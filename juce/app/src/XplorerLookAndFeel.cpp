@@ -7,6 +7,7 @@
 
 #include "xplorer/app/ComboBoxSizing.hpp"
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -77,11 +78,15 @@ namespace xplorer::app
     void XplorerLookAndFeel::setLedColour(juce::Colour colour)
     {
         _ledColour = colour;
-        // The one JUCE colour ID baked from the accent rather than read from
-        // _ledColour at paint time; re-seeding it here is what makes the
+        // The JUCE colour IDs baked from the accent rather than read from
+        // _ledColour at paint time; re-seeding them here is what makes the
         // in-place retune equivalent to the rebuild it replaces.
         // [RQ-GUI-068, RQ-GUI-073, ADR-JUC-020 (DEC-JUC-113)]
         setColour(juce::PopupMenu::highlightedBackgroundColourId, colour);
+        // Backup/get-all-single-patches' ProgressWindow and restore's
+        // ThreadWithProgressWindow both resolve this ID against the default
+        // LookAndFeel, so one seed colours both. [RQ-GUI-078, ADR-JUC-011]
+        setColour(juce::ProgressBar::foregroundColourId, colour);
     }
 
     void XplorerLookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -405,7 +410,8 @@ namespace xplorer::app
         // this is the only one that needs a text box at all -- knobs and the
         // mod-matrix amount sliders are all NoTextBox) with a digits-only
         // Label swapped in. [RQ-GUI-058]
-        auto* label = new DigitsOnlyLabel();
+        // [RQ-QLT-014] Held in a smart pointer until the return releases it.
+        auto label = std::make_unique<DigitsOnlyLabel>();
         label->setJustificationType(juce::Justification::centred);
         label->setKeyboardType(juce::TextInputTarget::decimalKeyboard);
         label->setColour(juce::Label::textColourId, slider.findColour(juce::Slider::textBoxTextColourId));
@@ -415,6 +421,50 @@ namespace xplorer::app
         label->setColour(juce::TextEditor::backgroundColourId, slider.findColour(juce::Slider::textBoxBackgroundColourId));
         label->setColour(juce::TextEditor::outlineColourId, slider.findColour(juce::Slider::textBoxOutlineColourId));
         label->setColour(juce::TextEditor::highlightColourId, slider.findColour(juce::Slider::textBoxHighlightColourId));
-        return label;
+        return label.release();
+    }
+
+    void XplorerLookAndFeel::drawProgressBar(juce::Graphics& g, juce::ProgressBar& progressBar, int width,
+                                             int height, double progress, const juce::String& textToShow)
+    {
+        // Draw the track/fill unchanged, via the base class's own geometry --
+        // an empty label withholds ITS text draw, which is replaced below.
+        juce::LookAndFeel_V4::drawProgressBar(g, progressBar, width, height, progress, juce::String());
+
+        if (textToShow.isEmpty())
+        {
+            return;
+        }
+
+        const auto background = progressBar.findColour(juce::ProgressBar::backgroundColourId);
+        const auto foreground = progressBar.findColour(juce::ProgressBar::foregroundColourId);
+        g.setFont(static_cast<float>(height) * tokens::semantic::progressBarLabelFontRatio);
+
+        const auto determinate =
+            progressBar.getResolvedStyle() == juce::ProgressBar::Style::linear && progress >= 0.0 && progress <= 1.0;
+        if (!determinate)
+        {
+            // Circular style, or an indeterminate/"spinning" linear bar: no
+            // static filled-vs-unfilled split exists to draw the label
+            // against, so fall back to JUCE's own single-colour compromise.
+            g.setColour(juce::Colour::contrasting(background, foreground));
+            g.drawText(textToShow, 0, 0, width, height, juce::Justification::centred, false);
+            return;
+        }
+
+        const auto filledWidth = juce::roundToInt(static_cast<double>(width) * progress);
+        {
+            juce::Graphics::ScopedSaveState clip(g);
+            g.reduceClipRegion(filledWidth, 0, width - filledWidth, height);
+            g.setColour(background.contrasting());
+            g.drawText(textToShow, 0, 0, width, height, juce::Justification::centred, false);
+        }
+        if (filledWidth > 0)
+        {
+            juce::Graphics::ScopedSaveState clip(g);
+            g.reduceClipRegion(0, 0, filledWidth, height);
+            g.setColour(foreground.contrasting());
+            g.drawText(textToShow, 0, 0, width, height, juce::Justification::centred, false);
+        }
     }
 }

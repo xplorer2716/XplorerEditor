@@ -17,6 +17,10 @@ namespace midiapp::service
 
     /// Minimal diagnostic logger: level-filtered lines to a per-user log
     /// file, timestamped. Thread safe. [RQ-FMW-070, RQ-NFR-008]
+    ///
+    /// TODO: no product code calls configure() or setLevel(), so this logger is
+    /// inert in the shipped application — nothing is ever written. See the
+    /// detailed note at the top of Logger.cpp and GitHub issue #68.
     class Logger
     {
     public:

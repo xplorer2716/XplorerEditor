@@ -16,7 +16,14 @@ namespace xplorer::settings
 
         /// Loads on first access; falls back to defaults (and persists them)
         /// when the file is missing, unreadable or partial. [RQ-SET-004]
-        [[nodiscard]] virtual AllUsersSettings& allUsersSettings() = 0;
+        /// The live settings, for READING. Const by design: the returned
+        /// reference points into the implementation's cache, so mutating it
+        /// would change what every later reader sees while never reaching the
+        /// disk -- a setting that works until the next restart. To change
+        /// something, copy this, edit the copy, and pass it to saveSettings(),
+        /// which persists and refreshes the cache in one step.
+        /// [RQ-BUG-004, ADR-BUG-003 (DEC-BUG-010, DEC-BUG-011)]
+        [[nodiscard]] virtual const AllUsersSettings& allUsersSettings() = 0;
 
         virtual void saveSettings(const AllUsersSettings& settings) = 0;
 
@@ -42,7 +49,7 @@ namespace xplorer::settings
         explicit XmlSettingsService(std::string preferredDirectory, std::string fallbackDirectory = {});
         ~XmlSettingsService() override;
 
-        [[nodiscard]] AllUsersSettings& allUsersSettings() override;
+        [[nodiscard]] const AllUsersSettings& allUsersSettings() override;
         void saveSettings(const AllUsersSettings& settings) override;
         void resetSettings() override;
 
@@ -59,7 +66,7 @@ namespace xplorer::settings
     public:
         InMemorySettingsService() : _settings(defaultAllUsersSettings()) {}
 
-        [[nodiscard]] AllUsersSettings& allUsersSettings() override { return _settings; }
+        [[nodiscard]] const AllUsersSettings& allUsersSettings() override { return _settings; }
         void saveSettings(const AllUsersSettings& settings) override { _settings = settings; }
         void resetSettings() override { _settings = defaultAllUsersSettings(); }
 

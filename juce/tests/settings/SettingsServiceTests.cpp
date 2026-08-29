@@ -41,7 +41,6 @@ SCENARIO("Defaults match the reference values", "[RQ-SET-002][RQ-SET-003][RQ-SET
         THEN("UI and randomizer defaults are the reference ones")
         {
             CHECK(settings.uiConfig.knobLedBorderColor == static_cast<std::int32_t>(0xFF66B5E3));
-            CHECK(settings.uiConfig.knobMovementIsLinear);
             CHECK(static_cast<int>(settings.randomizerConfig.vco2FmNoiseSync) == 7);
             CHECK(settings.randomizerConfig.vcoFreq == EnumRandomVCOFreq::Free);
             CHECK(static_cast<int>(settings.randomizerConfig.modulationMatrix) == 7);

@@ -5,6 +5,9 @@
 // PortableFormat.hpp, not <format>: see its header comment and
 // [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
 #include "midiapp/service/PortableFormat.hpp"
+#include "xpl/util/EnumUtils.hpp"
+
+#include <array>
 
 namespace xplorer::model
 {
@@ -26,7 +29,7 @@ namespace xplorer::model
         {
             return MidiMessage::sysEx(std::vector<std::uint8_t>{
                 0xF0, 0x10, 0x02, 0x0F, 0x00, 0x00, 0x00,
-                static_cast<std::uint8_t>(command), 0x00, value, 0x00, 0xF7});
+                static_cast<std::uint8_t>(xpl::util::toUnderlying(command)), 0x00, value, 0x00, 0xF7});
         }
 
         bool hasFlag(std::uint8_t flags, auto flag)
@@ -36,6 +39,14 @@ namespace xplorer::model
         }
     }
 
+    // A tone is the editor's live patch buffer: the 227 parameters of one
+    // Xpander voice plus its 20-row modulation matrix. One instance exists per
+    // controller and is mutated in place -- loading a file, receiving a dump or
+    // randomizing all rewrite THIS object rather than replacing it, which is
+    // why the UI can hold long-lived bindings to parameter names.
+    //
+    // "XPLORER" as the initial name is the reference's, and it is what the VFD
+    // shows before the first patch arrives from the synth.
     XpanderTone::XpanderTone()
     {
         initializeParameterMap();
@@ -43,6 +54,14 @@ namespace xplorer::model
         clearModulationMatrix();
     }
 
+    // Patch names are FIXED-WIDTH on the wire: exactly TONE_NAME_LENGTH
+    // characters, space-padded. The padding is not cosmetic -- toByteArray
+    // writes the string straight into the dump, so a short name would shift
+    // every following byte. [RQ-MOD-023]
+    //
+    // Note this is the plain model setter. The controller's own setToneName
+    // override adds the heavy side effect (full retransmission + resync) that
+    // the rename dialog depends on.
     void XpanderTone::setToneName(const std::string& name)
     {
         // Reference: truncate to 8 or pad right with spaces to 8.
@@ -57,6 +76,10 @@ namespace xplorer::model
         }
     }
 
+    // Wraps rather than clamps: stepping past patch 99 lands on 0 and vice
+    // versa, which is what makes the previous/next buttons cycle endlessly the
+    // way the instrument's own do. A clamp would make them stick at the ends.
+    // [RQ-MOD-021, RQ-CTL-007]
     void XpanderTone::setCurrentProgramNumber(int programNumber)
     {
         if (programNumber < MIN_PROGRAM_NUMBER)
@@ -93,6 +116,11 @@ namespace xplorer::model
         return static_cast<XpanderModMatrixParameter&>(parameterMap().at(name));
     }
 
+    // Matrix rows have no dedicated storage: each row's amount and quantize
+    // live in the ordinary parameter map under a generated name. These two
+    // helpers are the single place those names are formed, so the map key and
+    // every lookup can never drift apart. Entry numbers are 1-based here, as
+    // everywhere in the matrix API.
     std::string XpanderTone::amountSourceParameterNameForEntry(int entryNumber)
     {
         return formatStr("MOD_AMNT_SRC_{}", entryNumber);
@@ -105,6 +133,16 @@ namespace xplorer::model
 
     // --- parameter map ----------------------------------------------------
 
+    // Builds all 227 parameters, in the reference's own order -- and that order
+    // is part of the contract, not an implementation detail: the map is
+    // ORDERED, and the transmit worker's scan, the morphing filter and the
+    // full-tone send all iterate it.
+    //
+    // Two sources feed this: the literal (non-family) parameters come from the
+    // generated XpanderToneFixedParameters.inc, and the repeated families
+    // (TRACK x3, ENV x5, LFO x5, RAMP x4, matrix x20) are looped here because
+    // they differ only by index. Do not hand-edit the .inc -- regenerate it
+    // with juce/tools/generate_fixed_parameters.py. [RQ-MOD-020]
     void XpanderTone::initializeParameterMap()
     {
         auto& map = parameterMap();
@@ -113,7 +151,7 @@ namespace xplorer::model
                                   int maxValue, int step, std::uint8_t buttonId, int value,
                                   const char* label)
         {
-            map.add(std::make_unique<XpanderParameter>(name, static_cast<int>(page), subPage,
+            map.add(std::make_unique<XpanderParameter>(name, xpl::util::toUnderlying(page), subPage,
                                                        minValue, maxValue, step,
                                                        makeParameterFrame(buttonId), value, label));
         };
@@ -121,7 +159,7 @@ namespace xplorer::model
                                 int maxValue, int step, std::uint8_t buttonId, int value,
                                 const char* label)
         {
-            map.add(std::make_unique<XpanderSignedParameter>(name, static_cast<int>(page), subPage,
+            map.add(std::make_unique<XpanderSignedParameter>(name, xpl::util::toUnderlying(page), subPage,
                                                              minValue, maxValue, step,
                                                              makeParameterFrame(buttonId), value, label));
         };
@@ -131,10 +169,10 @@ namespace xplorer::model
         // --- TRACK_X (3x), reference INITIALIZEPARAMETERMAP_TRACK_X ---
         for (int trackNumber = 0; trackNumber < constants::TRACK_COUNT; ++trackNumber)
         {
-            const auto page = static_cast<EnumPages>(static_cast<int>(EnumPages::TRACK_1) + trackNumber);
+            const auto page = static_cast<EnumPages>(xpl::util::toUnderlying(EnumPages::TRACK_1) + trackNumber);
             addUnsigned(formatStr("TRACK_{}_IN", trackNumber + 1).c_str(), page, 0x00,
-                        static_cast<int>(EnumModulationSources::KBD),
-                        static_cast<int>(EnumModulationSources::LEV2), 1, 0x08, 0, "Input");
+                        xpl::util::toUnderlying(EnumModulationSources::KBD),
+                        xpl::util::toUnderlying(EnumModulationSources::LEV2), 1, 0x08, 0, "Input");
             for (int pointNumber = 0; pointNumber < constants::TRACK_POINTS_COUNTS; ++pointNumber)
             {
                 addUnsigned(formatStr("TRACK_{}_POINT_{}", trackNumber + 1, pointNumber + 1).c_str(),
@@ -146,7 +184,7 @@ namespace xplorer::model
         // --- ENV_X (5x), reference INITIALIZEPARAMETERMAP_ENV_X ---
         for (int envNumber = 0; envNumber < constants::ENV_COUNT; ++envNumber)
         {
-            const auto page = static_cast<EnumPages>(static_cast<int>(EnumPages::ENV_1) + envNumber);
+            const auto page = static_cast<EnumPages>(xpl::util::toUnderlying(EnumPages::ENV_1) + envNumber);
             const int n = envNumber + 1;
             addUnsigned(formatStr("ENV_{}_DELAY", n).c_str(), page, 0x00, 0, 63, 1, 0x08, 0, "Del");
             addUnsigned(formatStr("ENV_{}_ATTACK", n).c_str(), page, 0x00, 0, 63, 1, 0x09, 0, "Atck");
@@ -161,60 +199,60 @@ namespace xplorer::model
             addUnsigned(formatStr("ENV_{}_TRIG_EXTRIG", n).c_str(), page, 0x01, 0, 1, 1, 0x0A, 0, "Extern");
             addUnsigned(formatStr("ENV_{}_TRIG_LFOTRIG", n).c_str(), page, 0x01, 0, 1, 1, 0x0B, 0, "LFO");
             addUnsigned(formatStr("ENV_{}_TRIG_LFO_SOURCE", n).c_str(), page, 0x01,
-                        static_cast<int>(EnumLFOTriggerSources::LFO1),
-                        static_cast<int>(EnumLFOTriggerSources::VIB), 1, 0x0C, 0, "Source");
+                        xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1),
+                        xpl::util::toUnderlying(EnumLFOTriggerSources::VIB), 1, 0x0C, 0, "Source");
             addUnsigned(formatStr("ENV_{}_TRIG_GATED", n).c_str(), page, 0x01, 0, 1, 1, 0x0D, 0, "Gated");
         }
 
         // --- LFO_X (5x), reference INITIALIZEPARAMETERMAP_LFO_X ---
         for (int lfoNumber = 0; lfoNumber < constants::LFO_COUNT; ++lfoNumber)
         {
-            const auto page = static_cast<EnumPages>(static_cast<int>(EnumPages::LFO_1) + lfoNumber);
+            const auto page = static_cast<EnumPages>(xpl::util::toUnderlying(EnumPages::LFO_1) + lfoNumber);
             const int n = lfoNumber + 1;
             addUnsigned(formatStr("LFO_{}_SPEED", n).c_str(), page, 0x00, 0, 63, 1, 0x08, 0, "Speed");
             addUnsigned(formatStr("LFO_{}_WAVESHAPE", n).c_str(), page, 0x00,
-                        static_cast<int>(EnumLFOWaveShapes::TRIANGLE),
-                        static_cast<int>(EnumLFOWaveShapes::SAMPLE), 1, 0x09, 0, "Shape");
+                        xpl::util::toUnderlying(EnumLFOWaveShapes::TRIANGLE),
+                        xpl::util::toUnderlying(EnumLFOWaveShapes::SAMPLE), 1, 0x09, 0, "Shape");
             addUnsigned(formatStr("LFO_{}_SAMPLE_INPUT", n).c_str(), page, 0x00,
-                        static_cast<int>(EnumModulationSources::KBD),
-                        static_cast<int>(EnumModulationSources::LEV2), 1, 0x0A, 0, "Sample input");
+                        xpl::util::toUnderlying(EnumModulationSources::KBD),
+                        xpl::util::toUnderlying(EnumModulationSources::LEV2), 1, 0x0A, 0, "Sample input");
             addUnsigned(formatStr("LFO_{}_RETRIG", n).c_str(), page, 0x00, 0, 63, 1, 0x0B, 0, "Retrig");
             addUnsigned(formatStr("LFO_{}_AMP", n).c_str(), page, 0x00, 0, 63, 1, 0x0D, 0, "Amp");
             addUnsigned(formatStr("LFO_{}_LAG", n).c_str(), page, 0x01, 0, 1, 1, 0x00, 0, "Lag");
             addUnsigned(formatStr("LFO_{}_RETRIG_MODE", n).c_str(), page, 0x01,
-                        static_cast<int>(EnumLFORetrigModes::OFF),
-                        static_cast<int>(EnumLFORetrigModes::EXTRIG), 1, 0x1A, 0, "Retrig Mode");
+                        xpl::util::toUnderlying(EnumLFORetrigModes::OFF),
+                        xpl::util::toUnderlying(EnumLFORetrigModes::EXTRIG), 1, 0x1A, 0, "Retrig Mode");
         }
 
         // --- RAMP_X (4x), reference INITIALIZEPARAMETERMAP_RAMP_X ---
         for (int rampNumber = 0; rampNumber < constants::RAMP_COUNT; ++rampNumber)
         {
-            const auto page = static_cast<EnumPages>(static_cast<int>(EnumPages::RAMP_1) + rampNumber);
+            const auto page = static_cast<EnumPages>(xpl::util::toUnderlying(EnumPages::RAMP_1) + rampNumber);
             const int n = rampNumber + 1;
             addUnsigned(formatStr("RAMP_{}_RATE", n).c_str(), page, 0x00, 0, 63, 1, 0x09, 0, "Rate");
             addUnsigned(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n).c_str(), page, 0x01, 0, 1, 1, 0x09, 0, "Single/Multi");
             addUnsigned(formatStr("RAMP_{}_TRIG_EXTRIG", n).c_str(), page, 0x01, 0, 1, 1, 0x0A, 0, "Extern");
             addUnsigned(formatStr("RAMP_{}_TRIG_LFOTRIG", n).c_str(), page, 0x01, 0, 1, 1, 0x0B, 0, "LFO");
             addUnsigned(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n).c_str(), page, 0x01,
-                        static_cast<int>(EnumLFOTriggerSources::LFO1),
-                        static_cast<int>(EnumLFOTriggerSources::VIB), 1, 0x0C, 0, "Source");
+                        xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1),
+                        xpl::util::toUnderlying(EnumLFOTriggerSources::VIB), 1, 0x0C, 0, "Source");
             addUnsigned(formatStr("RAMP_{}_TRIG_GATED", n).c_str(), page, 0x01, 0, 1, 1, 0x0D, 0, "Gated");
         }
 
         // --- MOD MATRIX (x20), reference MOD MATRIX region ---
         const auto& defaultPages = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
-            static_cast<std::size_t>(EnumModulationDestinations::VCO1_FRQ)];
+            static_cast<std::size_t>(xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ))];
         for (int entryNumber = 1; entryNumber < constants::MODENTRIES_COUNT + 1; ++entryNumber)
         {
             // page does not matter, changed dynamically with the destination
             map.add(std::make_unique<XpanderModMatrixParameter>(
                 amountSourceParameterNameForEntry(entryNumber),
-                static_cast<int>(defaultPages.page), defaultPages.subPage,
+                xpl::util::toUnderlying(defaultPages.page), defaultPages.subPage,
                 ModulationMatrixEntry::MIN_AMOUNT, ModulationMatrixEntry::MAX_AMOUNT, 1,
                 makeModEditFrame(EnumModulationEditCommands::SETUNSIGNEDVALUE), 0));
             map.add(std::make_unique<XpanderModMatrixParameter>(
                 quantizeSourceParameterNameForEntry(entryNumber),
-                static_cast<int>(defaultPages.page), defaultPages.subPage,
+                xpl::util::toUnderlying(defaultPages.page), defaultPages.subPage,
                 ModulationMatrixEntry::MIN_QUANTIZE, ModulationMatrixEntry::MAX_QUANTIZE, 1,
                 makeModEditFrame(EnumModulationEditCommands::SETQUANTIZE), 0));
         }
@@ -352,7 +390,7 @@ namespace xplorer::model
             if (parameterAt(formatStr("ENV_{}_TRIG_LFOTRIG", n)).value() == 0)
             {
                 parameterAt(formatStr("ENV_{}_TRIG_LFO_SOURCE", n))
-                    .setValue(static_cast<int>(EnumLFOTriggerSources::LFO1));
+                    .setValue(xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1));
             }
             else
             {
@@ -389,7 +427,7 @@ namespace xplorer::model
             if (parameterAt(formatStr("ENV_{}_TRIG_LFOTRIG", n)).value() == 0)
             {
                 parameterAt(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n))
-                    .setValue(static_cast<int>(EnumLFOTriggerSources::LFO1));
+                    .setValue(xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1));
             }
             else
             {
@@ -402,11 +440,11 @@ namespace xplorer::model
         for (int i = 0; i < constants::MODENTRIES_COUNT; ++i)
         {
             const auto& entry = patch.modulationEntries[static_cast<std::size_t>(i)];
-            if (entry.source <= static_cast<int>(EnumModulationSources::LEV2)
-                && entry.dest <= static_cast<int>(EnumModulationDestinations::LAG_RATE))
+            if (entry.source <= xpl::util::toUnderlying(EnumModulationSources::LEV2)
+                && entry.dest <= xpl::util::toUnderlying(EnumModulationDestinations::LAG_RATE))
             {
                 changeModulationDestination(entry.source, entry.amount, entry.quantize ? 1 : 0,
-                                            static_cast<int>(EnumModulationDestinations::VCO1_FRQ),
+                                            xpl::util::toUnderlying(EnumModulationDestinations::VCO1_FRQ),
                                             entry.dest, i + 1, nullptr);
             }
         }
@@ -431,19 +469,19 @@ namespace xplorer::model
             vco.pw = byteOf(formatStr("VCO{}_PW", n));
             vco.vol = byteOf(formatStr("VCO{}_VOLUME", n));
             vco.wave = 0;
-            if (bit(formatStr("VCO{}_WAVESHAPE_TRI", n))) vco.wave |= static_cast<std::uint8_t>(EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
-            if (bit(formatStr("VCO{}_WAVESHAPE_SAW", n))) vco.wave |= static_cast<std::uint8_t>(EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
-            if (bit(formatStr("VCO{}_WAVESHAPE_PULSE", n))) vco.wave |= static_cast<std::uint8_t>(EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
+            if (bit(formatStr("VCO{}_WAVESHAPE_TRI", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
+            if (bit(formatStr("VCO{}_WAVESHAPE_SAW", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
+            if (bit(formatStr("VCO{}_WAVESHAPE_PULSE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
             if (n == 2)
             {
-                if (bit(formatStr("VCO{}_WAVESHAPE_NOISE", n))) vco.wave |= static_cast<std::uint8_t>(EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
-                if (bit(formatStr("VCO{}_WAVE_SYNC", n))) vco.wave |= static_cast<std::uint8_t>(EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
+                if (bit(formatStr("VCO{}_WAVESHAPE_NOISE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
+                if (bit(formatStr("VCO{}_WAVE_SYNC", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
             }
             vco.mod = 0;
-            if (bit(formatStr("VCO{}_MOD_KEYB", n))) vco.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_KEYBD);
-            if (bit(formatStr("VCO{}_MOD_LAG", n))) vco.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_LAG);
-            if (bit(formatStr("VCO{}_MOD_LEV1", n))) vco.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_LEV_1);
-            if (bit(formatStr("VCO{}_MOD_VIB", n))) vco.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_VIB);
+            if (bit(formatStr("VCO{}_MOD_KEYB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
+            if (bit(formatStr("VCO{}_MOD_LAG", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
+            if (bit(formatStr("VCO{}_MOD_LEV1", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
+            if (bit(formatStr("VCO{}_MOD_VIB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
         }
 
         // VCF/VCA
@@ -453,10 +491,10 @@ namespace xplorer::model
         patch.vcf.vca1 = byteOf("VCF_VCA1_VOLUME");
         patch.vcf.vca2 = byteOf("VCF_VCA2_VOLUME");
         patch.vcf.mod = 0;
-        if (bit("VCF_MOD_KEYB")) patch.vcf.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_KEYBD);
-        if (bit("VCF_MOD_LAG")) patch.vcf.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_LAG);
-        if (bit("VCF_MOD_LEV1")) patch.vcf.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_LEV_1);
-        if (bit("VCF_MOD_VIB")) patch.vcf.mod |= static_cast<std::uint8_t>(EnumModulationFlags::MODFLAG_VIB);
+        if (bit("VCF_MOD_KEYB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
+        if (bit("VCF_MOD_LAG")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
+        if (bit("VCF_MOD_LEV1")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
+        if (bit("VCF_MOD_VIB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
 
         // FM/LAG
         patch.fmAndLag.f_amp = byteOf("FM_AMP");
@@ -464,9 +502,9 @@ namespace xplorer::model
         patch.fmAndLag.lag_in = byteOf("LAG_IN");
         patch.fmAndLag.lag_rate = byteOf("FMLAG_RATE");
         patch.fmAndLag.lag_mode = 0;
-        if (bit("LAG_MODE_LEGATO")) patch.fmAndLag.lag_mode |= static_cast<std::uint8_t>(EnumLagModeFlags::LAGMODE_LEGATO);
-        if (bit("LAG_TIMING_LINEAR_EXPO")) patch.fmAndLag.lag_mode |= static_cast<std::uint8_t>(EnumLagModeFlags::LAGMODE_EXPO);
-        if (bit("LAG_LINEAR_EQUAL_TIME")) patch.fmAndLag.lag_mode |= static_cast<std::uint8_t>(EnumLagModeFlags::LAGMODE_EQUAL_TIME);
+        if (bit("LAG_MODE_LEGATO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_LEGATO);
+        if (bit("LAG_TIMING_LINEAR_EXPO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EXPO);
+        if (bit("LAG_LINEAR_EQUAL_TIME")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EQUAL_TIME);
 
         // TRACK
         for (int t = 0; t < constants::TRACK_COUNT; ++t)
@@ -491,14 +529,14 @@ namespace xplorer::model
             env.release = byteOf(formatStr("ENV_{}_RELEASE", n));
             env.amp = byteOf(formatStr("ENV_{}_VOLUME", n));
             env.flags = 0;
-            if (bit(formatStr("ENV_{}_MODE_RESET", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_RESET);
-            if (bit(formatStr("ENV_{}_MODE_FREERUN", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_FREERUN);
-            if (bit(formatStr("ENV_{}_MODE_DADR", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_DADR);
-            if (bit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_MULTI);
-            if (bit(formatStr("ENV_{}_TRIG_EXTRIG", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
-            if (bit(formatStr("ENV_{}_TRIG_LFOTRIG", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
+            if (bit(formatStr("ENV_{}_MODE_RESET", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_RESET);
+            if (bit(formatStr("ENV_{}_MODE_FREERUN", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_FREERUN);
+            if (bit(formatStr("ENV_{}_MODE_DADR", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_DADR);
+            if (bit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_MULTI);
+            if (bit(formatStr("ENV_{}_TRIG_EXTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
+            if (bit(formatStr("ENV_{}_TRIG_LFOTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
             env.lfotrig = byteOf(formatStr("ENV_{}_TRIG_LFO_SOURCE", n));
-            if (bit(formatStr("ENV_{}_TRIG_GATED", n))) env.flags |= static_cast<std::uint8_t>(EnumEnveloppeModeFlags::ENVMODE_GATED);
+            if (bit(formatStr("ENV_{}_TRIG_GATED", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_GATED);
         }
 
         // LFO
@@ -522,11 +560,11 @@ namespace xplorer::model
             const int n = r + 1;
             ramp.rate = byteOf(formatStr("RAMP_{}_RATE", n));
             ramp.flags = 0;
-            if (bit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n))) ramp.flags |= static_cast<std::uint8_t>(EnumRampFlags::RAMPF_MULTI);
-            if (bit(formatStr("RAMP_{}_TRIG_EXTRIG", n))) ramp.flags |= static_cast<std::uint8_t>(EnumRampFlags::RAMPF_EXTRIG);
-            if (bit(formatStr("RAMP_{}_TRIG_LFOTRIG", n))) ramp.flags |= static_cast<std::uint8_t>(EnumRampFlags::RAMPF_LFOTRIG);
+            if (bit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_MULTI);
+            if (bit(formatStr("RAMP_{}_TRIG_EXTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_EXTRIG);
+            if (bit(formatStr("RAMP_{}_TRIG_LFOTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_LFOTRIG);
             ramp.lfotrig = byteOf(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n));
-            if (bit(formatStr("RAMP_{}_TRIG_GATED", n))) ramp.flags |= static_cast<std::uint8_t>(EnumRampFlags::RAMPF_GATED);
+            if (bit(formatStr("RAMP_{}_TRIG_GATED", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_GATED);
         }
 
         // MODULATION MATRIX
@@ -541,8 +579,8 @@ namespace xplorer::model
             }
             else
             {
-                target.source = static_cast<std::uint8_t>(entry.source);
-                target.dest = static_cast<std::uint8_t>(entry.destination);
+                target.source = static_cast<std::uint8_t>(xpl::util::toUnderlying(entry.source));
+                target.dest = static_cast<std::uint8_t>(xpl::util::toUnderlying(entry.destination));
             }
             target.amount = static_cast<std::int8_t>(entry.amount());
             target.quantize = entry.quantize() == 1;
@@ -554,6 +592,11 @@ namespace xplorer::model
 
     // --- randomizer helpers -------------------------------------------------
 
+    // Spreads the two oscillators apart so a random patch sounds like an
+    // analogue instrument rather than a single stiff tone. The two magnitudes
+    // are the reference's: a barely-there 1 for "digital", a wide 10 for
+    // "analog". Symmetric around centre, so the perceived pitch does not move.
+    // [RQ-CTL-050]
     void XpanderTone::detune(bool detuneAnalog)
     {
         const int detuneValue = detuneAnalog ? 10 : 1;
@@ -561,28 +604,53 @@ namespace xplorer::model
         parameterAt("VCO2_DETUNE").setValue(detuneValue);
     }
 
+    /// Tunes the two oscillators to the interval the randomizer strategy names,
+    /// VCO2 above VCO1. `Free` is the only value that leaves both pitches as the
+    /// randomizer left them.
+    ///
+    /// `Octave` diverges from the reference implementation, which has no `case`
+    /// for it and so lets it behave exactly like `Free` — an option that never
+    /// did anything. [RQ-BUG-001, ADR-BUG-001 (DEC-BUG-001, DEC-BUG-003,
+    /// DEC-BUG-004)]
     void XpanderTone::defineVCOFrequenciesTuning(EnumRandomVCOFreq tuning)
     {
+        // Shared term of the compound intervals: a ninth is a second an octave
+        // up, an eleventh a fourth, a thirteenth a sixth.
+        constexpr int SEMITONES_PER_OCTAVE = 12;
+        // Not an interval, despite holding the same value: the reference parks
+        // both oscillators on this mid-range pitch for "same note". Kept
+        // separate so a later edit to one cannot silently move the other.
+        constexpr int SAME_NOTE_SEMITONE = 12;
+
         auto& vco1 = parameterAt("VCO1_FREQ");
         auto& vco2 = parameterAt("VCO2_FREQ");
         switch (tuning)
         {
-            case EnumRandomVCOFreq::SameNote: vco1.setValue(12); vco2.setValue(vco1.value()); break;
+            case EnumRandomVCOFreq::SameNote: vco1.setValue(SAME_NOTE_SEMITONE); vco2.setValue(vco1.value()); break;
             case EnumRandomVCOFreq::Third:    vco1.setValue(0);  vco2.setValue(4); break;
             case EnumRandomVCOFreq::Fifth:    vco1.setValue(0);  vco2.setValue(7); break;
             case EnumRandomVCOFreq::Seventh:  vco1.setValue(0);  vco2.setValue(11); break;
-            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(12 + 2); break;
-            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(12 + 5); break;
-            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(12 + 9); break;
-            case EnumRandomVCOFreq::Octave: // reference has no case: falls through unchanged
+            case EnumRandomVCOFreq::Octave:   vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE); break;
+            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 2); break;
+            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 5); break;
+            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(SEMITONES_PER_OCTAVE + 9); break;
             case EnumRandomVCOFreq::Free:
                 break;
         }
     }
 
+    // The randomizer's audibility guarantee. A fully random matrix usually
+    // leaves nothing routed to the amplifier, so the patch is silent -- which
+    // is why the user can ask for ENV2 to be forced onto VCA2 and pick the
+    // envelope shape. The four shapes below are the reference's DADSR + volume
+    // presets, not tunable values.
+    //
+    // EnumRandomVCAEnv::Free returns early: the reference asserts on it rather
+    // than handling it, so there is deliberately no shape to apply.
+    // [RQ-MOD-033, RQ-CTL-050]
     void XpanderTone::forceEnv2ModVca2AfterRandomizeMatrix(EnumRandomVCAEnv enveloppe)
     {
-        struct EnvelopeShape { int values[6]; }; // DADSR + volume
+        struct EnvelopeShape { std::array<int, 6> values; }; // DADSR + volume
         EnvelopeShape shape{};
         switch (enveloppe)
         {

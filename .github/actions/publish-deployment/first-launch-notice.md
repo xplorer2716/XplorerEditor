@@ -22,9 +22,3 @@ If nothing happens, your distribution does not ship FUSE 2:
 ```
 ./Xplorer-*.AppImage --appimage-extract-and-run
 ```
-
----
-
-Every archive contains the application, `oberheim.syx` (the patch **File → New** loads) and
-`xplorer.sbom.spdx.json` (the third-party components, also shown under **Help → About →
-Dependencies**). Keep the three together.

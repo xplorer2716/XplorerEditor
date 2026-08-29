@@ -11,6 +11,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <algorithm>
+#include <array>
 #include <memory>
 #include <regex>
 
@@ -52,7 +53,7 @@ namespace xplorer::app
                 _title.setText("Xplorer", juce::dontSendNotification);
 
                 _version.setText(productNameAndVersion, juce::dontSendNotification);
-                _copyright.setText("Copyright (c) 2012-2026 by Pascal Schmitt", juce::dontSendNotification);
+                _copyright.setText("Copyright (c) 2012-2026 by https://github.com/xplorer2716", juce::dontSendNotification);
 
                 _notice.setText("This software is released under GNU Affero General Public License v3.0",
                                 juce::dontSendNotification);
@@ -343,7 +344,7 @@ namespace xplorer::app
                 const juce::Font headerFont{juce::FontOptions{DEP_TEXT_SIZE}};
                 if (result.status == SbomStatus::Loaded)
                 {
-                    const char* const headings[] = {"Component", "Version", "Licence", "Website"};
+                    const auto headings = std::to_array<const char*>({"Component", "Version", "Licence", "Website"});
                     int index = 0;
                     for (auto* header : {&_nameHeader, &_versionHeader, &_licenseHeader, &_websiteHeader})
                     {
@@ -522,7 +523,8 @@ namespace xplorer::app
                         juce::AlertWindow::showMessageBoxAsync(
                             juce::MessageBoxIconType::InfoIcon, "Single patches",
                             juce::String(static_cast<int>(tones.size()))
-                                + " files extracted successfully to folder "
+                                + " files extracted successfully to folder"
+                                + juce::newLine
                                 + folder.getFullPathName());
                     }
                 }

@@ -5,6 +5,8 @@
 // Xpander/Matrix-12 MIDI spec and must match the reference exactly.
 // [RQ-MOD-001..003]
 
+#include "xpl/util/EnumUtils.hpp"
+
 #include <array>
 #include <cstdint>
 
@@ -300,7 +302,7 @@ namespace xplorer::model
 
     /// Page/sub-page for each modulation destination (same order as
     /// EnumModulationDestinations). [RQ-MOD-003]
-    inline constexpr std::array<PageSubPage, static_cast<std::size_t>(EnumModulationDestinations::LAG_RATE) + 1>
+    inline constexpr std::array<PageSubPage, static_cast<std::size_t>(xpl::util::toUnderlying(EnumModulationDestinations::LAG_RATE)) + 1>
         PAGE_SUBPAGE_FOR_MODULATION_DESTINATION{{
             {EnumPages::VCO_1_X, 2}, {EnumPages::VCO_1_X, 5}, {EnumPages::VCO_1_X, 7},
             {EnumPages::VCO_2_X, 2}, {EnumPages::VCO_2_X, 5}, {EnumPages::VCO_2_X, 7},
@@ -325,7 +327,7 @@ namespace xplorer::model
         for (std::size_t index = 0; index < PAGE_SUBPAGE_FOR_MODULATION_DESTINATION.size(); ++index)
         {
             const auto& entry = PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[index];
-            if (static_cast<int>(entry.page) == page && entry.subPage == subPage)
+            if (xpl::util::toUnderlying(entry.page) == page && entry.subPage == subPage)
             {
                 return static_cast<EnumModulationDestinations>(index);
             }

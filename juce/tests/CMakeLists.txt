@@ -71,13 +71,21 @@ add_executable(xpl_tests_app
     app/ModulationHighlightTests.cpp
     app/SegmentFontTests.cpp
     app/WindowGeometryTests.cpp
+    # Menu identity invariants: id uniqueness and View-range overlap, checked
+    # in the headless target because the GUI target that consumes them is off
+    # by default. [RQ-QLT-002, RQ-QLT-010, ADR-QLT-001 (DEC-QLT-001)]
+    app/MenuIdsTests.cpp
     # Layout-independent piano key mapping: OS-free, JUCE-free, so it belongs
     # in the headless target and runs even with -DXPL_BUILD_APP=OFF.
     # [RQ-GUI-074, RQ-BLD-025]
     app/PianoKeyMappingTests.cpp
     # Key-label decision logic, measurer injected (ComboBoxSizing's own
     # pattern) so it stays JUCE-free too. [RQ-GUI-075, RQ-BLD-025]
-    app/PianoKeyLabelPlanTests.cpp)
+    app/PianoKeyLabelPlanTests.cpp
+    # Knob preset values and the preset keymap: both halves are OS-free and
+    # JUCE-free, resolved against a fake KeyboardLayoutQuery exactly as the
+    # piano mapping is. [RQ-GUI-079, RQ-GUI-080, RQ-BLD-025]
+    app/KnobPresetValuesTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)

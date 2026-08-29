@@ -1,3 +1,3 @@
 unit_tests: true
-platform: linux
+platform: windows
 chat_mode: chat-eco

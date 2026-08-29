@@ -2,6 +2,8 @@
 
 #include "xplorer/app/ModulationHighlight.hpp"
 
+#include "xpl/util/EnumUtils.hpp"
+
 #include <set>
 
 // Block identity of modulation sources and destinations: the lookup that lets
@@ -22,8 +24,8 @@ namespace
 {
     // The enums are contiguous from 0; NONE closes the source range at 0x1B and
     // LAG_RATE closes the destination range.
-    constexpr int LAST_SOURCE = static_cast<int>(EnumModulationSourcesModMatrix::NONE);
-    constexpr int LAST_DESTINATION = static_cast<int>(EnumModulationDestinations::LAG_RATE);
+    constexpr int LAST_SOURCE = xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE);
+    constexpr int LAST_DESTINATION = xpl::util::toUnderlying(EnumModulationDestinations::LAG_RATE);
 }
 
 SCENARIO("Every modulation source resolves to its functional block, or to none",

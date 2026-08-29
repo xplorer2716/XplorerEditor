@@ -1,6 +1,6 @@
 /*
 Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-Copyright (C) 2012-2026 Pascal Schmitt
+Copyright (C) 2012-2026 https://github.com/xplorer2716
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -16,6 +16,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "xpl/midi/MidiMessage.hpp"
+
+#include "xpl/util/EnumUtils.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -51,7 +53,7 @@ namespace xpl::midi
         }
         requireDataByte(data1, "data1");
 
-        const auto status = static_cast<std::uint8_t>(static_cast<std::uint8_t>(command)
+        const auto status = static_cast<std::uint8_t>(xpl::util::toUnderlying(command)
                                                       | static_cast<std::uint8_t>(channel));
         if (isTwoByteCommand(command))
         {

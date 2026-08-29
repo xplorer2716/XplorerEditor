@@ -1,6 +1,6 @@
 /*
 Xplorer - A real-time editor for the Oberheim Xpander and Matrix-12 synths
-Copyright (C) 2012-2026 Pascal Schmitt
+Copyright (C) 2012-2026 https://github.com/xplorer2716
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as published by
@@ -70,6 +70,7 @@ namespace xpl::midi
         [[nodiscard]] int openOutputPortCount(const std::string& deviceName) const;
 
     private:
+        struct InputPortBody;
         class MockInputPort;
         class MockOutputPort;
         struct State;

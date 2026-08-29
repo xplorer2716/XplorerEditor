@@ -5,6 +5,7 @@
 
 #include <juce_core/juce_core.h>
 
+#include <array>
 #include <optional>
 #include <utility>
 
@@ -24,36 +25,36 @@ namespace xplorer::settings
             const char* name;
         };
 
-        constexpr EnumName<EnumRandomVCO2> VCO2_NAMES[]{
+        constexpr auto VCO2_NAMES = std::to_array<EnumName<EnumRandomVCO2>>({
             {EnumRandomVCO2::EnableFM, "EnableFM"},
             {EnumRandomVCO2::EnableNoise, "EnableNoise"},
             {EnumRandomVCO2::EnableSync, "EnableSync"},
-        };
-        constexpr EnumName<EnumRandomVCOFreq> VCOFREQ_NAMES[]{
+        });
+        constexpr auto VCOFREQ_NAMES = std::to_array<EnumName<EnumRandomVCOFreq>>({
             {EnumRandomVCOFreq::Free, "Free"}, {EnumRandomVCOFreq::SameNote, "SameNote"},
             {EnumRandomVCOFreq::Third, "Third"}, {EnumRandomVCOFreq::Fifth, "Fifth"},
             {EnumRandomVCOFreq::Seventh, "Seventh"}, {EnumRandomVCOFreq::Octave, "Octave"},
             {EnumRandomVCOFreq::Ninth, "Ninth"}, {EnumRandomVCOFreq::Eleventh, "Eleventh"},
             {EnumRandomVCOFreq::Thirteenth, "Thirteenth"},
-        };
-        constexpr EnumName<EnumRandomVCODetune> VCODETUNE_NAMES[]{
+        });
+        constexpr auto VCODETUNE_NAMES = std::to_array<EnumName<EnumRandomVCODetune>>({
             {EnumRandomVCODetune::Free, "Free"},
             {EnumRandomVCODetune::Digital, "Digital"},
             {EnumRandomVCODetune::Analog, "Analog"},
-        };
-        constexpr EnumName<EnumRandomVCAEnv> VCAENV_NAMES[]{
+        });
+        constexpr auto VCAENV_NAMES = std::to_array<EnumName<EnumRandomVCAEnv>>({
             {EnumRandomVCAEnv::Free, "Free"}, {EnumRandomVCAEnv::Organ, "Organ"},
             {EnumRandomVCAEnv::String, "String"}, {EnumRandomVCAEnv::Percusive, "Percusive"},
             {EnumRandomVCAEnv::PercusiveWithRelease, "PercusiveWithRelease"},
-        };
-        constexpr EnumName<EnumRandomModMatrix> MODMATRIX_NAMES[]{
+        });
+        constexpr auto MODMATRIX_NAMES = std::to_array<EnumName<EnumRandomModMatrix>>({
             {EnumRandomModMatrix::EnableAmount, "EnableAmount"},
             {EnumRandomModMatrix::EnableSourcesAndDestinations, "EnableSourcesAndDestinations"},
             {EnumRandomModMatrix::EnableQuantize, "EnableQuantize"},
-        };
+        });
 
         template <typename Enum, std::size_t N>
-        std::optional<Enum> parseEnum(const EnumName<Enum> (&table)[N], const juce::String& text)
+        std::optional<Enum> parseEnum(const std::array<EnumName<Enum>, N>& table, const juce::String& text)
         {
             for (const auto& entry : table)
             {
@@ -66,7 +67,7 @@ namespace xplorer::settings
         }
 
         template <typename Enum, std::size_t N>
-        juce::String enumToString(const EnumName<Enum> (&table)[N], Enum value)
+        juce::String enumToString(const std::array<EnumName<Enum>, N>& table, Enum value)
         {
             for (const auto& entry : table)
             {
@@ -79,7 +80,7 @@ namespace xplorer::settings
         }
 
         template <typename Enum, std::size_t N>
-        std::optional<Enum> parseFlags(const EnumName<Enum> (&table)[N], const juce::String& text)
+        std::optional<Enum> parseFlags(const std::array<EnumName<Enum>, N>& table, const juce::String& text)
         {
             int combined = 0;
             auto tokens = juce::StringArray::fromTokens(text, " ", "");
@@ -97,7 +98,7 @@ namespace xplorer::settings
         }
 
         template <typename Enum, std::size_t N>
-        juce::String flagsToString(const EnumName<Enum> (&table)[N], Enum value)
+        juce::String flagsToString(const std::array<EnumName<Enum>, N>& table, Enum value)
         {
             juce::StringArray names;
             for (const auto& entry : table)
@@ -114,12 +115,22 @@ namespace xplorer::settings
         // UiConfiguration::blockColours (BlockId order). Only set entries are
         // written; a missing element reads back as "unset". [RQ-SET-007,
         // ADR-JUC-020 (DEC-JUC-039)]
-        constexpr const char* BLOCK_COLOUR_ELEMENTS[AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT]{
+        constexpr std::array<const char*, AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT> BLOCK_COLOUR_ELEMENTS{
             "BlockColorVco", "BlockColorLag", "BlockColorTrack", "BlockColorVcf",
             "BlockColorEnv", "BlockColorLfo", "BlockColorRamp", "BlockColorMatrix",
         };
 
         // --- element helpers ----------------------------------------------
+        //
+        // All four return std::optional, and the empty case means "the element
+        // is not in the file" -- never "the value is zero". That distinction is
+        // what makes the schema tolerant in both directions: a file written by
+        // an older version simply lacks the newer elements and every reader
+        // falls back to its default (see the value_or() calls in
+        // parseSettings), while an element this version no longer reads is
+        // ignored rather than rejected. Both are relied upon -- by settings
+        // files predating a feature, and by files imported from the archived
+        // .NET implementation. [RQ-SET-006, RQ-SET-007]
 
         std::optional<juce::String> childText(const juce::XmlElement& parent, const char* name)
         {
@@ -134,6 +145,10 @@ namespace xplorer::settings
             return text.has_value() ? std::make_optional(text->getIntValue()) : std::nullopt;
         }
 
+        // Case-sensitive comparison against "true" on purpose: that is exactly
+        // what .NET's XmlSerializer emits, and anything else -- including
+        // "True" -- is therefore treated as false rather than silently
+        // accepted. addChildText below writes the same lowercase form back.
         std::optional<bool> childBool(const juce::XmlElement& parent, const char* name)
         {
             const auto text = childText(parent, name);
@@ -200,7 +215,6 @@ namespace xplorer::settings
             }
 
             settings.uiConfig.knobLedBorderColor = childInt(*ui, "KnobLedBorderColor").value_or(0);
-            settings.uiConfig.knobMovementIsLinear = childBool(*ui, "KnobMovementIsLinear").value_or(false);
             for (std::size_t i = 0; i < AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT; ++i)
             {
                 settings.uiConfig.blockColours[i] = childInt(*ui, BLOCK_COLOUR_ELEMENTS[i]);
@@ -251,7 +265,6 @@ namespace xplorer::settings
 
             auto* ui = root->createNewChildElement("UiConfig");
             addChildText(*ui, "KnobLedBorderColor", juce::String(settings.uiConfig.knobLedBorderColor));
-            addChildText(*ui, "KnobMovementIsLinear", settings.uiConfig.knobMovementIsLinear ? "true" : "false");
             for (std::size_t i = 0; i < AllUsersSettings::UiConfiguration::BLOCK_COLOUR_COUNT; ++i)
             {
                 if (settings.uiConfig.blockColours[i].has_value())
@@ -272,11 +285,23 @@ namespace xplorer::settings
         }
     }
 
+    // Pimpl, so juce::File and juce::XmlElement stay out of the public header
+    // and the settings library imposes no JUCE dependency on its consumers.
+    //
+    // The whole settings file is cached in memory after the first read. Reads
+    // are frequent (the controller consults settings on nearly every MIDI
+    // operation) and the file is only ever written by this process, so a
+    // re-read per access would be pure cost. The cache is refreshed on save and
+    // dropped on reset.
     struct XmlSettingsService::Impl
     {
         juce::File file;
         std::optional<AllUsersSettings> cache;
 
+        // Returns nullopt for every failure mode alike -- absent file,
+        // unparseable XML, wrong root element, missing sections -- because the
+        // caller's response is the same in all of them: fall back to defaults.
+        // Distinguishing them would add no behaviour.
         std::optional<AllUsersSettings> load() const
         {
             if (!file.existsAsFile())
@@ -307,7 +332,14 @@ namespace xplorer::settings
 
     XmlSettingsService::~XmlSettingsService() = default;
 
-    AllUsersSettings& XmlSettingsService::allUsersSettings()
+    // Lazy load with a three-step fallback: read the file; if that fails write
+    // the defaults and read them back; if THAT fails too (read-only
+    // filesystem), keep the defaults in memory for this run.
+    //
+    // Returns const: see the contract on the interface declaration. Mutating
+    // the cache in place would be invisible to disk, so the type refuses it.
+    // [RQ-BUG-004, ADR-BUG-003 (DEC-BUG-010)]
+    const AllUsersSettings& XmlSettingsService::allUsersSettings()
     {
         if (!_impl->cache.has_value())
         {
@@ -331,12 +363,19 @@ namespace xplorer::settings
         return *_impl->cache;
     }
 
+    // The cache is updated from the ARGUMENT, not by re-reading the file just
+    // written. Deliberate: a re-read would be slower and would silently mask a
+    // failed write by leaving the previous values in place, where this way the
+    // caller's own values are what everyone subsequently sees.
     void XmlSettingsService::saveSettings(const AllUsersSettings& settings)
     {
         _impl->save(settings);
         _impl->cache = settings;
     }
 
+    // Clears the cache rather than filling it with the defaults just written,
+    // so the next read goes through load() and reflects what actually reached
+    // the disk. [RQ-SET-004]
     void XmlSettingsService::resetSettings()
     {
         _impl->save(defaultAllUsersSettings());

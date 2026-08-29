@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "xpl/util/EnumUtils.hpp"
 #include "xplorer/model/PacketizedBinary.hpp"
 #include "xplorer/model/XpanderConstants.hpp"
 #include "xplorer/model/XpanderParameter.hpp"
@@ -211,12 +212,12 @@ SCENARIO("Constant tables match the reference", "[RQ-MOD-001][RQ-MOD-003]")
     THEN("destination -> page/subpage -> destination round-trips")
     {
         const auto& vcfEntry =
-            PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[static_cast<std::size_t>(EnumModulationDestinations::VCF_FRQ)];
+            PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[static_cast<std::size_t>(xpl::util::toUnderlying(EnumModulationDestinations::VCF_FRQ))];
         CHECK(vcfEntry.page == EnumPages::VCF_VCA_X);
         CHECK(vcfEntry.subPage == 2);
-        CHECK(modulationDestinationForPageSubPage(static_cast<int>(EnumPages::VCF_VCA_X), 2)
+        CHECK(modulationDestinationForPageSubPage(xpl::util::toUnderlying(EnumPages::VCF_VCA_X), 2)
               == EnumModulationDestinations::VCF_FRQ);
-        CHECK(modulationDestinationForPageSubPage(static_cast<int>(EnumPages::FM_LAG_X), 6)
+        CHECK(modulationDestinationForPageSubPage(xpl::util::toUnderlying(EnumPages::FM_LAG_X), 6)
               == EnumModulationDestinations::LAG_RATE);
     }
 }
