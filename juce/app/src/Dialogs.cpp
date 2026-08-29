@@ -53,7 +53,7 @@ namespace xplorer::app
                 _title.setText("Xplorer", juce::dontSendNotification);
 
                 _version.setText(productNameAndVersion, juce::dontSendNotification);
-                _copyright.setText("Copyright (c) 2012-2026 by Pascal Schmitt", juce::dontSendNotification);
+                _copyright.setText("Copyright (c) 2012-2026 by https://github.com/xplorer2716", juce::dontSendNotification);
 
                 _notice.setText("This software is released under GNU Affero General Public License v3.0",
                                 juce::dontSendNotification);
