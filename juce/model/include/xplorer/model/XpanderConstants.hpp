@@ -17,6 +17,11 @@ namespace xplorer::model
         inline constexpr int SINGLE_TONES_MAX_COUNT = 100;
         inline constexpr int MULTI_PATCHES_MAX_COUNT = 100;
         inline constexpr int TONE_NAME_LENGTH = 8;
+        // Patch names are fixed-width on the wire: shorter names are padded to
+        // TONE_NAME_LENGTH with this character. Named here rather than inline
+        // because the UI has to strip exactly what the model writes.
+        // [RQ-MOD-023, RQ-GUI-081]
+        inline constexpr char TONE_NAME_PADDING_CHAR = ' ';
         inline constexpr int MODENTRIES_COUNT = 20;
         inline constexpr int MAX_MODULATION_SOURCE = 6;
         inline constexpr int VCO_COUNT = 2;
