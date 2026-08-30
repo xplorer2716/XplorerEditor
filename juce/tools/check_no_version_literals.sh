@@ -67,5 +67,5 @@ for def in XPL_VERSION_FULL_STRING JUCE_APPLICATION_NAME_STRING; do
     fi
 done
 
-if [ "$FAIL" -eq 0 ]; then echo; echo "no version literals"; else echo; echo "$FAIL check(s) failed"; fi
+if [[ "$FAIL" -eq 0 ]]; then echo; echo "no version literals"; else echo; echo "$FAIL check(s) failed"; fi
 [ "$FAIL" -eq 0 ]

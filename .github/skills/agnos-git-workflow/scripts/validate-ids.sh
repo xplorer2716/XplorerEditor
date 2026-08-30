@@ -28,7 +28,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-if [ -z "$type" ] || [ -z "$value" ]; then
+if [[ -z "$type" ]] || [[ -z "$value" ]]; then
   usage
 fi
 
