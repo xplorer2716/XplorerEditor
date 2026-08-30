@@ -37,8 +37,15 @@ namespace xplorer::app
 
     /// Rename dialog: the text field restricts keystrokes/paste to the
     /// reference patch-name character set and length live, with
-    /// isPatchNameValid() re-checked on accept as a safety net.
+    /// isPatchNameValid() re-checked on accept as a safety net. `currentName`
+    /// is the stored, space-padded name -- the dialog strips the padding
+    /// before showing it (patchNameForEditing). [RQ-GUI-081]
     void showRenameDialog(const std::string& currentName, std::function<void(const std::string&)> onAccept);
+
+    /// The stored patch name as it should appear in an editable field: the
+    /// model's fixed-width space padding removed, leading and interior spaces
+    /// kept. [RQ-GUI-081]
+    [[nodiscard]] std::string patchNameForEditing(const std::string& storedName);
 
     /// True when every character is in the reference patch-name character
     /// set and the name is within the stored patch-name length.

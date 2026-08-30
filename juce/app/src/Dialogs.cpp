@@ -712,6 +712,26 @@ namespace xplorer::app
         };
     }
 
+    // The model stores a patch name fixed-width, space-padded to
+    // TONE_NAME_LENGTH, because that padding is part of the wire format
+    // (XpanderTone::setToneName, RQ-MOD-023). In a text field that padding is
+    // invisible yet still counts against the very TONE_NAME_LENGTH budget
+    // PatchNameInputFilter enforces, so pre-filling the editor with the stored
+    // form silently costs the user one typeable character per pad space -- a
+    // 6-character patch could only be renamed with 6 new characters. Strip it
+    // on the way in; the model pads again on the way out. Trailing spaces
+    // only: a leading or interior space is a legal name character here
+    // (PATCH_NAME_CHAR_PATTERN) and is the user's, not the format's.
+    // [RQ-GUI-081]
+    std::string patchNameForEditing(const std::string& storedName)
+    {
+        const auto lastSignificant =
+            storedName.find_last_not_of(model::constants::TONE_NAME_PADDING_CHAR);
+        return lastSignificant == std::string::npos
+                   ? std::string{}
+                   : storedName.substr(0, lastSignificant + 1);
+    }
+
     bool isPatchNameValid(const std::string& name)
     {
         return name.size() <= static_cast<std::size_t>(model::constants::TONE_NAME_LENGTH)
@@ -725,7 +745,7 @@ namespace xplorer::app
                                                  + juce::String(model::constants::TONE_NAME_LENGTH)
                                                  + " characters",
                                              juce::MessageBoxIconType::NoIcon);
-        window->addTextEditor("Name", juce::String(currentName));
+        window->addTextEditor("Name", juce::String(patchNameForEditing(currentName)));
         window->getTextEditor("Name")->setInputFilter(new PatchNameInputFilter(), true);
         window->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
         window->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
