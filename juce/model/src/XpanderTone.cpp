@@ -72,7 +72,7 @@ namespace xplorer::model
         else
         {
             _toneName = name;
-            _toneName.resize(constants::TONE_NAME_LENGTH, ' ');
+            _toneName.resize(constants::TONE_NAME_LENGTH, constants::TONE_NAME_PADDING_CHAR);
         }
     }
 
