@@ -465,6 +465,46 @@ SCENARIO("Synth utilities emit the reference byte frames", "[RQ-CTL-060][RQ-CTL-
     }
 }
 
+SCENARIO("Test display sends every reference glyph across both VFD lines", "[RQ-GUI-082]")
+{
+    GIVEN("a controller")
+    {
+        Fixture f;
+
+        WHEN("running the display character test")
+        {
+            f.controller.sendDisplayCharacterTestToSynth();
+
+            THEN("display off, on, then the character-test text are sent")
+            {
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                REQUIRE(sent.size() == 3);
+                REQUIRE(sent[2].size() == 5 + 80 + 1);
+            }
+
+            AND_THEN("line 1 is the uppercase alphabet")
+            {
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                const std::string expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                for (std::size_t i = 0; i < expected.size(); ++i)
+                {
+                    CHECK(sent[2][5 + i] == static_cast<std::uint8_t>(expected[i]));
+                }
+            }
+
+            AND_THEN("line 2 is the digits followed by the reference symbol set")
+            {
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                const std::string expected = "0123456789<>()[]/+-*$'";
+                for (std::size_t i = 0; i < expected.size(); ++i)
+                {
+                    CHECK(sent[2][5 + 40 + i] == static_cast<std::uint8_t>(expected[i]));
+                }
+            }
+        }
+    }
+}
+
 SCENARIO("Modulation-matrix source/destination availability follows the 6-source cap",
          "[RQ-GUI-016][RQ-CTL-030]")
 {

@@ -986,6 +986,9 @@ namespace xplorer::app
                 // shortcut, since the reference has none to match.
                 // [RQ-GUI-028, RQ-GUI-008]
                 menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
+                // Third sanctioned JUCE-only departure, no reference
+                // counterpart, no shortcut. [RQ-GUI-082, RQ-GUI-008]
+                menu.addItem(menuItemId(MenuItem::ToolsTestDisplay), "Test display");
                 juce::PopupMenu singlePatches;
                 singlePatches.addItem(menuItemId(MenuItem::ToolsGetAllSinglePatches),
                                       "Get all single patches from synth");
@@ -1209,6 +1212,9 @@ namespace xplorer::app
                     _pianoWindow->setVisible(true);
                     _pianoWindow->toFront(true);
                 }
+                break;
+            case MenuItem::ToolsTestDisplay: // [RQ-GUI-082]
+                _controller->sendDisplayCharacterTestToSynth();
                 break;
             case MenuItem::HelpAbout:
                 // Name and version from the build, not from a literal: this
