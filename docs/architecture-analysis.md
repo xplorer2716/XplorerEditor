@@ -32,7 +32,7 @@ still a binding constraint on this one (§8).
 | [8](#8-behavioural-invariants) | **Behavioural invariants** | **Before "fixing" anything that looks wrong on the wire** |
 | [9](#9-solid--design-patterns) | SOLID & patterns | You design a new seam |
 | [10](#10-testing-architecture) | Testing architecture | You add code and need to know where its test goes |
-| [11](#11-known-gaps--technical-debt) | Known gaps & debt | You are looking for work, or hit something unfinished |
+
 | [12](#12-architecture-summary) | Architecture summary | You want the context diagram and the honest trade-offs |
 | [13](#13-licensing-disclosure--governance) | Licensing & governance | You add a dependency or change a licence header |
 | [14](#14-open-points-still-to-verify) | **Open points still to verify** | You need to know what is *not* proven — hardware, platforms, unconfirmed wire behaviours |
@@ -997,27 +997,7 @@ new code); every scenario tagged with the requirement it covers (`"[RQ-MOD-033]"
 **Rule**: a failing test is never modified to make it pass. A test changes only when the
 expected behaviour genuinely changed, and the change is recorded in the plan.
 
----
-
-## 11. Known gaps & technical debt
-
-An index, ordered by what would hurt most. **The full register, with what each item needs in
-order to close, is [§14](#14-open-points-still-to-verify).**
-
-| Severity | Item | Detail |
-|---|---|---|
-| 🔴 Blocking field support | Diagnostic logging never enabled — no log file is ever written (issue #68) | [§14.4](#144-functional-gaps-carried-forward) |
-| 🟠 Unproven | Hardware validation and cross-compatibility campaigns both still in progress | [§14.1](#141-hardware-validation--not-complete) |
-| 🟠 Unproven | Five wire behaviours preserved verbatim but never confirmed on the instrument | [§14.2](#142-wire-behaviours-believed-correct-but-unconfirmed-on-hardware) |
-| 🟠 Unproven | macOS arm64 has never run on real Apple hardware | [§14.3](#143-platform-coverage-gaps) |
-| 🟡 Design constraint | Blocking sleeps reachable from the message thread — they *are* the hardware pacing | [§14.5](#145-structural-debt) |
-| 🟡 Safety net missing | Generator staleness gates exist but are not wired into CMake or CI | [§14.5](#145-structural-debt) |
-| 🟡 Incomplete | Design tokens cover appearance only; spacing and texture are still file-local | [§14.5](#145-structural-debt) |
-| 🟢 Feature gap | `BugReportFactory` payload, tone-morphing UX, multi-patch mode, keyboard-focus indicator | [§14.4](#144-functional-gaps-carried-forward) |
-| 🟢 Code debt | `AbstractTone` → `XpanderTone` downcast in one private accessor | [§14.5](#145-structural-debt) |
-| 🟢 Doc hygiene | 9 ADRs formally `Proposed` while their code ships | [§14.5](#145-structural-debt) |
-
----
+--
 
 ## 12. Architecture summary
 
