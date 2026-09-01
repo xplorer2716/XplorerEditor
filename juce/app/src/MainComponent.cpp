@@ -1214,7 +1214,7 @@ namespace xplorer::app
                 }
                 break;
             case MenuItem::ToolsTestDisplay: // [RQ-GUI-082]
-                _controller->sendDisplayCharacterTestToSynth();
+                displayCharacterTest();
                 break;
             case MenuItem::HelpAbout:
                 // Name and version from the build, not from a literal: this
@@ -1426,6 +1426,17 @@ namespace xplorer::app
                                                           "Single patches", e.what());
                 }
             });
+    }
+
+    /// @brief Sends a character test to the synth and displays it on the app's VFD.
+    void MainComponent::displayCharacterTest()
+    {
+        const auto line1="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const auto line2="0123456789<>()[]/+-*$'";
+        // Send to Xpander hardware. [RQ-GUI-082]
+        _controller->sendDisplayCharacterTestToSynth(line1,line2);
+        // Display on app VFD for alignment verification. [RQ-GUI-082]
+        _vfd->displayCharacters(line1, line2);
     }
 
     void MainComponent::onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event)
