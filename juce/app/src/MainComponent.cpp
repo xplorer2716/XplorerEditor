@@ -980,15 +980,6 @@ namespace xplorer::app
             case TopLevelMenu::Tools:
             {
                 addReferenceItem(menu, MenuItem::ToolsSettings, "Settings");
-                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
-                // No reference counterpart -- the second sanctioned JUCE-only
-                // item after the View menu, kept at the owner's decision. No
-                // shortcut, since the reference has none to match.
-                // [RQ-GUI-028, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
-                // Third sanctioned JUCE-only departure, no reference
-                // counterpart, no shortcut. [RQ-GUI-082, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsTestDisplay), "Test display");
                 juce::PopupMenu singlePatches;
                 singlePatches.addItem(menuItemId(MenuItem::ToolsGetAllSinglePatches),
                                       "Get all single patches from synth");
@@ -998,7 +989,16 @@ namespace xplorer::app
                 juce::PopupMenu allDataDump;
                 allDataDump.addItem(menuItemId(MenuItem::ToolsBackupAllData), "Backup all data");
                 allDataDump.addItem(menuItemId(MenuItem::ToolsRestoreAllData), "Restore all data");
-                menu.addSubMenu("Backup/Restore...", allDataDump);
+                menu.addSubMenu("Backup/Restore...", allDataDump);                
+                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
+                // No reference counterpart -- the second sanctioned JUCE-only
+                // item after the View menu, kept at the owner's decision. No
+                // shortcut, since the reference has none to match.
+                // [RQ-GUI-028, RQ-GUI-008]
+                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
+                // Third sanctioned JUCE-only departure, no reference
+                // counterpart, no shortcut. [RQ-GUI-082, RQ-GUI-008]
+                menu.addItem(menuItemId(MenuItem::ToolsTestDisplay), "Test display");
                 break;
             }
             case TopLevelMenu::Help:
