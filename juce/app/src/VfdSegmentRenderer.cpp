@@ -105,12 +105,11 @@ namespace xplorer::app
                               RAIL_RIGHT, vfd::vfdUnderscoreY);
                     break;
 
-                case 'x':
-                    // A crossing confined to the lower half, which is where a
-                    // 16-segment cell draws its lowercase. Built from the
-                    // existing rails, so it needs no geometry of its own.
-                    addStroke(path, RAIL_LEFT, RAIL_MIDDLE_Y, RAIL_RIGHT, RAIL_BOTTOM);
-                    addStroke(path, RAIL_RIGHT, RAIL_MIDDLE_Y, RAIL_LEFT, RAIL_BOTTOM);
+                case '.':
+                    // Same mark and position as the ':' lower dot — the true
+                    // VFD glyph, not the vendored table's single-diagonal
+                    // approximation. [PLAN-GUI-015]
+                    path.addPath(dotAt(vfd::vfdDotX, vfd::vfdDotLowerY, vfd::vfdDotSize));
                     break;
 
                 default:

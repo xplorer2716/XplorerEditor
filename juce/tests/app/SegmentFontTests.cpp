@@ -62,10 +62,14 @@ SCENARIO("the segment bit order matches the documented layout", "[RQ-GUI-033]")
 
         WHEN("'1' is decoded")
         {
-            THEN("it lights only the two right verticals and one diagonal serif")
+            THEN("it lights both full verticals, left and right, and nothing else")
             {
+                // Xpander hardware draws '1' as two parallel vertical strokes,
+                // not a single stroke with a diagonal serif — corrected from
+                // the vendored table's {C,D,N} against the physical display.
+                // [PLAN-GUI-015]
                 REQUIRE(litSegments('1')
-                        == setOf({Segment::C, Segment::D, Segment::N}));
+                        == setOf({Segment::C, Segment::D, Segment::G, Segment::H}));
             }
         }
 
@@ -110,7 +114,7 @@ SCENARIO("the segment bit order matches the documented layout", "[RQ-GUI-033]")
 
 SCENARIO("the outer ring and the diagonals are distinguishable", "[RQ-GUI-033]")
 {
-    GIVEN("'0' and '8', which share the whole outer ring")
+    GIVEN("'O' and '8', which share the whole outer ring")
     {
         const auto ring = setOf({Segment::A, Segment::B, Segment::C, Segment::D,
                                  Segment::E, Segment::F, Segment::G, Segment::H});
@@ -118,7 +122,7 @@ SCENARIO("the outer ring and the diagonals are distinguishable", "[RQ-GUI-033]")
         WHEN("their common segments are taken")
         {
             std::set<Segment> common;
-            for (const auto segment : litSegments('0'))
+            for (const auto segment : litSegments('O'))
             {
                 if (litSegments('8').count(segment) != 0)
                 {
@@ -134,17 +138,41 @@ SCENARIO("the outer ring and the diagonals are distinguishable", "[RQ-GUI-033]")
 
         WHEN("their differences are taken")
         {
-            THEN("'0' adds the slash diagonals and '8' adds the middle bar")
+            THEN("'O' adds nothing and '8' adds the middle bar")
             {
-                auto zero = litSegments('0');
+                // 'O' no longer differs from the plain ring: digit '0' was
+                // moved onto this same mask (Xpander hardware draws no
+                // slash — no visual difference between 0 and O), so the ring
+                // alone is 'O''s whole shape now. [PLAN-GUI-015]
+                auto letterO = litSegments('O');
                 auto eight = litSegments('8');
                 for (const auto segment : ring)
                 {
-                    zero.erase(segment);
+                    letterO.erase(segment);
                     eight.erase(segment);
                 }
-                REQUIRE(zero == setOf({Segment::N, Segment::T}));
+                REQUIRE(letterO.empty());
                 REQUIRE(eight == setOf({Segment::P, Segment::U}));
+            }
+        }
+    }
+
+    GIVEN("'7', whose only non-horizontal segments are its diagonal stroke")
+    {
+        WHEN("it is decoded")
+        {
+            THEN("it is exactly the top horizontals plus N and T")
+            {
+                // Corrected '7' is oblique (Xpander hardware), built from the
+                // top bar plus a single top-right-to-bottom-left diagonal —
+                // the same N,T pair the old sprite-derived '0' used to pin
+                // before '0' moved onto the plain-ring mask above. Combined
+                // with 'M'/'W' below ({K,N} vs {R,T}), this still isolates
+                // all four diagonal bit positions individually:
+                // N = {K,N}∩{N,T}, T = {R,T}∩{N,T}, K = {K,N}\{N}, R = {R,T}\{T}.
+                // [PLAN-GUI-015]
+                REQUIRE(litSegments('7')
+                        == setOf({Segment::A, Segment::B, Segment::N, Segment::T}));
             }
         }
     }
@@ -296,16 +324,30 @@ SCENARIO("the vendored table has exactly two known mask collisions", "[RQ-GUI-04
                 }
             }
 
-            THEN("they are ':' with '|' and 'x' with 'X', and nothing else")
+            THEN("they are the two off-model pairs plus three Xpander-accurate ones")
             {
-                // This pins the vendored data. RQ-GUI-049 requires all 95
-                // glyphs to render distinctly, and the renderer buys that with
-                // exactly two off-model overrides (DEC-JUC-052). If a table
-                // update ever introduced a third collision, that guarantee
-                // would break silently — so it must break here instead.
-                REQUIRE(collisions.size() == 2);
+                // ':'/'|' and 'x'/'X' are the vendored data's own collisions;
+                // RQ-GUI-049 requires all 95 glyphs to render distinctly, and
+                // the renderer buys that with exactly two off-model overrides
+                // (DEC-JUC-052).
+                //
+                // '0'/'O', '('/'<' and ')'/'>' are NEW, deliberate collisions
+                // from the Xpander hardware correction (PLAN-GUI-015): the
+                // physical display draws each pair identically (no slashed
+                // zero, and angle brackets reuse the same rounded-brace shape
+                // as parentheses), so unlike the two above, these are NOT
+                // given a distinguishing override — colliding IS the
+                // hardware-accurate behaviour here.
+                //
+                // If a table update ever introduced an unaccounted-for
+                // collision, that guarantee would break silently — so it must
+                // break here instead.
+                REQUIRE(collisions.size() == 5);
+                REQUIRE(collisions[0x1400] == "(<");
                 REQUIRE(collisions[0x2200] == ":|");
+                REQUIRE(collisions[0x4100] == ")>");
                 REQUIRE(collisions[0x5500] == "Xx");
+                REQUIRE(collisions[0x00FF] == "0O");
             }
         }
     }
