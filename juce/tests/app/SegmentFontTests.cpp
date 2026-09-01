@@ -62,14 +62,18 @@ SCENARIO("the segment bit order matches the documented layout", "[RQ-GUI-033]")
 
         WHEN("'1' is decoded")
         {
-            THEN("it lights both full verticals, left and right, and nothing else")
+            THEN("it lights the plain right vertical only, no serif, no diagonal")
             {
-                // Xpander hardware draws '1' as two parallel vertical strokes,
-                // not a single stroke with a diagonal serif — corrected from
-                // the vendored table's {C,D,N} against the physical display.
-                // [PLAN-GUI-015]
+                // Two earlier corrections both regressed on owner review: G+H
+                // (both left segments) drew two full-height bars side by side
+                // and read as "11"; H alone (a short top-left flag) still left
+                // a visible stray fragment. The plain right vertical is the
+                // simplest shape left to try — deliberately identical to '!'
+                // (same C,D mask), which is a NEW collision this correction
+                // introduces and has not yet been visually confirmed against
+                // the hardware. [PLAN-GUI-015, pending re-confirmation]
                 REQUIRE(litSegments('1')
-                        == setOf({Segment::C, Segment::D, Segment::G, Segment::H}));
+                        == setOf({Segment::C, Segment::D}));
             }
         }
 
@@ -324,25 +328,31 @@ SCENARIO("the vendored table has exactly two known mask collisions", "[RQ-GUI-04
                 }
             }
 
-            THEN("they are the two off-model pairs plus three Xpander-accurate ones")
+            THEN("they are the two off-model pairs plus four Xpander-accurate ones")
             {
                 // ':'/'|' and 'x'/'X' are the vendored data's own collisions;
                 // RQ-GUI-049 requires all 95 glyphs to render distinctly, and
                 // the renderer buys that with exactly two off-model overrides
                 // (DEC-JUC-052).
                 //
-                // '0'/'O', '('/'<' and ')'/'>' are NEW, deliberate collisions
-                // from the Xpander hardware correction (PLAN-GUI-015): the
-                // physical display draws each pair identically (no slashed
-                // zero, and angle brackets reuse the same rounded-brace shape
-                // as parentheses), so unlike the two above, these are NOT
-                // given a distinguishing override — colliding IS the
-                // hardware-accurate behaviour here.
+                // '0'/'O', '('/'<', ')'/'>' and '1'/'!' are NEW, deliberate
+                // collisions from the Xpander hardware correction
+                // (PLAN-GUI-015): the physical display draws '0'/'O' and the
+                // bracket pairs identically, and '1' is corrected to the
+                // plainest possible vertical stroke after two owner-rejected
+                // attempts at a serif ("11", then a stray fragment) — which
+                // happens to match '!''s existing mask exactly. Unlike the
+                // first two collisions, none of these four gets a
+                // distinguishing override: colliding IS the hardware-accurate
+                // behaviour for the digits/brackets, and '!'/'?' are owner-
+                // confirmed to never reach this display at all, so '1'/'!'
+                // costs nothing in practice.
                 //
                 // If a table update ever introduced an unaccounted-for
                 // collision, that guarantee would break silently — so it must
                 // break here instead.
-                REQUIRE(collisions.size() == 5);
+                REQUIRE(collisions.size() == 6);
+                REQUIRE(collisions[0x000C] == "!1");
                 REQUIRE(collisions[0x1400] == "(<");
                 REQUIRE(collisions[0x2200] == ":|");
                 REQUIRE(collisions[0x4100] == ")>");

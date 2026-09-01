@@ -684,7 +684,7 @@ SCENARIO("Every printable character renders, and no two render alike",
                 byAppearance[cellSignature(image)].push_back(codePoint);
             }
 
-            THEN("all 95 are distinguishable, except the Xpander's own three identical pairs")
+            THEN("all 95 are distinguishable, except five known identical pairs")
             {
                 // The inherited sprite drew only 51 of these and left 44 cells
                 // blank — every lowercase letter among them. The vendored table
@@ -705,8 +705,16 @@ SCENARIO("Every printable character renders, and no two render alike",
                 // called directly with lowercase (e.g. by this very test),
                 // and at that level 'x' now falls back to the vendored
                 // table's own 'X'-identical mask.
+                //
+                // '1'/'!' collide too: '1' was corrected to the plainest
+                // possible vertical stroke after two owner-rejected attempts
+                // at a serif regressed to "11" or a stray fragment, and that
+                // plain stroke happens to match '!''s existing mask exactly.
+                // Owner-confirmed '!' and '?' never reach this display in
+                // practice, so the collision is accepted rather than chasing
+                // a fourth '1' shape.
                 const std::set<std::set<int>> allowedIdenticalPairs{
-                    {'0', 'O'}, {'(', '<'}, {')', '>'}, {'X', 'x'}};
+                    {'0', 'O'}, {'(', '<'}, {')', '>'}, {'X', 'x'}, {'1', '!'}};
 
                 for (const auto& [appearance, characters] : byAppearance)
                 {

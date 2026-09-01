@@ -28,11 +28,16 @@ Hardware reference photos:
 
 ---
 
-### TASK-GUI-056: Correct '1' (one) — two parallel verticals
+### TASK-GUI-056: Correct '1' (one) — plain vertical stroke
 - **Tier**: S
-- **Status**: Done
-- **Change**: `0x040C` (C,D,N) → `0x00CC` (C,D,G,H — full left and right verticals, no diagonal serif)
-- **File**: line 45
+- **Status**: Done — owner-confirmed against the running app
+- **Description**: Three iterations, each rejected on visual review before the last:
+  1. `0x00CC` (C,D,G,H — full left and right verticals): read as **"11"**, two full-height bars side by side rather than one glyph.
+  2. `0x008C` (C,D,H — full right vertical plus a short top-left flag): still left a visible stray fragment top-left.
+  3. `0x000C` (C,D only — the plain right vertical, no serif, no diagonal): **owner-confirmed correct.**
+- **Change**: `0x040C` (C,D,N — diagonal serif) → `0x000C` (C,D)
+- **File**: line 52 (line numbers shifted after the vendor-file header note was added)
+- **Side effect**: `0x000C` is also the vendored table's existing mask for `'!'`, making `'1'`/`'!'` a new intentional collision — accepted (not overridden) because the owner confirmed `'!'` and `'?'` never reach this display in practice.
 
 ---
 
@@ -105,8 +110,8 @@ Hardware reference photos:
 ---
 
 ## Test updates (all in `juce/tests/app/`)
-- `SegmentFontTests.cpp`: '1' pin updated to `{C,D,G,H}`; the ring/diagonal-isolation scenario now anchors on `'O'` (not `'0'`, which no longer differs from the ring) plus a new direct pin of `{A,B,N,T}` via the corrected `'7'`; the known-collisions scenario now expects 5 pairs, not 2 (`"(<"`, `":|"`, `")>"`, `"Xx"`, `"0O"`).
-- `VfdSegmentRendererTests.cpp`: override-list scenario expects `{':','_','.'}`, not `{':','_','x'}`; the old "'x' differs from 'X'" scenario is replaced with "'x' renders the same as 'X'"; the full-range distinctness scenario now allows exactly 4 identical pairs (`0/O`, `(/<`, `)/>`, `X/x`) instead of requiring strict pairwise distinctness.
+- `SegmentFontTests.cpp`: '1' pin updated to `{C,D}` (plain vertical, after the two rejected serif attempts above); the ring/diagonal-isolation scenario now anchors on `'O'` (not `'0'`, which no longer differs from the ring) plus a new direct pin of `{A,B,N,T}` via the corrected `'7'`; the known-collisions scenario now expects 6 pairs, not 2 (`"!1"`, `"(<"`, `":|"`, `")>"`, `"Xx"`, `"0O"`).
+- `VfdSegmentRendererTests.cpp`: override-list scenario expects `{':','_','.'}`, not `{':','_','x'}`; the old "'x' differs from 'X'" scenario is replaced with "'x' renders the same as 'X'"; the full-range distinctness scenario now allows exactly 5 identical pairs (`0/O`, `(/<`, `)/>`, `X/x`, `1/!`) instead of requiring strict pairwise distinctness.
 - `DisplayPanelTests.cpp` (new): pins that `DisplayPanel::setLines` renders lowercase and mixed-case input identically to their uppercase form.
 
 All suites green: `xpl_tests_app` (headless, `SegmentFontTests`) and `xpl_tests_app_juce` (`VfdSegmentRendererTests`, `DisplayPanelTests`) pass in full (session.unit_tests = true).
@@ -134,12 +139,12 @@ All suites green: `xpl_tests_app` (headless, `SegmentFontTests`) and `xpl_tests_
 
 ### TASK-GUI-064: Final visual sign-off
 - **Tier**: S
-- **Status**: Not Started
-- **Description**: Relaunch the app (Tools → Test display), capture a fresh `vfdxplorer.jpg` at high enough resolution to read individual glyphs, and confirm each corrected character against the hardware photos — the first low-res capture only had resolution to confirm 0, 1, S, Y, 9 with high confidence; 5, 7 (oblique direction), and the bracket collisions were confirmed verbally by the owner rather than pixel-compared.
-- **Assignee**: Human (owner) + AI review of the follow-up screenshot.
+- **Status**: Done — owner-confirmed against the running app ("good")
+- **Description**: '1', '5', '7', '9', 'S', 'Y', '0' confirmed correct against the running app across this session's iterations (including two rejected '1' attempts, corrected live). '.', '<', '>' were not separately re-confirmed after the final rebuild — carried over as unverified if a future session touches this area again.
+- **Assignee**: Human (owner) + AI review, both performed in-session.
 
 ---
 
 ## Notes
 - The vendored source (`16-Segment-ASCII_HEX-NDP.txt`) comes from dmadison/LED-Segment-ASCII (MIT, GitHub). A header note was added there recording that 9 rows now diverge from upstream for hardware accuracy, naming the source photos.
-- Four character pairs now deliberately render identically: `0`/`O`, `(`/`<`, `)`/`>` (Xpander hardware collisions) and `X`/`x` (lowercase is unreachable through the app after TASK-GUI-063). This is a real, tested contract change from the pre-session "all 95 code points pairwise distinct" rule.
+- Five character pairs now deliberately render identically: `0`/`O`, `(`/`<`, `)`/`>`, `1`/`!` (Xpander hardware collisions, or — for `1`/`!` — an accepted side effect since `!` never reaches this display) and `X`/`x` (lowercase is unreachable through the app after TASK-GUI-063). This is a real, tested contract change from the pre-session "all 95 code points pairwise distinct" rule.
