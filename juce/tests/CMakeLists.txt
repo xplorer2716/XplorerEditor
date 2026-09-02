@@ -100,6 +100,12 @@ if(XPL_BUILD_APP)
     add_executable(xpl_tests_app_juce
         app/ComboBoxRealMetricsTests.cpp
         app/VfdSegmentRendererTests.cpp
+        # DisplayPanel::setLines uppercases every line before rendering
+        # (the physical Xpander VFD has no lowercase capability), pinned
+        # against the real component so the test exercises the same
+        # buffered-paint path the app does. [RQ-GUI-049, PLAN-GUI-015]
+        app/DisplayPanelTests.cpp
+        ../app/src/DisplayPanel.cpp
         app/BackgroundRendererTests.cpp
         # Section vertical rhythm. Reads DesignTokens.hpp (hence this
         # JUCE-linked target rather than the headless one) but instantiates no

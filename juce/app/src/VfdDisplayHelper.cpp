@@ -4,6 +4,8 @@
 #include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
 
+#include <algorithm>
+
 namespace xplorer::app
 {
     namespace
@@ -96,6 +98,29 @@ namespace xplorer::app
         }
 
         _display.setLines({toneLine(), line2, line3, juce::String(), ccLine});
+    }
+
+    void VfdDisplayHelper::displayCharacters(const std::string& line1, const std::string& line2)
+    {
+        // Same content as XpanderController::sendDisplayCharacterTestToSynth,
+        // so the app VFD and the Xpander hardware can be compared side by
+        // side. Each line is wrapped independently onto the panel's real
+        // column count, one row per chunk, mirroring the two separate
+        // hardware photos (letters, then digits/symbols) rather than running
+        // both together. A chunk count beyond the panel's row budget is not
+        // trimmed here: renderBlock already ignores StringArray rows past its
+        // own row count, so a second wrap threshold here would only risk
+        // disagreeing with it. [RQ-GUI-082]
+        const auto width = std::max(1, _display.maxCharsPerLine());
+        juce::StringArray lines;
+        for (const juce::String text : {juce::String(line1), juce::String(line2)})
+        {
+            for (int start = 0; start < text.length(); start += width)
+            {
+                lines.add(text.substring(start, start + width));
+            }
+        }
+        _display.setLines(lines);
     }
 
     void VfdDisplayHelper::showModulationEntry(const model::ModulationMatrixEntry& entry,

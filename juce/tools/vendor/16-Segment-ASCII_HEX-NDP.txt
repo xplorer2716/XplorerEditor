@@ -23,7 +23,14 @@
  * THE SOFTWARE.
  *
  */
- 
+
+// XPLORER DIVERGENCE (PLAN-GUI-015): 9 rows below (0, 1, 5, 7, 9, <, >, S, Y)
+// were corrected against the physical Oberheim Xpander VFD (photos:
+// docs/assets/letters.jpg, digits_and_symbols.jpg, vfdxplorer.jpg), which
+// draws these characters differently from this upstream table's generic
+// 16-segment convention. This is no longer a verbatim vendor copy for those
+// nine entries; every other row is untouched. [RQ-GUI-033, RQ-GUI-049]
+
 const uint16_t SixteenSegmentASCII[96] = {
 	0x0000, /* (space) */
 	0x000C, /* ! */
@@ -41,21 +48,21 @@ const uint16_t SixteenSegmentASCII[96] = {
 	0x8800, /* - */
 	0x1000, /* . */
 	0x4400, /* / */
-	0x44FF, /* 0 */
-	0x040C, /* 1 */
+	0x00FF, /* 0 */
+	0x000C, /* 1 */
 	0x8877, /* 2 */
 	0x083F, /* 3 */
 	0x888C, /* 4 */
-	0x90B3, /* 5 */
+	0x88BB, /* 5 */
 	0x88FB, /* 6 */
-	0x000F, /* 7 */
+	0x4403, /* 7 */
 	0x88FF, /* 8 */
-	0x88BF, /* 9 */
+	0x888F, /* 9 */
 	0x2200, /* : */
 	0x4200, /* ; */
-	0x9400, /* < */
+	0x1400, /* < */
 	0x8830, /* = */
-	0x4900, /* > */
+	0x4100, /* > */
 	0x2807, /* ? */
 	0x0AF7, /* @ */
 	0x88CF, /* A */
@@ -76,13 +83,13 @@ const uint16_t SixteenSegmentASCII[96] = {
 	0x88C7, /* P */
 	0x10FF, /* Q */
 	0x98C7, /* R */
-	0x88BB, /* S */
+	0x90B3, /* S */
 	0x2203, /* T */
 	0x00FC, /* U */
 	0x44C0, /* V */
 	0x50CC, /* W */
 	0x5500, /* X */
-	0x88BC, /* Y */
+	0x2500, /* Y */
 	0x4433, /* Z */
 	0x2212, /* [ */
 	0x1100, /* \ */

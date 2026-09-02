@@ -704,6 +704,24 @@ namespace xplorer::controller
         sendDisplayMessageToSynth(line1 + line2); // [RQ-CTL-061]
     }
 
+    void XpanderController::sendDisplayCharacterTestToSynth(const std::string& line1,const std::string& line2)
+    {
+        constexpr int PADDING_LENGTH = MAX_DISPLAY_MESSAGE_LENGTH / 2;
+        if (!verifySynthOutputDevice())
+        {
+            return;
+        }
+        auto padRight = [](std::string text, std::size_t width)
+        {
+            text.resize(std::max(text.size(), width), ' ');
+            return text;
+        };
+        const auto pl1 = padRight(line1, PADDING_LENGTH); // [RQ-GUI-082]
+        const auto pl2 = padRight(line2, PADDING_LENGTH); // [RQ-GUI-082]
+        sendDisplayOffOnToSynth();
+        sendDisplayMessageToSynth(pl1+pl2); // [RQ-GUI-082]
+    }
+
     void XpanderController::sendTypeWriterMessageToSynth(const std::string& message)
     {
         constexpr int SCROLL_DELAY = 50;

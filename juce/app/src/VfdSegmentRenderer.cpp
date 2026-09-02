@@ -105,12 +105,14 @@ namespace xplorer::app
                               RAIL_RIGHT, vfd::vfdUnderscoreY);
                     break;
 
-                case 'x':
-                    // A crossing confined to the lower half, which is where a
-                    // 16-segment cell draws its lowercase. Built from the
-                    // existing rails, so it needs no geometry of its own.
-                    addStroke(path, RAIL_LEFT, RAIL_MIDDLE_Y, RAIL_RIGHT, RAIL_BOTTOM);
-                    addStroke(path, RAIL_RIGHT, RAIL_MIDDLE_Y, RAIL_LEFT, RAIL_BOTTOM);
+                case '.':
+                    // Same mark as the ':' dots, but at the cell's
+                    // bottom-right corner — on the bottom rail, at the right
+                    // rail — matching the fixed corner dot every Xpander
+                    // character cell has. Reuses the rail tokens rather than
+                    // the colon's (centred) dot position: no new token
+                    // needed. [PLAN-GUI-015]
+                    path.addPath(dotAt(vfd::vfdSegRight, vfd::vfdSegBottom, vfd::vfdDotSize));
                     break;
 
                 default:

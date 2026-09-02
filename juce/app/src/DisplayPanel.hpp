@@ -41,7 +41,10 @@ namespace xplorer::app
         [[nodiscard]] int lineCount() const;
 
         /// Replaces the text block; no-op (and no repaint) when identical,
-        /// like the reference SetText.
+        /// like the reference SetText. Every line is uppercased first: the
+        /// physical Xpander VFD has no lowercase capability, so this is the
+        /// one place all display content passes through before rendering.
+        /// [RQ-GUI-049, PLAN-GUI-015]
         void setLines(juce::StringArray lines);
 
         void paint(juce::Graphics& g) override;

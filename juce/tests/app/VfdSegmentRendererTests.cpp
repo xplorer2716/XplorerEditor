@@ -9,6 +9,7 @@
 #include <cmath>
 #include <vector>
 #include <map>
+#include <set>
 #include <string>
 
 // The renderer's whole reason to exist is that it does NOT degrade with scale
@@ -526,6 +527,23 @@ namespace
         return true;
     }
 
+    /// Leftmost column whose brightest pixel clears `threshold`, or -1.
+    int firstLitColumn(const juce::Image& image, int threshold)
+    {
+        const juce::Image::BitmapData pixels(image, juce::Image::BitmapData::readOnly);
+        for (int x = 0; x < image.getWidth(); ++x)
+        {
+            for (int y = 0; y < image.getHeight(); ++y)
+            {
+                if (pixels.getPixelColour(x, y).getGreen() >= threshold)
+                {
+                    return x;
+                }
+            }
+        }
+        return -1;
+    }
+
     constexpr int LIT_THRESHOLD = 120;   // well clear of the unlit bed (~22)
     constexpr float PROBE_SCALE = 8.0F;  // enough resolution to resolve a dot gap
 }
@@ -562,7 +580,7 @@ SCENARIO("The colon is two dots, which no segment combination can make",
     }
 }
 
-SCENARIO("Lowercase x is distinguishable from uppercase X", "[RQ-GUI-049]")
+SCENARIO("Lowercase x renders the same as uppercase X", "[RQ-GUI-049]")
 {
     const juce::ScopedJuceInitialiser_GUI juceInit;
     const VfdSegmentRenderer renderer;
@@ -572,22 +590,42 @@ SCENARIO("Lowercase x is distinguishable from uppercase X", "[RQ-GUI-049]")
         const auto lower = renderer.renderBlock({"x"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
         const auto upper = renderer.renderBlock({"X"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
 
-        THEN("they render differently")
+        THEN("they render identically")
         {
-            REQUIRE_FALSE(sameImage(lower, upper));
+            // The half-height lowercase primitive that used to split this
+            // pair (DEC-JUC-052) was removed: DisplayPanel now uppercases
+            // every line before it reaches this renderer (RQ-GUI-049
+            // amendment, PLAN-GUI-015, 2026-09-02), so the application can
+            // never present a lowercase 'x' to it. Calling the renderer
+            // directly with lowercase — as this test does — now falls back
+            // to the vendored table's own 'X'-identical mask.
+            REQUIRE(sameImage(lower, upper));
+        }
+    }
+}
+
+SCENARIO("The period sits in the cell's lower-right corner, not centred like the colon",
+         "[RQ-GUI-033][RQ-GUI-049]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("'.' and ':', which both use the dot primitive (DEC-JUC-052)")
+    {
+        const auto period = renderer.renderBlock({"."}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+        const auto colon = renderer.renderBlock({":"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+
+        THEN("the period's dot sits lower than the colon's dots")
+        {
+            // The physical Xpander VFD has a fixed corner dot at the
+            // bottom-right of every cell, not the colon's centred dot
+            // position — PLAN-GUI-015 follow-up.
+            REQUIRE(firstLitRow(period, LIT_THRESHOLD) > firstLitRow(colon, LIT_THRESHOLD));
         }
 
-        THEN("the lowercase form sits in the lower half of the cell")
+        THEN("the period's dot sits further right than the colon's dots")
         {
-            // Which is where a 16-segment cell draws its lowercase, and why
-            // the table cannot express it: a crossing needs both diagonal
-            // pairs and those start at the top corners.
-            const auto lowerTop = firstLitRow(lower, LIT_THRESHOLD);
-            const auto upperTop = firstLitRow(upper, LIT_THRESHOLD);
-            REQUIRE(lowerTop > 0);
-            REQUIRE(upperTop > 0);
-            REQUIRE(lowerTop > upperTop);
-            REQUIRE(lowerTop > lower.getHeight() / 3);
+            REQUIRE(firstLitColumn(period, LIT_THRESHOLD) > firstLitColumn(colon, LIT_THRESHOLD));
         }
     }
 }
@@ -617,15 +655,22 @@ SCENARIO("The override table is the only divergence from the vendored data",
 {
     GIVEN("the printable ASCII range")
     {
-        THEN("exactly ':', '_' and 'x' are overridden")
+        THEN("exactly ':', '_' and '.' are overridden")
         {
             // DEC-JUC-052 requires the divergence to live in one auditable
             // place. If a fourth override appeared without this list changing,
             // the audit trail would be a lie — so the list is the assertion.
+            // '.' joined in PLAN-GUI-015 (2026-09-01): the vendored table's
+            // closest entry is a stray diagonal, not the dot the Xpander
+            // shows. 'x' left the same session (2026-09-02): it existed only
+            // to keep lowercase 'x' distinct from 'X', and DisplayPanel now
+            // uppercases everything before it reaches this renderer, so no
+            // lowercase code point is reachable through the app any more —
+            // the override became dead code (RQ-GUI-049 amendment).
             for (int codePoint = FIRST_GLYPH; codePoint <= LAST_GLYPH; ++codePoint)
             {
                 const auto expected = codePoint == ':' || codePoint == '_'
-                                      || codePoint == 'x';
+                                      || codePoint == '.';
                 INFO("code point " << codePoint);
                 REQUIRE(VfdSegmentRenderer::hasOverride(codePoint) == expected);
             }
@@ -682,13 +727,38 @@ SCENARIO("Every printable character renders, and no two render alike",
                 byAppearance[cellSignature(image)].push_back(codePoint);
             }
 
-            THEN("all 95 are distinguishable from one another")
+            THEN("all 95 are distinguishable, except five known identical pairs")
             {
                 // The inherited sprite drew only 51 of these and left 44 cells
                 // blank — every lowercase letter among them. The vendored table
-                // covers all 95 but collides on ':'/'|' and 'x'/'X'; the
-                // off-model primitives (DEC-JUC-052) split both. This is where
-                // that claim is actually proved, at the pixel.
+                // covers all 95 and collides on ':'/'|' and 'x'/'X'; the
+                // off-model primitives (DEC-JUC-052) split both, since
+                // RQ-GUI-049 requires those two pairs to render distinctly.
+                //
+                // '0'/'O', '('/'<' and ')'/'>' collide too, but on purpose
+                // (PLAN-GUI-015): the physical Xpander VFD draws each pair
+                // with the identical shape (no slashed zero; angle brackets
+                // reuse the rounded-brace shape of parentheses), so matching
+                // pixels here IS the hardware-accurate behaviour, not a gap.
+                //
+                // 'X'/'x' collide too, for a different reason: the app now
+                // uppercases all display text (RQ-GUI-049 amendment, same
+                // plan), so the half-height primitive that used to keep them
+                // apart was removed as dead code — this renderer can still be
+                // called directly with lowercase (e.g. by this very test),
+                // and at that level 'x' now falls back to the vendored
+                // table's own 'X'-identical mask.
+                //
+                // '1'/'!' collide too: '1' was corrected to the plainest
+                // possible vertical stroke after two owner-rejected attempts
+                // at a serif regressed to "11" or a stray fragment, and that
+                // plain stroke happens to match '!''s existing mask exactly.
+                // Owner-confirmed '!' and '?' never reach this display in
+                // practice, so the collision is accepted rather than chasing
+                // a fourth '1' shape.
+                const std::set<std::set<int>> allowedIdenticalPairs{
+                    {'0', 'O'}, {'(', '<'}, {')', '>'}, {'X', 'x'}, {'1', '!'}};
+
                 for (const auto& [appearance, characters] : byAppearance)
                 {
                     juce::ignoreUnused(appearance);
@@ -700,10 +770,13 @@ SCENARIO("Every printable character renders, and no two render alike",
                             clash += static_cast<char>(codePoint);
                         }
                         INFO("characters sharing one appearance: " << clash);
-                        REQUIRE(characters.size() == 1);
+                        REQUIRE(characters.size() == 2);
+                        const std::set<int> pair(characters.begin(), characters.end());
+                        REQUIRE(allowedIdenticalPairs.count(pair) == 1);
                     }
                 }
-                REQUIRE(static_cast<int>(byAppearance.size()) == GLYPH_COUNT);
+                REQUIRE(static_cast<int>(byAppearance.size())
+                        == GLYPH_COUNT - static_cast<int>(allowedIdenticalPairs.size()));
             }
         }
     }
