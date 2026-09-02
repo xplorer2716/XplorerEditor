@@ -473,7 +473,7 @@ SCENARIO("Test display sends every reference glyph across both VFD lines", "[RQ-
 
         WHEN("running the display character test")
         {
-            f.controller.sendDisplayCharacterTestToSynth();
+            f.controller.sendDisplayCharacterTestToSynth("ABCDEFGHIJKLMNOPQRSTUVWXYZ", "0123456789<>()[]/+-*$'");
 
             THEN("display off, on, then the character-test text are sent")
             {
