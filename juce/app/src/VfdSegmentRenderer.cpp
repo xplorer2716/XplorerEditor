@@ -106,10 +106,13 @@ namespace xplorer::app
                     break;
 
                 case '.':
-                    // Same mark and position as the ':' lower dot — the true
-                    // VFD glyph, not the vendored table's single-diagonal
-                    // approximation. [PLAN-GUI-015]
-                    path.addPath(dotAt(vfd::vfdDotX, vfd::vfdDotLowerY, vfd::vfdDotSize));
+                    // Same mark as the ':' dots, but at the cell's
+                    // bottom-right corner — on the bottom rail, at the right
+                    // rail — matching the fixed corner dot every Xpander
+                    // character cell has. Reuses the rail tokens rather than
+                    // the colon's (centred) dot position: no new token
+                    // needed. [PLAN-GUI-015]
+                    path.addPath(dotAt(vfd::vfdSegRight, vfd::vfdSegBottom, vfd::vfdDotSize));
                     break;
 
                 default:

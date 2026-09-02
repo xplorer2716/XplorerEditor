@@ -57,10 +57,14 @@ namespace xplorer::app
         ///        disconnected marks. Not decoration: it appears in every
         ///        NAME:VALUE and every "MIDI CC:" line.
         ///   '_'  a bar BELOW the glyph body, outside every rail.
-        ///   '.'  a single dot at the ':' glyph's lower-dot position. The
-        ///        vendored table has no true period — its closest entry lights
-        ///        one diagonal segment (R), which reads as a stray half-stroke,
-        ///        not a dot. The Xpander hardware shows a real dot (PLAN-GUI-015).
+        ///   '.'  a single dot in the cell's lower-right corner, sat on the
+        ///        bottom rail and pushed to the right rail — the physical
+        ///        Xpander VFD has a fixed period dot at the extreme
+        ///        bottom-right of every character cell, distinct from the
+        ///        ':' dots (which stay centred so the colon itself reads
+        ///        correctly). The vendored table has no true period — its
+        ///        closest entry lights one diagonal segment (R), which reads
+        ///        as a stray half-stroke, not a dot (PLAN-GUI-015).
         ///
         /// Lowercase 'x' is deliberately NOT here any more: the table gives it
         /// the same four diagonals as 'X' (a real 16-segment device has no

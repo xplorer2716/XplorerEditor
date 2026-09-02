@@ -137,6 +137,21 @@ All suites green: `xpl_tests_app` (headless, `SegmentFontTests`) and `xpl_tests_
 
 ## Open follow-up
 
+### TASK-GUI-065: Reposition the '.' dot to the cell's bottom-right corner
+- **Tier**: S
+- **Status**: Done
+- **Description**: Owner review of the rendered `.` (2026-09-02): the dot reused the ':' lower-dot position (`vfdDotX`/`vfdDotLowerY`), which floats mid-lower and left-of-centre in the cell — not on the bottom rail, and not at the right side. The physical Xpander VFD has a fixed period dot at the extreme bottom-right corner of every character cell. Moved the '.' override to sit on the bottom rail and the right rail (`vfdSegBottom`/`vfdSegRight`), reusing existing rail tokens rather than the colon's dot tokens — no new design-system token needed, and the colon's own dot position is untouched.
+- **Requirement refs**: RQ-GUI-033, RQ-GUI-049
+- **ADR refs**: ADR-JUC-023 (DEC-JUC-052)
+- **Files**:
+  - `juce/app/src/VfdSegmentRenderer.cpp` — `case '.':` now calls `dotAt(vfdSegRight, vfdSegBottom, vfdDotSize)`
+  - `juce/app/src/VfdSegmentRenderer.hpp` — `'.'` doc comment updated to describe the corner position
+  - `juce/tests/app/VfdSegmentRendererTests.cpp` — new scenario "The period sits in the cell's lower-right corner, not centred like the colon", pinning it below and to the right of the colon's dots
+- **Acceptance (Gherkin)**: *Given* the '.' override, *When* rendered next to ':', *Then* its dot's first lit row is lower and its first lit column is further right than the colon's dots.
+- **Assignee**: AI
+
+---
+
 ### TASK-GUI-064: Final visual sign-off
 - **Tier**: S
 - **Status**: Done — owner-confirmed against the running app ("good")

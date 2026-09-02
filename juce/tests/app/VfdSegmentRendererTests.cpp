@@ -527,6 +527,23 @@ namespace
         return true;
     }
 
+    /// Leftmost column whose brightest pixel clears `threshold`, or -1.
+    int firstLitColumn(const juce::Image& image, int threshold)
+    {
+        const juce::Image::BitmapData pixels(image, juce::Image::BitmapData::readOnly);
+        for (int x = 0; x < image.getWidth(); ++x)
+        {
+            for (int y = 0; y < image.getHeight(); ++y)
+            {
+                if (pixels.getPixelColour(x, y).getGreen() >= threshold)
+                {
+                    return x;
+                }
+            }
+        }
+        return -1;
+    }
+
     constexpr int LIT_THRESHOLD = 120;   // well clear of the unlit bed (~22)
     constexpr float PROBE_SCALE = 8.0F;  // enough resolution to resolve a dot gap
 }
@@ -583,6 +600,32 @@ SCENARIO("Lowercase x renders the same as uppercase X", "[RQ-GUI-049]")
             // directly with lowercase — as this test does — now falls back
             // to the vendored table's own 'X'-identical mask.
             REQUIRE(sameImage(lower, upper));
+        }
+    }
+}
+
+SCENARIO("The period sits in the cell's lower-right corner, not centred like the colon",
+         "[RQ-GUI-033][RQ-GUI-049]")
+{
+    const juce::ScopedJuceInitialiser_GUI juceInit;
+    const VfdSegmentRenderer renderer;
+
+    GIVEN("'.' and ':', which both use the dot primitive (DEC-JUC-052)")
+    {
+        const auto period = renderer.renderBlock({"."}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+        const auto colon = renderer.renderBlock({":"}, ONE_COLUMN, ONE_ROW, PROBE_SCALE);
+
+        THEN("the period's dot sits lower than the colon's dots")
+        {
+            // The physical Xpander VFD has a fixed corner dot at the
+            // bottom-right of every cell, not the colon's centred dot
+            // position — PLAN-GUI-015 follow-up.
+            REQUIRE(firstLitRow(period, LIT_THRESHOLD) > firstLitRow(colon, LIT_THRESHOLD));
+        }
+
+        THEN("the period's dot sits further right than the colon's dots")
+        {
+            REQUIRE(firstLitColumn(period, LIT_THRESHOLD) > firstLitColumn(colon, LIT_THRESHOLD));
         }
     }
 }
