@@ -63,6 +63,7 @@ namespace xplorer::app
         ToolsSettings = 20,
         ToolsTuneRequest = 21,
         ToolsPianoKeyboard = 22,
+        ToolsTestDisplay = 23, // [RQ-GUI-082]
 
         // Help
         HelpAbout = 30,
@@ -94,6 +95,7 @@ namespace xplorer::app
         MenuItem::ToolsSettings,
         MenuItem::ToolsTuneRequest,
         MenuItem::ToolsPianoKeyboard,
+        MenuItem::ToolsTestDisplay,
         MenuItem::HelpAbout,
         MenuItem::HelpUserManual,
         MenuItem::HelpReleases,

@@ -101,6 +101,9 @@ namespace xplorer::app
         /// Shared by the Patch > Rename menu item and the VFD double-click so
         /// the two triggers can never diverge in what they do. [RQ-GUI-025]
         void showRenameDialogForCurrentTone();
+        /// Display character test on both Xpander and app VFD: letters and
+        /// symbols for visual alignment verification. [RQ-GUI-082]
+        void displayCharacterTest();
         /// Shared by the shortcut button and the Patch menu item, following the
         /// rename idiom above: one implementation per action, two triggers.
         /// [RQ-QLT-005]

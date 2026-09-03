@@ -121,7 +121,12 @@ namespace xplorer::controller
         void sendPageUpdate(int page, int subPage);
         void forceSendPageSubPage();
         void sendGreetingsToSynth();
-        void sendTypeWriterMessageToSynth(const std::string& message);
+      
+        void sendTypeWriterMessageToSynth(const std::string &message);
+        /// Sends the uppercase alphabet, the digits 0-9 and the reference
+        /// symbol set <>/+-*$ across the two VFD lines, so every glyph the
+        /// display can show is exercised from one menu action. [RQ-GUI-082]
+        void sendDisplayCharacterTestToSynth(const std::string &line1, const std::string &line2);
 
         // --- event handlers (set by the view) [RQ-CTL-070] --------------------
         void setFullToneChangeHandler(std::function<void(const FullToneChangeEvent&)> handler);

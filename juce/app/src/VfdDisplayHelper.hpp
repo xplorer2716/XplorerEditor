@@ -31,6 +31,14 @@ namespace xplorer::app
         /// or the max-source-reached notice.
         void showModulationEntry(const model::ModulationMatrixEntry& entry, bool maxSourceReached);
 
+        /// Character test: display alphabet and symbols for VFD alignment
+        /// verification. Each argument is wrapped independently onto as many
+        /// display rows as it needs, at the panel's actual column count
+        /// (DisplayPanel::maxCharsPerLine(), not a hard-coded width), so
+        /// content longer than one row never gets silently clipped to it.
+        /// [RQ-GUI-082]
+        void displayCharacters(const std::string& line1, const std::string& line2);
+
     private:
         [[nodiscard]] juce::String toneLine() const;
         [[nodiscard]] bool isActiveModulationDestination(const std::string& parameterName) const;

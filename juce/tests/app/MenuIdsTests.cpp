@@ -114,6 +114,7 @@ SCENARIO("Menu item ids keep their reference values", "[RQ-QLT-001]")
             CHECK(menuItemId(MenuItem::PatchSynchronize) == 16);
             CHECK(menuItemId(MenuItem::ToolsSettings) == 20);
             CHECK(menuItemId(MenuItem::ToolsPianoKeyboard) == 22);
+            CHECK(menuItemId(MenuItem::ToolsTestDisplay) == 23); // [RQ-GUI-082]
             CHECK(menuItemId(MenuItem::HelpAbout) == 30);
             CHECK(menuItemId(MenuItem::HelpWebsite) == 33);
             CHECK(menuItemId(MenuItem::ToolsGetAllSinglePatches) == 40);

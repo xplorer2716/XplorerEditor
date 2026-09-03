@@ -51,6 +51,13 @@ namespace xplorer::app
 
     void DisplayPanel::setLines(juce::StringArray lines)
     {
+        // The Xpander hardware has no lowercase capability (RQ-GUI-049,
+        // PLAN-GUI-015): uppercase here, once, so every caller — tone names
+        // from a .syx file included — displays the way the real unit would.
+        for (auto& line : lines)
+        {
+            line = line.toUpperCase();
+        }
         if (_lines == lines)
         {
             return; // reference SetText early-out

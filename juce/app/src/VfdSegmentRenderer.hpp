@@ -57,12 +57,25 @@ namespace xplorer::app
         ///        disconnected marks. Not decoration: it appears in every
         ///        NAME:VALUE and every "MIDI CC:" line.
         ///   '_'  a bar BELOW the glyph body, outside every rail.
-        ///   'x'  a half-height crossing. The table gives lowercase x the same
-        ///        four diagonals as 'X' — correct for a real 16-segment device,
-        ///        since a crossing needs both diagonal pairs and those start at
-        ///        the TOP corners, leaving no lower-half crossing. RQ-GUI-049
-        ///        nonetheless requires the two to render differently.
-        static constexpr std::array<int, 3> OVERRIDDEN_CHARACTERS{':', '_', 'x'};
+        ///   '.'  a single dot in the cell's lower-right corner, sat on the
+        ///        bottom rail and pushed to the right rail — the physical
+        ///        Xpander VFD has a fixed period dot at the extreme
+        ///        bottom-right of every character cell, distinct from the
+        ///        ':' dots (which stay centred so the colon itself reads
+        ///        correctly). The vendored table has no true period — its
+        ///        closest entry lights one diagonal segment (R), which reads
+        ///        as a stray half-stroke, not a dot (PLAN-GUI-015).
+        ///
+        /// Lowercase 'x' is deliberately NOT here any more: the table gives it
+        /// the same four diagonals as 'X' (a real 16-segment device has no
+        /// lower-half crossing to distinguish them), which used to need a
+        /// half-height primitive to satisfy RQ-GUI-049's distinctness rule.
+        /// That rule was narrowed to the always-uppercase range (PLAN-GUI-015,
+        /// 2026-09-02): DisplayPanel::setLines now uppercases everything before
+        /// it reaches this renderer, since the physical Xpander VFD has no
+        /// lowercase capability, so no lowercase code point can reach this
+        /// class through the application any more.
+        static constexpr std::array<int, 3> OVERRIDDEN_CHARACTERS{':', '_', '.'};
         static constexpr int OVERRIDE_COUNT = static_cast<int>(OVERRIDDEN_CHARACTERS.size());
 
         VfdSegmentRenderer();

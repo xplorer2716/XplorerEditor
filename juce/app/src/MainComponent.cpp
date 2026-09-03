@@ -980,12 +980,6 @@ namespace xplorer::app
             case TopLevelMenu::Tools:
             {
                 addReferenceItem(menu, MenuItem::ToolsSettings, "Settings");
-                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
-                // No reference counterpart -- the second sanctioned JUCE-only
-                // item after the View menu, kept at the owner's decision. No
-                // shortcut, since the reference has none to match.
-                // [RQ-GUI-028, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
                 juce::PopupMenu singlePatches;
                 singlePatches.addItem(menuItemId(MenuItem::ToolsGetAllSinglePatches),
                                       "Get all single patches from synth");
@@ -995,7 +989,16 @@ namespace xplorer::app
                 juce::PopupMenu allDataDump;
                 allDataDump.addItem(menuItemId(MenuItem::ToolsBackupAllData), "Backup all data");
                 allDataDump.addItem(menuItemId(MenuItem::ToolsRestoreAllData), "Restore all data");
-                menu.addSubMenu("Backup/Restore...", allDataDump);
+                menu.addSubMenu("Backup/Restore...", allDataDump);                
+                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
+                // No reference counterpart -- the second sanctioned JUCE-only
+                // item after the View menu, kept at the owner's decision. No
+                // shortcut, since the reference has none to match.
+                // [RQ-GUI-028, RQ-GUI-008]
+                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
+                // Third sanctioned JUCE-only departure, no reference
+                // counterpart, no shortcut. [RQ-GUI-082, RQ-GUI-008]
+                menu.addItem(menuItemId(MenuItem::ToolsTestDisplay), "Test display");
                 break;
             }
             case TopLevelMenu::Help:
@@ -1210,6 +1213,9 @@ namespace xplorer::app
                     _pianoWindow->toFront(true);
                 }
                 break;
+            case MenuItem::ToolsTestDisplay: // [RQ-GUI-082]
+                displayCharacterTest();
+                break;
             case MenuItem::HelpAbout:
                 // Name and version from the build, not from a literal: this
                 // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
@@ -1420,6 +1426,17 @@ namespace xplorer::app
                                                           "Single patches", e.what());
                 }
             });
+    }
+
+    /// @brief Sends a character test to the synth and displays it on the app's VFD.
+    void MainComponent::displayCharacterTest()
+    {
+        const auto line1="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const auto line2="0123456789<>()[]/+-*$'";
+        // Send to Xpander hardware. [RQ-GUI-082]
+        _controller->sendDisplayCharacterTestToSynth(line1,line2);
+        // Display on app VFD for alignment verification. [RQ-GUI-082]
+        _vfd->displayCharacters(line1, line2);
     }
 
     void MainComponent::onAllDataDumpProgression(const controller::AllDataDumpProgressionEvent& event)
