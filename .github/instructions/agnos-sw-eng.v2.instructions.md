@@ -77,7 +77,7 @@ Features, requirements, ADRs and tasks SHALL be in the format: `<TYPE>-<TRI>-<NN
 - Requirement IDs SHALL appear in ALL related artefacts: feature files, ADR files, Plan files, task descriptions, file headers, class/function doc comments, and test case names.
 - The user SHALL be able to grep any requirement ID and find all related code and documentation.
 - An artifact with no traceable requirement ID is considered incomplete and SHALL NOT be delivered.
-- Always put traceability references into **commments** format , never as plain text.
+- Always put traceability references into **comments** format , never as plain text.
 
 ### MANDATORY DESIGN SYSTEM (UI PROJECTS)
 - Any project with a user interface SHALL define a design system BEFORE implementing the first
@@ -90,6 +90,7 @@ Features, requirements, ADRs and tasks SHALL be in the format: `<TYPE>-<TRI>-<NN
   is considered incomplete and SHALL NOT be delivered (same rule as missing requirement IDs).
 - Deviations from a reference or mockup value SHALL be recorded in the design-system source of
   truth with a rationale note — never as an inline literal in code.
+- As a starting point, a design-system template is available in `process/1.requirements/design-system-template.md`. As a default implementation, you should propose to persist the design system tokens into a `design-system.yaml` file, and then to create a script to convert the design tokens from the `design-system.yaml` file into a target file which format matches the target programming language.
 
 ## CONTEXT MANAGEMENT
 
@@ -208,8 +209,7 @@ Brief description of the feature's purpose and scope.
   [Mermaid diagram -- required]
   ```
 - Every decision in ADR SHALL have a unique identifier in the format `DEC-<TRI>-<NNN>` (e.g., `DEC-USR-001`), consistent with the universal ID schema, that can be referenced in plans, tasks, and source code.
-- The design system itself SHALL be captured as an ADR (token structure, tiers,
-  generation/verification mechanism). Every subsequent UI-affecting ADR SHALL reference it.
+- The design system itself SHALL be captured as an ADR (token structure, tiers, generation/verification mechanism). Every subsequent UI-affecting ADR SHALL reference it.
 
 
 ### Traceability in ADRs
@@ -249,8 +249,8 @@ The DoD items that apply depend on the task tier. Use the matrix below:
 | DoD Item | S | M | L |
 |----------|:-:|:-:|:-:|
 | Every new artifact references a requirement ID | ✓ | ✓ | ✓ |
-| No string or numeric literal is duplicated inline — all are named constants | — | ✓ | ✓ |
-| No failing test was modified to force it to pass | — | ✓ | ✓ |
+| No string or numeric literal is duplicated inline — all are named constants | ✓ | ✓ | ✓ |
+| No failing test was modified to force it to pass | ✓ | ✓ | ✓ |
 | UI change consumes design-system tokens — no raw visual literal in code | ✓ | ✓ | ✓ |
 | Code compiles and passes static analysis with no errors | ✓ | ✓ | ✓ |
 
@@ -316,9 +316,7 @@ This plan implements the tasks in the format specified below.
 
 - All generated code SHALL comply with **SOLID** principles (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion).
 - **No duplicated/magic literals (strings or numbers).** Every constant SHALL be declared as a named class-level or method-level constant. 
-- **UI code**: every visual constant (color, spacing, size, alpha, font metric) SHALL be
-  initialized from design-system tokens. Local named constants MAY alias a token for
-  readability, but SHALL NOT hold a raw visual value.
+- **UI code**: every visual constant (color, spacing, size, alpha, font metric) SHALL be initialized from design-system tokens. Local named constants MAY alias a token for readability, but SHALL NOT hold a raw visual value.
 - Code SHALL contains traceable references to the requirement ID(s) and ADR decisions ID(s) it implements in the form of comments or docstrings.
 
 
