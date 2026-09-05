@@ -917,13 +917,13 @@ namespace xplorer::app
                 _browse.onClick = [this] { browseForDirectory(); };
                 addAndMakeVisible(_browse);
 
-                _clear.setButtonText("Clear");
-                _clear.onClick = [this]
+                _delete.setButtonText("Delete");
+                _delete.onClick = [this]
                 {
                     _directoryOverride.clear();
                     updateDirectoryDisplay();
                 };
-                addAndMakeVisible(_clear);
+                addAndMakeVisible(_delete);
             }
 
             void applyTo(settings::AllUsersSettings::LoggingConfiguration& logging) const
@@ -948,7 +948,7 @@ namespace xplorer::app
                 area.removeFromTop(tokens::semantic::layoutSectionGap);
                 auto dirRow = rowBounds(area);
                 _directoryLabel.setBounds(dirRow.removeFromLeft(LABEL_WIDTH));
-                _clear.setBounds(dirRow.removeFromRight(tokens::semantic::dialogClearWidth));
+                _delete.setBounds(dirRow.removeFromRight(tokens::semantic::dialogDeleteWidth));
                 dirRow.removeFromRight(tokens::semantic::layoutButtonGap);
                 _browse.setBounds(dirRow.removeFromRight(tokens::semantic::dialogChooseWidth));
                 dirRow.removeFromRight(tokens::semantic::layoutButtonGap);
@@ -995,7 +995,7 @@ namespace xplorer::app
             juce::ToggleButton _midiDomain, _controllerDomain, _uiDomain;
             juce::Label _directoryLabel;
             juce::Label _directoryPath;
-            juce::TextButton _browse, _clear;
+            juce::TextButton _browse, _delete;
             std::string _directoryOverride;
             std::unique_ptr<juce::FileChooser> _directoryChooser;
         };

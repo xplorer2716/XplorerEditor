@@ -93,7 +93,7 @@ namespace xplorer::app::tokens
         inline constexpr int dialogBlockLabelWidth = 90;  // block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')
         inline constexpr int dialogResetWidth = 140;  // 'Reset to defaults' button width
         inline constexpr int dialogGroupHeaderHeight = 16;  // vertical clearance under a GroupComponent title before the first row
-        inline constexpr int dialogClearWidth = 70;  // 'Clear' button width (log-directory override) -- narrower than dialogResetWidth's 'Reset to defaults', sized to its own shorter label
+        inline constexpr int dialogDeleteWidth = 70;  // 'Delete' button width (log-directory override) -- narrower than dialogResetWidth's 'Reset to defaults', sized to its own shorter label
         inline constexpr int midiCcColumnMinWidth = 240;  // minimum width of the automation table's 'MIDI CC' column; value-preserving from its pre-existing fixed width. The column stretches above this floor to fill the dialog (setStretchToFitActive), so the 'Parameter' column's dialogLabelWidth never grows -- there is no unconstrained/dead header area left over.
         inline constexpr int patchSpinnerWidth = 92;  // overall juce::Slider(IncDecButtons) width. 80 widened +15% (owner visual review 2026-08-05: narrow field hurt readability)
         inline constexpr int patchSpinnerTextBoxWidth = 69;  // text-entry portion width, scaled +15% with patchSpinnerWidth (60->69) to keep the button-zone proportion; the remaining 23px button zone is still narrower than dialogRowHeight so JUCE stacks +/- vertically (juce_Slider.cpp resizeIncDecButtons: sideBySide iff width > height)
@@ -227,7 +227,7 @@ namespace xplorer::app::tokens
         inline constexpr int dialogBlockLabelWidth = global::dialogBlockLabelWidth;  // block label width in the colour grid, RQ-GUI-046
         inline constexpr int dialogResetWidth = global::dialogResetWidth;  // Reset to defaults button width, RQ-GUI-046
         inline constexpr int dialogGroupHeaderHeight = global::dialogGroupHeaderHeight;  // group-title clearance, RQ-GUI-046
-        inline constexpr int dialogClearWidth = global::dialogClearWidth;  // Clear button width (log-directory override), RQ-GUI-083
+        inline constexpr int dialogDeleteWidth = global::dialogDeleteWidth;  // Delete button width (log-directory override), RQ-GUI-083
         inline constexpr int midiCcColumnMinWidth = global::midiCcColumnMinWidth;  // automation table 'MIDI CC' column floor width, RQ-GUI-060
         inline constexpr int dialogRandomizerCol1Width = global::dialogRandomizerCol1Width;  // FM / Amount column, RQ-GUI-069
         inline constexpr int dialogRandomizerCol2Width = global::dialogRandomizerCol2Width;  // Noise / Quantize column, RQ-GUI-069
