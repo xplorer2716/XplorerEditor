@@ -85,7 +85,11 @@ add_executable(xpl_tests_app
     # Knob preset values and the preset keymap: both halves are OS-free and
     # JUCE-free, resolved against a fake KeyboardLayoutQuery exactly as the
     # piano mapping is. [RQ-GUI-079, RQ-GUI-080, RQ-BLD-025]
-    app/KnobPresetValuesTests.cpp)
+    app/KnobPresetValuesTests.cpp
+    # Diagnostic-logger wiring: path/severity resolution is pure string and
+    # integer logic, kept JUCE-free for the same reason. [RQ-FMW-070,
+    # RQ-SET-008, RQ-BLD-025]
+    app/LoggingConfigResolverTests.cpp)
 target_link_libraries(xpl_tests_app PRIVATE
     xpl_app_core xpl::warnings Catch2::Catch2WithMain)
 catch_discover_tests(xpl_tests_app)
@@ -150,7 +154,12 @@ if(XPL_BUILD_APP)
         # The SPDX reader is pure data in / data out by design, precisely so its
         # field mapping, filtering and failure results can be pinned without a
         # display. [RQ-GUI-057, ADR-ABT-001 (DEC-ABT-006)]
-        ../app/src/SbomReader.cpp)
+        ../app/src/SbomReader.cpp
+        # JuceFileLoggerSink needs real juce::FileLogger file I/O, hence this
+        # target rather than the headless one. [RQ-FMW-070, ADR-FMW-001
+        # (DEC-FMW-001)]
+        app/LoggingSinkTests.cpp
+        ../app/src/LoggingSink.cpp)
     target_include_directories(xpl_tests_app_juce PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../app/src)
     # Same JUCE feature switches as the app target, so this test compiles the

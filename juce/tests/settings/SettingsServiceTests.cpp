@@ -232,6 +232,84 @@ SCENARIO("A .NET XmlSerializer file imports unchanged", "[RQ-SET-006]")
                 CHECK(settings.randomizerConfig.vcoDetune == EnumRandomVCODetune::Analog);
                 CHECK(static_cast<int>(settings.randomizerConfig.modulationMatrix) == 5);
             }
+
+            THEN("logging defaults apply -- the reference file predates that section")
+            {
+                CHECK(settings.loggingConfig.severityLevel == 0);
+                CHECK(settings.loggingConfig.midiDomainEnabled);
+                CHECK(settings.loggingConfig.controllerDomainEnabled);
+                CHECK(settings.loggingConfig.uiDomainEnabled);
+                CHECK(settings.loggingConfig.logDirectoryOverride.empty());
+            }
+        }
+    }
+}
+
+SCENARIO("Logging configuration persists independently of the other sections", "[RQ-SET-008]")
+{
+    GIVEN("a settings file with no LoggingConfig section")
+    {
+        const auto dir = freshTempDir("xpl_settings_logging_absent");
+        XmlSettingsService service(dir.string());
+
+        WHEN("settings are accessed")
+        {
+            const auto& settings = service.allUsersSettings();
+
+            THEN("severity is Off, every domain is enabled, and there is no directory override")
+            {
+                CHECK(settings.loggingConfig.severityLevel == 0);
+                CHECK(settings.loggingConfig.midiDomainEnabled);
+                CHECK(settings.loggingConfig.controllerDomainEnabled);
+                CHECK(settings.loggingConfig.uiDomainEnabled);
+                CHECK(settings.loggingConfig.logDirectoryOverride.empty());
+            }
+        }
+    }
+
+    GIVEN("non-default logging configuration saved to disk")
+    {
+        const auto dir = freshTempDir("xpl_settings_logging_roundtrip");
+        {
+            XmlSettingsService service(dir.string());
+            auto settings = service.allUsersSettings();
+            settings.loggingConfig.severityLevel = 3; // Info
+            settings.loggingConfig.midiDomainEnabled = false;
+            settings.loggingConfig.controllerDomainEnabled = true;
+            settings.loggingConfig.uiDomainEnabled = false;
+            settings.loggingConfig.logDirectoryOverride = "/custom/log/dir";
+            service.saveSettings(settings);
+        }
+
+        WHEN("a new service instance reads the same directory")
+        {
+            XmlSettingsService service(dir.string());
+            const auto& settings = service.allUsersSettings();
+
+            THEN("every logging field round-trips exactly")
+            {
+                CHECK(settings.loggingConfig.severityLevel == 3);
+                CHECK_FALSE(settings.loggingConfig.midiDomainEnabled);
+                CHECK(settings.loggingConfig.controllerDomainEnabled);
+                CHECK_FALSE(settings.loggingConfig.uiDomainEnabled);
+                CHECK(settings.loggingConfig.logDirectoryOverride == "/custom/log/dir");
+            }
+        }
+
+        WHEN("reset is requested")
+        {
+            XmlSettingsService service(dir.string());
+            service.resetSettings();
+
+            THEN("the logging section reads back as the defaults, not the customised values")
+            {
+                const auto& settings = service.allUsersSettings();
+                CHECK(settings.loggingConfig.severityLevel == 0);
+                CHECK(settings.loggingConfig.midiDomainEnabled);
+                CHECK(settings.loggingConfig.controllerDomainEnabled);
+                CHECK(settings.loggingConfig.uiDomainEnabled);
+                CHECK(settings.loggingConfig.logDirectoryOverride.empty());
+            }
         }
     }
 }

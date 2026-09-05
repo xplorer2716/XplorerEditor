@@ -32,6 +32,7 @@ target_sources(XplorerApp PRIVATE
     src/Main.cpp
     src/DesignTokens.hpp
     src/MainComponent.cpp
+    src/LoggingSink.cpp
     src/BackgroundRenderer.cpp
     src/ShortcutIcons.cpp
     src/DialogIcons.cpp

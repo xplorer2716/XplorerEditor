@@ -131,6 +131,8 @@ tiers:
     dialogBlockLabelWidth: { kind: int, value: 90,  note: "block-name label width in the 2x4 colour grid (sized to 'MOD MATRIX')" }
     dialogResetWidth:      { kind: int, value: 140, note: "'Reset to defaults' button width" }
     dialogGroupHeaderHeight: { kind: int, value: 16, note: "vertical clearance under a GroupComponent title before the first row" }
+    # ---- settings LOGGING tab (RQ-GUI-083, ADR-FMW-001) ----
+    dialogDeleteWidth: { kind: int, value: 70, note: "'Delete' button width (log-directory override) -- narrower than dialogResetWidth's 'Reset to defaults', sized to its own shorter label" }
     # ---- MIDI automation table column layout (RQ-GUI-060, ADR-JUC-012 DEC-JUC-104) ----
     midiCcColumnMinWidth: { kind: int, value: 240, note: "minimum width of the automation table's 'MIDI CC' column; value-preserving from its pre-existing fixed width. The column stretches above this floor to fill the dialog (setStretchToFitActive), so the 'Parameter' column's dialogLabelWidth never grows -- there is no unconstrained/dead header area left over." }
     # ---- Go to patch / Store spinner control (RQ-GUI-058) ----
@@ -342,6 +344,7 @@ tiers:
     dialogBlockLabelWidth: { alias: global.dialogBlockLabelWidth, note: "block label width in the colour grid, RQ-GUI-046" }
     dialogResetWidth:      { alias: global.dialogResetWidth,      note: "Reset to defaults button width, RQ-GUI-046" }
     dialogGroupHeaderHeight: { alias: global.dialogGroupHeaderHeight, note: "group-title clearance, RQ-GUI-046" }
+    dialogDeleteWidth: { alias: global.dialogDeleteWidth, note: "Delete button width (log-directory override), RQ-GUI-083" }
     midiCcColumnMinWidth: { alias: global.midiCcColumnMinWidth, note: "automation table 'MIDI CC' column floor width, RQ-GUI-060" }
     dialogRandomizerCol1Width: { alias: global.dialogRandomizerCol1Width, note: "FM / Amount column, RQ-GUI-069" }
     dialogRandomizerCol2Width: { alias: global.dialogRandomizerCol2Width, note: "Noise / Quantize column, RQ-GUI-069" }

@@ -1,7 +1,9 @@
 // XML persistence schema-compatible with the .NET XmlSerializer output of
 // the reference AllUsersSettingsService, so existing xplorer.users.config
-// files import unchanged. [RQ-SET-001, RQ-SET-004, RQ-SET-006]
+// files import unchanged. [RQ-SET-001, RQ-SET-004, RQ-SET-006, RQ-SET-008]
 #include "xplorer/settings/SettingsService.hpp"
+
+#include "midiapp/service/Logger.hpp"
 
 #include <juce_core/juce_core.h>
 
@@ -236,6 +238,22 @@ namespace xplorer::settings
             randomConfig.vca2Env = *env;
             randomConfig.modulationMatrix = *matrix;
 
+            // Unlike MidiConfig/UiConfig/RandomizerConfig above, LoggingConfig
+            // is OPTIONAL at the section level, not just per-element: a file
+            // predating this feature -- including every .NET reference file,
+            // RQ-SET-006 -- has no such section at all, and that SHALL load
+            // as the defaults already sitting in the default-constructed
+            // `settings.loggingConfig` above, not fail parsing. [RQ-SET-008]
+            if (const auto* logging = root.getChildByName("LoggingConfig"))
+            {
+                auto& loggingConfig = settings.loggingConfig;
+                loggingConfig.severityLevel = childInt(*logging, "SeverityLevel").value_or(0);
+                loggingConfig.midiDomainEnabled = childBool(*logging, "MidiDomainEnabled").value_or(true);
+                loggingConfig.controllerDomainEnabled = childBool(*logging, "ControllerDomainEnabled").value_or(true);
+                loggingConfig.uiDomainEnabled = childBool(*logging, "UiDomainEnabled").value_or(true);
+                loggingConfig.logDirectoryOverride = childText(*logging, "LogDirectoryOverride").value_or("").toStdString();
+            }
+
             return settings;
         }
 
@@ -281,6 +299,14 @@ namespace xplorer::settings
             addChildText(*random, "VCA2Env", enumToString(VCAENV_NAMES, randomConfig.vca2Env));
             addChildText(*random, "ModulationMatrix", flagsToString(MODMATRIX_NAMES, randomConfig.modulationMatrix));
 
+            auto* logging = root->createNewChildElement("LoggingConfig");
+            const auto& loggingConfig = settings.loggingConfig;
+            addChildText(*logging, "SeverityLevel", juce::String(loggingConfig.severityLevel));
+            addChildText(*logging, "MidiDomainEnabled", loggingConfig.midiDomainEnabled ? "true" : "false");
+            addChildText(*logging, "ControllerDomainEnabled", loggingConfig.controllerDomainEnabled ? "true" : "false");
+            addChildText(*logging, "UiDomainEnabled", loggingConfig.uiDomainEnabled ? "true" : "false");
+            addChildText(*logging, "LogDirectoryOverride", loggingConfig.logDirectoryOverride);
+
             return root;
         }
     }
@@ -319,7 +345,12 @@ namespace xplorer::settings
         void save(const AllUsersSettings& settings)
         {
             file.getParentDirectory().createDirectory();
-            settingsToXml(settings)->writeTo(file);
+            if (!settingsToXml(settings)->writeTo(file))
+            {
+                // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                        "Unable to write settings file: " + file.getFullPathName().toStdString());
+            }
         }
     };
 
@@ -348,6 +379,9 @@ namespace xplorer::settings
             {
                 // Missing, unreadable or legacy-partial file: persist the
                 // defaults and reload, as the reference does. [RQ-SET-004]
+                // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                        "Unable to load settings; creating new default values");
                 _impl->save(defaultAllUsersSettings());
                 _impl->cache = _impl->load();
             }
