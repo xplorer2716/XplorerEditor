@@ -1,11 +1,14 @@
 #include "xplorer/controller/PageSubPageHelper.hpp"
 
+#include "midiapp/service/Logger.hpp"
 #include "xpl/util/EnumUtils.hpp"
 
 namespace xplorer::controller
 {
     using model::EnumPages;
     using model::EnumRotaryEncoders;
+    using midiapp::service::LogDomain;
+    using midiapp::service::TraceLevel;
 
     PageSubPageHelper::PageSubPageHelper()
     {
@@ -32,7 +35,11 @@ namespace xplorer::controller
         int subPage = 0;
         getPageSubPage(page, subPage);
         const auto found = _authorizedRotaryEvents.find({page, subPage});
-        return found != _authorizedRotaryEvents.end() && found->second.contains(encoder);
+        const bool isAuthorized = found != _authorizedRotaryEvents.end() && found->second.contains(encoder);
+        // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+        XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Verbose,
+                "isAuthorizedRotary: " + std::string(isAuthorized ? "true" : "false"));
+        return isAuthorized;
     }
 
     bool PageSubPageHelper::isLfoRetrig(int parameterPage, int parameterSubPage, int buttonId) const
@@ -43,21 +50,33 @@ namespace xplorer::controller
                                && parameterSubPage <= xpl::util::toUnderlying(EnumPages::LFO_5);
         const bool isRetrig = parameterSubPage == 0x01
                               && buttonId == xpl::util::toUnderlying(EnumRotaryEncoders::THIRD);
-        return isPageLfo && isRetrig;
+        const bool result = isPageLfo && isRetrig;
+        // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+        XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Verbose,
+                "isLfoRetrig: " + std::string(result ? "true" : "false"));
+        return result;
     }
 
     bool PageSubPageHelper::isPageEnvLfoRampTrack() const
     {
         const std::lock_guard lock(_mutex);
-        return _lastPageSelected >= xpl::util::toUnderlying(EnumPages::ENV_1)
-               && _lastPageSelected <= xpl::util::toUnderlying(EnumPages::RAMP_4);
+        const bool result = _lastPageSelected >= xpl::util::toUnderlying(EnumPages::ENV_1)
+                            && _lastPageSelected <= xpl::util::toUnderlying(EnumPages::RAMP_4);
+        // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+        XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Verbose,
+                "isPageEnvLfoRampTrack: " + std::string(result ? "true" : "false"));
+        return result;
     }
 
     bool PageSubPageHelper::isPageLfo() const
     {
         const std::lock_guard lock(_mutex);
-        return _lastPageSelected >= xpl::util::toUnderlying(EnumPages::LFO_1)
-               && _lastPageSelected <= xpl::util::toUnderlying(EnumPages::LFO_5);
+        const bool result = _lastPageSelected >= xpl::util::toUnderlying(EnumPages::LFO_1)
+                            && _lastPageSelected <= xpl::util::toUnderlying(EnumPages::LFO_5);
+        // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+        XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Verbose,
+                "isPageLfo: " + std::string(result ? "true" : "false"));
+        return result;
     }
 
     void PageSubPageHelper::initializeAuthorizedEditingRotaryEvents()
