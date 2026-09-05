@@ -46,7 +46,7 @@ This plan implements the tasks in the format specified below.
 
 ### TASK-SET-002: Persist logging configuration in settings
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Add `AllUsersSettings::LoggingConfiguration` (plain `int severityLevel`, three
   `bool` domain-enable flags, `std::string logDirectoryOverride`) with defaults matching RQ-SET-008
   (severity Off, all domains enabled, no override). Persist it as a new `<LoggingConfig>` XML
