@@ -1,7 +1,7 @@
 # ADR-FMW-001: Domain-Based Diagnostic Logging — Sink, Wiring and Configuration
 
 ## Status
-Proposed.
+Accepted — implemented in TASK-FMW-001, TASK-SET-002, TASK-FMW-002, TASK-GUI-066 (session LOG, 2026-09-05).
 
 <!-- Motivated by GitHub issue #68: Logger::configure()/setLevel() are never called outside
 juce/tests/, so no log file is ever created and the one existing TraceLevel::Error call site is
