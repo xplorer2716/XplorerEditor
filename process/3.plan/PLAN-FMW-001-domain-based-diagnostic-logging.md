@@ -108,3 +108,126 @@ This plan implements the tasks in the format specified below.
     shows the previously persisted values, not the discarded edits.
 - **Dependencies**: TASK-SET-002
 - **Assignee**: AI
+
+---
+
+## Completion against the .NET reference's own call sites (ADR-FMW-001 DEC-FMW-004)
+
+TASK-FMW-001..GUI-066 above designed and wired the mechanism but populated only 5 call sites. The
+tasks below complete it against a verified inventory of all 57 `Logger` call sites in the .NET
+reference (`xplorer2716/XplorerEditor-dotnet-archive` + its `MidiApp` submodule) — see DEC-FMW-004
+for the full inventory, exclusions and domain-assignment rationale. 10 reference sites are
+excluded (dead code, eliminated failure modes, or no JUCE equivalent) and are not tasked below.
+
+### TASK-FMW-003: Remaining MIDI I/O call sites in the controller's inbound event handler
+- **Tier**: M
+- **Status**: Done
+- **Description**: In `XpanderControllerMidiEvents.cpp`, add the 5 remaining reference call sites
+  (of 8; 3 already ported) at their confirmed insertion points: `isProgramChangeDownSysex`/
+  `isProgramChangeUpSysex` handlers (`Info`), `isPageSubPageSelectSysex` handler (`Info`),
+  `isPageEditFollowsSysex` handler (`Info`), `handleModulationEditFromSynth` (`Verbose`).
+- **Requirement refs**: RQ-FMW-074, RQ-FMW-073
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the MIDI domain is enabled and the threshold passes, *When* the synth sends a
+    program-down SysEx, *Then* a line is written containing `[MIDI]`, `Info`, and
+    `ProgramChangeDOWN`.
+  - *Given* the codebase, *When* `XpanderControllerMidiEvents.cpp` is searched, *Then* all 8 of the
+    file's reference-inventoried call sites are present under `XPL_LOG(LogDomain::Midi, ...)`.
+- **Dependencies**: None
+- **Assignee**: AI
+
+### TASK-FMW-004: Remaining Controller-calls sites in the model/controller layer
+- **Tier**: M
+- **Status**: Done
+- **Description**: Add the remaining reference sites classified Controller calls that are live
+  diagnostics: 4 in `PageSubPageHelper.cpp` (`isAuthorizedRotary`/`isLfoRetrig`/
+  `isPageEnvLfoRampTrack`/`isPageLfo`, `Verbose`). **Not ported** (corrected mid-task, DEC-FMW-004):
+  the reference's other 6 model-layer sites — `XpanderToneModulationMatrix.cs`'s 4-site
+  `DumpModulationMatrixDestination`/`DumpModulationMatrix` and `XpanderTone.cs`'s 2-site
+  `DumpModulationParameters` — are explicitly `for debug purpose` methods with **zero callers**
+  anywhere in the reference, confirmed by an exhaustive search; porting them would resurrect dead
+  code, not a live diagnostic.
+- **Requirement refs**: RQ-FMW-075, RQ-FMW-073
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the Controller-calls domain is enabled and the threshold passes, *When*
+    `PageSubPageHelper::isAuthorizedRotary` is called, *Then* a `Verbose` line is written tagged
+    `[CONTROLLER_CALLS]`.
+  - *Given* the codebase, *When* `PageSubPageHelper.cpp` is searched, *Then* all 4 of its
+    reference-inventoried sites are present under `XPL_LOG(LogDomain::ControllerCalls, ...)`.
+- **Dependencies**: TASK-FMW-003
+- **Assignee**: AI
+
+### TASK-FMW-005: Controller-calls sites in settings, startup and UI↔controller binding
+- **Tier**: M
+- **Status**: Done
+- **Description**: Add the reference sites classified Controller calls that sit outside the model
+  layer: `XmlSettingsService.cpp` — a `Warning` when `allUsersSettings()` falls back to defaults
+  because `load()` returned `nullopt`, and a `Warning` when `Impl::save()`'s
+  `settingsToXml(...)->writeTo(file)` returns `false`; `MainComponent.cpp::configureDiagnosticLogging()`
+  — one `Info` line reporting the resolved severity level right after `Logger::setLevel(...)`
+  (the reference's `"Logger.TraceLevel is: ..."` self-report; its sibling name/version banner line
+  is already produced by `JuceFileLoggerSink`'s welcome message and is not duplicated);
+  `ParameterBindingRegistry.cpp` — `Verbose` on a successful `bind()`, `Warning` when `bind()`
+  fails (parameter name not found on the controller — the reference's `deviceNameError`-adjacent
+  "could not find parameter" case), `Warning` around `_controller.setParameter(...)` in
+  `onControlEdited()` if it throws, and `Warning` when `onParameterChanged()` finds no bound
+  control for an incoming controller notification.
+- **Requirement refs**: RQ-FMW-075, RQ-FMW-073, RQ-SET-004
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* a settings file that fails to load, *When* `allUsersSettings()` falls back to defaults,
+    *Then* a `Warning` line is written before the defaults are returned.
+  - *Given* the Controller-calls domain is enabled, *When* `ParameterBindingRegistry::bind()` is
+    called with a parameter name the controller does not recognise, *Then* a `Warning` line is
+    written and `bind()` still returns `false` unchanged.
+- **Dependencies**: TASK-FMW-004
+- **Assignee**: AI
+
+### TASK-GUI-067: UI-events crash handler and MIDI settings tab diagnostics
+- **Tier**: M
+- **Status**: Done
+- **Description**: `Main.cpp::unhandledException()` — one `Error` line (RQ-FMW-076 already
+  names this disposition explicitly) built from the same `e`/`sourceFile`/`lineNumber` already
+  passed to the alert; no separate flush call is added (`JuceFileLoggerSink`/`FileStreamSink`
+  already flush per write, DEC-FMW-004). `SettingsDialog.cpp::MidiSettingsPage` — one `Verbose`
+  line summarising the enumerated synth-output/synth-input/automation-input device name lists (the
+  reference's per-device capability dump has no JUCE equivalent to read from; the enumerated name
+  lists are what `MidiBackend` actually exposes). `SettingsDialog.cpp::exportMappingAsHtml()` — a
+  `Warning` alongside the existing `AlertWindow` when `file.replaceWithText(html)` fails. **Not
+  ported** (corrected mid-task, DEC-FMW-004): the reference's `MainForm.Overrides.cs::
+  CheckScreenSize`/`DumpMidiInfoToLogFile` (4 sites) — both WinForms-specific diagnostics the
+  port's own window-scale system (RQ-SCL-001..005) supersedes by construction, and the latter
+  depends on `BugReportFactory` (RQ-FMW-071), confirmed never ported at all; porting either would
+  be separate, larger scope, not this task's.
+- **Requirement refs**: RQ-FMW-076, RQ-FMW-073, RQ-GUI-035
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the UI-events domain is enabled, *When* `unhandledException()` fires, *Then* an `Error`
+    line is written before the alert is shown.
+  - *Given* the MIDI domain is enabled, *When* the Settings dialog's MIDI tab is opened, *Then* a
+    `Verbose` line reports the number of synth-output, synth-input and automation-input devices
+    found.
+- **Dependencies**: TASK-FMW-005
+- **Assignee**: AI
+
+### TASK-CTL-021: Log and surface a device-open failure in `applyMidiSettings`
+- **Tier**: M
+- **Status**: Done
+- **Description**: `Dialogs.cpp::applyMidiSettings()` currently discards the `bool` returned by
+  `setSynthOutputDevice`/`setSynthInputDevice`/`setAutomationInputDevice` — the exact structural
+  equivalent of the reference's `deviceNameError` (`SettingsManager.cs`), silent in the port today.
+  Check each return value and log a `Warning` naming which device (output/input/automation) and
+  configured name failed to open — three distinct messages, more diagnosable than the reference's
+  single undifferentiated flag (owner decision, session LOG, DEC-FMW-004).
+- **Requirement refs**: RQ-FMW-075, RQ-FMW-073, RQ-NFR-008
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* a settings file naming a synth output device that is not currently connected, *When*
+    `applyMidiSettings()` runs, *Then* a `Warning` line is written naming the output device and its
+    configured name, and the application continues to start normally.
+  - *Given* all three configured device names resolve successfully, *When* `applyMidiSettings()`
+    runs, *Then* no device-related warning is written.
+- **Dependencies**: None
+- **Assignee**: AI

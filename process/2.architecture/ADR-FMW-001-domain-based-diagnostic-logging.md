@@ -2,6 +2,10 @@
 
 ## Status
 Accepted — implemented in TASK-FMW-001, TASK-SET-002, TASK-FMW-002, TASK-GUI-066 (session LOG, 2026-09-05).
+Extended by DEC-FMW-004 (session LOG, 2026-09-05): the domains and mechanism above were designed
+but only 5 of the reference's 57 call sites were ever populated. DEC-FMW-004 completes the
+population against a verified inventory of the .NET reference. In progress: TASK-FMW-003,
+TASK-FMW-004, TASK-FMW-005, TASK-GUI-067, TASK-CTL-021.
 
 <!-- Motivated by GitHub issue #68: Logger::configure()/setLevel() are never called outside
 juce/tests/, so no log file is ever created and the one existing TraceLevel::Error call site is
@@ -203,6 +207,106 @@ reusing the existing `juce::FileChooser` directory-selection pattern already use
 (`Dialogs.cpp:492-496`) — no new file-picking mechanism. Apply-on-accept / discard-on-cancel,
 identical contract to the dialog's other tabs (RQ-GUI-046).
 
+### DEC-FMW-004 — Call-site population against a verified reference inventory
+
+DEC-FMW-001..003 designed the mechanism; only 5 call sites ever used it (§Context). The owner
+directed (session LOG) a systematic completion: every `Logger` call site in the .NET reference
+(`xplorer2716/XplorerEditor-dotnet-archive`, `Xplorer/`, plus its `MidiApp` submodule,
+`xplorer2716/MidiApp`) was inventoried and mapped to the C++ port **by what the code does, not by
+class/method name** — names changed extensively during the port and a name-based mapping would
+have been wrong in several confirmed cases below.
+
+**Inventory: 57 sites across 17 files** (47 in `Xplorer/`, 10 in `MidiApp.MidiController/`),
+confirmed against `MidiApp.MidiController.Service.Logger` — the reference class this port's
+`midiapp::service::Logger` already descends from (same namespace shape, same `Write`/`WriteLine`/
+`WriteLineIf` surface, same `applog.txt` default, same `Prefix(TraceLevel)` formatting concept).
+Of the 57: **5 were already ported** (§Context) and verified byte-for-byte faithful to the
+reference message text during this pass. Of the remaining 52:
+
+**Excluded — 20 sites, each for a specific verified reason, not a blanket "low value" judgement:**
+- `TopLevelExceptionHandler.NonUIThreadExceptionHandler`/`UIThreadExceptionHandler` (2 sites,
+  `Error` + `Logger.Flush()` each) — **not excluded**, see live mapping below; listed here only to
+  note `Logger.Flush()` is not reproduced: both the default `FileStreamSink` and
+  `JuceFileLoggerSink` already flush on every `write()` (`Logger.cpp:127`; `juce::FileLogger`'s own
+  documented per-line flush), so a separate flush primitive would be redundant, not missing.
+- `XpanderController.SendPageUpdate`'s parse-failure `Warning` (1 site) — the string→enum page-name
+  parsing it guarded no longer exists anywhere in the port (`sendPageUpdate(int, int)` takes an
+  already-resolved page; UI blocks bind directly to `EnumPages` values, confirmed by exhaustive
+  search for any string-to-page-enum conversion in `juce/`).
+- `AbstractController.WorkerThread`'s `ThreadAbortException` catch (1 site, `Info`) — the port's
+  transmit worker uses cooperative `std::jthread`/`std::stop_token` (`AbstractControllerWorker.cpp`);
+  there is no forced-thread-abort mechanism left to catch.
+- `Program.cs::LogGeneralInformations()`'s name/version banner (1 of its 2 sites) — already
+  produced unconditionally by `JuceFileLoggerSink`'s `juce::FileLogger` welcome message, which
+  `configureDiagnosticLogging()` already constructs with `productNameAndVersion()`
+  (`MainComponent.cpp`); a second, hand-written banner line would duplicate it.
+- `AbstractControllerMainForm.Events.cs::OnAutomationParameterChange` base virtual (2 sites, `Info`
+  + `Warning`) — **dead code in the reference itself**: `MainForm.Overrides.cs`'s `override` of the
+  same method never calls `base.OnAutomationParameterChange(...)`, so these two lines never execute
+  in the shipped .NET application. Confirmed by reading the override body, not assumed from the
+  method name.
+- `XpanderTone.ModulationMatrix.cs::DumpModulationMatrixDestination`/`DumpModulationMatrix` (4
+  sites, `Verbose`) and `XpanderTone.cs::DumpModulationParameters` (2 sites, `Verbose`) — all three
+  methods are explicitly commented `for debug purpose` in the reference **and are never called from
+  anywhere in the reference codebase** (confirmed by an exhaustive call-site search restricted to
+  the method name, excluding its own declaration). Unreferenced debug utilities, not live
+  diagnostics; not ported, for the same reason as the two dead-code sites below.
+- `AboutForm._lbLink_LinkClicked` and `MainForm.OpenBrowserWithUrl` (2 sites, `Warning` each) — both
+  catch a failed `Process.Start(url)`. The port's equivalents (`juce::HyperlinkButton` in
+  `Dialogs.cpp`'s `AboutContent`; `file.startAsProcess()` in `SettingsDialog.cpp`'s
+  `exportMappingAsHtml`) launch the browser through JUCE APIs that do not expose a catchable
+  open-failure the same way — no equivalent insertion point exists without hand-rolling a check
+  JUCE itself doesn't surface. Owner-confirmed exclusion.
+
+**Domain assignment for the remainder:** RQ-FMW-073's three domains do not cleanly cover every
+site (settings persistence, the top-level exception handler, MIDI device enumeration). Where
+RQ-FMW-076 already named a disposition explicitly (the top-level exception handler → UI events,
+citing RQ-GUI-035) that pre-existing text governs. Everywhere else undecided, the owner directed
+(session LOG): MIDI device enumeration stays **MIDI I/O** (it is about MIDI hardware, even though
+no message is transmitted); every other structurally-ambiguous group (settings load/save,
+UI↔controller parameter binding, the diagnostic severity self-report) is assigned **Controller
+calls**, matching RQ-FMW-073's "calls the UI makes on the controller" wording, which
+`ParameterBindingRegistry` (settings/binding boundary) and `XmlSettingsService` (a controller
+dependency) both satisfy structurally.
+
+**The `TraceLevel.Off`-as-unconditional-log idiom is not reproduced.** The reference's
+`WriteLine(source, level, message)` compares `level <= _traceSwitch.Level`; passing `TraceLevel.Off`
+(value 0) as the *message's own level* makes the comparison always true, so that one line
+(`MainForm.Overrides.cs:475`, an on-demand MIDI-info dump) always wrote regardless of the switch
+setting — a deliberate exploit of the comparison, not a real severity. This port's `TraceLevel::Off`
+means "disabled" unambiguously (RQ-FMW-070/073); reproducing the idiom would need a separate
+force-write path. Owner decision (session LOG): **do not reproduce it** — the site is ported at
+`TraceLevel::Info` like any other on-demand diagnostic dump, subject to the normal threshold.
+
+**Two additional gaps found during mapping, not present in the original inventory as literal
+matches but confirmed as the closest live equivalent of a reference site, and in scope for
+TASK-CTL-021:**
+- `Dialogs.cpp::applyMidiSettings()` discards the `bool` returned by `setSynthOutputDevice`/
+  `setSynthInputDevice`/`setAutomationInputDevice` (`AbstractControllerDevices.cpp:57-80` — `false`
+  means the named device could not be opened). This is the exact structural equivalent of the
+  reference's `deviceNameError` flag (`SettingsManager.cs`, logged as `Warning`) — currently silent
+  in the port. **Owner-directed fix (this session):** check each return value and log a `Warning`
+  identifying which device failed, rather than reproduce the reference's single undifferentiated
+  flag.
+- `SettingsDialog.cpp::exportMappingAsHtml()` discards the `bool` returned by
+  `file.replaceWithText(html)` on its success path but already shows an `AlertWindow` on failure
+  with no log — the closest live equivalent of `MidiPage.cs`'s "Unable to export automation table"
+  `Warning`. Logged alongside the existing `AlertWindow` call, not replacing it.
+
+- `MainForm.Overrides.cs::CheckScreenSize`/`DumpMidiInfoToLogFile` (4 sites: `Info`×1 unconditional
+  via the reference's 2-arg `Write` overload, `Info`×1, `Error`×1, and the `TraceLevel.Off`
+  quirk-carrying site already covered under the Off decision above) — both methods are
+  WinForms-specific (`Screen.FromControl`, `MinimumSize` vs. detected DPI/resolution) diagnostics
+  the port's own scale system (RQ-SCL-001..005, `windowSizeForScale()`) supersedes by construction
+  rather than by defensive post-hoc check (confirmed absent anywhere in `juce/app`); and
+  `DumpMidiInfoToLogFile` depends on `BugReportFactory.CreateMidiDevicesInfo()`, itself never
+  ported (RQ-FMW-071 has no C++ implementation at all, confirmed absent) — implementing it would be
+  a separate feature, not this task's scope.
+
+Full per-file, per-site disposition (target file, domain, severity) was worked out interactively
+with the owner (session LOG chat log) and is not duplicated here field-by-field; PLAN-FMW-001's
+TASK-FMW-003..005, TASK-GUI-067 and TASK-CTL-021 carry it at file granularity.
+
 ## Consequences
 
 **Easier.** A log file is finally produced, with per-user severity control and, additionally, a
@@ -263,6 +367,14 @@ DEC-FMW-002.
   `xpl_settings` depend on `xpl_framework`, a new edge in a dependency graph that currently flows
   the other way (`xpl_framework` ← `xpl_model` ← `xpl_settings`); a plain `int`/`bool` costs
   nothing and the one conversion site already sits in `juce/app`, which depends on both.
+- **Port every reference call site mechanically, by name/location, without checking the port's
+  current behaviour at that point.** Rejected — demonstrably wrong in several cases confirmed
+  during DEC-FMW-004 (e.g. `SendPageUpdate`'s parse-failure guard, dead code in
+  `OnAutomationParameterChange`'s un-called base override): a name-based port would have logged
+  failure modes that can no longer occur, or resurrected code the reference itself never executed.
+- **Reproduce the `TraceLevel.Off`-as-always-log idiom** with a dedicated force-write path bypassing
+  the domain/severity gate. Rejected by the owner (DEC-FMW-004): adds a second, harder-to-reason-about
+  write path for one reference line; ported at `Info` under the normal threshold instead.
 - **Truncate the log file on every launch** (matching the .NET reference's `FileMode.Create`
   literally) instead of using `juce::FileLogger`'s append/trim default. Rejected — the owner asked
   to reuse `FileLogger` "by default"; reimplementing truncate-on-launch on top of it would be

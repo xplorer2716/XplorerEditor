@@ -191,6 +191,8 @@ namespace xplorer::controller
         else if (isProgramChangeDownSysex(message))
         {
             isMessageHandled = true;
+            // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+            XPL_LOG(LogDomain::Midi, TraceLevel::Info, "RECV: ProgramChangeDOWN " + message.toString());
             xpanderTone().setCurrentProgramNumber(xpanderTone().currentProgramNumber() - 1); // [RQ-CTL-024]
             if (settings().midiConfig.smartAllNotesOff)
             {
@@ -201,6 +203,8 @@ namespace xplorer::controller
         else if (isProgramChangeUpSysex(message))
         {
             isMessageHandled = true;
+            // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+            XPL_LOG(LogDomain::Midi, TraceLevel::Info, "RECV: ProgramChangeUP " + message.toString());
             xpanderTone().setCurrentProgramNumber(xpanderTone().currentProgramNumber() + 1);
             if (settings().midiConfig.smartAllNotesOff)
             {
@@ -215,6 +219,8 @@ namespace xplorer::controller
             // emit a page-select from this same helper, so a missed update here
             // would make it write parameters into the wrong page.
             isMessageHandled = true;
+            // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+            XPL_LOG(LogDomain::Midi, TraceLevel::Info, "RECV: PageSubPageSelect " + message.toString());
             _pageSubPageHelper.updatePageSubPage(page, subPage);
             if (_pageSubPageHelper.isPageEnvLfoRampTrack())
             {
@@ -231,6 +237,8 @@ namespace xplorer::controller
             // A null parameter here means the page/id pair maps to nothing this
             // editor models; ignored rather than treated as an error.
             isMessageHandled = true;
+            // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+            XPL_LOG(LogDomain::Midi, TraceLevel::Info, "RECV: PageEditFollows " + message.toString());
             setSetParameterEnabled(false);
             int parameterPage = 0;
             int parameterSubPage = 0;
@@ -336,6 +344,12 @@ namespace xplorer::controller
         int page = 0;
         int subPage = 0;
         _pageSubPageHelper.getPageSubPage(page, subPage);
+        // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+        XPL_LOG(LogDomain::Midi, TraceLevel::Verbose,
+                "RECV: ModulationEdit: page=" + std::to_string(page) + ", subpage=" + std::to_string(subPage)
+                    + ", cmd=" + std::to_string(xpl::util::toUnderlying(command))
+                    + ", idSource=" + std::to_string(modulationSourceNumber)
+                    + ", value=" + std::to_string(value));
         auto& xTone = xpanderTone();
         const auto destination = model::modulationDestinationForPageSubPage(page, subPage);
 
