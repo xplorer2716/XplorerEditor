@@ -27,6 +27,7 @@
 #include "DialogIcons.hpp"
 #include "Dialogs.hpp"
 
+#include "midiapp/service/Logger.hpp"
 #include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/LoggingConfigResolver.hpp"
@@ -232,12 +233,21 @@ namespace xplorer::app
             {
                 const auto& midi = settingsService.allUsersSettings().midiConfig;
 
-                addDeviceCombo(_synthOut, _synthOutLabel, "Synth output", backend.outputDeviceNames(),
+                const auto outputDeviceNames = backend.outputDeviceNames();
+                const auto inputDeviceNames = backend.inputDeviceNames();
+                addDeviceCombo(_synthOut, _synthOutLabel, "Synth output", outputDeviceNames,
                                midi.synthOutputDeviceName);
-                addDeviceCombo(_synthIn, _synthInLabel, "Synth input", backend.inputDeviceNames(),
+                addDeviceCombo(_synthIn, _synthInLabel, "Synth input", inputDeviceNames,
                                midi.synthInputDeviceName);
-                addDeviceCombo(_autoIn, _autoInLabel, "Automation input", backend.inputDeviceNames(),
+                addDeviceCombo(_autoIn, _autoInLabel, "Automation input", inputDeviceNames,
                                midi.automationInputDeviceName);
+                // Reference: MidiPage.Initialize()/DumpInputDevice/DumpOutputDevice logged each
+                // enumerated device's capabilities; MidiBackend only exposes names, not per-device
+                // capability structs, so the closest live equivalent is a count summary.
+                // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                XPL_LOG(midiapp::service::LogDomain::Midi, midiapp::service::TraceLevel::Verbose,
+                        "MIDI devices found: " + std::to_string(outputDeviceNames.size()) + " output, "
+                            + std::to_string(inputDeviceNames.size()) + " input");
 
                 addCombo(_channel, _channelLabel, "MIDI channel");
                 for (int ch = 1; ch <= 16; ++ch)
@@ -375,6 +385,10 @@ namespace xplorer::app
                         }
                         else
                         {
+                            // [RQ-FMW-076, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                            XPL_LOG(midiapp::service::LogDomain::UiEvents, midiapp::service::TraceLevel::Warning,
+                                    "Unable to export automation table: "
+                                        + file.getFullPathName().toStdString());
                             juce::AlertWindow::showMessageBoxAsync(
                                 juce::MessageBoxIconType::WarningIcon, "Export MIDI mapping",
                                 "Unable to write " + file.getFullPathName());
