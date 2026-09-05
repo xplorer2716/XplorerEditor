@@ -35,7 +35,7 @@
 
 namespace xplorer::controller
 {
-    using midiapp::service::Logger;
+    using midiapp::service::LogDomain;
     using midiapp::service::TraceLevel;
     using model::EnumModulationEditCommands;
     using model::EnumModulationSourcesModMatrix;
@@ -156,8 +156,8 @@ namespace xplorer::controller
         if (isSinglePatchProgramDumpSysex(message))
         {
             isMessageHandled = true;
-            Logger::writeLine("XpanderController", TraceLevel::Info,
-                              "RECV: SingleVoiceProgramDump " + message.toString());
+            XPL_LOG(LogDomain::Midi, TraceLevel::Info,
+                    "RECV: SingleVoiceProgramDump " + message.toString());
             // Two very different meanings for the same frame, disambiguated by
             // state: during an all-data dump this patch is one of a hundred
             // being collected, so handleAllDataDumpRequest consumes it and
@@ -183,8 +183,8 @@ namespace xplorer::controller
         }
         else if (isMultiPatchProgramDumpSysex(message))
         {
-            Logger::writeLine("XpanderController", TraceLevel::Info,
-                              "RECV: MultiPatchProgramDumpSysex " + message.toString());
+            XPL_LOG(LogDomain::Midi, TraceLevel::Info,
+                    "RECV: MultiPatchProgramDumpSysex " + message.toString());
             // Outside a dump request, multi patches are ignored. [RQ-CTL-026]
             isMessageHandled = handleAllDataDumpRequest(message, false);
         }
@@ -449,10 +449,10 @@ namespace xplorer::controller
                 return parameter;
             }
         }
-        Logger::writeLine("XpanderController", TraceLevel::Error,
-                          "Unable to get param for: page=" + std::to_string(page)
-                              + ", subPage=" + std::to_string(subPage)
-                              + ", buttonID=" + std::to_string(buttonId));
+        XPL_LOG(LogDomain::Midi, TraceLevel::Error,
+                "Unable to get param for: page=" + std::to_string(page)
+                    + ", subPage=" + std::to_string(subPage)
+                    + ", buttonID=" + std::to_string(buttonId));
         return nullptr;
     }
 

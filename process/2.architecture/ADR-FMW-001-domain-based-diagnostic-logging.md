@@ -14,12 +14,15 @@ Logger.cpp. [RQ-FMW-070, RQ-FMW-073..076, RQ-SET-008, RQ-GUI-083, RQ-NFR-008] --
 
 **The logger exists but is wired to nothing.** `midiapp::service::Logger`
 (`juce/framework/include/midiapp/service/Logger.hpp`, `juce/framework/src/Logger.cpp`) already
-implements level-filtered, timestamped, mutex-guarded writes to a `std::ofstream` sink. Three call
-sites already exist in `juce/controller/src/XpanderControllerMidiEvents.cpp` (lines 159, 186 —
-`TraceLevel::Info`; line 452 — `TraceLevel::Error`), and `ServicesTests.cpp` exercises the class
-directly. But `Logger::configure()`/`setLevel()` are called from nowhere in `juce/app/`,
-`juce/controller/`, `juce/model/` or `juce/framework/` itself — `g_level` never leaves
-`TraceLevel::Off`, so every one of those calls is a silent no-op.
+implements level-filtered, timestamped, mutex-guarded writes to a `std::ofstream` sink. Five call
+sites already exist — three in `juce/controller/src/XpanderControllerMidiEvents.cpp` (lines 159,
+186 — `TraceLevel::Info`; line 452 — `TraceLevel::Error`) and two more in
+`juce/model/src/XpanderToneModulationMatrix.cpp` (lines 403, 417 — `TraceLevel::Info`, found only
+once the build broke on them mid-implementation, not by the original grep this ADR was written
+from) — and `ServicesTests.cpp` exercises the class directly. But `Logger::configure()`/
+`setLevel()` are called from nowhere in `juce/app/`, `juce/controller/`, `juce/model/` or
+`juce/framework/` itself — `g_level` never leaves `TraceLevel::Off`, so every one of those calls is
+a silent no-op.
 
 **The library graph is layered, and the layering is real, not incidental.** Verified from every
 `CMakeLists.txt` on the path from `Logger` to the application, not assumed:
@@ -117,10 +120,10 @@ explicit choice. A line is written only when its domain is enabled **and** its s
 that one shared threshold.
 
 **The existing `writeLine(const std::string& source, TraceLevel level, const std::string& message)`
-overload is removed, not kept alongside a new one.** It has exactly three call sites in the whole
-codebase (`XpanderControllerMidiEvents.cpp:159, 186, 452`) plus the `ServicesTests.cpp` scenario —
-few enough that a second, parallel API shape is not worth carrying (owner decision, session LOG:
-one call shape, not two). It is replaced outright by:
+overload is removed, not kept alongside a new one.** It has five call sites in the whole codebase
+(`XpanderControllerMidiEvents.cpp:159, 186, 452`; `XpanderToneModulationMatrix.cpp:403, 417`) plus
+the `ServicesTests.cpp` scenario — few enough that a second, parallel API shape is not worth
+carrying (owner decision, session LOG: one call shape, not two). It is replaced outright by:
 
 ```cpp
 static void writeLine(LogDomain domain, TraceLevel level, const char* file, int line, const std::string& message);
@@ -145,8 +148,11 @@ would just triplicate it. The formatted line becomes:
 took by hand. **This ADR requires migrating, as part of the implementing task, not left for
 later:** the three `XpanderControllerMidiEvents.cpp` call sites to `XPL_LOG(LogDomain::Midi, ...)`
 (the file is the controller's inbound MIDI-event handler — see its own header comment — so `Midi`
-is the natural domain for all three) and the `ServicesTests.cpp` Logger scenario to the new
-signature. No caller of the old three-argument `writeLine` may remain once this task is done.
+is the natural domain for all three); the two `XpanderToneModulationMatrix.cpp` call sites
+(internal tone-model diagnostics, not raw MIDI traffic or a literal call boundary) to
+`XPL_LOG(LogDomain::ControllerCalls, ...)`, the closest fit among the three; and the
+`ServicesTests.cpp` Logger scenario to the new signature. No caller of the old three-argument
+`writeLine` may remain once this task is done.
 
 **MIDI formatting reuses `xpl::midi::MidiMessage::toString()`** (`juce/midi/src/MidiMessage.cpp:146-155`,
 a hex byte dump already used nowhere else for logging) — call sites compose the log message from
@@ -248,7 +254,7 @@ DEC-FMW-002.
   is meant to prevent.
 - **Keep the legacy `writeLine(source, level, message)` overload alongside the new domain-aware
   one**, migrating call sites opportunistically rather than in this task. Rejected by the owner:
-  with only three call sites and one test scenario using it, a permanent second API shape costs
+  with only five call sites and one test scenario using it, a permanent second API shape costs
   more in ongoing reader confusion than the one-time migration it would avoid.
 - **New semantic MIDI-message formatter** (decode Note On/Off/CC into words) instead of reusing
   `MidiMessage::toString()`. Rejected by the owner: the existing hex dump is legible to this
