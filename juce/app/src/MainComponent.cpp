@@ -6,12 +6,15 @@
 #include "BinaryData.h"
 #include "DesignTokens.hpp"
 #include "Dialogs.hpp"
+#include "LoggingSink.hpp"
 #include "PianoKeyboardLayoutQuery.hpp"
 #include "SettingsDialog.hpp"
 #include "midiapp/service/FileUtils.hpp"
+#include "midiapp/service/Logger.hpp"
 #include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ControlTable.hpp"
+#include "xplorer/app/LoggingConfigResolver.hpp"
 #include "xplorer/app/MenuIds.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
 #include "xplorer/model/XpanderConstants.hpp"
@@ -149,6 +152,29 @@ namespace xplorer::app
         {
             return std::string(JUCE_APPLICATION_NAME_STRING) + " " + XPL_VERSION_FULL_STRING;
         }
+
+        // Wires the diagnostic logger from persisted configuration: a
+        // juce::FileLogger-backed sink at the resolved path, the global
+        // severity threshold, and the three domain gates. Called once, right
+        // after _settingsService is constructed and before _controller is,
+        // so no MIDI/controller activity can ever go unlogged. [RQ-FMW-070,
+        // RQ-FMW-073, RQ-SET-008, RQ-NFR-008, ADR-FMW-001 (DEC-FMW-001,
+        // DEC-FMW-003)]
+        void configureDiagnosticLogging(settings::XmlSettingsService& settingsService)
+        {
+            using midiapp::service::Logger;
+            using midiapp::service::LogDomain;
+
+            const auto& loggingConfig = settingsService.allUsersSettings().loggingConfig;
+            const auto logFilePath = resolveLogFilePath(loggingConfig.logDirectoryOverride,
+                                                          settingsService.settingsFilePath());
+            Logger::configure(std::make_unique<JuceFileLoggerSink>(
+                juce::File(juce::String(logFilePath)), productNameAndVersion()));
+            Logger::setLevel(resolveSeverityLevel(loggingConfig.severityLevel));
+            Logger::setDomainEnabled(LogDomain::Midi, loggingConfig.midiDomainEnabled);
+            Logger::setDomainEnabled(LogDomain::ControllerCalls, loggingConfig.controllerDomainEnabled);
+            Logger::setDomainEnabled(LogDomain::UiEvents, loggingConfig.uiDomainEnabled);
+        }
     }
 
     MainComponent::MainComponent()
@@ -156,6 +182,7 @@ namespace xplorer::app
         _dispatcher = std::make_shared<JuceEventDispatcher>();
         _settingsService = std::make_unique<settings::XmlSettingsService>(
             preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString());
+        configureDiagnosticLogging(*_settingsService);
         _controller = std::make_unique<controller::XpanderController>(
             _backend, *_settingsService, _dispatcher, productNameAndVersion());
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);
@@ -289,6 +316,7 @@ namespace xplorer::app
         // [RQ-CTL-060, RQ-BUG-003, ADR-BUG-002 (DEC-BUG-005)]
         _controller->stop();
         juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+        midiapp::service::Logger::shutdown(); // releases the log file handle [RQ-NFR-008]
     }
 
     void MainComponent::placeFixedBlockControls()

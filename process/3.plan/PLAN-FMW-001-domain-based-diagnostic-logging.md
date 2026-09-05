@@ -69,7 +69,7 @@ This plan implements the tasks in the format specified below.
 
 ### TASK-FMW-002: Application-layer sink and startup wiring
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: In `juce/app`, add `JuceFileLoggerSink` (implements `ILogSink`, wraps
   `juce::FileLogger`) and wire diagnostic logging in `MainComponent`'s constructor, immediately
   after `_settingsService` is constructed and before `_controller` is constructed: resolve the log

@@ -11,6 +11,7 @@ add_library(xpl_app_core STATIC
     src/SegmentFont.cpp
     src/PianoKeyMapping.cpp
     src/PianoKeyLabelPlan.cpp
-    src/KnobPresetValues.cpp)
+    src/KnobPresetValues.cpp
+    src/LoggingConfigResolver.cpp)
 target_include_directories(xpl_app_core PUBLIC include)
 target_link_libraries(xpl_app_core PUBLIC xpl_controller PRIVATE xpl::warnings)
