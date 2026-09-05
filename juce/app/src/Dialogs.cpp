@@ -5,6 +5,7 @@
 #include "DialogIcons.hpp"
 #include "SbomReader.hpp"
 
+#include "midiapp/service/Logger.hpp"
 #include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 
@@ -433,9 +434,26 @@ namespace xplorer::app
                            settings::ISettingsService& settingsService, xpl::midi::MidiBackend&)
     {
         const auto& midi = settingsService.allUsersSettings().midiConfig;
-        controller.setSynthOutputDevice(midi.synthOutputDeviceName);
-        controller.setSynthInputDevice(midi.synthInputDeviceName);
-        controller.setAutomationInputDevice(midi.automationInputDeviceName);
+        // Reference: SettingsManager.LoadSettings()'s deviceNameError flag, logged as one
+        // undifferentiated Warning. Ported as three distinct messages -- one per device -- since
+        // that is more diagnosable than the reference's single flag (owner decision, session LOG,
+        // ADR-FMW-001 DEC-FMW-004). [RQ-FMW-075, RQ-NFR-008]
+        if (!controller.setSynthOutputDevice(midi.synthOutputDeviceName) && !midi.synthOutputDeviceName.empty())
+        {
+            XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                    "Unable to open synth output device: " + midi.synthOutputDeviceName);
+        }
+        if (!controller.setSynthInputDevice(midi.synthInputDeviceName) && !midi.synthInputDeviceName.empty())
+        {
+            XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                    "Unable to open synth input device: " + midi.synthInputDeviceName);
+        }
+        if (!controller.setAutomationInputDevice(midi.automationInputDeviceName)
+            && !midi.automationInputDeviceName.empty())
+        {
+            XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                    "Unable to open automation input device: " + midi.automationInputDeviceName);
+        }
         // Reference MIDI channel is 1-based in settings, 0-based on the wire.
         controller.setMidiChannel(juce::jlimit(0, 15, midi.midiChannel - 1));
         controller.setParameterTransmitDelay(juce::jmax(0, midi.sysexTransmitDelay));

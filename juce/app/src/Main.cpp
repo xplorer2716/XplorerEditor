@@ -2,6 +2,8 @@
 #include "JuceEventDispatcher.hpp"
 #include "MainComponent.hpp"
 
+#include "midiapp/service/Logger.hpp"
+
 #include <juce_gui_extra/juce_gui_extra.h>
 
 namespace xplorer::app
@@ -55,6 +57,11 @@ namespace xplorer::app
         void unhandledException(const std::exception* e, const juce::String& sourceFile,
                                 int lineNumber) override
         {
+            // [RQ-FMW-076, RQ-GUI-035, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+            XPL_LOG(midiapp::service::LogDomain::UiEvents, midiapp::service::TraceLevel::Error,
+                    "Unhandled exception: "
+                        + std::string(e != nullptr ? e->what() : "unknown exception") + " at "
+                        + sourceFile.toStdString() + ":" + std::to_string(lineNumber));
             juce::AlertWindow::showMessageBoxAsync(
                 juce::MessageBoxIconType::WarningIcon, "Xplorer - unexpected error",
                 juce::String(e != nullptr ? e->what() : "unknown exception") + "\nat "

@@ -42,7 +42,7 @@
 
 namespace xplorer::model
 {
-    using midiapp::service::Logger;
+    using midiapp::service::LogDomain;
     using midiapp::service::TraceLevel;
     using xpl::midi::MidiMessage;
 
@@ -400,8 +400,8 @@ namespace xplorer::model
                 return i;
             }
         }
-        Logger::writeLine("XpanderTone", TraceLevel::Info,
-                          "GetNextAvailableModIDSourceForDest: No IdSource available");
+        XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Info,
+                "GetNextAvailableModIDSourceForDest: No IdSource available");
         return UNDEFINED_MODULATION_SOURCE_NUMBER;
     }
 
@@ -414,8 +414,8 @@ namespace xplorer::model
                 return i;
             }
         }
-        Logger::writeLine("XpanderTone", TraceLevel::Info,
-                          "GetNextAvailableModEntry: No modulation entry available");
+        XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Info,
+                "GetNextAvailableModEntry: No modulation entry available");
         return NO_AVAILABLE_MOD_ENTRY;
     }
 
