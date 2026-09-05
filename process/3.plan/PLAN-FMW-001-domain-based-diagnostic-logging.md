@@ -90,7 +90,7 @@ This plan implements the tasks in the format specified below.
 
 ### TASK-GUI-066: Settings dialog "Logging" tab
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: Add a fourth tab, "Logging", to the Settings dialog (`juce/app/src/
   SettingsDialog.{hpp,cpp}`), alongside MIDI / User interface / Randomizer: a severity selector
   (Aucun/Erreur/Avertissement/Info/Détaillé), three domain checkboxes, and a directory chooser
