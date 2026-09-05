@@ -918,26 +918,22 @@ namespace xplorer::app
                 addAndMakeVisible(_uiDomain);
 
                 _directoryLabel.setText("Log directory", juce::dontSendNotification);
+                // Right-justified and attached to _directoryPath, exactly like
+                // _severityLabel above -- both labels then end at the same x
+                // (flush against their control's left edge). [RQ-GUI-083]
+                _directoryLabel.attachToComponent(&_directoryPath, true);
+                _directoryLabel.setJustificationType(juce::Justification::centredRight);
                 _directoryLabel.setFont(dialogControlFont());
                 addAndMakeVisible(_directoryLabel);
 
                 _directoryOverride = logging.logDirectoryOverride;
                 _directoryPath.setFont(juce::Font{juce::FontOptions{tokens::semantic::textSubtitle}});
                 _directoryPath.setColour(juce::Label::textColourId, tokens::semantic::textHint);
-                updateDirectoryDisplay();
                 addAndMakeVisible(_directoryPath);
 
                 _browse.setButtonText("Browse...");
                 _browse.onClick = [this] { browseForDirectory(); };
                 addAndMakeVisible(_browse);
-
-                _delete.setButtonText("Delete");
-                _delete.onClick = [this]
-                {
-                    _directoryOverride.clear();
-                    updateDirectoryDisplay();
-                };
-                addAndMakeVisible(_delete);
             }
 
             void applyTo(settings::AllUsersSettings::LoggingConfiguration& logging) const
@@ -960,13 +956,16 @@ namespace xplorer::app
                 _uiDomain.setBounds(rowBounds(area).withTrimmedLeft(LABEL_WIDTH));
 
                 area.removeFromTop(tokens::semantic::layoutSectionGap);
-                auto dirRow = rowBounds(area);
-                _directoryLabel.setBounds(dirRow.removeFromLeft(LABEL_WIDTH));
-                _delete.setBounds(dirRow.removeFromRight(tokens::semantic::dialogDeleteWidth));
-                dirRow.removeFromRight(tokens::semantic::layoutButtonGap);
+                // Trimmed the same LABEL_WIDTH off the left as every row
+                // above (not removeFromLeft into _directoryLabel): the label
+                // now attaches to _directoryPath (ctor) and right-justifies
+                // itself flush against it, so both labels' text ends at the
+                // same x as _severity's own left edge. [RQ-GUI-083]
+                auto dirRow = rowBounds(area).withTrimmedLeft(LABEL_WIDTH);
                 _browse.setBounds(dirRow.removeFromRight(tokens::semantic::dialogChooseWidth));
                 dirRow.removeFromRight(tokens::semantic::layoutButtonGap);
                 _directoryPath.setBounds(dirRow);
+                updateDirectoryDisplay();
             }
 
         private:
@@ -979,10 +978,28 @@ namespace xplorer::app
 
             void updateDirectoryDisplay()
             {
-                _directoryPath.setText(_directoryOverride.empty()
-                                            ? juce::String("(default: next to the settings file)")
-                                            : juce::String(_directoryOverride),
-                                       juce::dontSendNotification);
+                const juce::String fullText = _directoryOverride.empty()
+                    ? juce::String("(default: next to the settings file)")
+                    : juce::String(_directoryOverride);
+
+                // juce::Label has no built-in ellipsis mode (unlike the combo
+                // box overflow handling this app already relies on elsewhere,
+                // ADR-JUC-022) -- truncate by hand when the path is wider than
+                // the space Browse now leaves it. [RQ-GUI-083]
+                const auto& font = _directoryPath.getFont();
+                const int maxWidth = _directoryPath.getWidth();
+                juce::String displayText = fullText;
+                if (maxWidth > 0 && juce::GlyphArrangement::getStringWidth(font, displayText) > maxWidth)
+                {
+                    const juce::String ellipsis = "...";
+                    while (displayText.isNotEmpty()
+                           && juce::GlyphArrangement::getStringWidth(font, displayText + ellipsis) > maxWidth)
+                    {
+                        displayText = displayText.dropLastCharacters(1);
+                    }
+                    displayText += ellipsis;
+                }
+                _directoryPath.setText(displayText, juce::dontSendNotification);
             }
 
             void browseForDirectory()
@@ -1009,7 +1026,7 @@ namespace xplorer::app
             juce::ToggleButton _midiDomain, _controllerDomain, _uiDomain;
             juce::Label _directoryLabel;
             juce::Label _directoryPath;
-            juce::TextButton _browse, _delete;
+            juce::TextButton _browse;
             std::string _directoryOverride;
             std::unique_ptr<juce::FileChooser> _directoryChooser;
         };

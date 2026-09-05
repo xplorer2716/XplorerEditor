@@ -4,8 +4,11 @@
 Accepted — implemented in TASK-FMW-001, TASK-SET-002, TASK-FMW-002, TASK-GUI-066 (session LOG, 2026-09-05).
 Extended by DEC-FMW-004 (session LOG, 2026-09-05): the domains and mechanism above were designed
 but only 5 of the reference's 57 call sites were ever populated. DEC-FMW-004 completes the
-population against a verified inventory of the .NET reference. In progress: TASK-FMW-003,
+population against a verified inventory of the .NET reference. Completed by TASK-FMW-003,
 TASK-FMW-004, TASK-FMW-005, TASK-GUI-067, TASK-CTL-021.
+Post-delivery (session LOG, 2026-09-05): TASK-FMW-006 fixed severity/domain changes on the Logging
+tab not taking effect until restart (completes DEC-FMW-003's contract, no new decision). DEC-FMW-005
+removes the log-directory "Delete" button and aligns the tab's layout (TASK-GUI-068).
 
 <!-- Motivated by GitHub issue #68: Logger::configure()/setLevel() are never called outside
 juce/tests/, so no log file is ever created and the one existing TraceLevel::Error call site is
@@ -307,6 +310,21 @@ Full per-file, per-site disposition (target file, domain, severity) was worked o
 with the owner (session LOG chat log) and is not duplicated here field-by-field; PLAN-FMW-001's
 TASK-FMW-003..005, TASK-GUI-067 and TASK-CTL-021 carry it at file granularity.
 
+### DEC-FMW-005 — Remove the log-directory override's "Delete" button; align its label and truncate long paths
+
+Owner-reported (session LOG): the "Delete" button next to the log-directory path was confusable
+with deleting the log file/directory itself, not clearing the override. Removed outright (button,
+handler, member) — no replacement; the override can still be changed via the directory chooser.
+Amends RQ-GUI-083 (drops its "clearable back to the default" clause).
+
+Same-session layout correction: `_directoryLabel` now attaches to `_directoryPath` and
+right-justifies, matching `_severityLabel`, so both labels end at the same x. `_browse` moves to
+the row's right edge (unchanged width), and `_directoryPath` truncates with a trailing `...`
+(`juce::GlyphArrangement::getStringWidth`, ADR-JUC-022's measurer) when too wide to fit.
+
+`dialogDeleteWidth` (global + semantic) removed from `design-tokens.yaml`; `DesignTokens.hpp`
+regenerated. Tracked as TASK-GUI-068.
+
 ## Consequences
 
 **Easier.** A log file is finally produced, with per-user severity control and, additionally, a
@@ -380,6 +398,9 @@ DEC-FMW-002.
   to reuse `FileLogger` "by default"; reimplementing truncate-on-launch on top of it would be
   extra code to *undo* part of the class being reused, for a behaviour RQ-FMW-070 does not itself
   require.
+- **Keep the log-directory "Delete" button behind a confirmation dialog** (DEC-FMW-005). Rejected
+  — adds a second dialog without removing the ambiguity; outright removal costs nothing since the
+  directory chooser already covers the only edit path that matters.
 
 ## Diagram
 
