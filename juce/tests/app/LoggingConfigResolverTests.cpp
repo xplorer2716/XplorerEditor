@@ -2,6 +2,8 @@
 
 #include "xplorer/app/LoggingConfigResolver.hpp"
 
+#include <filesystem>
+
 // Pure path/severity resolution behind wiring the diagnostic logger from
 // persisted configuration (RQ-SET-008). JUCE-free and OS-free, so it stays
 // headless-testable (RQ-BLD-025) without constructing a window.
@@ -20,7 +22,13 @@ SCENARIO("The log file path defaults next to the settings file", "[RQ-SET-008]")
 
             THEN("it sits in the settings file's own directory, under xplorer.log")
             {
-                CHECK(path == "/home/user/.config/Xplorer/Xplorer/xplorer.log");
+                // Built via std::filesystem::path, not a forward-slash string
+                // literal: resolveLogFilePath joins with the platform's own
+                // separator (backslash on Windows), which a hard-coded '/'
+                // expectation does not match there. [CI: Windows job failure,
+                // LoggingConfigResolverTests.cpp:23/37, run 33968166473]
+                const auto expected = std::filesystem::path("/home/user/.config/Xplorer/Xplorer") / LOG_FILE_NAME;
+                CHECK(path == expected.string());
             }
         }
     }
@@ -34,7 +42,8 @@ SCENARIO("The log file path defaults next to the settings file", "[RQ-SET-008]")
 
             THEN("the override wins outright, still under xplorer.log")
             {
-                CHECK(path == "/custom/log/dir/xplorer.log");
+                const auto expected = std::filesystem::path("/custom/log/dir") / LOG_FILE_NAME;
+                CHECK(path == expected.string());
             }
         }
     }
