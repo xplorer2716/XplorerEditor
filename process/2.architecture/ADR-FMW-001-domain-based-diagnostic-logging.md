@@ -45,10 +45,11 @@ down as a string (`MainComponent.cpp:122-140, 157-158`). Introducing `juce::File
 into `Logger.cpp` would be the first crack in a boundary every layer below `juce/app` currently
 honours without exception.
 
-**The reference used `FileMode.Create` (truncate on every launch, RQ-FMW-070's `applog.txt`);
+**The reference used `FileMode.Create` (truncate on every launch, writing `applog.txt`);
 `juce::FileLogger` appends and optionally caps the file's size instead.** This ADR uses
 `juce::FileLogger`'s own default behaviour (append + size-based trim) rather than reimplementing
-truncate-on-launch — see Consequences.
+truncate-on-launch — see Consequences. The port's log file is also renamed to **`xplorer.log`**
+(owner decision, session LOG) rather than carrying the reference's `applog.txt` name forward.
 
 **Requirements driving this decision:** RQ-FMW-070 (severity-filtered logging to a per-user file),
 RQ-FMW-073 (three independently-switchable domains sharing one global severity threshold),
@@ -72,8 +73,10 @@ public:
 ```
 
 `Logger::configure(const std::string& logFilePath)` **keeps its exact current signature and
-behaviour** — internally it still opens its own `std::ofstream` sink. Every existing test and the
-three existing controller call sites are therefore unaffected; this is the zero-regression path.
+behaviour** — internally it still opens its own `std::ofstream` sink. This is the zero-regression
+path for `Logger`'s own sink-configuration entry point and for any test that only exercises it
+directly; it is independent of the `writeLine` signature change under DEC-FMW-002 below, which
+does require migrating the existing call sites.
 
 A second overload, `Logger::configure(std::unique_ptr<ILogSink> sink)`, is added for production
 use. `juce/app` (the only layer allowed to know JUCE exists) implements it:
@@ -113,8 +116,11 @@ stays the single existing `g_level`/`TraceLevel` — there is no per-domain leve
 explicit choice. A line is written only when its domain is enabled **and** its severity passes
 that one shared threshold.
 
-A new overload carries the domain and an automatically-captured call site instead of the free-text
-`source` the legacy overload takes by hand:
+**The existing `writeLine(const std::string& source, TraceLevel level, const std::string& message)`
+overload is removed, not kept alongside a new one.** It has exactly three call sites in the whole
+codebase (`XpanderControllerMidiEvents.cpp:159, 186, 452`) plus the `ServicesTests.cpp` scenario —
+few enough that a second, parallel API shape is not worth carrying (owner decision, session LOG:
+one call shape, not two). It is replaced outright by:
 
 ```cpp
 static void writeLine(LogDomain domain, TraceLevel level, const char* file, int line, const std::string& message);
@@ -135,9 +141,12 @@ would just triplicate it. The formatted line becomes:
 ```
 
 — the existing timestamp/level formatting (Logger.cpp:96-113) is reused unchanged; only the
-`[<domain>] <file>:<line>:` segment is new. The legacy `writeLine(source, level, message)` path
-keeps its current `timestamp [LEVEL] source: message` shape verbatim — the two call shapes coexist
-by design (see Consequences).
+`[<domain>] <file>:<line>:` segment is new, replacing the free-text `source` the removed overload
+took by hand. **This ADR requires migrating, as part of the implementing task, not left for
+later:** the three `XpanderControllerMidiEvents.cpp` call sites to `XPL_LOG(LogDomain::Midi, ...)`
+(the file is the controller's inbound MIDI-event handler — see its own header comment — so `Midi`
+is the natural domain for all three) and the `ServicesTests.cpp` Logger scenario to the new
+signature. No caller of the old three-argument `writeLine` may remain once this task is done.
 
 **MIDI formatting reuses `xpl::midi::MidiMessage::toString()`** (`juce/midi/src/MidiMessage.cpp:146-155`,
 a hex byte dump already used nowhere else for logging) — call sites compose the log message from
@@ -171,8 +180,8 @@ default above, so a settings file predating this feature loads unchanged.
 **Default log directory reuses `settingsFilePath()`, not a new directory-resolution call.**
 `XmlSettingsService::settingsFilePath()` already returns the full path already resolved through
 `ADR-SET-001`'s preferred/fallback fallback (`XmlSettingsService.cpp:326-331`). The default log
-path is that path's parent directory plus `applog.txt` (RQ-FMW-070's reference filename) — zero
-duplicated resolution logic, zero new exported directory-resolution function. When
+path is that path's parent directory plus **`xplorer.log`** — zero duplicated resolution logic,
+zero new exported directory-resolution function. When
 `logDirectoryOverride` is non-empty, it is used verbatim instead.
 
 **Wiring point:** `MainComponent`'s constructor (`MainComponent.cpp:154-158`), immediately after
@@ -197,12 +206,11 @@ special-cased. Reusing `settingsFilePath()` for the default log directory means 
 ADR-SET-001's fallback logic (e.g. a third fallback tier) automatically applies to the log file
 too, with nothing to keep in sync by hand.
 
-**Harder.** `Logger` now has two `configure()` overloads and two `writeLine()` shapes (legacy
-free-text `source`, new domain+file/line) that coexist rather than one replacing the other — a
-reader has to know both exist. The three pre-existing calls in `XpanderControllerMidiEvents.cpp`
-are not migrated to the new domain-aware macro by this ADR (they are prime candidates — Controller/
-MIDI domain — but choosing exactly which call becomes which domain is implementation detail for
-the plan, not an architectural decision).
+**Harder.** `Logger` now has two `configure()` overloads (path-based, for tests and the framework's
+own default sink; injected-sink, for production) — a reader has to know both exist, and why. There
+is, however, only **one** `writeLine` shape after this ADR: the free-text-`source` overload is
+removed outright (DEC-FMW-002), so the implementing task must migrate every existing caller in the
+same change that introduces the new signature — there is no intermediate state where both exist.
 
 **Constrained.** `juce::FileLogger`'s append-and-trim replaces the reference's truncate-per-launch:
 a relaunch no longer starts an empty file (it keeps recent history up to the trim size instead).
@@ -213,10 +221,11 @@ single-global-threshold design (owner's explicit choice) means a user cannot mut
 at Info while keeping Controller calls at Verbose; they can only turn a domain fully on or off
 under whatever the one severity threshold currently is.
 
-**Unchanged.** The existing `Logger::configure(std::string)`, `writeLine(source, level, message)`,
-`setLevel`/`level`/`shutdown` signatures and behaviour; every existing `ServicesTests.cpp`
-scenario; the XML schema for `MidiConfig`/`UiConfig`/`RandomizerConfig`; ADR-SET-001's directory
-resolution itself (only reused, not modified).
+**Unchanged.** The existing `Logger::configure(std::string)`, `setLevel`/`level`/`shutdown`
+signatures and behaviour; the XML schema for `MidiConfig`/`UiConfig`/`RandomizerConfig`;
+ADR-SET-001's directory resolution itself (only reused, not modified). **Changed, not kept:** the
+`writeLine(source, level, message)` signature and its `ServicesTests.cpp` scenario — see
+DEC-FMW-002.
 
 ## Alternatives Considered
 
@@ -237,6 +246,10 @@ resolution itself (only reused, not modified).
   convention instead of auto-capturing it. Rejected by the owner: defeats the point of automatic
   capture and is exactly the kind of copy-pasted-and-forgotten call site RQ-FMW-073's traceability
   is meant to prevent.
+- **Keep the legacy `writeLine(source, level, message)` overload alongside the new domain-aware
+  one**, migrating call sites opportunistically rather than in this task. Rejected by the owner:
+  with only three call sites and one test scenario using it, a permanent second API shape costs
+  more in ongoing reader confusion than the one-time migration it would avoid.
 - **New semantic MIDI-message formatter** (decode Note On/Off/CC into words) instead of reusing
   `MidiMessage::toString()`. Rejected by the owner: the existing hex dump is legible to this
   application's MIDI-literate audience, and a decoder is scope the original ask did not include.
@@ -276,7 +289,7 @@ flowchart TD
     MC --> SINKIMPL
     SINKIMPL -. implements .-> SINKIF
     SINKIMPL --> FL
-    FL --> FILE[("applog.txt")]
+    FL --> FILE[("xplorer.log")]
     UIEV -- "XPL_LOG(UiEvents, level, msg)" --> LOG
     TAB -- "accept: saveSettings()" --> SETSVC
     TAB -. "cancel: discarded" .-> TAB
