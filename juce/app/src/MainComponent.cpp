@@ -164,6 +164,7 @@ namespace xplorer::app
         {
             using midiapp::service::Logger;
             using midiapp::service::LogDomain;
+            using midiapp::service::TraceLevel;
 
             const auto& loggingConfig = settingsService.allUsersSettings().loggingConfig;
             const auto logFilePath = resolveLogFilePath(loggingConfig.logDirectoryOverride,
@@ -174,6 +175,12 @@ namespace xplorer::app
             Logger::setDomainEnabled(LogDomain::Midi, loggingConfig.midiDomainEnabled);
             Logger::setDomainEnabled(LogDomain::ControllerCalls, loggingConfig.controllerDomainEnabled);
             Logger::setDomainEnabled(LogDomain::UiEvents, loggingConfig.uiDomainEnabled);
+            // Reference: Program.cs::LogGeneralInformations() self-reports the resolved
+            // trace level; its sibling name/version banner line is already produced by
+            // JuceFileLoggerSink's welcome message above, so only this one is added.
+            // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+            XPL_LOG(LogDomain::ControllerCalls, TraceLevel::Info,
+                    "Logger severity level is: " + std::to_string(loggingConfig.severityLevel));
         }
     }
 

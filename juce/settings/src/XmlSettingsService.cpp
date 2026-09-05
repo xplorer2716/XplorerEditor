@@ -3,6 +3,8 @@
 // files import unchanged. [RQ-SET-001, RQ-SET-004, RQ-SET-006, RQ-SET-008]
 #include "xplorer/settings/SettingsService.hpp"
 
+#include "midiapp/service/Logger.hpp"
+
 #include <juce_core/juce_core.h>
 
 #include <array>
@@ -343,7 +345,12 @@ namespace xplorer::settings
         void save(const AllUsersSettings& settings)
         {
             file.getParentDirectory().createDirectory();
-            settingsToXml(settings)->writeTo(file);
+            if (!settingsToXml(settings)->writeTo(file))
+            {
+                // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                        "Unable to write settings file: " + file.getFullPathName().toStdString());
+            }
         }
     };
 
@@ -372,6 +379,9 @@ namespace xplorer::settings
             {
                 // Missing, unreadable or legacy-partial file: persist the
                 // defaults and reload, as the reference does. [RQ-SET-004]
+                // [RQ-FMW-075, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                XPL_LOG(midiapp::service::LogDomain::ControllerCalls, midiapp::service::TraceLevel::Warning,
+                        "Unable to load settings; creating new default values");
                 _impl->save(defaultAllUsersSettings());
                 _impl->cache = _impl->load();
             }
