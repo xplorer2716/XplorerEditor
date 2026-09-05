@@ -1129,6 +1129,14 @@ namespace xplorer::app
                 _randomPage->applyTo(settings.randomizerConfig);
                 _loggingPage->applyTo(settings.loggingConfig);
                 _settingsService.saveSettings(settings);
+                // Without this, severity/domain changes only took effect after
+                // a restart -- configureDiagnosticLogging() (MainComponent.cpp)
+                // is the only other caller, at startup. [RQ-FMW-070, RQ-FMW-073,
+                // RQ-SET-008, RQ-GUI-046, ADR-FMW-001 (DEC-FMW-003)]
+                applyLoggingConfiguration(settings.loggingConfig.severityLevel,
+                                           settings.loggingConfig.midiDomainEnabled,
+                                           settings.loggingConfig.controllerDomainEnabled,
+                                           settings.loggingConfig.uiDomainEnabled);
                 // No isRunning() guard around this call: the constructor
                 // stopped the controller and the destructor restarts it, so
                 // it is always stopped here. The reference guards its own

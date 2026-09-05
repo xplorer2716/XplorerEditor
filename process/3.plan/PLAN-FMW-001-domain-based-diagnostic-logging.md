@@ -231,3 +231,54 @@ excluded (dead code, eliminated failure modes, or no JUCE equivalent) and are no
     runs, *Then* no device-related warning is written.
 - **Dependencies**: None
 - **Assignee**: AI
+
+---
+
+## Post-delivery defect and UX correction (owner report, session LOG, 2026-09-05)
+
+### TASK-FMW-006: Apply logging severity/domain changes live on Settings accept
+- **Tier**: M
+- **Status**: Done (compile/test run by owner, not by AI this session)
+- **Description**: `SettingsDialog.cpp::accept()` persisted the edited `LoggingConfiguration` to
+  XML and re-applied MIDI settings live, but never re-applied severity/domain changes to the
+  running `Logger` — so setting severity to "Aucun" (Off) kept writing INFO/VERBOSE lines until
+  the app was restarted (owner bug report, session LOG). Factor the four
+  `Logger::setLevel`/`setDomainEnabled` calls already in `MainComponent.cpp::
+  configureDiagnosticLogging()` into a new `applyLoggingConfiguration(...)` in
+  `LoggingConfigResolver.hpp/.cpp`, and call it from both `configureDiagnosticLogging()` (startup)
+  and `SettingsDialog.cpp::accept()` (live), so the two paths cannot drift again. The log file's
+  own location (`logDirectoryOverride`) stays restart-only, unchanged.
+- **Requirement refs**: RQ-FMW-070, RQ-FMW-073, RQ-SET-008, RQ-GUI-046
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-003)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the app is running with severity Info, *When* the user sets "Log severity" to "Aucun"
+    in Settings and accepts, *Then* no further line is written for the rest of the session, with no
+    restart.
+  - *Given* the app is running with the MIDI domain enabled, *When* the user disables it and
+    accepts, *Then* no further MIDI-domain line is written until re-enabled, with no restart.
+  - *Given* `applyLoggingConfiguration(rawLevel, midi, controller, ui)` is called, *When*
+    `Logger::level()`/`isDomainEnabled(...)` are read afterward, *Then* they reflect exactly the
+    resolved/clamped values passed in.
+- **Dependencies**: None
+- **Assignee**: AI
+
+### TASK-GUI-068: Remove the log-directory "Delete" button
+- **Tier**: M
+- **Status**: Not Started
+- **Description**: Remove `LoggingSettingsPage`'s "Delete" button, which cleared
+  `logDirectoryOverride` back to default — owner-reported UX risk (session LOG): a button labelled
+  "Delete" next to a real filesystem path reads as "delete the directory/log file", not "clear this
+  override", with no upside worth that risk. Remove the button, its handler, its member, its
+  layout, and the now-orphaned `dialogDeleteWidth` design token (YAML source + generated header).
+  Amends RQ-GUI-083 (drops its "clearable back to the default" clause); recorded as DEC-FMW-005.
+- **Requirement refs**: RQ-GUI-083 (amended)
+- **ADR refs**: ADR-FMW-001 (DEC-FMW-005 — new)
+- **Acceptance Criteria** (Gherkin):
+  - *Given* the Logging tab is open, *When* it is displayed, *Then* no "Delete" button appears next
+    to the log directory path.
+  - *Given* the codebase, *When* searched for `dialogDeleteWidth`, *Then* no occurrence remains in
+    `design-tokens.yaml` or `DesignTokens.hpp`.
+  - *Given* a settings file with `logDirectoryOverride` already set, *When* the Logging tab is
+    opened, *Then* the path is shown and can be changed via "Browse...", with no button to clear it.
+- **Dependencies**: None
+- **Assignee**: AI

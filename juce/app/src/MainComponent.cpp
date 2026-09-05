@@ -171,10 +171,8 @@ namespace xplorer::app
                                                           settingsService.settingsFilePath());
             Logger::configure(std::make_unique<JuceFileLoggerSink>(
                 juce::File(juce::String(logFilePath)), productNameAndVersion()));
-            Logger::setLevel(resolveSeverityLevel(loggingConfig.severityLevel));
-            Logger::setDomainEnabled(LogDomain::Midi, loggingConfig.midiDomainEnabled);
-            Logger::setDomainEnabled(LogDomain::ControllerCalls, loggingConfig.controllerDomainEnabled);
-            Logger::setDomainEnabled(LogDomain::UiEvents, loggingConfig.uiDomainEnabled);
+            applyLoggingConfiguration(loggingConfig.severityLevel, loggingConfig.midiDomainEnabled,
+                                       loggingConfig.controllerDomainEnabled, loggingConfig.uiDomainEnabled);
             // Reference: Program.cs::LogGeneralInformations() self-reports the resolved
             // trace level; its sibling name/version banner line is already produced by
             // JuceFileLoggerSink's welcome message above, so only this one is added.

@@ -4,12 +4,15 @@
 
 #include <filesystem>
 
-// Pure path/severity resolution behind wiring the diagnostic logger from
-// persisted configuration (RQ-SET-008). JUCE-free and OS-free, so it stays
-// headless-testable (RQ-BLD-025) without constructing a window.
+// Path/severity resolution and applying the result to the running Logger,
+// behind wiring the diagnostic logger from persisted configuration
+// (RQ-SET-008). JUCE-free and OS-free, so it stays headless-testable
+// (RQ-BLD-025) without constructing a window.
 // [RQ-FMW-070, ADR-FMW-001 (DEC-FMW-003)]
 
 using namespace xplorer::app;
+using midiapp::service::Logger;
+using midiapp::service::LogDomain;
 using midiapp::service::TraceLevel;
 
 SCENARIO("The log file path defaults next to the settings file", "[RQ-SET-008]")
@@ -75,5 +78,44 @@ SCENARIO("A persisted severity value is clamped to a valid TraceLevel", "[RQ-SET
         {
             CHECK(resolveSeverityLevel(99) == TraceLevel::Verbose);
         }
+    }
+}
+
+SCENARIO("Applying a logging configuration pushes it into the running Logger",
+         "[RQ-FMW-070][RQ-FMW-073][RQ-SET-008][RQ-GUI-046]")
+{
+    GIVEN("a severity and three domain flags")
+    {
+        WHEN("severity is Off and only the UI domain is enabled")
+        {
+            applyLoggingConfiguration(0, false, false, true);
+
+            THEN("the running Logger reflects exactly those values")
+            {
+                CHECK(Logger::level() == TraceLevel::Off);
+                CHECK_FALSE(Logger::isDomainEnabled(LogDomain::Midi));
+                CHECK_FALSE(Logger::isDomainEnabled(LogDomain::ControllerCalls));
+                CHECK(Logger::isDomainEnabled(LogDomain::UiEvents));
+            }
+        }
+
+        WHEN("the severity is out of range and all domains are enabled")
+        {
+            applyLoggingConfiguration(99, true, true, true);
+
+            THEN("it clamps the same way resolveSeverityLevel does")
+            {
+                CHECK(Logger::level() == TraceLevel::Verbose);
+                CHECK(Logger::isDomainEnabled(LogDomain::Midi));
+                CHECK(Logger::isDomainEnabled(LogDomain::ControllerCalls));
+                CHECK(Logger::isDomainEnabled(LogDomain::UiEvents));
+            }
+        }
+
+        // Restore the defaults other suites rely on (Off, all domains
+        // enabled) so this scenario cannot leak state into one that runs
+        // after it -- same care ServicesTests.cpp takes around global
+        // Logger state.
+        applyLoggingConfiguration(0, true, true, true);
     }
 }
