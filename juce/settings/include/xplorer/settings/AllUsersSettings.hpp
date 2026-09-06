@@ -1,6 +1,6 @@
 #pragma once
 
-// Port of Xplorer.Controller.Service.Settings.AllUsersSettings. [RQ-SET-002, RQ-SET-003]
+// Port of Xplorer.Controller.Service.Settings.AllUsersSettings. [RQ-SET-002, RQ-SET-003, RQ-SET-008]
 
 #include "xplorer/model/XpanderConstants.hpp"
 
@@ -54,9 +54,28 @@ namespace xplorer::settings
             model::EnumRandomModMatrix modulationMatrix{}; // [Flags]
         };
 
+        /// Diagnostic-logging configuration (RQ-SET-008, ADR-FMW-001
+        /// DEC-FMW-003). Stored as plain int/bool/string rather than
+        /// midiapp::service::TraceLevel/LogDomain: xpl_settings has no
+        /// dependency on xpl_framework, and this struct does not introduce
+        /// one -- the application layer, which depends on both, converts at
+        /// the one point that needs to.
+        struct LoggingConfiguration
+        {
+            /// Mirrors TraceLevel's underlying value (0 = Off .. 4 = Verbose).
+            int severityLevel = 0;
+            bool midiDomainEnabled = true;
+            bool controllerDomainEnabled = true;
+            bool uiDomainEnabled = true;
+            /// Empty means "no override": the log file is written next to
+            /// the resolved settings directory (RQ-SET-001, ADR-SET-001).
+            std::string logDirectoryOverride;
+        };
+
         MidiConfiguration midiConfig;
         UiConfiguration uiConfig;
         RandomizerConfiguration randomizerConfig;
+        LoggingConfiguration loggingConfig;
     };
 
     /// Reference defaults (DefaultAllusersSettings). [RQ-SET-004]

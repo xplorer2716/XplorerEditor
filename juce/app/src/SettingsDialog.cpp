@@ -27,8 +27,10 @@
 #include "DialogIcons.hpp"
 #include "Dialogs.hpp"
 
+#include "midiapp/service/Logger.hpp"
 #include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
+#include "xplorer/app/LoggingConfigResolver.hpp"
 #include "xplorer/app/MidiAutomationTable.hpp"
 #include "xplorer/model/XpanderTone.hpp"
 #include "xplorer/settings/AllUsersSettings.hpp"
@@ -231,12 +233,21 @@ namespace xplorer::app
             {
                 const auto& midi = settingsService.allUsersSettings().midiConfig;
 
-                addDeviceCombo(_synthOut, _synthOutLabel, "Synth output", backend.outputDeviceNames(),
+                const auto outputDeviceNames = backend.outputDeviceNames();
+                const auto inputDeviceNames = backend.inputDeviceNames();
+                addDeviceCombo(_synthOut, _synthOutLabel, "Synth output", outputDeviceNames,
                                midi.synthOutputDeviceName);
-                addDeviceCombo(_synthIn, _synthInLabel, "Synth input", backend.inputDeviceNames(),
+                addDeviceCombo(_synthIn, _synthInLabel, "Synth input", inputDeviceNames,
                                midi.synthInputDeviceName);
-                addDeviceCombo(_autoIn, _autoInLabel, "Automation input", backend.inputDeviceNames(),
+                addDeviceCombo(_autoIn, _autoInLabel, "Automation input", inputDeviceNames,
                                midi.automationInputDeviceName);
+                // Reference: MidiPage.Initialize()/DumpInputDevice/DumpOutputDevice logged each
+                // enumerated device's capabilities; MidiBackend only exposes names, not per-device
+                // capability structs, so the closest live equivalent is a count summary.
+                // [RQ-FMW-074, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                XPL_LOG(midiapp::service::LogDomain::Midi, midiapp::service::TraceLevel::Verbose,
+                        "MIDI devices found: " + std::to_string(outputDeviceNames.size()) + " output, "
+                            + std::to_string(inputDeviceNames.size()) + " input");
 
                 addCombo(_channel, _channelLabel, "MIDI channel");
                 for (int ch = 1; ch <= 16; ++ch)
@@ -374,6 +385,10 @@ namespace xplorer::app
                         }
                         else
                         {
+                            // [RQ-FMW-076, ADR-FMW-001 (DEC-FMW-002, DEC-FMW-004)]
+                            XPL_LOG(midiapp::service::LogDomain::UiEvents, midiapp::service::TraceLevel::Warning,
+                                    "Unable to export automation table: "
+                                        + file.getFullPathName().toStdString());
                             juce::AlertWindow::showMessageBoxAsync(
                                 juce::MessageBoxIconType::WarningIcon, "Export MIDI mapping",
                                 "Unable to write " + file.getFullPathName());
@@ -861,6 +876,161 @@ namespace xplorer::app
             juce::TextButton _randomizeAll;
         };
 
+        // ---- Logging page ---------------------------------------------------
+        // Severity threshold, the three independent domain gates, and an
+        // optional log-directory override. [RQ-GUI-083, RQ-FMW-070,
+        // RQ-FMW-073, RQ-SET-008, ADR-FMW-001 (DEC-FMW-003)]
+        class LoggingSettingsPage final : public juce::Component
+        {
+        public:
+            explicit LoggingSettingsPage(settings::ISettingsService& settingsService)
+            {
+                const auto& logging = settingsService.allUsersSettings().loggingConfig;
+
+                _severityLabel.setText("Log severity", juce::dontSendNotification);
+                _severityLabel.attachToComponent(&_severity, true);
+                _severityLabel.setJustificationType(juce::Justification::centredRight);
+                _severityLabel.setFont(dialogControlFont());
+                addAndMakeVisible(_severityLabel);
+                for (std::size_t i = 0; i < SEVERITY_LABELS.size(); ++i)
+                {
+                    _severity.addItem(SEVERITY_LABELS[i], static_cast<int>(i) + SEVERITY_ID_OFFSET);
+                }
+                // Clamped the same way the wiring at startup clamps a
+                // possibly-out-of-range persisted value (LoggingConfigResolver,
+                // ADR-FMW-001 DEC-FMW-003), so a hand-edited settings file
+                // cannot select a non-existent combo item.
+                _severity.setSelectedId(
+                    xpl::util::toUnderlying(resolveSeverityLevel(logging.severityLevel)) + SEVERITY_ID_OFFSET,
+                    juce::dontSendNotification);
+                addAndMakeVisible(_severity);
+
+                _midiDomain.setButtonText("Log MIDI I/O");
+                _midiDomain.setToggleState(logging.midiDomainEnabled, juce::dontSendNotification);
+                addAndMakeVisible(_midiDomain);
+
+                _controllerDomain.setButtonText("Log controller calls");
+                _controllerDomain.setToggleState(logging.controllerDomainEnabled, juce::dontSendNotification);
+                addAndMakeVisible(_controllerDomain);
+
+                _uiDomain.setButtonText("Log UI events");
+                _uiDomain.setToggleState(logging.uiDomainEnabled, juce::dontSendNotification);
+                addAndMakeVisible(_uiDomain);
+
+                _directoryLabel.setText("Log directory", juce::dontSendNotification);
+                // Right-justified and attached to _directoryPath, exactly like
+                // _severityLabel above -- both labels then end at the same x
+                // (flush against their control's left edge). [RQ-GUI-083]
+                _directoryLabel.attachToComponent(&_directoryPath, true);
+                _directoryLabel.setJustificationType(juce::Justification::centredRight);
+                _directoryLabel.setFont(dialogControlFont());
+                addAndMakeVisible(_directoryLabel);
+
+                _directoryOverride = logging.logDirectoryOverride;
+                _directoryPath.setFont(juce::Font{juce::FontOptions{tokens::semantic::textSubtitle}});
+                _directoryPath.setColour(juce::Label::textColourId, tokens::semantic::textHint);
+                addAndMakeVisible(_directoryPath);
+
+                _browse.setButtonText("Browse...");
+                _browse.onClick = [this] { browseForDirectory(); };
+                addAndMakeVisible(_browse);
+            }
+
+            void applyTo(settings::AllUsersSettings::LoggingConfiguration& logging) const
+            {
+                logging.severityLevel = _severity.getSelectedId() - SEVERITY_ID_OFFSET;
+                logging.midiDomainEnabled = _midiDomain.getToggleState();
+                logging.controllerDomainEnabled = _controllerDomain.getToggleState();
+                logging.uiDomainEnabled = _uiDomain.getToggleState();
+                logging.logDirectoryOverride = _directoryOverride;
+            }
+
+            void resized() override
+            {
+                auto area = getLocalBounds().reduced(MARGIN);
+                auto severityRow = rowBounds(area);
+                _severity.setBounds(severityRow.withTrimmedLeft(LABEL_WIDTH));
+
+                _midiDomain.setBounds(rowBounds(area).withTrimmedLeft(LABEL_WIDTH));
+                _controllerDomain.setBounds(rowBounds(area).withTrimmedLeft(LABEL_WIDTH));
+                _uiDomain.setBounds(rowBounds(area).withTrimmedLeft(LABEL_WIDTH));
+
+                area.removeFromTop(tokens::semantic::layoutSectionGap);
+                // Trimmed the same LABEL_WIDTH off the left as every row
+                // above (not removeFromLeft into _directoryLabel): the label
+                // now attaches to _directoryPath (ctor) and right-justifies
+                // itself flush against it, so both labels' text ends at the
+                // same x as _severity's own left edge. [RQ-GUI-083]
+                auto dirRow = rowBounds(area).withTrimmedLeft(LABEL_WIDTH);
+                _browse.setBounds(dirRow.removeFromRight(tokens::semantic::dialogChooseWidth));
+                dirRow.removeFromRight(tokens::semantic::layoutButtonGap);
+                _directoryPath.setBounds(dirRow);
+                updateDirectoryDisplay();
+            }
+
+        private:
+            // juce::ComboBox item ids are 1-based (0 means "no selection"),
+            // so a TraceLevel's underlying value (0..4) is offset by this to
+            // become its item id.
+            static constexpr int SEVERITY_ID_OFFSET = 1;
+            static constexpr std::array<const char*, 5> SEVERITY_LABELS{
+                "Off", "Error", "Warning", "Info", "Verbose"};
+
+            void updateDirectoryDisplay()
+            {
+                const juce::String fullText = _directoryOverride.empty()
+                    ? juce::String("(default: next to the settings file)")
+                    : juce::String(_directoryOverride);
+
+                // juce::Label has no built-in ellipsis mode (unlike the combo
+                // box overflow handling this app already relies on elsewhere,
+                // ADR-JUC-022) -- truncate by hand when the path is wider than
+                // the space Browse now leaves it. [RQ-GUI-083]
+                const auto& font = _directoryPath.getFont();
+                const int maxWidth = _directoryPath.getWidth();
+                juce::String displayText = fullText;
+                if (maxWidth > 0 && juce::GlyphArrangement::getStringWidth(font, displayText) > maxWidth)
+                {
+                    const juce::String ellipsis = "...";
+                    while (displayText.isNotEmpty()
+                           && juce::GlyphArrangement::getStringWidth(font, displayText + ellipsis) > maxWidth)
+                    {
+                        displayText = displayText.dropLastCharacters(1);
+                    }
+                    displayText += ellipsis;
+                }
+                _directoryPath.setText(displayText, juce::dontSendNotification);
+            }
+
+            void browseForDirectory()
+            {
+                _directoryChooser = std::make_unique<juce::FileChooser>(
+                    "Choose the log directory",
+                    _directoryOverride.empty() ? juce::File() : juce::File(_directoryOverride),
+                    juce::String());
+                _directoryChooser->launchAsync(
+                    juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectDirectories,
+                    [this](const juce::FileChooser& fc)
+                    {
+                        const auto folder = fc.getResult();
+                        if (folder != juce::File())
+                        {
+                            _directoryOverride = folder.getFullPathName().toStdString();
+                            updateDirectoryDisplay();
+                        }
+                    });
+            }
+
+            juce::ComboBox _severity;
+            juce::Label _severityLabel;
+            juce::ToggleButton _midiDomain, _controllerDomain, _uiDomain;
+            juce::Label _directoryLabel;
+            juce::Label _directoryPath;
+            juce::TextButton _browse;
+            std::string _directoryOverride;
+            std::unique_ptr<juce::FileChooser> _directoryChooser;
+        };
+
         // ---- Dialog content ------------------------------------------------
         // Hosts the three pages and owns the accept/cancel semantics described
         // in the file header. Read its constructor and destructor together --
@@ -899,14 +1069,17 @@ namespace xplorer::app
                 auto midiPage = std::make_unique<MidiSettingsPage>(settingsService, backend);
                 auto uiPage = std::make_unique<UiSettingsPage>(settingsService, _onBlockPaletteChanged, _onLedColourChanged);
                 auto randomPage = std::make_unique<RandomizerSettingsPage>(settingsService);
+                auto loggingPage = std::make_unique<LoggingSettingsPage>(settingsService);
                 _midiPage = midiPage.get();
                 _uiPage = uiPage.get();
                 _randomPage = randomPage.get();
+                _loggingPage = loggingPage.get();
 
                 const auto bg = tokens::semantic::surfaceRecessed;
                 _tabs.addTab("MIDI", bg, midiPage.release(), true);
                 _tabs.addTab("User interface", bg, uiPage.release(), true);
                 _tabs.addTab("Randomizer", bg, randomPage.release(), true);
+                _tabs.addTab("Logging", bg, loggingPage.release(), true); // [RQ-GUI-083]
                 addAndMakeVisible(_tabs);
 
                 _ok.setButtonText("OK");
@@ -971,7 +1144,16 @@ namespace xplorer::app
                 _midiPage->applyTo(settings.midiConfig);
                 _uiPage->applyTo(settings.uiConfig);
                 _randomPage->applyTo(settings.randomizerConfig);
+                _loggingPage->applyTo(settings.loggingConfig);
                 _settingsService.saveSettings(settings);
+                // Without this, severity/domain changes only took effect after
+                // a restart -- configureDiagnosticLogging() (MainComponent.cpp)
+                // is the only other caller, at startup. [RQ-FMW-070, RQ-FMW-073,
+                // RQ-SET-008, RQ-GUI-046, ADR-FMW-001 (DEC-FMW-003)]
+                applyLoggingConfiguration(settings.loggingConfig.severityLevel,
+                                           settings.loggingConfig.midiDomainEnabled,
+                                           settings.loggingConfig.controllerDomainEnabled,
+                                           settings.loggingConfig.uiDomainEnabled);
                 // No isRunning() guard around this call: the constructor
                 // stopped the controller and the destructor restarts it, so
                 // it is always stopped here. The reference guards its own
@@ -1017,6 +1199,7 @@ namespace xplorer::app
             MidiSettingsPage* _midiPage = nullptr;
             UiSettingsPage* _uiPage = nullptr;
             RandomizerSettingsPage* _randomPage = nullptr;
+            LoggingSettingsPage* _loggingPage = nullptr;
             juce::TextButton _ok, _cancel;
         };
     }

@@ -385,7 +385,7 @@ namespace xplorer::controller
             // Byte-for-byte the reference frame, including its duplicated
             // leading 0xF0 (latent quirk preserved for wire fidelity). [RQ-CTL-008]
             const std::vector<std::uint8_t> programmerModeSinglePatch{
-                xpl::midi::SYSEX_START, 0xF0, 0x10, 0x02, 0x0D, 0x01, 0x00, xpl::midi::SYSEX_END};
+                xpl::midi::SYSEX_START, 0x10, 0x02, 0x0D, 0x01, 0x00, xpl::midi::SYSEX_END};
             sendDataToSynthOutputDevice(MidiMessage::fromRawBytes(programmerModeSinglePatch));
         }
     }
@@ -648,8 +648,8 @@ namespace xplorer::controller
         if (verifySynthOutputDevice())
         {
             // Reference wraps Tune Request (0xF6) inside a SysEx frame —
-            // preserved byte-for-byte. [RQ-CTL-060]
-            const std::vector<std::uint8_t> tuneRequest{xpl::midi::SYSEX_START, 0xF6, xpl::midi::SYSEX_END};
+            // sys common, not sysex
+            const std::vector<std::uint8_t> tuneRequest{ 0xF6};
             sendDataToSynthOutputDevice(MidiMessage::fromRawBytes(tuneRequest));
         }
     }
