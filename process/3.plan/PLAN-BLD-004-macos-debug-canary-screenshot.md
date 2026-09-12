@@ -8,8 +8,9 @@ it crashed first. No other workflow (other macOS streams, Windows, Linux) is
 touched.
 
 ## References
-- **Requirements**: RQ-BLD-032 (new)
-- **ADRs**: ADR-BLD-006 (DEC-BLD-029, DEC-BLD-030)
+- **Requirements**: RQ-BLD-032 (new), RQ-BLD-033 (new — portability defect found while executing TASK-BLD-019)
+- **ADRs**: ADR-BLD-006 (DEC-BLD-029, DEC-BLD-030). None for RQ-BLD-033 — a
+  two-line, directly-root-caused encoding fix, Tier S.
 
 This plan implements the tasks in the format specified below.
 ---
@@ -42,6 +43,19 @@ This plan implements the tasks in the format specified below.
   - **Given** `test_generate_workflows.py`, **When** run via `python3 -m unittest`, **Then** it passes and fails if the scope guard regresses (verified by temporarily broadening the guard and observing the test catch it).
   - **Given** `python3 juce/tools/generate_workflows.py --check`, **When** run after committing the regenerated files, **Then** it reports all workflows up to date.
 - **Dependencies**: TASK-BLD-018
+- **Assignee**: AI
+
+---
+
+### TASK-BLD-020: Fix non-portable text encoding in the workflow generator
+- **Tier**: S
+- **Status**: Done (2026-09-12) — verified: `generate_workflows.py` then `--check` on `session.platform = windows` reports all 15 up to date; confirmed the fix touches only encoding/newline handling (`git diff --stat` showed zero content drift on the 14 files outside this task's own scope).
+- **Description**: `generate_workflows.py`'s `main()` reads and writes the generated `.yml` files with no explicit encoding, so it uses the platform's default text encoding. On `session.platform = windows` this is `cp1252`, not UTF-8, which mis-decodes/mis-encodes the generated header's em dash characters — found while regenerating for TASK-BLD-019, when `--check` reported all 15 files stale with no matrix change. Fix: pass `encoding="utf-8"` explicitly to both `target.read_text()` and `target.write_text(body)`.
+- **Requirement refs**: RQ-BLD-033
+- **ADR refs**: None (Tier S — directly root-caused, two-line fix)
+- **Acceptance Criteria** (Gherkin):
+  - **Given** `session.platform = windows`, **When** `generate_workflows.py` is run and then `generate_workflows.py --check` immediately after, **Then** `--check` reports all workflows up to date.
+- **Dependencies**: None
 - **Assignee**: AI
 
 ---

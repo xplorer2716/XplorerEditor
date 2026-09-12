@@ -245,10 +245,18 @@ def main() -> int:
     for filename, body in generate().items():
         target = WORKFLOWS / filename
         if args.check:
-            if not target.exists() or target.read_text() != body:
+            # encoding="utf-8" is not optional here: the header below carries
+            # an em dash, and the platform default text encoding is not UTF-8
+            # on every OS (cp1252 on a Windows session, RQ-BLD-033) -- without
+            # it this comparison mis-decodes and reports every file stale.
+            if not target.exists() or target.read_text(encoding="utf-8") != body:
                 stale.append(filename)
         else:
-            target.write_text(body)
+            # newline="\n" stops write_text from translating "\n" to the
+            # platform's own line separator -- without it, a Windows run
+            # rewrites all fifteen files to CRLF, whereas the committed
+            # files (and a Linux/macOS run) are LF. [RQ-BLD-033]
+            target.write_text(body, encoding="utf-8", newline="\n")
 
     if args.check:
         if stale:
