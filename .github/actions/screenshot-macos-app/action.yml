@@ -33,7 +33,6 @@ runs:
       run: |
         set -euo pipefail
         app_path="$(cd "${ARTEFACT_DIR}/../.." && pwd)"
-        echo "app-path=${app_path}" >> "$GITHUB_OUTPUT"
         open "${app_path}"
         # Gives the JUCE window time to actually paint before anything looks
         # at it -- macos-latest carries a real window server even though no
