@@ -1,0 +1,65 @@
+# Launches the built macOS app and captures a screenshot to prove it actually
+# opens a window -- a link-clean build and a green ctest run are both silent
+# about a startup crash, a missing framework or a malformed Info.plist.
+# [RQ-BLD-032, ADR-BLD-006 (DEC-BLD-029, DEC-BLD-030)]
+#
+# Mechanism mirrors a working reference the owner supplied directly (a
+# sibling project's `macos-ui-check` job): open, sleep, screencapture, pkill.
+# The one addition is the `pgrep` check between "open" and "screencapture" --
+# without it, a crash-on-launch still produces a plausible-sized PNG of the
+# desktop, silently passing.
+name: 'Screenshot the built macOS app'
+description: 'Launches the built Xplorer.app, verifies it is still running, captures a screenshot, and quits it.'
+
+inputs:
+  artefact-dir:
+    description: "build-app's own artefact-dir output (Xplorer.app/Contents/MacOS)."
+    required: true
+
+outputs:
+  screenshot-path:
+    description: 'Path to the captured PNG screenshot.'
+    value: ${{ steps.screenshot.outputs.screenshot-path }}
+
+runs:
+  using: composite
+  steps:
+    # artefact-dir is Contents/MacOS (build-app's own `locate` step); two
+    # levels up is the .app bundle itself, which is what `open` expects.
+    - id: launch
+      shell: bash
+      env:
+        ARTEFACT_DIR: ${{ inputs.artefact-dir }}
+      run: |
+        set -euo pipefail
+        app_path="$(cd "${ARTEFACT_DIR}/../.." && pwd)"
+        open "${app_path}"
+        # Gives the JUCE window time to actually paint before anything looks
+        # at it -- macos-latest carries a real window server even though no
+        # interactive user is attached.
+        sleep 5
+
+    # open(1) hands the launch to launchd and returns immediately, so no
+    # shell in this job ever holds the app's real PID -- pgrep by name is
+    # what makes "is it still running" checkable at all.
+    - id: verify
+      shell: bash
+      run: |
+        set -euo pipefail
+        if ! pgrep -x Xplorer > /dev/null; then
+          echo "::error::Xplorer is not running -- it crashed (or never started) after 'open'"
+          exit 1
+        fi
+
+    - id: screenshot
+      shell: bash
+      run: |
+        set -euo pipefail
+        path="${RUNNER_TEMP}/xplorer-macos-debug-canary.png"
+        screencapture -x "$path"
+        echo "screenshot-path=${path}" >> "$GITHUB_OUTPUT"
+
+    - name: Quit Xplorer
+      if: always()
+      shell: bash
+      run: pkill -x Xplorer || true

@@ -187,6 +187,29 @@ CANARY_UPLOAD = """
           if-no-files-found: error
 """
 
+MACOS_DEBUG_CANARY_SCREENSHOT = """
+      # A link-clean build is not proof the app opens a window -- a missing
+      # framework, a bad Info.plist or a startup crash would otherwise only
+      # surface once the owner downloaded and ran this artefact by hand.
+      # macOS Debug canary is where a feature branch gets its fastest,
+      # least-supervised feedback (RQ-BLD-019), so this launches the built
+      # app directly on the runner's own window server and photographs it.
+      # Scoped to this one combination only: Windows/Linux runners have no
+      # comparable on-screen window, and this was not requested for the
+      # other macOS streams. [RQ-BLD-032, ADR-BLD-006 (DEC-BLD-029,
+      # DEC-BLD-030)]
+      - id: screenshot
+        uses: ./.github/actions/screenshot-macos-app
+        with:
+          artefact-dir: ${{{{ steps.build.outputs.artefact-dir }}}}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-${{{{ steps.version.outputs.full }}}}-macos-arm64-debug-screenshot
+          path: ${{{{ steps.screenshot.outputs.screenshot-path }}}}
+          if-no-files-found: error
+"""
+
 PREPROD_PR_UPLOAD = """
       # A pull request targeting dev verifies the merge result before it lands:
       # build and test, but PUBLISH's own guard keeps it from publishing, so an
@@ -206,6 +229,10 @@ def workflow(os_name: str, arch: str, runner: str, config: str, stage: str) -> t
     name = f"{os_name}-{arch}-{config}-{stage}"
     _, permission, human = STREAMS[stage]
     tail = {"prod": TAG_GUARD + PUBLISH, "preprod": PUBLISH + PREPROD_PR_UPLOAD, "canary": CANARY_UPLOAD}[stage]
+    # Launch-and-screenshot smoke test, macOS Debug canary only.
+    # [RQ-BLD-032, ADR-BLD-006 (DEC-BLD-029)]
+    if stage == "canary" and os_name == "macos" and config == "debug":
+        tail += MACOS_DEBUG_CANARY_SCREENSHOT
     # id-token/attestations are what actions/attest-build-provenance needs to
     # mint its OIDC token and store the result; only the streams that reach
     # PUBLISH (prod, preprod) call it, so canary carries neither permission.
@@ -245,10 +272,18 @@ def main() -> int:
     for filename, body in generate().items():
         target = WORKFLOWS / filename
         if args.check:
-            if not target.exists() or target.read_text() != body:
+            # encoding="utf-8" is not optional here: the header below carries
+            # an em dash, and the platform default text encoding is not UTF-8
+            # on every OS (cp1252 on a Windows session, RQ-BLD-033) -- without
+            # it this comparison mis-decodes and reports every file stale.
+            if not target.exists() or target.read_text(encoding="utf-8") != body:
                 stale.append(filename)
         else:
-            target.write_text(body)
+            # newline="\n" stops write_text from translating "\n" to the
+            # platform's own line separator -- without it, a Windows run
+            # rewrites all fifteen files to CRLF, whereas the committed
+            # files (and a Linux/macOS run) are LF. [RQ-BLD-033]
+            target.write_text(body, encoding="utf-8", newline="\n")
 
     if args.check:
         if stale:
