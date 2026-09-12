@@ -1,7 +1,9 @@
 # ADR-BLD-006: macOS Debug Canary Launch Screenshot Smoke Test
 
 ## Status
-Proposed (session BLD, 2026-09-12).
+Accepted (session BLD, 2026-09-12) — implemented (TASK-BLD-018, TASK-BLD-019); the actual "does
+`Xplorer.app` really paint a window" claim is provable only by the next real
+`macos-arm64-debug-canary` run, not locally.
 
 <!-- Motivated by RQ-BLD-032 (owner request: catch a macOS build that compiles
 but does not actually run, directly on the GitHub-hosted runner). Extends

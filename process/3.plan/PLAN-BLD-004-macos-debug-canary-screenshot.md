@@ -33,7 +33,7 @@ This plan implements the tasks in the format specified below.
 
 ### TASK-BLD-019: Generate the step for macOS/Debug/canary only, with a unit test
 - **Tier**: M
-- **Status**: Not Started
+- **Status**: Done (2026-09-12) — `test_generate_workflows.py` passes (2 tests); regression-checked by temporarily broadening the scope guard and observing the test fail, then restoring it; `.github/workflows/` regenerated, and `--check` (post TASK-BLD-020's fix) confirms only `macos-arm64-debug-canary.yml` changed.
 - **Description**: Extend `juce/tools/generate_workflows.py`'s `workflow()` function so the generated body appends a call to `screenshot-macos-app` plus an `upload-artifact` step for its output, gated by `os_name == "macos" and config == "debug" and stage == "canary"` — the same conditional-augmentation style already used there for permissions. Add `juce/tools/test_generate_workflows.py` (stdlib `unittest`, no new dependency) asserting the step is present for that one combination and absent from every other platform/config/stream combination the matrix produces. Regenerate `.github/workflows/` and commit the result.
 - **Requirement refs**: RQ-BLD-032
 - **ADR refs**: ADR-BLD-006 (DEC-BLD-029, DEC-BLD-030)
