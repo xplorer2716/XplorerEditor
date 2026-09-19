@@ -1,7 +1,9 @@
 # ADR-JUC-028: Modulation-Matrix Block Identity and Frame Highlight
 
 ## Status
-Proposed
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 **Partially superseded 2026-08-04 by ADR-JUC-029 (owner decision, session GFX).**
 DEC-JUC-083 is withdrawn in full and DEC-JUC-084 in part: the keyboard-focus ring

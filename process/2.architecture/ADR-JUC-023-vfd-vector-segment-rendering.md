@@ -1,7 +1,9 @@
 # ADR-JUC-023: VFD Vector 16-Segment Rendering
 
 ## Status
-Proposed
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Supersedes ADR-JUC-007 (VFD bitmap glyph rendering). Motivated by the
 amendment of RQ-GUI-033 (vector 16-segment rendering), RQ-GUI-049 (full ASCII

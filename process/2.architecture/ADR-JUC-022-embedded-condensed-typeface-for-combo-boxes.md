@@ -1,7 +1,9 @@
 # ADR-JUC-022: Fixed Combo-Box Text Size Made Possible by an Embedded Condensed Typeface
 
 ## Status
-Proposed
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Motivated by RQ-GUI-047 (fixed combo-box font size, per-group widths),
 RQ-GUI-048 (development-build fit assertion) and RQ-DSN-096 (embedded combo-box
