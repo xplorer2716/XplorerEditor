@@ -1,7 +1,9 @@
 # ADR-JUC-027: Diagram Stroke Weight and Paint Order
 
 ## Status
-Proposed.
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 **Extended 2026-08-15 (session GUI, RQ-GUI-071)** with DEC-JUC-112 — where a
 control tick STOPS. DEC-JUC-075 settled the z-order of a tick against the block

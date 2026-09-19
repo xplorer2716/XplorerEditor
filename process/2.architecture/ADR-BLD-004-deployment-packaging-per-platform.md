@@ -1,7 +1,9 @@
 # ADR-BLD-004: Deployment Packaging, per Platform
 
 ## Status
-Proposed (session BLD, 2026-08-16).
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Motivated by RQ-BLD-021 (what a deployment contains), RQ-BLD-022 (generated SBOM),
 RQ-BLD-024 (Windows Debug runtime), RQ-BLD-025 (Linux GUI + AppImage), RQ-BLD-026 (application

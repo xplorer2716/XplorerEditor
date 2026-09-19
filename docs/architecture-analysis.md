@@ -32,12 +32,15 @@ still a binding constraint on this one (§8).
 | [8](#8-behavioural-invariants) | **Behavioural invariants** | **Before "fixing" anything that looks wrong on the wire** |
 | [9](#9-solid--design-patterns) | SOLID & patterns | You design a new seam |
 | [10](#10-testing-architecture) | Testing architecture | You add code and need to know where its test goes |
-
 | [12](#12-architecture-summary) | Architecture summary | You want the context diagram and the honest trade-offs |
 | [13](#13-licensing-disclosure--governance) | Licensing & governance | You add a dependency or change a licence header |
 | [14](#14-open-points-still-to-verify) | **Open points still to verify** | You need to know what is *not* proven — hardware, platforms, unconfirmed wire behaviours |
 | [A](#appendix-a--decision-index) | Decision index | You need the ADR that governs an area |
 | [B](#appendix-b--glossary) | Glossary | An identifier or acronym is unfamiliar |
+
+> **No §11**: an earlier revision's "Known limitations" section was folded into §14 and the
+> number retired rather than reused. Every in-text pointer that used to say "(§11)" has been
+> corrected to its actual current subsection under §14 (verified 2026-09-19).
 
 ---
 
@@ -47,7 +50,7 @@ still a binding constraint on this one (§8).
 
 | If your task is about… | Go to | Section |
 |---|---|---|
-| A knob/combo/checkbox's **position, size or caption** | `juce/app/core/src/GeneratedControlTable.inc` — **generated**, see §4 | [§4](#4-generated-sources--single-sources-of-truth) |
+| A knob/combo/checkbox's **position, size or caption** | `juce/app/core/src/GeneratedControlTable.inc` — **hand-maintained**, edit it directly, see §4 | [§4](#4-generated-sources--single-sources-of-truth) |
 | A **colour, stroke width, font size, spacing token** | `juce/tools/design-tokens.yaml` → regenerates `juce/app/src/DesignTokens.hpp` | [§4](#4-generated-sources--single-sources-of-truth), [§5.9](#59-skin-design-tokens-and-themeable-blocks) |
 | The **background artwork** (frames, rails, captions, signal lines) | `juce/app/src/BackgroundRenderer.cpp` + `juce/tools/generate_background_mockup.py` (must stay in lock-step) | [§5.2](#52-logical-canvas--uniform-scaling) |
 | **What a control does** when the user moves it | `juce/app/core/src/ParameterBindingRegistry.cpp` | [§5.4](#54-control--parameter-binding) |
@@ -83,9 +86,12 @@ flowchart TD
     style TEST fill:#14532d,color:#fff
 ```
 
-1. **Never hand-edit a generated file.** Six `.inc` files, `DesignTokens.hpp` and all 17 CI
-   workflows are outputs. Editing one is a defect that the next regeneration silently
-   reverts. §4 lists every one with its source and generator.
+1. **Never hand-edit a file that is still actually regenerable — but check first.** A
+   `GENERATED`/`DO NOT EDIT` header is not proof the generator can still run: two of this
+   project's extraction scripts read from the archived `.NET` reference tree, which has
+   since left this repository, so several files that still carry that header can no longer
+   be regenerated at all and are edited by hand today, deviations and all. §4 lists the
+   current status of every one of them — check it, don't trust the header alone.
 2. **No raw visual literal in UI code.** Colours, strokes, sizes, alphas and motion
    durations come from `DesignTokens.hpp`. A local named constant may *alias* a token; it
    may not *hold* a value.
@@ -99,17 +105,31 @@ flowchart TD
 
 ### 0.3 Scale of the system
 
+> **This table drifts and has no staleness gate of its own** — the same class of risk §12
+> warns about for hand-copied facts elsewhere, applied to this table itself. Figures below
+> were re-counted directly against the repository on **2026-09-19** (`HEAD` at the time,
+> `ab39c548`); the document's own date (2026-08-30) had gone stale by the time of this pass.
+> Re-verify with the commands in the footnote below before trusting an old copy of this table.
+
 | Dimension | Count |
 |---|---|
-| Production code | **19 829 lines** across **135** files (`juce/`, excluding tests and tooling) |
-| Test code | **8 412 lines** across **40** files |
-| Catch2 scenarios | **170** definitions; **2 911** assertions in the headless configuration |
+| Production code | **20 682 lines** across **143** `.cpp`/`.hpp`/`.h` files under `juce/`, excluding `tests/` and `tools/` (+ **1 079** lines across 9 `.inc` files if generated/frozen sources are counted too — see §4) |
+| Test code | **9 476 lines** across **45** files |
+| Catch2 scenarios | **189** `SCENARIO(...)` definitions (statically counted). Assertion count **not independently re-verified this pass** — Catch2's own total is a runtime figure (`ctest` output), not something a source grep can reproduce reliably |
 | Build targets | 7 static libraries + 1 asset library + 1 GUI executable + 9 test executables |
-| Requirements | **287** `RQ-*` ids |
-| Architecture decisions | **50** ADRs carrying **176** `DEC-*` ids |
-| Plans / tasks | **46** plans, **217** `TASK-*` ids |
-| CI workflows | **17** (15 generated + 2 hand-written) |
-| Bound controls | **208** rows in the generated control table; **227** tone parameters |
+| Requirements | **309** unique `RQ-*` ids (`process/1.requirements/`) |
+| Architecture decisions | **54** ADR files carrying **193** unique `DEC-*` ids (`process/2.architecture/`) |
+| Plans / tasks | **30** files matching `PLAN-*.md`, **+ 22** earlier `<N>-Phase-<N>-*.md` migration-phase plans that predate that naming convention (52 plan files total, by two conventions); **263** unique `TASK-*` ids |
+| CI workflows | **17** (15 generated + 2 hand-written) — unchanged, confirmed |
+| Bound controls | **208** rows in the generated control table (confirmed exact); **227** tone parameters (187 patch + 40 matrix, hardware-defined, not expected to drift) |
+
+> **Re-verification commands** (run from the repo root):
+> `find juce -name "*.cpp" -o -name "*.hpp" -o -name "*.h" | grep -v -i test | grep -vE "^juce/(tests|tools)/" | xargs wc -l` (production LOC);
+> swap in `juce/tests` for test LOC;
+> `grep -rhoE "^\s*SCENARIO\(" juce/tests/ | wc -l` (scenarios);
+> `find process/2.architecture -iname "ADR-*.md" | wc -l` and `grep -rhoE "DEC-[A-Z]+-[0-9]+" process/2.architecture/ | sort -u | wc -l` (ADRs/decisions);
+> `grep -rhoE "RQ-[A-Z]+-[0-9]+" process/1.requirements/ | sort -u | wc -l` (requirements);
+> `grep -rhoE "TASK-[A-Z]+-[0-9]+" process/3.plan/ | sort -u | wc -l` (tasks).
 
 ---
 
@@ -346,10 +366,12 @@ flowchart LR
 
 15 of the 17 workflow files are **generated** by `juce/tools/generate_workflows.py` from a
 matrix of (os, arch, configuration, stream). Two are hand-written: `cut-deployment.yml`
-(the only workflow that writes a ref) and `linux-headless-release.yml`. All real logic
-lives in four composite actions — `resolve-version`, `build-app`, `package-deployment`,
+(the only workflow that writes a ref) and `linux-headless-release.yml`. Most real logic
+lives in four core composite actions — `resolve-version`, `build-app`, `package-deployment`,
 `publish-deployment` — so the generated files contain only a name, a trigger and a call
-sequence.
+sequence. A fifth, narrower composite action, `screenshot-macos-app`, handles the macOS
+debug-canary launch smoke-test screenshot (`ADR-BLD-006`/`TASK-BLD-018`, added after this
+document's original pass).
 
 | Platform | Runner | Artefact |
 |---|---|---|
@@ -426,54 +448,86 @@ flowchart TB
 
 ## 4. Generated sources & single sources of truth
 
-**This is the section that prevents the most expensive class of mistake.** Nine artefacts
-in this repository are outputs. Editing one by hand appears to work, passes review if
-nobody notices, and is silently reverted by the next regeneration.
+**This is the section that prevents the most expensive class of mistake — including the
+mistake of trusting a `GENERATED` header that is no longer true.** The migration's two
+`.NET`-reading extraction scripts (`extract_control_table.py`, `generate_fixed_parameters.py`)
+have inputs that lived in the archived reference tree; that tree has since left this
+repository entirely, so **both scripts are now inert — they cannot be run, not "should not
+be run."** Six `.inc` files they used to produce are therefore **frozen**: hand-edited if
+they need to change at all, whatever their own header comment still claims. Only one of the
+six (`GeneratedControlTable.inc`) has had its header updated to say so; the other five still
+carry a stale `GENERATED` / `Regenerate with …` comment that this document — not the source
+— is the accurate record of. Two further files (verified present, absent from earlier
+revisions of this table) are hand-authored or one-time-extracted outright.
 
 ```mermaid
 flowchart LR
-    subgraph SRC ["✍️ Sources of truth (edit these)"]
+    subgraph SRC ["✍️ Sources of truth — still live (edit these)"]
         DTY["juce/tools/design-tokens.yaml"]
-        REF[".NET reference sources<br/><i>archived repo, read-only</i> NOT USED ANYMORE"]
-        SVG["generate_background_mockup.py"]
+        VEND["vendor/16-Segment-ASCII_HEX-NDP.txt<br/><i>MIT, dmadison/LED-Segment-ASCII</i>"]
+        SVGG["generate_background_mockup.py<br/><i>(geometry inside)</i>"]
         MTX["generate_workflows.py<br/><i>(matrix inside)</i>"]
-        SEG["generate_segment_font.py"]
-        FIX["generate_fixed_parameters.py"]
     end
 
-    subgraph OUT ["🤖 Generated (never edit)"]
-        DTH["app/src/DesignTokens.hpp"]
-        CT["GeneratedControlTable.inc<br/>208 rows"]
+    subgraph DEAD ["☠️ Inert generators — inputs left with the archived .NET tree"]
+        EXT["extract_control_table.py<br/><i>reads Xplorer/View/*, Xplorer/Common/*,<br/>Xplorer/Properties/*, Sanford.Multimedia.Midi/*</i>"]
+        FIXG["generate_fixed_parameters.py<br/><i>reads Xplorer/Model/Tone/XpanderTone.cs</i>"]
+    end
+
+    subgraph FROZEN ["🧊 Frozen — hand-edit if they must change, despite the header"]
+        CT["GeneratedControlTable.inc<br/>278 lines · header self-updated ✅<br/>(ADR-JUC-024/DEC-JUC-059)"]
         EL["GeneratedEnumLabels.inc"]
         CE["GeneratedComboEnumMap.inc"]
-        PN["GeneratedParameterNames.inc"]
-        CC["GeneratedControlChangeNames.inc"]
+        PN["GeneratedParameterNames.inc<br/><i>header still says 'Regenerate' ⚠</i>"]
+        CC["GeneratedControlChangeNames.inc<br/><i>header still says 'Regenerate' ⚠</i>"]
+        XF["XpanderToneFixedParameters.inc<br/><i>header still says 'DO NOT EDIT' ⚠</i>"]
+    end
+
+    subgraph OUT ["🤖 Still genuinely generated (never edit)"]
+        DTH["app/src/DesignTokens.hpp"]
         GS["GeneratedSegmentFont.inc"]
-        XF["XpanderToneFixedParameters.inc"]
         WF[".github/workflows/*.yml<br/>15 of 17"]
         BG["tools/background-mockup.svg"]
     end
 
+    subgraph HAND ["🖊️ Hand-authored / one-time extraction (documented, not generated)"]
+        CCS["ControlChangeShortNames.inc<br/>RQ-GUI-059/ADR-JUC-012"]
+        DAT["DefaultAutomationTable.inc<br/>no live generator"]
+    end
+
     DTY -->|generate_design_tokens.py| DTH
-    REF -->|"app/core/tools/<br/>extract_control_table.py"| CT & EL & CE & PN & CC
-    SEG --> GS
-    FIX --> XF
+    VEND -->|generate_segment_font.py| GS
     MTX --> WF
-    SVG --> BG
+    SVGG --> BG
+    EXT -.->|"can no longer run"| CT & EL & CE & PN & CC
+    FIXG -.->|"can no longer run"| XF
 
     style OUT fill:#7c2d12,color:#fff
     style SRC fill:#14532d,color:#fff
+    style FROZEN fill:#78350f,color:#fff
+    style DEAD fill:#450a0a,color:#fff
+    style HAND fill:#1e3a5f,color:#fff
 ```
 
-| Generated artefact | Source | Generator | Staleness gate |
-|---|---|---|---|
-| `app/src/DesignTokens.hpp` | `juce/tools/design-tokens.yaml` | `generate_design_tokens.py` | `--check` mode exists; **not wired into CI** (§11) |
-| `GeneratedControlTable.inc` (208 rows) | .NET `MainForm.Designer.cs` + `.resx` | `app/core/tools/extract_control_table.py` | Headless anchor test in `xpl_tests_app` |
-| `GeneratedEnumLabels.inc`, `GeneratedComboEnumMap.inc`, `GeneratedParameterNames.inc`, `GeneratedControlChangeNames.inc` | same | same | table/label tests |
-| `GeneratedSegmentFont.inc` | glyph definitions | `generate_segment_font.py` | `SegmentFont` decode tests |
-| `XpanderToneFixedParameters.inc` | .NET `XpanderTone.cs` | `generate_fixed_parameters.py` | parameter-count + round-trip tests |
-| `.github/workflows/*.yml` (15) | matrix in the script | `generate_workflows.py` | `--check` mode |
-| `juce/tools/background-mockup.svg` | geometry in the script | `generate_background_mockup.py` | must match `BackgroundRenderer.cpp` by review |
+| Artefact | Status | Source / provenance | Generator | Staleness gate |
+|---|---|---|---|---|
+| `app/src/DesignTokens.hpp` | Generated, live | `juce/tools/design-tokens.yaml` | `generate_design_tokens.py` | `--check` mode exists; **not wired into CI** (§14.5) |
+| `GeneratedSegmentFont.inc` | Generated, live | `vendor/16-Segment-ASCII_HEX-NDP.txt` (vendored, MIT) | `generate_segment_font.py` | `SegmentFont` decode tests |
+| `.github/workflows/*.yml` (15) | Generated, live | matrix in the script | `generate_workflows.py` | `--check` mode |
+| `juce/tools/background-mockup.svg` | Generated, live | geometry in the script | `generate_background_mockup.py` | must match `BackgroundRenderer.cpp` by review |
+| `GeneratedControlTable.inc` (278 lines) | **Frozen — confirmed hand-maintained** | originally .NET `MainForm.Designer.cs` + `.resx`, no longer present | `extract_control_table.py` — **inert, do not run** (its own header says so) | Headless anchor test in `xpl_tests_app`; deviations tracked in-file (e.g. `TASK-GUI-009`) |
+| `GeneratedEnumLabels.inc`, `GeneratedComboEnumMap.inc` | **Frozen** — same dead generator, header silent on the fact | same archived sources | same inert script | table/label tests |
+| `GeneratedParameterNames.inc`, `GeneratedControlChangeNames.inc` | **Frozen** — header still says "Regenerate with `extract_control_table.py`", which is no longer true | same archived sources | same inert script | table/label tests |
+| `XpanderToneFixedParameters.inc` | **Frozen** — header still says "GENERATED … DO NOT EDIT" with no caveat | .NET `XpanderTone.cs`, no longer present | `generate_fixed_parameters.py` — **inert**, input path does not exist in this repo | parameter-count + round-trip tests (still meaningful: they guard hand-edits, not regeneration) |
+| `ControlChangeShortNames.inc` | Hand-authored, always was | n/a — the reference has no short-name concept | none | `RQ-GUI-059`/`ADR-JUC-012` (`DEC-JUC-103`) |
+| `DefaultAutomationTable.inc` | One-time extraction, no live generator | .NET `AllUsersSettingsService.cs` defaults | none currently in `juce/tools/` | `RQ-SET-002`; consumed by `AllUsersSettingsDefaults.cpp` |
+
+> **Why this matters more than a documentation nit**: a header that says `GENERATED — DO NOT
+> EDIT` is instruction a coding agent will follow literally. For six files in this table that
+> instruction cannot be carried out (the generator would fail on a missing input), so an
+> agent that takes the header at face value and goes looking for "the real source to fix
+> instead" will not find one. Treat every row in this table as authoritative over the
+> comment inside the file it describes.
 
 ### Coupled edits
 
@@ -553,34 +607,39 @@ producing an off-screen window.
 `.syx` goes through `MainComponent::loadSysexFileByType` — classify (RQ-MOD-043), then
 load / confirm-and-restore / warn — the same path as File ▸ Open.
 
-### 5.3 The extraction pipeline
+### 5.3 The extraction pipeline (retired) and the control table's life since
 
-The UI is not re-described by hand. `app/core/tools/extract_control_table.py` regenerated
-all UI facts mechanically from the archived WinForms sources during the migration process.
-Now the control table has its onw life.
+The UI was not re-described by hand **during the migration**: `extract_control_table.py`
+regenerated all UI facts mechanically from the archived WinForms sources. That pipeline is
+now retired — the archived sources it read are gone from this repository, so the script
+cannot run — and **the control table has had its own, hand-maintained life since** (see §4
+for the full status of every file this pipeline used to produce).
 
 ```mermaid
 flowchart LR
-    subgraph ref ["Archived reference sources (read-only) NOT USED ANYMORE"]
+    subgraph ref ["Archived reference sources — GONE from this repo"]
         D["MainForm.Designer.cs<br/><i>types, tags, parent chain</i>"]
         R["MainForm.resx<br/><i>geometry, captions</i>"]
         RS["Resources.resx<br/><i>enum labels, parameter names</i>"]
         C["XpanderConstants.cs<br/><i>enum declarations</i>"]
     end
-    S["extract_control_table.py<br/><i>mechanical, deterministic</i>"]
-    subgraph gen ["Generated & committed"]
-        T["GeneratedControlTable.inc<br/>208 ControlSpec rows<br/><i>id · kind · ABSOLUTE bounds · tag · caption</i>"]
-        O["3 further label/name tables"]
+    S["extract_control_table.py<br/><i>ran once, during migration — inert since</i>"]
+    subgraph gen ["Frozen since migration — hand-edited if changed at all"]
+        T["GeneratedControlTable.inc<br/>278 lines · id · kind · ABSOLUTE bounds · tag · caption<br/><i>confirmed hand-maintained, ADR-JUC-024/DEC-JUC-059</i>"]
+        O["4 further label/name tables — same status,<br/>not all self-documented as such (§4)"]
     end
-    D & R & RS & C --> S --> T & O
+    D & R & RS & C -.->|"one-time, migration only"| S -.-> T & O
 
-    style T fill:#7c2d12,color:#fff
+    style T fill:#78350f,color:#fff
 ```
 
-**Key detail**: WinForms `Location` is *parent-relative*. The script resolves each control
-through the `Controls.Add` parent chain to **absolute canvas coordinates**, which is what
-`ControlSpec` stores — so the runtime never walks a parent hierarchy. A headless test locks
-the table against known anchors.
+**Key detail, still true today**: WinForms `Location` was *parent-relative*. The script
+resolved each control through the `Controls.Add` parent chain to **absolute canvas
+coordinates**, which is what `ControlSpec` stores — so the runtime never walks a parent
+hierarchy. That one-time resolution is exactly why the table can now live on by hand: nothing
+downstream depends on the archived parent-chain data still existing. A headless test locks
+the table against known anchors — today that test is guarding against a bad **hand** edit,
+not a regeneration drift.
 
 ### 5.4 Control ⇄ parameter binding
 
@@ -869,7 +928,7 @@ flowchart TB
 **Known blocking spots**, preserved from the reference for timing fidelity:
 `storeSinglePatchToSynth`, `sendProgramChangeAndGetSinglePatchFromSynth` and the VFD
 typewriter sleep on their calling thread — the message thread when reached from a menu. An
-async refactor is a tracked candidate (§11) and would need an ADR, because the sleeps *are*
+async refactor is a tracked candidate (§14.5) and would need an ADR, because the sleeps *are*
 the pacing that real hardware needs.
 
 ---
@@ -892,33 +951,43 @@ format, the file format or real hardware depends on it.
 
 ### 8.2 Deliberate oddities — do not "correct"
 
+> Two items formerly listed here — the duplicated leading `0xF0` and the SysEx-wrapped Tune
+> Request — were **corrected on 2026-09-06** and now live in §8.3. Do not reintroduce them.
+
 | # | Behaviour | Location | Status |
 |---|---|---|---|
-| 1 | Programmer-mode frame has a **duplicated leading `0xF0`**: `{F0, F0, 10, 02, 0D, 01, 00, F7}` | `XpanderController::sendProgrammerModeSinglePatch` | Verbatim, commented — the synth accepts this frame |
-| 2 | Tune Request sent as `{F0, F6, F7}` — a System Common byte wrapped in SysEx, non-standard | `sendTuneRequestToSynth` | Verbatim, commented |
-| 3 | All-notes-off uses the **settings** MIDI channel while everything else uses the tone's | `sendAllNotesOffToSynthOutput` | Verbatim; channel mismatch is the reference's |
-| 4 | `IsLfoRetrig` compares a sub-page against a page constant — nearly always true | `PageSubPageHelper` | Verbatim, commented |
-| 5 | Humanize `addValue` is always false (`Next(0,1)` is always 0); range collapses to `{0}` at value 0 | randomizer | Behaviour preserved; inverted negative ranges swapped only where unreachable, to avoid UB |
-| 6 | An unterminated trailing SysEx frame is dropped; scanning resumes at the closing `0xF7` | `SysexStreamIterator` | Verbatim, tested |
-| 7 | One non-single-patch frame classifies a whole file as `AllDataDump`, not `Unknown` | `determineSysexFileType` | Verbatim |
-| 8 | Renaming a tone triggers a **full transmission + program change + dump request** | `setToneName` | Verbatim — the UI depends on the side effect |
-| 9 | `Changed` flags are cleared **after** the full-tone send in load/randomize/morph epilogues | `XpanderController` | Order matters; verbatim |
-| 10 | Sign mixing between entry sign and unsigned value in `changeModulationSourceAmount` | `XpanderToneModulationMatrix.cpp` | Verbatim; covered by model tests |
-| 11 | `MockMidiBackend` delivers synchronously on the injecting thread | tests | Port-specific design choice, documented |
+| 1 | All-notes-off uses the **settings** MIDI channel while everything else uses the tone's | `sendAllNotesOffToSynthOutput` | Verbatim; channel mismatch is the reference's |
+| 2 | `IsLfoRetrig` compares a sub-page against a page constant — nearly always true | `PageSubPageHelper` | Verbatim, commented |
+| 3 | Humanize `addValue` is always false (`Next(0,1)` is always 0); range collapses to `{0}` at value 0 | randomizer | Behaviour preserved; inverted negative ranges swapped only where unreachable, to avoid UB |
+| 4 | An unterminated trailing SysEx frame is dropped; scanning resumes at the closing `0xF7` | `SysexStreamIterator` | Verbatim, tested |
+| 5 | One non-single-patch frame classifies a whole file as `AllDataDump`, not `Unknown` | `determineSysexFileType` | Verbatim |
+| 6 | Renaming a tone triggers a **full transmission + program change + dump request** | `setToneName` | Verbatim — the UI depends on the side effect |
+| 7 | `Changed` flags are cleared **after** the full-tone send in load/randomize/morph epilogues | `XpanderController` | Order matters; verbatim |
+| 8 | Sign mixing between entry sign and unsigned value in `changeModulationSourceAmount` | `XpanderToneModulationMatrix.cpp` | Verbatim; covered by model tests |
+| 9 | `MockMidiBackend` delivers synchronously on the injecting thread | tests | Port-specific design choice, documented |
 
 ### 8.3 Corrected defects
 
-Two reference behaviours were **deliberately not preserved**, each under an ADR:
+Four reference behaviours were **deliberately not preserved**, each under a decision:
 
 | Behaviour | Reference | Here | Decision |
 |---|---|---|---|
 | Randomizer `Octave` VCO strategy | Shares the `Free` branch — the option does nothing | `VCO1_FREQ = 0`, `VCO2_FREQ = 12`, its own case between `Seventh` and `Ninth` | ADR-BUG-001 (DEC-BUG-001/003) |
 | Resync after accepting MIDI settings | Re-applies settings, never re-requests the patch | Re-requests the current patch after restarting the controller | ADR-BUG-002 (DEC-BUG-008) |
+| Programmer-mode frame's duplicated leading `0xF0`: `{F0, F0, 10, 02, 0D, 01, 00, F7}` | Byte-for-byte, preserved from the reference | `{F0, 10, 02, 0D, 01, 00, F7}` — the duplicate removed | RQ-CTL-008, issue #81, fixed 2026-09-06 (commit `f0f178b8`) |
+| Tune Request framing: `{F0, F6, F7}` — a System Common byte (`0xF6`) wrapped in a SysEx frame | Byte-for-byte, preserved from the reference | `{0xF6}` sent alone, as the Oberheim/MIDI spec's System Common message | RQ-CTL-060, issue #82, fixed 2026-09-06 (commit `f0f178b8`); a lagging test assertion was caught and fixed separately by `TASK-BUG-010` (PR #84) |
 
-The boundary that makes these admissible is **DEC-BUG-002**: reference-exactness binds
-everything observable *outside* the application — SysEx, `.syx`, settings XML — and does not
-oblige reproducing an affordance the reference offered but never implemented. A divergence
-that would change a byte on the wire remains forbidden.
+The boundary that makes the first two admissible is **DEC-BUG-002**: reference-exactness
+binds everything observable *outside* the application — SysEx, `.syx`, settings XML — and
+does not oblige reproducing an affordance the reference offered but never implemented.
+
+The last two are a **different kind of exception**, and an honest one to name: both change a
+byte pattern that *does* go out on the wire, which Rule 3 (§0.2) and §8.1 otherwise treat as
+frozen. They were changed because the old byte pattern was never anything but a guess that
+the reference's own quirk was necessary — issue #81/#82 each read the published Oberheim/MIDI
+spec and found no reason to prefer the old framing over a standards-conformant one. **Both
+changes are now confirmed against real hardware** (§14.2): the corrected framing works as
+intended on a real Xpander/Matrix-12.
 
 ### 8.4 Also improved on the reference
 
@@ -939,7 +1008,7 @@ that would change a byte on the wire remains forbidden.
 | **O** — Open/Closed | ✅ | Virtual handlers, worker override, `IToneReader`/`IToneWriter`, `MidiBackend`; `IBoundControl` lets a new control kind join the registry without touching it |
 | **L** — Liskov | ✅ | Mock and JUCE backends interchangeable in every test; bound-control fakes substitute JUCE wrappers |
 | **I** — Interface Segregation | ✅ | `MidiBackend`, `IToneReader`, `IToneWriter`, `ISettingsService`, `EventDispatcher`, `IBoundControl` are all small |
-| **D** — Dependency Inversion | ✅ | MIDI behind a port, settings behind an interface, UI marshalling behind a dispatcher; no singletons. **Residual**: `XpanderController` downcasts `AbstractTone` → `XpanderTone` in one private accessor (§11) |
+| **D** — Dependency Inversion | ✅ | MIDI behind a port, settings behind an interface, UI marshalling behind a dispatcher; no singletons. **Residual**: `XpanderController` downcasts `AbstractTone` → `XpanderTone` in one private accessor (§14.5) |
 
 | Pattern | Where |
 |---|---|
@@ -997,7 +1066,7 @@ new code); every scenario tagged with the requirement it covers (`"[RQ-MOD-033]"
 **Rule**: a failing test is never modified to make it pass. A test changes only when the
 expected behaviour genuinely changed, and the change is recorded in the plan.
 
---
+---
 
 ## 12. Architecture summary
 
@@ -1020,8 +1089,8 @@ C4Context
 ### Strengths
 
 - **Testability by construction.** Every seam is an injected interface and all UI logic sits
-  in a UI-framework-free library. 170 requirement-tagged scenarios, 2 911 assertions,
-  three platforms.
+  in a UI-framework-free library. 189 requirement-tagged scenarios (§0.3) across three
+  platforms; the assertion count is a `ctest` runtime figure, not re-verified in this pass.
 - **No hand-copied facts.** Layout, captions, enum labels, parameter names, design tokens,
   segment glyphs and 15 CI workflows are all generated from single sources; drift is a
   regeneration away from being caught, not a review away from being missed.
@@ -1030,22 +1099,17 @@ C4Context
   YAML edit.
 - **Wire and file compatibility**, verified against real hardware dumps and against archived
   patch libraries and settings files.
-- **Traceability as a first-class artefact.** 287 requirements, 50 ADRs with 176 numbered
-  decisions, 217 tasks — including decisions later reversed, kept with their reasoning
+- **Traceability as a first-class artefact.** 309 requirements, 54 ADRs with 193 numbered
+  decisions, 263 tasks (§0.3) — including decisions later reversed, kept with their reasoning
   rather than deleted.
 - Fully event-driven UI, cooperative threading, reference timing preserved.
 
 ### Weaknesses
 
-- **Diagnostic logging does not work at all** (§11-3) — the one gap that makes field
-  diagnosis of a user's problem impossible.
-- Hardware-only behaviours (dump timing against a real synth, LED colours under traffic)
-  still await validation on the instrument.
 - A few reference-faithful blocking sleeps are reachable from the message thread.
 - Design-token coverage stops at appearance; spacing and texture parameters are still
   file-local constants, and the staleness gate is not enforced by CI.
 - Appearance has a single validator, and pixel review is milestone-gated.
-- A handful of ADRs are implemented but formally `Proposed`.
 
 ---
 
@@ -1095,32 +1159,31 @@ project's own commits do.
 
 ## 14. Open points still to verify
 
-Everything below was left open at the end of the migration and is **not yet closed**. It is
-kept in one place deliberately: these are the claims this document makes that rest on
-reasoning, tests or a single platform rather than on observation against the real
-instrument.
+Everything below was left open at the end of the migration. Most of it has since closed —
+§14.1 and §14.2 are kept as resolution records rather than deleted, per §14.6's own rule that
+an item's closure is recorded, not erased. What remains genuinely open is §14.3's platform
+coverage and §14.4/§14.5's functional and structural debt.
 
-### 14.1 Hardware validation — not complete
+### 14.1 Hardware validation — complete
 
-| Item | Task | State |
-|---|---|---|
-| Manual hardware validation checklist against a real Xpander / Matrix-12 | `TASK-JUC-071` (RQ-TST-006) | **In progress** — started by the owner, not yet fully covered |
-| Cross-compatibility campaign: patch libraries and settings files exchanged with the archived implementation, both directions | `TASK-JUC-072` (RQ-MOD-050, RQ-SET-006, RQ-NFR-003) | **In progress** — started by the owner, not yet fully covered |
-| Dump timing against a real synth under sustained traffic | — | Not observed; the transmit pacing is reference-derived, not measured here |
-| MIDI activity lamp behaviour under real traffic | — | Not observed |
+**Resolved (confirmed by the owner, 2026-09-19).** All four items formerly tracked here as
+open have been validated against a real Xpander/Matrix-12: the manual hardware validation
+checklist (`TASK-JUC-071`, RQ-TST-006), the cross-compatibility campaign exchanging patch
+libraries and settings files with the archived implementation in both directions
+(`TASK-JUC-072`, RQ-MOD-050/RQ-SET-006/RQ-NFR-003), dump timing under sustained traffic, and
+MIDI activity lamp behaviour under real traffic. Both tasks are marked `Done` in
+`process/3.plan/6-Phase-6-Integration.md`. No open hardware-validation item remains.
 
-### 14.2 Wire behaviours believed correct but unconfirmed on hardware
+### 14.2 Wire behaviours — all confirmed on hardware
 
-Each of these is preserved verbatim from the reference (§8.2) on the assumption that the
-instrument accepts it. None has been confirmed against the hardware by this project.
-
-| # | Behaviour | What to confirm |
-|---|---|---|
-| 1 | Programmer-mode frame carries a **duplicated leading `0xF0`** | That the synth accepts the frame as sent, rather than the duplication being a reference bug the instrument tolerated by luck |
-| 2 | Tune Request sent as `{F0, F6, F7}` — System Common wrapped in SysEx | That the synth acts on it; a standards-conformant `0xF6` alone may be what actually works |
-| 3 | All-notes-off uses the **settings** MIDI channel while everything else uses the tone's channel | Whether the mismatch is intentional or a reference defect. If the two channels differ in a user's setup, all-notes-off goes to the wrong channel |
-| 4 | `IsLfoRetrig` compares a sub-page against a page constant — the condition is almost always true | Whether the near-constant result is the behaviour the instrument expects |
-| 5 | Humanize `addValue` can never be true, and its range collapses to `{0}` at value 0 | Whether the randomizer's humanize feature is meaningfully doing anything at all |
+**Resolved (confirmed by the owner, 2026-09-19).** Every behaviour formerly tracked here as
+unconfirmed has now been verified against a real Xpander/Matrix-12, including the two framing
+changes from §8.3: the corrected Programmer-mode frame without the duplicated leading `0xF0`
+(issue #81) and the bare `{0xF6}` Tune Request (issue #82) both work as intended on real
+hardware. The three behaviours preserved verbatim from the reference — the settings-channel
+all-notes-off, `IsLfoRetrig`'s near-constant comparison, and the randomizer's Humanize
+behaviour — are likewise confirmed to behave as documented on the instrument. No open
+wire-behaviour question remains.
 
 ### 14.3 Platform coverage gaps
 
@@ -1135,46 +1198,58 @@ regression that only shows on one platform, one DPI or one theme could ship unno
 
 ### 14.4 Functional gaps carried forward
 
+> **Resolved since this list was written**: "Diagnostic logging never enabled" (GitHub issue
+> #68, RQ-FMW-070/RQ-NFR-008) was closed on 2026-09-05 by `ADR-FMW-001` (PR #83) — domain-based
+> diagnostic logging, wired at startup. Confirmed in the current source: `MainComponent.cpp`
+> now calls `Logger::configure(...)`, `LoggingConfigResolver` resolves the level from settings,
+> and the Settings dialog has its own Logging tab. No longer an open point; removed from the
+> table below.
+
 | Item | State |
 |---|---|
-| **Diagnostic logging never enabled** | `Logger::configure()`/`setLevel()` are called only by tests. No log file is written, no message at any severity is emitted — so a user's field problem cannot be diagnosed from a log. Violates RQ-FMW-070 / RQ-NFR-008. Tracked as GitHub issue **#68** |
-| `BugReportFactory` payload | Not ported. The top-level exception dialog exists (RQ-GUI-035) but without the diagnostic payload (RQ-FMW-071) |
 | Tone morphing UX | Deferred — the reference form was unfinished (empty OK/Cancel, unwired). The controller primitive is ported and tested; the UX has no specification |
 | Multi-patch mode | Out of scope, as in the reference. Backlog |
 | Keyboard-focus visual indicator | Implemented, then removed after two rounds of adjustment were each judged visually wrong (ADR-JUC-029). **Accepted residual gap**: a keyboard-only user tabbing without acting gets no positional feedback. Revisiting means reopening RQ-GUI-054 |
 
 ### 14.5 Structural debt
 
+> **Resolved since this list was written**: the "9 ADRs formally `Proposed` while their code
+> ships" row (`ADR-ABT-001`, `ADR-BLD-002/003/004`, `ADR-JUC-022/023/024/027/028`) is closed —
+> all nine were flipped to `Accepted` in a documentation-hygiene pass (2026-09-19), each with
+> an implementation note. Removed from the table below.
+
 | Item | State |
 |---|---|
-| Blocking sleeps reachable from the message thread (`storeSinglePatchToSynth`, `sendProgramChangeAndGetSinglePatchFromSynth`, VFD typewriter) | The sleeps *are* the hardware pacing, so removing them is not a pure refactor. An async redesign needs an ADR and hardware measurement (§14.1) to size the delays |
+| Blocking sleeps reachable from the message thread (`storeSinglePatchToSynth`, `sendProgramChangeAndGetSinglePatchFromSynth`, VFD typewriter) | The sleeps *are* the hardware pacing, so removing them is not a pure refactor. An async redesign still needs an ADR; the hardware measurements to size the delays are now available from the completed validation (§14.1) |
 | `AbstractTone` → `XpanderTone` downcast in one private accessor | Kept for port fidelity; redesign candidate |
 | Design-token coverage is appearance-only | Spacing/layout geometry and procedural texture parameters are still file-local constants, pending an owner-approved spacing scale |
 | Token staleness gate not enforced | `generate_design_tokens.py --check` and `generate_workflows.py --check` exist but are **not wired into CMake or CI**. A hand-edited or stale generated file would not fail a build |
-| 9 ADRs formally `Proposed` while their code ships | `ADR-ABT-001`, `ADR-BLD-002/003/004`, `ADR-JUC-022/023/024/027/028`. Documentation hygiene, not a code defect: they are implemented and referenced as such by later `Accepted` ADRs. A housekeeping pass should flip them with an implementation note |
 
 ### 14.6 How to close an item
 
 An open point closes the same way any change lands: a requirement (or an amendment to one)
 in `process/1.requirements/`, an ADR if it is a structural or behavioural decision, a plan
 with Gherkin acceptance criteria in `process/3.plan/`, then the code and its test. For the
-hardware items in §14.1 and §14.2 the "test" is an observation on the instrument, recorded
-in the task — there is no way to automate it, which is exactly why they are still open.
+hardware items that used to live in §14.1 and §14.2, the "test" was an observation on the
+instrument, recorded in the task — there was no way to automate it, which is exactly why they
+stayed open as long as they did, until the owner completed that observation directly.
 
 ---
 
 ## Appendix A — Decision index
 
 Architecture decisions live in `process/2.architecture/`, one file per ADR, each carrying
-numbered `DEC-*` decisions that code comments reference directly. **50 ADRs, 176 decisions.**
+numbered `DEC-*` decisions that code comments reference directly. **54 ADRs, 193 decisions**
+(re-counted 2026-09-19, see §0.3 for the verification commands).
 
 | Series | Count | Domain |
 |---|---|---|
-| `ADR-JUC-*` | 36 | UI and application architecture — canvas, tokens, VFD, matrix, menus, threading |
-| `ADR-BLD-*` | 5 | Build, versioning, packaging, delivery streams |
+| `ADR-JUC-*` | 37 | UI and application architecture — canvas, tokens, VFD, matrix, menus, threading |
+| `ADR-BLD-*` | 6 | Build, versioning, packaging, delivery streams |
+| `ADR-BUG-*` | 3 | Defect corrections that diverge from the reference; controller lifecycle |
 | `ADR-ABT-*` | 2 | Licensing and dependency disclosure |
-| `ADR-BUG-*` | 2 | Defect corrections that diverge from the reference; controller lifecycle |
-| `ADR-GUI-*`, `ADR-SET-*`, `ADR-QLT-*`, `ADR-GOV-*`, `ADR-CLR-*` | 5 | Vector shortcut buttons; settings directory fallback; menu identity; governance; section rhythm |
+| `ADR-FMW-*` | 1 | Domain-based diagnostic logging (new since this document's last full pass) |
+| `ADR-GUI-*`, `ADR-SET-*`, `ADR-QLT-*`, `ADR-GOV-*`, `ADR-CLR-*` | 5 (1 each) | Vector shortcut buttons; settings directory fallback; menu identity; governance; section rhythm |
 
 **High-traffic decisions** — the ones most likely to constrain a new change:
 
@@ -1193,9 +1268,12 @@ numbered `DEC-*` decisions that code comments reference directly. **50 ADRs, 176
 | `ADR-SET-001` | Settings directory fallback |
 | `ADR-QLT-001` | Single-source menu identity |
 | `ADR-BUG-002` | Controller lifecycle ownership |
+| `ADR-FMW-001` | Domain-based diagnostic logging — closes GitHub issue #68 |
 
-The process artefacts as a whole: **287 requirements** (`process/1.requirements/`, EARS
-format), **46 plans / 217 tasks** (`process/3.plan/`, Gherkin acceptance criteria).
+The process artefacts as a whole: **309 requirements** (`process/1.requirements/`, EARS
+format), **263 tasks** across **52 plan files** — 30 following the `PLAN-*.md` convention and
+22 earlier `<N>-Phase-<N>-*.md` migration-phase files (`process/3.plan/`, Gherkin acceptance
+criteria). Counts re-verified 2026-09-19; see §0.3 for the commands.
 
 ---
 

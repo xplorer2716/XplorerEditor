@@ -60,3 +60,24 @@ jobs:
           name: Xplorer-${{ steps.version.outputs.full }}-macos-arm64-debug
           path: ${{ steps.build.outputs.artefact-dir }}
           if-no-files-found: error
+
+      # A link-clean build is not proof the app opens a window -- a missing
+      # framework, a bad Info.plist or a startup crash would otherwise only
+      # surface once the owner downloaded and ran this artefact by hand.
+      # macOS Debug canary is where a feature branch gets its fastest,
+      # least-supervised feedback (RQ-BLD-019), so this launches the built
+      # app directly on the runner's own window server and photographs it.
+      # Scoped to this one combination only: Windows/Linux runners have no
+      # comparable on-screen window, and this was not requested for the
+      # other macOS streams. [RQ-BLD-032, ADR-BLD-006 (DEC-BLD-029,
+      # DEC-BLD-030)]
+      - id: screenshot
+        uses: ./.github/actions/screenshot-macos-app
+        with:
+          artefact-dir: ${{ steps.build.outputs.artefact-dir }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Xplorer-${{ steps.version.outputs.full }}-macos-arm64-debug-screenshot
+          path: ${{ steps.screenshot.outputs.screenshot-path }}
+          if-no-files-found: error
