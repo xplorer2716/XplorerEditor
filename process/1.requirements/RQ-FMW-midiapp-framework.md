@@ -47,7 +47,16 @@ Scope: C++ port of `MidiApp.MidiController` Model/Controller abstractions. UI-si
 
 - **RQ-FMW-070** — The framework shall provide diagnostic logging with severity levels, configurable at runtime, writing to a per-user application log file (reference: `applog.txt`).
   - *Amended 2026-09-05 (owner decision, session LOG, ADR-FMW-001):* **The port's log file is named `xplorer.log`, not `applog.txt`.** The reference filename is kept above only as the .NET behaviour this requirement was originally written against; the shipped file name is `xplorer.log`, resolved next to the settings directory (RQ-SET-008, ADR-SET-001) unless overridden.
-- **RQ-FMW-071** — The framework shall provide a bug-report facility that captures exception context including MIDI device state, equivalent in content to the reference `BugReportFactory`.
+- **RQ-FMW-071** — ~~The framework shall provide a bug-report facility that captures exception context including MIDI device state, equivalent in content to the reference `BugReportFactory`.~~
+  - *Withdrawn 2026-09-19 (owner decision).* `BugReportFactory` is not being ported. It was
+    already confirmed out of scope for the diagnostic-logging work that closed the adjacent
+    gap (ADR-FMW-001 DEC-FMW-004: "`DumpMidiInfoToLogFile` depends on
+    `BugReportFactory.CreateMidiDevicesInfo()`, itself never ported... implementing it would
+    be a separate feature, not this task's scope"). The domain-based diagnostic logger
+    (RQ-FMW-070, RQ-FMW-073..076) now covers this project's diagnostic needs instead. Kept
+    here, marked withdrawn rather than deleted, per this project's own traceability
+    convention (§0 Rule 5 of `docs/architecture-analysis.md`). RQ-GUI-035's top-level
+    exception dialog no longer depends on this requirement.
 - **RQ-FMW-072** — The framework shall enforce single-instance execution per user session (reference: `FileMutex`).
 - **RQ-FMW-073** — **EARS type: Ubiquitous.** The diagnostic logger (RQ-FMW-070) SHALL classify every log line under exactly one of three domains: **MIDI I/O** (incoming and outgoing MIDI messages), **Controller calls** (calls the controller makes into the MIDI/backend layer, and calls the UI makes on the controller) and **UI events** (events occurring in the user interface). Each domain SHALL be independently enabled or disabled at runtime; a line SHALL be written only when its domain is enabled **and** its severity passes the single global severity threshold already defined by RQ-FMW-070 — there is no per-domain severity, only a per-domain on/off gate. **Priority:** Must. **Dependencies:** RQ-FMW-070.
   - **Acceptance (Gherkin):** *Given* the MIDI domain is disabled, *When* a MIDI message is logged, *Then* no line is written for it regardless of severity. *Given* the MIDI domain is enabled and the global threshold is Warning, *When* an Info-level MIDI line is logged, *Then* no line is written (Info is less severe than the Warning threshold). *Given* the MIDI domain is enabled and the threshold passes, *When* the line is logged, *Then* it is written, tagged with its domain.
