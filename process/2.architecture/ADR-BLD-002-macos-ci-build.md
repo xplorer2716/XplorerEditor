@@ -1,7 +1,9 @@
 # ADR-BLD-002: macOS CI Build (arm64, Artifact-Only, Release + Debug)
 
 ## Status
-Proposed
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Motivated by RQ-BLD-011 (macOS Release build + CI artifact) and RQ-BLD-012
 (macOS Debug build extending the RQ-GUI-047/048 font-fit verification to a

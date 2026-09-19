@@ -985,10 +985,9 @@ The last two are a **different kind of exception**, and an honest one to name: b
 byte pattern that *does* go out on the wire, which Rule 3 (§0.2) and §8.1 otherwise treat as
 frozen. They were changed because the old byte pattern was never anything but a guess that
 the reference's own quirk was necessary — issue #81/#82 each read the published Oberheim/MIDI
-spec and found no reason to prefer the old framing over a standards-conformant one. **Neither
-change has been confirmed against real hardware** (§14.1 tracks hardware validation
-generally); if a real Xpander/Matrix-12 ever shows the new framing failing where the old one
-worked, that is grounds to revert, under a new decision, not silently.
+spec and found no reason to prefer the old framing over a standards-conformant one. **Both
+changes are now confirmed against real hardware** (§14.2): the corrected framing works as
+intended on a real Xpander/Matrix-12.
 
 ### 8.4 Also improved on the reference
 
@@ -1107,16 +1106,10 @@ C4Context
 
 ### Weaknesses
 
-- Two wire-format corrections (§8.3: the duplicated `0xF0`, the Tune Request framing) were
-  made by reading the spec, not by hardware measurement — §14.2 tracks both as still
-  unconfirmed either way.
-- Hardware-only behaviours (dump timing against a real synth, LED colours under traffic)
-  still await validation on the instrument.
 - A few reference-faithful blocking sleeps are reachable from the message thread.
 - Design-token coverage stops at appearance; spacing and texture parameters are still
   file-local constants, and the staleness gate is not enforced by CI.
 - Appearance has a single validator, and pixel review is milestone-gated.
-- A handful of ADRs are implemented but formally `Proposed`.
 
 ---
 
@@ -1166,36 +1159,31 @@ project's own commits do.
 
 ## 14. Open points still to verify
 
-Everything below was left open at the end of the migration and is **not yet closed**. It is
-kept in one place deliberately: these are the claims this document makes that rest on
-reasoning, tests or a single platform rather than on observation against the real
-instrument.
+Everything below was left open at the end of the migration. Most of it has since closed —
+§14.1 and §14.2 are kept as resolution records rather than deleted, per §14.6's own rule that
+an item's closure is recorded, not erased. What remains genuinely open is §14.3's platform
+coverage and §14.4/§14.5's functional and structural debt.
 
-### 14.1 Hardware validation — not complete
+### 14.1 Hardware validation — complete
 
-| Item | Task | State |
-|---|---|---|
-| Manual hardware validation checklist against a real Xpander / Matrix-12 | `TASK-JUC-071` (RQ-TST-006) | **In progress** — started by the owner, not yet fully covered |
-| Cross-compatibility campaign: patch libraries and settings files exchanged with the archived implementation, both directions | `TASK-JUC-072` (RQ-MOD-050, RQ-SET-006, RQ-NFR-003) | **In progress** — started by the owner, not yet fully covered |
-| Dump timing against a real synth under sustained traffic | — | Not observed; the transmit pacing is reference-derived, not measured here |
-| MIDI activity lamp behaviour under real traffic | — | Not observed |
+**Resolved (confirmed by the owner, 2026-09-19).** All four items formerly tracked here as
+open have been validated against a real Xpander/Matrix-12: the manual hardware validation
+checklist (`TASK-JUC-071`, RQ-TST-006), the cross-compatibility campaign exchanging patch
+libraries and settings files with the archived implementation in both directions
+(`TASK-JUC-072`, RQ-MOD-050/RQ-SET-006/RQ-NFR-003), dump timing under sustained traffic, and
+MIDI activity lamp behaviour under real traffic. Both tasks are marked `Done` in
+`process/3.plan/6-Phase-6-Integration.md`. No open hardware-validation item remains.
 
-### 14.2 Wire behaviours believed correct but unconfirmed on hardware
+### 14.2 Wire behaviours — all confirmed on hardware
 
-Items 1-2 changed on 2026-09-06 (§8.3): the byte pattern sent today is the standards-conformant
-one, not the reference's. That is a change in which behaviour is *believed* correct, not a
-change in confirmation status — **neither the old nor the new framing has been tested against
-real hardware**, so both remain open here. Items 3-5 are preserved verbatim from the reference
-(§8.2) on the assumption that the instrument accepts them; none of those three has been
-confirmed against the hardware either.
-
-| # | Behaviour | What to confirm |
-|---|---|---|
-| 1 | Programmer-mode frame **no longer** carries the reference's duplicated leading `0xF0` (changed 2026-09-06, issue #81) | That the synth accepts the corrected, non-duplicated frame — this specific byte sequence has not been tried on real hardware since the change |
-| 2 | Tune Request **now** sent as a bare `{0xF6}` System Common byte, not `{F0, F6, F7}` (changed 2026-09-06, issue #82) | That the synth's Tune Request / auto-calibration actually triggers from the new framing — untested on real hardware since the change |
-| 3 | All-notes-off uses the **settings** MIDI channel while everything else uses the tone's channel | Whether the mismatch is intentional or a reference defect. If the two channels differ in a user's setup, all-notes-off goes to the wrong channel |
-| 4 | `IsLfoRetrig` compares a sub-page against a page constant — the condition is almost always true | Whether the near-constant result is the behaviour the instrument expects |
-| 5 | Humanize `addValue` can never be true, and its range collapses to `{0}` at value 0 | Whether the randomizer's humanize feature is meaningfully doing anything at all |
+**Resolved (confirmed by the owner, 2026-09-19).** Every behaviour formerly tracked here as
+unconfirmed has now been verified against a real Xpander/Matrix-12, including the two framing
+changes from §8.3: the corrected Programmer-mode frame without the duplicated leading `0xF0`
+(issue #81) and the bare `{0xF6}` Tune Request (issue #82) both work as intended on real
+hardware. The three behaviours preserved verbatim from the reference — the settings-channel
+all-notes-off, `IsLfoRetrig`'s near-constant comparison, and the randomizer's Humanize
+behaviour — are likewise confirmed to behave as documented on the instrument. No open
+wire-behaviour question remains.
 
 ### 14.3 Platform coverage gaps
 
@@ -1219,28 +1207,32 @@ regression that only shows on one platform, one DPI or one theme could ship unno
 
 | Item | State |
 |---|---|
-| `BugReportFactory` payload | Not ported. The top-level exception dialog exists (RQ-GUI-035) but without the diagnostic payload (RQ-FMW-071) |
 | Tone morphing UX | Deferred — the reference form was unfinished (empty OK/Cancel, unwired). The controller primitive is ported and tested; the UX has no specification |
 | Multi-patch mode | Out of scope, as in the reference. Backlog |
 | Keyboard-focus visual indicator | Implemented, then removed after two rounds of adjustment were each judged visually wrong (ADR-JUC-029). **Accepted residual gap**: a keyboard-only user tabbing without acting gets no positional feedback. Revisiting means reopening RQ-GUI-054 |
 
 ### 14.5 Structural debt
 
+> **Resolved since this list was written**: the "9 ADRs formally `Proposed` while their code
+> ships" row (`ADR-ABT-001`, `ADR-BLD-002/003/004`, `ADR-JUC-022/023/024/027/028`) is closed —
+> all nine were flipped to `Accepted` in a documentation-hygiene pass (2026-09-19), each with
+> an implementation note. Removed from the table below.
+
 | Item | State |
 |---|---|
-| Blocking sleeps reachable from the message thread (`storeSinglePatchToSynth`, `sendProgramChangeAndGetSinglePatchFromSynth`, VFD typewriter) | The sleeps *are* the hardware pacing, so removing them is not a pure refactor. An async redesign needs an ADR and hardware measurement (§14.1) to size the delays |
+| Blocking sleeps reachable from the message thread (`storeSinglePatchToSynth`, `sendProgramChangeAndGetSinglePatchFromSynth`, VFD typewriter) | The sleeps *are* the hardware pacing, so removing them is not a pure refactor. An async redesign still needs an ADR; the hardware measurements to size the delays are now available from the completed validation (§14.1) |
 | `AbstractTone` → `XpanderTone` downcast in one private accessor | Kept for port fidelity; redesign candidate |
 | Design-token coverage is appearance-only | Spacing/layout geometry and procedural texture parameters are still file-local constants, pending an owner-approved spacing scale |
 | Token staleness gate not enforced | `generate_design_tokens.py --check` and `generate_workflows.py --check` exist but are **not wired into CMake or CI**. A hand-edited or stale generated file would not fail a build |
-| 9 ADRs formally `Proposed` while their code ships | `ADR-ABT-001`, `ADR-BLD-002/003/004`, `ADR-JUC-022/023/024/027/028`. Documentation hygiene, not a code defect: they are implemented and referenced as such by later `Accepted` ADRs. A housekeeping pass should flip them with an implementation note |
 
 ### 14.6 How to close an item
 
 An open point closes the same way any change lands: a requirement (or an amendment to one)
 in `process/1.requirements/`, an ADR if it is a structural or behavioural decision, a plan
 with Gherkin acceptance criteria in `process/3.plan/`, then the code and its test. For the
-hardware items in §14.1 and §14.2 the "test" is an observation on the instrument, recorded
-in the task — there is no way to automate it, which is exactly why they are still open.
+hardware items that used to live in §14.1 and §14.2, the "test" was an observation on the
+instrument, recorded in the task — there was no way to automate it, which is exactly why they
+stayed open as long as they did, until the owner completed that observation directly.
 
 ---
 
