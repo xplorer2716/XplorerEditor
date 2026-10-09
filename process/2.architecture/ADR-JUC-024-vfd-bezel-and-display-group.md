@@ -1,7 +1,9 @@
 # ADR-JUC-024: VFD Bezel and Display-Group Placement
 
 ## Status
-Proposed
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Motivated by RQ-GUI-050 (recessed bezel + display group read as one unit)
 and RQ-DSN-098 (its token group). Follows ADR-JUC-023, which made the display

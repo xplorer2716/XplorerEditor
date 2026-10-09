@@ -418,4 +418,5 @@ Today only the rotary knob reacts to the pointer (`drawRotarySlider` checks `isM
 
 ## Error handling
 
-- **RQ-GUI-035** — When an unhandled exception reaches the UI layer, the application shall show a top-level error dialog offering a bug report containing the diagnostic payload (RQ-FMW-071) instead of terminating silently.
+- **RQ-GUI-035** — When an unhandled exception reaches the UI layer, the application shall show a top-level error dialog with the exception's file/line and a bug-report pointer, instead of terminating silently.
+  - *Amended 2026-09-19 (owner decision):* the dependency on a `BugReportFactory`-equivalent diagnostic payload (formerly RQ-FMW-071) is dropped — see RQ-FMW-071's own withdrawal note. This requirement stands on its own: the top-level dialog itself, not the payload.

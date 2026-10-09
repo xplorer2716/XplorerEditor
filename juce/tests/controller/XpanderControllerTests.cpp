@@ -413,11 +413,14 @@ SCENARIO("Synth utilities emit the reference byte frames", "[RQ-CTL-060][RQ-CTL-
         {
             f.controller.sendTuneRequestToSynth();
 
-            THEN("the reference SysEx-wrapped frame goes out")
+            THEN("the bare Tune Request status byte goes out, not wrapped in SysEx")
             {
+                // Oberheim spec: Tune Request (F6H) is a System Common byte
+                // sent alone, never SysEx-wrapped. [RQ-CTL-060] (corrected
+                // 2026-09-06, issue #82 — assertion lagged behind f0f178b's fix)
                 const auto sent = f.backend.sentMessages(SYNTH_OUT);
                 REQUIRE(sent.size() == 1);
-                CHECK(sent[0].toBytes() == std::vector<std::uint8_t>{0xF0, 0xF6, 0xF7});
+                CHECK(sent[0].toBytes() == std::vector<std::uint8_t>{0xF6});
             }
         }
 

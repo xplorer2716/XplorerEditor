@@ -1,7 +1,9 @@
 # ADR-ABT-001: SBOM-Driven Dependency Disclosure (SPDX, Read at Run Time)
 
 ## Status
-Proposed
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Motivated by RQ-GUI-057 (dependencies window), RQ-BLD-014 (build ships the
 SBOM beside the executable) and the RQ-GUI-025 amendment (About dialog carries

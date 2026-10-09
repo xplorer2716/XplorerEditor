@@ -1,7 +1,9 @@
 # ADR-BLD-003: Two-Branch Delivery, Commit-Derived Version and Deployment Streams
 
 ## Status
-Proposed (session BLD, 2026-08-16).
+Accepted — implemented and shipping. Flipped from `Proposed` in a documentation-hygiene
+pass (2026-09-19): the code was already in place and referenced as such by later
+`Accepted` ADRs; only this file's status label had lagged.
 
 <!-- Motivated by RQ-BLD-019 (two branches, three streams), RQ-BLD-020 (version derivation),
 RQ-BLD-023 (workflow layout) and RQ-BLD-028 (production gate). Supersedes ADR-BLD-001's
