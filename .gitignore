@@ -13,6 +13,7 @@
 
 # xerj local search index data (generated, includes master key — never commit)
 .xerj-data/
+xerjdata/
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # VISUAL STUDIO (2015-2026) IDE
