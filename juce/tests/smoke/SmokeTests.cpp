@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <catch2/catch_test_macros.hpp>
 
 #include "midiapp/LibraryInfo.hpp"
-#include "xpl/midi/LibraryInfo.hpp"
+#include "common/midi/LibraryInfo.hpp"
 #include "xplorer/controller/LibraryInfo.hpp"
 #include "xplorer/model/LibraryInfo.hpp"
 #include "xplorer/settings/LibraryInfo.hpp"
@@ -43,7 +43,7 @@ SCENARIO("All layer libraries build and link bottom-up", "[RQ-BLD-005]")
     {
         THEN("each reports its identity")
         {
-            CHECK(xpl::midi::libraryName() == "xpl_midi");
+            CHECK(common::midi::libraryName() == "xpl_midi");
             CHECK(midiapp::libraryName() == "xpl_framework");
             CHECK(xplorer::model::libraryName() == "xpl_model");
             CHECK(xplorer::controller::libraryName() == "xpl_controller");
@@ -58,7 +58,7 @@ SCENARIO("The JUCE backend adapter library links against JUCE 8", "[RQ-BLD-001]"
     {
         WHEN("the JUCE version is queried")
         {
-            const auto version = xpl::midi::juceVersion();
+            const auto version = common::midi::juceVersion();
             THEN("it reports JUCE 8.x")
             {
                 INFO(version);

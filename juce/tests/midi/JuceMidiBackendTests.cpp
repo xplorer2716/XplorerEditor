@@ -17,13 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <catch2/catch_test_macros.hpp>
 
-#include "xpl/midi/JuceMidiBackend.hpp"
+#include "common/midi/JuceMidiBackend.hpp"
 
 #include <atomic>
 #include <chrono>
 #include <thread>
 
-using namespace xpl::midi;
+using namespace common::midi;
 
 SCENARIO("JUCE backend enumerates and opens devices safely headless", "[RQ-MID-001][RQ-MID-002]")
 {

@@ -17,7 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include "xpl/midi/MidiMessage.hpp"
+#include "common/midi/MidiMessage.hpp"
 
 #include <cstdint>
 #include <memory>
@@ -59,7 +59,7 @@ namespace midiapp::model
         void setChanged(bool changed);
 
         /// The SysEx message transmitting the current value. [RQ-FMW-001]
-        [[nodiscard]] xpl::midi::MidiMessage message() const;
+        [[nodiscard]] common::midi::MidiMessage message() const;
 
         /// Deep copy, including the message bytes. [RQ-FMW-003]
         [[nodiscard]] virtual std::unique_ptr<AbstractParameter> clone() const = 0;
@@ -71,7 +71,7 @@ namespace midiapp::model
         /// last step: the reference base constructor virtual-dispatches
         /// UpdateMessageFromValue, which a C++ base constructor cannot do.
         AbstractParameter(std::string name, int minValue, int maxValue, int step,
-                          xpl::midi::MidiMessage message, std::string label = {});
+                          common::midi::MidiMessage message, std::string label = {});
 
         AbstractParameter(const AbstractParameter& other);
         AbstractParameter& operator=(const AbstractParameter&) = delete;

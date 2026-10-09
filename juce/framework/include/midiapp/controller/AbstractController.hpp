@@ -4,7 +4,7 @@
 #include "midiapp/controller/EventDispatcher.hpp"
 #include "midiapp/model/AbstractTone.hpp"
 #include "midiapp/model/ToneIO.hpp"
-#include "xpl/midi/MidiPorts.hpp"
+#include "common/midi/MidiPorts.hpp"
 
 #include <condition_variable>
 #include <deque>
@@ -95,7 +95,7 @@ namespace midiapp::controller
         void setAutomationParameterChangeHandler(std::function<void(const std::string&, int)> handler);
 
     protected:
-        AbstractController(xpl::midi::MidiBackend& backend,
+        AbstractController(common::midi::MidiBackend& backend,
                            std::unique_ptr<model::AbstractTone> tone,
                            std::shared_ptr<EventDispatcher> dispatcher = nullptr);
 
@@ -118,20 +118,20 @@ namespace midiapp::controller
         [[nodiscard]] bool verifyAutomationInputDevice() const { return _automationInput != nullptr; }
 
         /// Guarded send to the synth output; silently drops when no device.
-        void sendToSynthOutput(const xpl::midi::MidiMessage& message);
+        void sendToSynthOutput(const common::midi::MidiMessage& message);
 
         // --- automation input handlers (defaults = reference behavior) ---
-        virtual void automationInputDeviceChannelMessageReceived(const xpl::midi::MidiMessage& message); // [RQ-FMW-050/051]
-        virtual void automationInputDeviceSysExMessageReceived(const xpl::midi::MidiMessage& message);   // [RQ-FMW-052]
-        virtual void automationInputDeviceSysCommonMessageReceived(const xpl::midi::MidiMessage& message);
-        virtual void automationInputDeviceSysRealtimeMessageReceived(const xpl::midi::MidiMessage& message);
+        virtual void automationInputDeviceChannelMessageReceived(const common::midi::MidiMessage& message); // [RQ-FMW-050/051]
+        virtual void automationInputDeviceSysExMessageReceived(const common::midi::MidiMessage& message);   // [RQ-FMW-052]
+        virtual void automationInputDeviceSysCommonMessageReceived(const common::midi::MidiMessage& message);
+        virtual void automationInputDeviceSysRealtimeMessageReceived(const common::midi::MidiMessage& message);
         virtual void automationInputDeviceError(const std::string& description);
 
         // --- synth input handlers (defaults: do nothing, like the reference) ---
-        virtual void synthInputDeviceChannelMessageReceived(const xpl::midi::MidiMessage& message);
-        virtual void synthInputDeviceSysExMessageReceived(const xpl::midi::MidiMessage& message);
-        virtual void synthInputDeviceSysCommonMessageReceived(const xpl::midi::MidiMessage& message);
-        virtual void synthInputDeviceSysRealtimeMessageReceived(const xpl::midi::MidiMessage& message);
+        virtual void synthInputDeviceChannelMessageReceived(const common::midi::MidiMessage& message);
+        virtual void synthInputDeviceSysExMessageReceived(const common::midi::MidiMessage& message);
+        virtual void synthInputDeviceSysCommonMessageReceived(const common::midi::MidiMessage& message);
+        virtual void synthInputDeviceSysRealtimeMessageReceived(const common::midi::MidiMessage& message);
         virtual void synthInputDeviceError(const std::string& description);
 
         // --- transmit worker [RQ-FMW-040..042, ADR-JUC-005] ---
@@ -151,20 +151,20 @@ namespace midiapp::controller
     private:
         void startWorkerThread();
         void stopWorkerThread();
-        [[nodiscard]] xpl::midi::MidiInputCallbacks makeAutomationCallbacks();
-        [[nodiscard]] xpl::midi::MidiInputCallbacks makeSynthCallbacks();
-        bool assignInputDevice(std::unique_ptr<xpl::midi::MidiInputPort>& slot,
+        [[nodiscard]] common::midi::MidiInputCallbacks makeAutomationCallbacks();
+        [[nodiscard]] common::midi::MidiInputCallbacks makeSynthCallbacks();
+        bool assignInputDevice(std::unique_ptr<common::midi::MidiInputPort>& slot,
                                const std::string& deviceName,
-                               xpl::midi::MidiInputCallbacks callbacks);
+                               common::midi::MidiInputCallbacks callbacks);
 
-        xpl::midi::MidiBackend& _backend;
+        common::midi::MidiBackend& _backend;
         std::unique_ptr<model::AbstractTone> _tone;
         std::shared_ptr<EventDispatcher> _dispatcher;
         DualDictionary _automationTable;
 
-        std::unique_ptr<xpl::midi::MidiOutputPort> _synthOutput;
-        std::unique_ptr<xpl::midi::MidiInputPort> _synthInput;
-        std::unique_ptr<xpl::midi::MidiInputPort> _automationInput;
+        std::unique_ptr<common::midi::MidiOutputPort> _synthOutput;
+        std::unique_ptr<common::midi::MidiInputPort> _synthInput;
+        std::unique_ptr<common::midi::MidiInputPort> _automationInput;
 
         std::function<void(const std::string&, int)> _automationParameterChangeHandler;
 

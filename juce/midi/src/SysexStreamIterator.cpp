@@ -15,11 +15,11 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "xpl/midi/SysexStreamIterator.hpp"
+#include "common/midi/SysexStreamIterator.hpp"
 
-#include "xpl/midi/MidiMessage.hpp"
+#include "common/midi/MidiMessage.hpp"
 
-namespace xpl::midi
+namespace common::midi
 {
     SysexStreamIterator::SysexStreamIterator(std::span<const std::uint8_t> data)
         : _data(data)

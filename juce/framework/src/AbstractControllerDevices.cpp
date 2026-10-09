@@ -6,11 +6,11 @@
 
 namespace midiapp::controller
 {
-    using xpl::midi::ChannelCommand;
-    using xpl::midi::MidiInputCallbacks;
-    using xpl::midi::MidiMessage;
+    using common::midi::ChannelCommand;
+    using common::midi::MidiInputCallbacks;
+    using common::midi::MidiMessage;
 
-    xpl::midi::MidiInputCallbacks AbstractController::makeAutomationCallbacks()
+    common::midi::MidiInputCallbacks AbstractController::makeAutomationCallbacks()
     {
         MidiInputCallbacks callbacks;
         callbacks.onChannelMessage = [this](const MidiMessage& m) { automationInputDeviceChannelMessageReceived(m); };
@@ -21,7 +21,7 @@ namespace midiapp::controller
         return callbacks;
     }
 
-    xpl::midi::MidiInputCallbacks AbstractController::makeSynthCallbacks()
+    common::midi::MidiInputCallbacks AbstractController::makeSynthCallbacks()
     {
         MidiInputCallbacks callbacks;
         callbacks.onChannelMessage = [this](const MidiMessage& m) { synthInputDeviceChannelMessageReceived(m); };
@@ -32,9 +32,9 @@ namespace midiapp::controller
         return callbacks;
     }
 
-    bool AbstractController::assignInputDevice(std::unique_ptr<xpl::midi::MidiInputPort>& slot,
+    bool AbstractController::assignInputDevice(std::unique_ptr<common::midi::MidiInputPort>& slot,
                                                const std::string& deviceName,
-                                               xpl::midi::MidiInputCallbacks callbacks)
+                                               common::midi::MidiInputCallbacks callbacks)
     {
         if (deviceName.empty())
         {

@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "midiapp/model/ToneIO.hpp"
-#include "xpl/midi/SysexStreamIterator.hpp"
+#include "common/midi/SysexStreamIterator.hpp"
 #include "xplorer/model/XpanderSinglePatch.hpp"
 
 #include <fstream>
@@ -17,7 +17,7 @@ namespace
         std::ifstream stream(std::string(XPL_FIXTURES_DIR) + "/single_patch_oberheim.syx", std::ios::binary);
         REQUIRE(stream.good());
         const Bytes fileContent((std::istreambuf_iterator<char>(stream)), {});
-        auto messages = xpl::midi::SysexStreamIterator::allMessages(fileContent);
+        auto messages = common::midi::SysexStreamIterator::allMessages(fileContent);
         REQUIRE(!messages.empty());
         return messages.front();
     }

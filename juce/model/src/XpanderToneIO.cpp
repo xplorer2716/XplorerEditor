@@ -60,7 +60,7 @@ namespace xplorer::model
             return SysexFileType::Unknown;
         }
 
-        xpl::midi::SysexStreamIterator iterator(content);
+        common::midi::SysexStreamIterator iterator(content);
         int sysexCount = 0;
         bool firstIsSinglePatch = false;
         while (auto frame = iterator.next())

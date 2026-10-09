@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "xplorer/controller/XpanderController.hpp"
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 #include "xpl/util/EnumUtils.hpp"
 
 #include <algorithm>
@@ -11,7 +11,7 @@
 #include <thread>
 
 using namespace xplorer;
-using namespace xpl::midi;
+using namespace common::midi;
 using controller::XpanderController;
 
 namespace
@@ -378,7 +378,7 @@ SCENARIO("The first start synchronizes on the editing patch, later starts do not
                 REQUIRE(f.waitForSentCount(3));
                 const auto sent = f.backend.sentMessages(SYNTH_OUT);
                 REQUIRE(sent.size() >= 3);
-                CHECK(sent[0].command() == xpl::midi::ChannelCommand::ProgramChange);
+                CHECK(sent[0].command() == common::midi::ChannelCommand::ProgramChange);
                 CHECK(sent[0].data1() == EDITING_PROGRAM);
                 CHECK(sent[1][3] == 0x0B); // page select opcode
                 CHECK(sent[2][3] == 0x00); // single-patch dump request opcode

@@ -161,7 +161,7 @@ is the natural domain for all three); the two `XpanderToneModulationMatrix.cpp` 
 `ServicesTests.cpp` Logger scenario to the new signature. No caller of the old three-argument
 `writeLine` may remain once this task is done.
 
-**MIDI formatting reuses `xpl::midi::MidiMessage::toString()`** (`juce/midi/src/MidiMessage.cpp:146-155`,
+**MIDI formatting reuses `common::midi::MidiMessage::toString()`** (`juce/midi/src/MidiMessage.cpp:146-155`,
 a hex byte dump already used nowhere else for logging) — call sites compose the log message from
 it plus a direction/device literal (e.g. `"IN " + msg.toString()`); no new MIDI-to-string
 formatter is introduced.

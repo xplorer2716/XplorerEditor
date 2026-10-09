@@ -5,7 +5,7 @@
 // [RQ-MOD-041..043]
 
 #include "midiapp/model/ToneIO.hpp"
-#include "xpl/midi/SysexStreamIterator.hpp"
+#include "common/midi/SysexStreamIterator.hpp"
 
 #include <cstdint>
 #include <optional>
@@ -36,7 +36,7 @@ namespace xplorer::model
         std::optional<std::vector<std::uint8_t>> next();
 
     private:
-        xpl::midi::SysexStreamIterator _iterator;
+        common::midi::SysexStreamIterator _iterator;
     };
 
     /// Classifies a .syx file: one single-patch frame -> SingleTone; several

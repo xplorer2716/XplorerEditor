@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace midiapp::model
 {
     AbstractParameter::AbstractParameter(std::string name, int minValue, int maxValue, int step,
-                                         xpl::midi::MidiMessage message, std::string label)
+                                         common::midi::MidiMessage message, std::string label)
         : _name(std::move(name)),
           _label(std::move(label)),
           _minValue(minValue),
@@ -146,10 +146,10 @@ namespace midiapp::model
         _changed = changed;
     }
 
-    xpl::midi::MidiMessage AbstractParameter::message() const
+    common::midi::MidiMessage AbstractParameter::message() const
     {
         const std::lock_guard lock(_mutex);
-        return xpl::midi::MidiMessage::fromRawBytes(_messageBytes);
+        return common::midi::MidiMessage::fromRawBytes(_messageBytes);
     }
 
     std::string AbstractParameter::toString() const

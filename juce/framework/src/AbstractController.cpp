@@ -6,11 +6,11 @@
 
 namespace midiapp::controller
 {
-    using xpl::midi::ChannelCommand;
-    using xpl::midi::MessageType;
-    using xpl::midi::MidiMessage;
+    using common::midi::ChannelCommand;
+    using common::midi::MessageType;
+    using common::midi::MidiMessage;
 
-    AbstractController::AbstractController(xpl::midi::MidiBackend& backend,
+    AbstractController::AbstractController(common::midi::MidiBackend& backend,
                                            std::unique_ptr<model::AbstractTone> tone,
                                            std::shared_ptr<EventDispatcher> dispatcher)
         : _backend(backend),

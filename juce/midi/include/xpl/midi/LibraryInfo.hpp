@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <string>
 
-namespace xpl::midi
+namespace common::midi
 {
     /// Name of this layer library, used by build smoke tests. [RQ-BLD-005]
     std::string libraryName();

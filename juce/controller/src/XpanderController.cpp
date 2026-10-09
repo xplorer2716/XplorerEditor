@@ -33,7 +33,7 @@
 
 #include "midiapp/service/FileUtils.hpp"
 #include "midiapp/service/Logger.hpp"
-#include "xpl/midi/SysexStreamIterator.hpp"
+#include "common/midi/SysexStreamIterator.hpp"
 #include "xpl/util/EnumUtils.hpp"
 
 #include <algorithm>
@@ -49,8 +49,8 @@ namespace xplorer::controller
     using model::EnumPages;
     using model::XpanderParameter;
     using model::XpanderTone;
-    using xpl::midi::ChannelCommand;
-    using xpl::midi::MidiMessage;
+    using common::midi::ChannelCommand;
+    using common::midi::MidiMessage;
 
     namespace
     {
@@ -74,7 +74,7 @@ namespace xplorer::controller
         }
     }
 
-    XpanderController::XpanderController(xpl::midi::MidiBackend& backend,
+    XpanderController::XpanderController(common::midi::MidiBackend& backend,
                                          settings::ISettingsService& settingsService,
                                          std::shared_ptr<midiapp::controller::EventDispatcher> dispatcher,
                                          std::string productNameAndVersion)
@@ -299,7 +299,7 @@ namespace xplorer::controller
                                                       const std::function<void(int, int)>& progressionAction)
     {
         const auto data = readAllBytes(fileName);
-        const auto allSysexes = xpl::midi::SysexStreamIterator::allMessages(data);
+        const auto allSysexes = common::midi::SysexStreamIterator::allMessages(data);
         const int count = static_cast<int>(allSysexes.size());
         int index = 0;
         for (const auto& sysex : allSysexes)
@@ -334,7 +334,7 @@ namespace xplorer::controller
         sendDataToSynthOutputDevice(MidiMessage::sysEx(clone.toByteArray()));
         sleepMs(DELAY_BETWEEN_MESSAGES);
         const std::vector<std::uint8_t> storePatchMessage{
-            0xF0, 0x10, 0x02, 0x07, static_cast<std::uint8_t>(programNumber), xpl::midi::SYSEX_END};
+            0xF0, 0x10, 0x02, 0x07, static_cast<std::uint8_t>(programNumber), common::midi::SYSEX_END};
         sendDataToSynthOutputDevice(MidiMessage::sysEx(storePatchMessage)); // [RQ-CTL-006]
         sendProgramChangeAndGetSinglePatchFromSynth(programNumber);
     }
@@ -385,7 +385,7 @@ namespace xplorer::controller
             // Byte-for-byte the reference frame, including its duplicated
             // leading 0xF0 (latent quirk preserved for wire fidelity). [RQ-CTL-008]
             const std::vector<std::uint8_t> programmerModeSinglePatch{
-                xpl::midi::SYSEX_START, 0x10, 0x02, 0x0D, 0x01, 0x00, xpl::midi::SYSEX_END};
+                common::midi::SYSEX_START, 0x10, 0x02, 0x0D, 0x01, 0x00, common::midi::SYSEX_END};
             sendDataToSynthOutputDevice(MidiMessage::fromRawBytes(programmerModeSinglePatch));
         }
     }
@@ -741,8 +741,8 @@ namespace xplorer::controller
 
     void XpanderController::sendDisplayOffOnToSynth()
     {
-        const std::vector<std::uint8_t> displayOff{0xF0, 0x10, 0x02, displayControlCommand(), 0x00, xpl::midi::SYSEX_END};
-        const std::vector<std::uint8_t> displayOn{0xF0, 0x10, 0x02, displayControlCommand(), 0x02, xpl::midi::SYSEX_END};
+        const std::vector<std::uint8_t> displayOff{0xF0, 0x10, 0x02, displayControlCommand(), 0x00, common::midi::SYSEX_END};
+        const std::vector<std::uint8_t> displayOn{0xF0, 0x10, 0x02, displayControlCommand(), 0x02, common::midi::SYSEX_END};
         sendDataToSynthOutputDevice(MidiMessage::sysEx(displayOff));
         sleepMs(parameterTransmitDelay());
         sendDataToSynthOutputDevice(MidiMessage::sysEx(displayOn));
@@ -753,7 +753,7 @@ namespace xplorer::controller
     {
         constexpr int DISPLAY_INTRO_LENGTH = 5;
         std::vector<std::uint8_t> displayMessage(DISPLAY_INTRO_LENGTH + MAX_DISPLAY_MESSAGE_LENGTH + 1, ' ');
-        displayMessage[0] = xpl::midi::SYSEX_START;
+        displayMessage[0] = common::midi::SYSEX_START;
         displayMessage[1] = 0x10;
         displayMessage[2] = 0x02;
         displayMessage[3] = displayControlCommand();
@@ -763,7 +763,7 @@ namespace xplorer::controller
             displayMessage[DISPLAY_INTRO_LENGTH + i] =
                 static_cast<std::uint8_t>(::toupper(static_cast<unsigned char>(message[i])));
         }
-        displayMessage.back() = xpl::midi::SYSEX_END;
+        displayMessage.back() = common::midi::SYSEX_END;
         sendDataToSynthOutputDevice(MidiMessage::sysEx(displayMessage));
         sleepMs(parameterTransmitDelay());
     }
@@ -779,9 +779,9 @@ namespace xplorer::controller
     void XpanderController::sendAllDataDumpRequestToSynth()
     {
         const std::vector<std::uint8_t> allDataDumpRequest{
-            xpl::midi::SYSEX_START, 0x10, 0x02, 0x02,
+            common::midi::SYSEX_START, 0x10, 0x02, 0x02,
             settings().midiConfig.synthTypeIsMatrix12 ? std::uint8_t{0x01} : std::uint8_t{0x00},
-            xpl::midi::SYSEX_END};
+            common::midi::SYSEX_END};
         sendDataToSynthOutputDevice(MidiMessage::sysEx(allDataDumpRequest)); // [RQ-CTL-062]
     }
 
@@ -801,8 +801,8 @@ namespace xplorer::controller
         if (verifySynthOutputDevice())
         {
             const std::vector<std::uint8_t> programDumpRequest{
-                xpl::midi::SYSEX_START, 0x10, 0x02, 0x00, 0x00,
-                static_cast<std::uint8_t>(programNumber), xpl::midi::SYSEX_END};
+                common::midi::SYSEX_START, 0x10, 0x02, 0x00, 0x00,
+                static_cast<std::uint8_t>(programNumber), common::midi::SYSEX_END};
             sendDataToSynthOutputDevice(MidiMessage::sysEx(programDumpRequest));
         }
     }
@@ -811,7 +811,7 @@ namespace xplorer::controller
     {
         const std::vector<std::uint8_t> pageSelectMessage{
             0xF0, 0x10, 0x02, 0x0B, static_cast<std::uint8_t>(page),
-            static_cast<std::uint8_t>(subPage), xpl::midi::SYSEX_END};
+            static_cast<std::uint8_t>(subPage), common::midi::SYSEX_END};
         if (verifySynthOutputDevice())
         {
             sendDataToSynthOutputDevice(MidiMessage::sysEx(pageSelectMessage));

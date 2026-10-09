@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string>
 #include <vector>
 
-namespace xpl::midi
+namespace common::midi
 {
     /// Channel voice commands (status high nibble), values as on the wire.
     /// Mirrors the Sanford ChannelCommand surface used by the reference. [RQ-MID-010]

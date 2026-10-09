@@ -17,12 +17,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <catch2/catch_test_macros.hpp>
 
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 
 #include <string>
 #include <vector>
 
-using namespace xpl::midi;
+using namespace common::midi;
 
 namespace
 {

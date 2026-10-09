@@ -229,7 +229,7 @@ namespace xplorer::app
         class MidiSettingsPage final : public juce::Component
         {
         public:
-            MidiSettingsPage(settings::ISettingsService& settingsService, xpl::midi::MidiBackend& backend)
+            MidiSettingsPage(settings::ISettingsService& settingsService, common::midi::MidiBackend& backend)
             {
                 const auto& midi = settingsService.allUsersSettings().midiConfig;
 
@@ -1040,7 +1040,7 @@ namespace xplorer::app
         {
         public:
             SettingsContent(controller::XpanderController& controller,
-                            settings::ISettingsService& settingsService, xpl::midi::MidiBackend& backend,
+                            settings::ISettingsService& settingsService, common::midi::MidiBackend& backend,
                             std::function<void(int)> onLedColourChanged,
                             std::function<void(const BlockPalette&)> onBlockPaletteChanged)
                 : _controller(controller), _settingsService(settingsService), _backend(backend),
@@ -1188,7 +1188,7 @@ namespace xplorer::app
 
             controller::XpanderController& _controller;
             settings::ISettingsService& _settingsService;
-            xpl::midi::MidiBackend& _backend;
+            common::midi::MidiBackend& _backend;
             std::function<void(int)> _onLedColourChanged;
             std::function<void(const BlockPalette&)> _onBlockPaletteChanged;
             int _originalLedColour = 0;
@@ -1205,7 +1205,7 @@ namespace xplorer::app
     }
 
     void showSettingsDialog(controller::XpanderController& controller,
-                            settings::ISettingsService& settingsService, xpl::midi::MidiBackend& backend,
+                            settings::ISettingsService& settingsService, common::midi::MidiBackend& backend,
                             std::function<void(int)> onLedColourChanged,
                             std::function<void(const BlockPalette&)> onBlockPaletteChanged)
     {

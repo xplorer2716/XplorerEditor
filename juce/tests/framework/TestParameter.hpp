@@ -36,7 +36,7 @@ namespace midiapp::testing
 
         TestParameter(const std::string& name, int minValue, int maxValue, int step, int value)
             : AbstractParameter(name, minValue, maxValue, step,
-                                xpl::midi::MidiMessage::sysEx(std::vector<std::uint8_t>{0xF0, 0x10, 0x02, 0x00, 0x00, 0xF7}),
+                                common::midi::MidiMessage::sysEx(std::vector<std::uint8_t>{0xF0, 0x10, 0x02, 0x00, 0x00, 0xF7}),
                                 {})
         {
             initializeValue(value);

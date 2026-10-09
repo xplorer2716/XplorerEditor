@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "xplorer/app/ParameterBindingRegistry.hpp"
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 
 #include <chrono>
 #include <string>
@@ -9,7 +9,7 @@
 #include <vector>
 
 using namespace xplorer;
-using namespace xpl::midi;
+using namespace common::midi;
 
 namespace
 {

@@ -23,7 +23,7 @@ namespace xplorer::controller
     public:
         /// @param settingsService injected (reference kept). [RQ-SET-005]
         /// @param productNameAndVersion shown on the synth VFD greetings.
-        XpanderController(xpl::midi::MidiBackend& backend,
+        XpanderController(common::midi::MidiBackend& backend,
                           settings::ISettingsService& settingsService,
                           std::shared_ptr<midiapp::controller::EventDispatcher> dispatcher = nullptr,
                           std::string productNameAndVersion = "XPLORER");
@@ -140,14 +140,14 @@ namespace xplorer::controller
         void workerThreadProc(std::stop_token stopToken) override;
 
         /// Automation overrides (reference XpanderController.MIDIEvents).
-        void automationInputDeviceSysExMessageReceived(const xpl::midi::MidiMessage& message) override;
-        void automationInputDeviceChannelMessageReceived(const xpl::midi::MidiMessage& message) override;
+        void automationInputDeviceSysExMessageReceived(const common::midi::MidiMessage& message) override;
+        void automationInputDeviceChannelMessageReceived(const common::midi::MidiMessage& message) override;
 
         /// Synth input overrides. [RQ-CTL-021..027]
-        void synthInputDeviceChannelMessageReceived(const xpl::midi::MidiMessage& message) override;
-        void synthInputDeviceSysExMessageReceived(const xpl::midi::MidiMessage& message) override;
-        void synthInputDeviceSysCommonMessageReceived(const xpl::midi::MidiMessage& message) override;
-        void synthInputDeviceSysRealtimeMessageReceived(const xpl::midi::MidiMessage& message) override;
+        void synthInputDeviceChannelMessageReceived(const common::midi::MidiMessage& message) override;
+        void synthInputDeviceSysExMessageReceived(const common::midi::MidiMessage& message) override;
+        void synthInputDeviceSysCommonMessageReceived(const common::midi::MidiMessage& message) override;
+        void synthInputDeviceSysRealtimeMessageReceived(const common::midi::MidiMessage& message) override;
 
     private:
         static constexpr int DELAY_BETWEEN_ALL_DATA_DUMP_SEND_SINGLE_PATCH = 150;
@@ -162,7 +162,7 @@ namespace xplorer::controller
         [[nodiscard]] std::uint8_t displayControlCommand() const;
 
         // guarded send + MIDI-activity notification (reference SendDataToSynthOutputDevice)
-        void sendDataToSynthOutputDevice(const xpl::midi::MidiMessage& message);
+        void sendDataToSynthOutputDevice(const common::midi::MidiMessage& message);
 
         void sendAllDataDumpRequestToSynth();
         void sendProgramChangeToSynthOutput(int programNumber);
@@ -175,19 +175,19 @@ namespace xplorer::controller
         void clearAllChangedFlags();
 
         // synth-input SysEx decoding (reference Is*SysEx helpers)
-        bool handleAllDataDumpRequest(const xpl::midi::MidiMessage& message, bool isSinglePatchDataDump);
+        bool handleAllDataDumpRequest(const common::midi::MidiMessage& message, bool isSinglePatchDataDump);
         void handleModulationEditFromSynth(int modulationSourceNumber,
                                            model::EnumModulationEditCommands command, int value);
         [[nodiscard]] model::XpanderParameter* getParameterForPageSubPageAndId(int page, int subPage, int buttonId);
-        [[nodiscard]] static bool isSinglePatchProgramDumpSysex(const xpl::midi::MidiMessage& message);
-        [[nodiscard]] static bool isMultiPatchProgramDumpSysex(const xpl::midi::MidiMessage& message);
-        [[nodiscard]] static bool isProgramChangeUpSysex(const xpl::midi::MidiMessage& message);
-        [[nodiscard]] static bool isProgramChangeDownSysex(const xpl::midi::MidiMessage& message);
-        [[nodiscard]] static bool isPageSubPageSelectSysex(const xpl::midi::MidiMessage& message,
+        [[nodiscard]] static bool isSinglePatchProgramDumpSysex(const common::midi::MidiMessage& message);
+        [[nodiscard]] static bool isMultiPatchProgramDumpSysex(const common::midi::MidiMessage& message);
+        [[nodiscard]] static bool isProgramChangeUpSysex(const common::midi::MidiMessage& message);
+        [[nodiscard]] static bool isProgramChangeDownSysex(const common::midi::MidiMessage& message);
+        [[nodiscard]] static bool isPageSubPageSelectSysex(const common::midi::MidiMessage& message,
                                                            int& page, int& subPage);
-        [[nodiscard]] bool isPageEditFollowsSysex(const xpl::midi::MidiMessage& message, int& buttonId,
+        [[nodiscard]] bool isPageEditFollowsSysex(const common::midi::MidiMessage& message, int& buttonId,
                                                   int& parameterValue, bool& isRotary) const;
-        [[nodiscard]] static bool isModulationEditFollowsSysex(const xpl::midi::MidiMessage& message,
+        [[nodiscard]] static bool isModulationEditFollowsSysex(const common::midi::MidiMessage& message,
                                                                int& modulationSourceNumber,
                                                                model::EnumModulationEditCommands& command,
                                                                int& value);

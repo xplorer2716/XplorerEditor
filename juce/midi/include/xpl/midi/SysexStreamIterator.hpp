@@ -22,7 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <span>
 #include <vector>
 
-namespace xpl::midi
+namespace common::midi
 {
     /// Splits a byte stream (typically a .syx file content) into successive
     /// complete SysEx messages [0xF0 .. 0xF7], skipping any bytes outside

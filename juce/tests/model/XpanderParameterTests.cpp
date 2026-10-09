@@ -9,7 +9,7 @@
 #include <vector>
 
 using namespace xplorer::model;
-using xpl::midi::MidiMessage;
+using common::midi::MidiMessage;
 using Bytes = std::vector<std::uint8_t>;
 
 namespace

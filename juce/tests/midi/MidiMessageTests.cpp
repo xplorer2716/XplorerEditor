@@ -17,15 +17,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <catch2/catch_test_macros.hpp>
 
-#include "xpl/midi/MidiMessage.hpp"
+#include "common/midi/MidiMessage.hpp"
 
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
 
-using xpl::midi::ChannelCommand;
-using xpl::midi::MessageType;
-using xpl::midi::MidiMessage;
+using common::midi::ChannelCommand;
+using common::midi::MessageType;
+using common::midi::MidiMessage;
 
 SCENARIO("Channel voice messages encode as on the wire", "[RQ-MID-010]")
 {

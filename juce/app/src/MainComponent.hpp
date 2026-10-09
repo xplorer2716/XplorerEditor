@@ -21,7 +21,7 @@
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 #include "xplorer/controller/XpanderController.hpp"
 #include "xplorer/settings/SettingsService.hpp"
-#include "xpl/midi/JuceMidiBackend.hpp"
+#include "common/midi/JuceMidiBackend.hpp"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -143,7 +143,7 @@ namespace xplorer::app
         // binding it to guessed characters. [RQ-GUI-080, ADR-JUC-037]
         std::vector<ResolvedPresetKey> _presetKeys;
 
-        xpl::midi::JuceMidiBackend _backend;
+        common::midi::JuceMidiBackend _backend;
         std::shared_ptr<JuceEventDispatcher> _dispatcher;
         std::unique_ptr<settings::XmlSettingsService> _settingsService;
         std::unique_ptr<controller::XpanderController> _controller;

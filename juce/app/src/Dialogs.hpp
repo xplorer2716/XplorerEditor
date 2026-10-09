@@ -7,7 +7,7 @@
 
 #include "xplorer/controller/XpanderController.hpp"
 #include "xplorer/settings/SettingsService.hpp"
-#include "xpl/midi/MidiPorts.hpp"
+#include "common/midi/MidiPorts.hpp"
 
 #include <functional>
 #include <string>
@@ -19,7 +19,7 @@ namespace xplorer::app
     /// settings dialog is accepted.
     void applyMidiSettings(controller::XpanderController& controller,
                            settings::ISettingsService& settingsService,
-                           xpl::midi::MidiBackend& backend);
+                           common::midi::MidiBackend& backend);
 
     /// Extract-single-tones dialog: bank sysex file + destination folder, then
     /// runs the extraction and reports the file count. [RQ-GUI-025]

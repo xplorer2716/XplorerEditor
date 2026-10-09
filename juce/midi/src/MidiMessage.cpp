@@ -15,14 +15,14 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "xpl/midi/MidiMessage.hpp"
+#include "common/midi/MidiMessage.hpp"
 
 #include "xpl/util/EnumUtils.hpp"
 
 #include <sstream>
 #include <stdexcept>
 
-namespace xpl::midi
+namespace common::midi
 {
     namespace
     {

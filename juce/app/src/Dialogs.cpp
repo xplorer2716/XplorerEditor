@@ -431,7 +431,7 @@ namespace xplorer::app
     }
 
     void applyMidiSettings(controller::XpanderController& controller,
-                           settings::ISettingsService& settingsService, xpl::midi::MidiBackend&)
+                           settings::ISettingsService& settingsService, common::midi::MidiBackend&)
     {
         const auto& midi = settingsService.allUsersSettings().midiConfig;
         // Reference: SettingsManager.LoadSettings()'s deviceNameError flag, logged as one

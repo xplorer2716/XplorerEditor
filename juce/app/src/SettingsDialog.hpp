@@ -11,7 +11,7 @@
 
 #include "xplorer/controller/XpanderController.hpp"
 #include "xplorer/settings/SettingsService.hpp"
-#include "xpl/midi/MidiPorts.hpp"
+#include "common/midi/MidiPorts.hpp"
 
 #include <functional>
 
@@ -25,7 +25,7 @@ namespace xplorer::app
     /// [ADR-JUC-020 (DEC-JUC-038, DEC-JUC-113)]
     void showSettingsDialog(controller::XpanderController& controller,
                             settings::ISettingsService& settingsService,
-                            xpl::midi::MidiBackend& backend,
+                            common::midi::MidiBackend& backend,
                             std::function<void(int)> onLedColourChanged,
                             std::function<void(const BlockPalette&)> onBlockPaletteChanged);
 }

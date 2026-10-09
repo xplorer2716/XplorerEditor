@@ -17,13 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include <catch2/catch_test_macros.hpp>
 
-#include "xpl/midi/SysexStreamIterator.hpp"
+#include "common/midi/SysexStreamIterator.hpp"
 
 #include <cstdint>
 #include <fstream>
 #include <vector>
 
-using xpl::midi::SysexStreamIterator;
+using common::midi::SysexStreamIterator;
 using Bytes = std::vector<std::uint8_t>;
 
 SCENARIO("SysEx frames are split from a byte stream", "[RQ-MID-030]")

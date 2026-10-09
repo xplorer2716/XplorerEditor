@@ -44,7 +44,7 @@ namespace xplorer::model
 {
     using midiapp::service::LogDomain;
     using midiapp::service::TraceLevel;
-    using xpl::midi::MidiMessage;
+    using common::midi::MidiMessage;
 
     namespace
     {

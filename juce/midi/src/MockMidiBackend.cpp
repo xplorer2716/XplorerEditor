@@ -35,12 +35,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // Device names are the identity: openInput/openOutput fail for a name that was
 // not registered with addInputDevice/addOutputDevice first, mirroring the real
 // backend's behaviour when a device is absent.
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 
 #include <algorithm>
 #include <map>
 
-namespace xpl::midi
+namespace common::midi
 {
     // All mutable state lives here, behind a shared_ptr held by the backend AND
     // by every port it opened. That is what makes destruction order irrelevant:

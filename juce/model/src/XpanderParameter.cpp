@@ -6,7 +6,7 @@
 
 namespace xplorer::model
 {
-    using xpl::midi::MidiMessage;
+    using common::midi::MidiMessage;
 
     // --- XpanderParameter -------------------------------------------------
 

@@ -7,7 +7,7 @@
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/app/ParameterBindingRegistry.hpp"
 
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -39,7 +39,7 @@
 // [RQ-GUI-053, RQ-GUI-040, ADR-JUC-016 (DEC-JUC-086, DEC-JUC-094), ADR-JUC-014]
 
 using namespace xplorer;
-using namespace xpl::midi;
+using namespace common::midi;
 
 namespace
 {

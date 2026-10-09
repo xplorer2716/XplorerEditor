@@ -5,7 +5,7 @@
 #include "xplorer/app/ControlTable.hpp"
 #include "xplorer/settings/SettingsService.hpp"
 
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 #include "xpl/util/EnumUtils.hpp"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -17,7 +17,7 @@
 // never opens the popup). [RQ-GUI-016, ADR-JUC-036 (DEC-JUC-122)]
 
 using namespace xplorer;
-using namespace xpl::midi;
+using namespace common::midi;
 
 namespace
 {

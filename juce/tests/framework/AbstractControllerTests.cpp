@@ -2,14 +2,14 @@
 
 #include "TestParameter.hpp"
 #include "midiapp/controller/AbstractController.hpp"
-#include "xpl/midi/MockMidiBackend.hpp"
+#include "common/midi/MockMidiBackend.hpp"
 
 #include <chrono>
 #include <memory>
 #include <thread>
 
 using namespace midiapp;
-using namespace xpl::midi;
+using namespace common::midi;
 
 namespace
 {

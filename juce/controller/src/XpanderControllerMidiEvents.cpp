@@ -44,8 +44,8 @@ namespace xplorer::controller
     using model::ModulationMatrixEntry;
     using model::XpanderParameter;
     using model::XpanderTone;
-    using xpl::midi::ChannelCommand;
-    using xpl::midi::MidiMessage;
+    using common::midi::ChannelCommand;
+    using common::midi::MidiMessage;
 
     namespace
     {

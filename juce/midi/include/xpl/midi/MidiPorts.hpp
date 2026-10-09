@@ -17,14 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include "xpl/midi/MidiMessage.hpp"
+#include "common/midi/MidiMessage.hpp"
 
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace xpl::midi
+namespace common::midi
 {
     /// Callbacks a client registers on an input port. Unset members are
     /// simply not invoked. Delivery is serialized per port. [RQ-MID-020..024]

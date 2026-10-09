@@ -15,11 +15,11 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#include "xpl/midi/LibraryInfo.hpp"
+#include "common/midi/LibraryInfo.hpp"
 
 #include <juce_audio_devices/juce_audio_devices.h>
 
-namespace xpl::midi
+namespace common::midi
 {
     std::string juceVersion() { return juce::SystemStats::getJUCEVersion().toStdString(); }
 }

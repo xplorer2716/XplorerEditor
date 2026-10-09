@@ -13,7 +13,7 @@ namespace xplorer::model
 {
     using midiapp::model::AbstractParameter;
     using midiapp::service::formatStr;
-    using xpl::midi::MidiMessage;
+    using common::midi::MidiMessage;
 
     namespace
     {

@@ -17,11 +17,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include "xpl/midi/MidiPorts.hpp"
+#include "common/midi/MidiPorts.hpp"
 
 #include <memory>
 
-namespace xpl::midi
+namespace common::midi
 {
     /// MidiBackend implementation over juce::MidiInput / juce::MidiOutput.
     /// This header stays JUCE-free ([RQ-MID-040]); all JUCE types live in the

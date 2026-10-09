@@ -17,14 +17,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
-#include "xpl/midi/MidiPorts.hpp"
+#include "common/midi/MidiPorts.hpp"
 
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 
-namespace xpl::midi
+namespace common::midi
 {
     /// In-memory MIDI backend for automated tests: scriptable input injection,
     /// captured output, no hardware. Callback delivery is synchronous on the
