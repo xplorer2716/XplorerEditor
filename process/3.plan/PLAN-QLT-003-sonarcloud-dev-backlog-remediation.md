@@ -168,6 +168,19 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 - **Dependencies**: TASK-QLT-020
 - **Assignee**: AI
 
+### TASK-QLT-023: Fix the 3 issues left open on `dev` after PR #89
+- **Tier**: S
+- **Status**: Done
+- **Description**: `cpp:S5415` x2 (`XpanderParameter.cpp`: `std::move` passed to a `const&` since TASK-QLT-016; the four constructors now take the message by `const&`) and `cpp:S6177` (`MainComponent.cpp`: `using enum ControlKind` in `buildFixedBlockControl`).
+- **Requirement refs**: RQ-QLT-017, RQ-QLT-018, RQ-QLT-019
+- **ADR refs**: None
+- **Acceptance Criteria**:
+  - **Given** `dev` after PR #89
+  - **When** SonarCloud re-analyses it
+  - **Then** no issue is left OPEN
+- **Dependencies**: TASK-QLT-022
+- **Assignee**: AI
+
 ---
 
 ## Verification
