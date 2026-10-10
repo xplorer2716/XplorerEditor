@@ -353,3 +353,63 @@ tranche and triaged separately:
   - **When** this file is read
   - **Then** its rationale is findable by rule id and location
 - **Dependencies**: None
+
+## SonarCloud `dev` Backlog Remediation (PLAN-QLT-003)
+
+Origin: SonarCloud scan of branch `dev`, analysis 2026-10-09 — 324 OPEN issues
+(0 BLOCKER, 33 HIGH, 177 MEDIUM, 114 LOW; MQR impact severities).
+
+### RQ-QLT-017: HIGH-impact SonarCloud issues are resolved or triaged
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: The codebase SHALL have zero OPEN HIGH-impact SonarCloud
+  issues on the delivered branch, each being either fixed or accepted with a
+  rationale recorded per RQ-QLT-016.
+- **Metric**: OPEN issues with impact severity HIGH = 0 (33 at baseline)
+- **Measurement Method**: `sonar list issues --branch <branch> --severities HIGH`
+  after the next SonarCloud analysis
+- **Priority**: Must
+- **Acceptance Criteria**:
+  - **Given** the 33 baseline HIGH issues
+  - **When** SonarCloud re-analyses the branch
+  - **Then** none remains OPEN
+  - **And** the test suite passes with no test modified to force a pass
+- **Dependencies**: RQ-QLT-016, RQ-TST-*
+
+### RQ-QLT-018: MEDIUM-impact SonarCloud issues are resolved or triaged
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: The codebase SHALL have zero OPEN MEDIUM-impact SonarCloud
+  issues on the delivered branch, each being either fixed or accepted with a
+  rationale recorded per RQ-QLT-016.
+- **Metric**: OPEN issues with impact severity MEDIUM = 0 (177 at baseline)
+- **Measurement Method**: `sonar list issues --branch <branch> --severities MEDIUM`
+- **Priority**: Should
+- **Acceptance Criteria**:
+  - **Given** the 177 baseline MEDIUM issues
+  - **When** SonarCloud re-analyses the branch
+  - **Then** none remains OPEN
+  - **And** the test suite passes with no test modified to force a pass
+- **Dependencies**: RQ-QLT-016, RQ-QLT-017, RQ-TST-*
+
+### RQ-QLT-019: LOW-impact SonarCloud issues are resolved or triaged
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: The codebase SHALL have zero OPEN LOW-impact SonarCloud
+  issues on the delivered branch, each being either fixed or accepted with a
+  rationale recorded per RQ-QLT-016.
+- **Metric**: OPEN issues with impact severity LOW = 0 (114 at baseline)
+- **Measurement Method**: `sonar list issues --branch <branch> --severities LOW`
+- **Priority**: Could
+- **Acceptance Criteria**:
+  - **Given** the 114 baseline LOW issues
+  - **When** SonarCloud re-analyses the branch
+  - **Then** none remains OPEN
+  - **And** the test suite passes with no test modified to force a pass
+- **Dependencies**: RQ-QLT-016, RQ-QLT-018, RQ-TST-*
