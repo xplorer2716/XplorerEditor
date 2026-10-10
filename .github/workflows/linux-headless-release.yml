@@ -27,6 +27,9 @@ name: linux-headless-release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   linux-headless-release:
     runs-on: ubuntu-latest
