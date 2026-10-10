@@ -227,7 +227,7 @@ namespace xplorer::app
             control->asComponent().setBounds(spec.x, spec.y, spec.width, spec.height);
             _parent.addAndMakeVisible(control->asComponent());
             _registry.bind(concrete, *control);
-            _controls.push_back({spec.tag, std::move(control)});
+            _controls.emplace_back(spec.tag, std::move(control));
         }
 
         // Instance selector buttons (radio group). Caption is the reference

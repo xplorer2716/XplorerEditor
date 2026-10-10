@@ -726,7 +726,7 @@ namespace xplorer::app
         const int size = tokens::component::indicatorSize;
         const auto now = juce::Time::currentTimeMillis();
         const int horizontalSpace = (area.getWidth() - LED_COUNT * size) / (LED_COUNT + 1);
-        const float y = static_cast<float>(area.getY() + (area.getHeight() - size) / 2);
+        const auto y = static_cast<float>(area.getY() + (area.getHeight() - size) / 2);
 
         for (int i = 0; i < LED_COUNT; ++i)
         {

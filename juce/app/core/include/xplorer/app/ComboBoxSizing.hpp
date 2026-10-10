@@ -64,8 +64,7 @@ namespace xplorer::app
         std::vector<std::string> overflowing;
         for (const auto& input : inputs)
         {
-            const float available =
-                static_cast<float>(input.width - arrowZone - 2 * labelBorder);
+            const auto available = static_cast<float>(input.width - arrowZone - 2 * labelBorder);
             float widest = 0.0F;
             for (const auto& label : input.labels)
             {

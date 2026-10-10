@@ -7,6 +7,7 @@
 #include "xplorer/model/XpanderConstants.hpp"
 
 #include <array>
+#include <functional>
 #include <map>
 #include <string>
 
@@ -31,7 +32,7 @@ namespace xplorer::controller
 
     struct FullToneChangeEvent
     {
-        std::map<std::string, int> parameterMap;
+        std::map<std::string, int, std::less<>> parameterMap;
         std::array<model::ModulationMatrixEntry, model::constants::MODENTRIES_COUNT> modulationMatrix;
     };
 

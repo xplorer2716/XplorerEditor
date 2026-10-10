@@ -406,7 +406,7 @@ namespace xplorer::model
         }
     }
 
-    std::set<std::string> XpanderTone::eligibleParametersForToneMorphing() const
+    midiapp::model::ParameterNameSet XpanderTone::eligibleParametersForToneMorphing() const
     {
         return _parameterNamesForToneMorphing;
     }

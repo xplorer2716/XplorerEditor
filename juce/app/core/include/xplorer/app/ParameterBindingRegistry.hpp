@@ -75,7 +75,7 @@ namespace xplorer::app
         class RefreshGuard;
 
         controller::XpanderController& _controller;
-        std::map<std::string, IBoundControl*> _bindings;
+        std::map<std::string, IBoundControl*, std::less<>> _bindings;
         std::function<void(const std::string&)> _localEditHandler;
         bool _refreshing = false;
     };

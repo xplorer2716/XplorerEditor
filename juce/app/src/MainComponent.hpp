@@ -156,7 +156,7 @@ namespace xplorer::app
         DisplayPanel _display;
         std::unique_ptr<VfdDisplayHelper> _vfd;
         std::vector<std::unique_ptr<juce::Button>> _shortcutButtons;
-        std::map<std::string, std::function<void()>> _shortcutActions;
+        std::map<std::string, std::function<void()>, std::less<>> _shortcutActions;
         std::unique_ptr<juce::FileChooser> _fileChooser;
         std::unique_ptr<PianoWindow> _pianoWindow;
         std::unique_ptr<ProgressWindow> _progressWindow;

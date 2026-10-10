@@ -436,3 +436,12 @@ comment carries the task id.
   `prototypes/triangle_lattice.py:120`) and `shelldre:S7688` x2
   (`validate-ids.sh:15`, `check_no_version_literals.sh:71`): Python and shell
   code copied from another repository, reviewed upstream.
+- **TASK-QLT-016** — 17 issues in test files (`cpp:S5827` x7, `S6045` x4,
+  `S5817` x2, `S7034`, `S6033`, `S5950`, `S6010` x1 each). Production code,
+  accepted on the owner's decision: `cpp:S7034` x2 (`MainComponent.cpp:111`,
+  `FileUtils.cpp:24`: `std::string::contains` is C++23, the project is C++20);
+  `cpp:S1238` x1 (`EventDispatcher.hpp:20`: `post()` by value is the base
+  class's sink signature); `cpp:S6010` x1 (`XpanderController.cpp:201`: every
+  path API of the project is `std::string`); `cpp:S5950` x4
+  (`XpanderParameter.cpp:48,82,107,127`: `clone()` needs the copy constructors,
+  non-public by design, which `std::make_unique` cannot reach).

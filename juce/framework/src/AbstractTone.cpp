@@ -58,7 +58,7 @@ namespace midiapp::model
             // triggers; kept as-is for behavioral fidelity.
             const bool addValue = false;
             const int current = parameter.value();
-            const int spread = static_cast<int>(static_cast<float>(current) * humanizeRatio.value());
+            const auto spread = static_cast<int>(static_cast<float>(current) * humanizeRatio.value());
             int low = current - spread;
             int high = current + spread;
             if (low > high)
@@ -87,7 +87,7 @@ namespace midiapp::model
         _midiChannel = channel;
     }
 
-    void AbstractTone::randomizeToneParameters(const std::set<std::string>& excludedParameterNames,
+    void AbstractTone::randomizeToneParameters(const ParameterNameSet& excludedParameterNames,
                                                std::optional<float> humanizeRatio,
                                                std::optional<unsigned int> seed)
     {
@@ -119,9 +119,9 @@ namespace midiapp::model
         }
     }
 
-    std::set<std::string> AbstractTone::eligibleParametersForToneMorphing() const
+    ParameterNameSet AbstractTone::eligibleParametersForToneMorphing() const
     {
-        std::set<std::string> names;
+        ParameterNameSet names;
         for (const auto& entry : _parameterMap)
         {
             names.insert(entry.name);

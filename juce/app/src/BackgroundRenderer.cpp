@@ -235,7 +235,7 @@ namespace xplorer::app
         const auto box = [&](float x, float y, float w, float h,
                              const juce::Colour* block = nullptr)
         {
-            boxLayer.push_back([&g, x, y, w, h, block]
+            boxLayer.emplace_back([&g, x, y, w, h, block]
             {
                 if (block != nullptr)
                 {
@@ -255,7 +255,7 @@ namespace xplorer::app
         };
         const auto line = [&](float x1, float y1, float x2, float y2)
         {
-            lineLayer.push_back([&g, &frameStroke, x1, y1, x2, y2]
+            lineLayer.emplace_back([&g, &frameStroke, x1, y1, x2, y2]
             {
                 g.setColour(FRAME);
                 juce::Path segment;
@@ -281,7 +281,7 @@ namespace xplorer::app
         const auto text = [&](int x, int y, const juce::String& s, float size, bool bold,
                               juce::Colour colour, juce::Justification just)
         {
-            textLayer.push_back([&g, x, y, s, size, bold, colour, just]
+            textLayer.emplace_back([&g, x, y, s, size, bold, colour, just]
             {
                 g.setColour(colour);
                 g.setFont(makeFont(size, bold));
@@ -326,7 +326,7 @@ namespace xplorer::app
 
             text(static_cast<int>(labelX), baselineY, s, FS_SECTION, true, block,
                  juce::Justification::left);
-            textLayer.push_back([&g, x, barX, barEnd, barY, barHeight, block]
+            textLayer.emplace_back([&g, x, barX, barEnd, barY, barHeight, block]
             {
                 // Lead-in stub: flat block hue at full opacity, the same colour as
                 // the label and as the first pixel of the run after it, so the
@@ -401,7 +401,7 @@ namespace xplorer::app
         line(276, 230, 289, 230);
         line(289, 230, 289, 180);
         line(289, 180, 492, 180);
-        lineLayer.push_back([&g, &frameStroke]
+        lineLayer.emplace_back([&g, &frameStroke]
         {
             juce::Path hop; // semicircular bump over x=499 (SVG arc M492 180 A7 7 0 0 1 506 180)
             hop.startNewSubPath(492.0F, 180.0F);
@@ -430,7 +430,7 @@ namespace xplorer::app
         // VCO2-row VCA out -> right, then up at x=499 into the VCF
         line(458, 232, 499, 232);
         line(499, 232, 499, 70);
-        lineLayer.push_back([&g, &frameStroke]
+        lineLayer.emplace_back([&g, &frameStroke]
         {
             juce::Path curve; // SVG M499 70 Q499 58 509 58
             curve.startNewSubPath(499.0F, 70.0F);
@@ -462,7 +462,7 @@ namespace xplorer::app
         // paints where it is called, so a ScopedSaveState wrapped around the
         // call would be popped long before the text layer is replayed.
         // [ADR-JUC-027 (DEC-JUC-075)]
-        textLayer.push_back([&g]
+        textLayer.emplace_back([&g]
         {
             juce::Graphics::ScopedSaveState state{g};
             g.addTransform(juce::AffineTransform::rotation(

@@ -22,7 +22,7 @@ namespace xplorer::app
             {
                 continue; // no items: nothing to fit, cannot constrain the size
             }
-            inputs.push_back({spec.id, spec.width, std::move(labels)});
+            inputs.emplace_back(spec.id, spec.width, std::move(labels));
         }
         return inputs;
     }

@@ -75,9 +75,9 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-016: Standard-library idiom modernisation (C++)
 - **Tier**: M
-- **Status**: Not Started
-- **Description**: `cpp:S6045` transparent comparators, `S6033`/`S6030`/`S6003` emplace family, `S7034` contains, `S5950` make_unique, `S5827` auto, `S6010` std::filesystem::path, `S5817` const methods, `S1238` pass-by-const-ref.
-- **Requirement refs**: RQ-QLT-018
+- **Status**: Done
+- **Description**: `cpp:S6045` transparent comparators (`ParameterNameSet` alias for the tone/controller API), `S6033`/`S6030`/`S6003` emplace family, `S5827` auto, `S5817` const methods, `S1238` pass-by-const-ref fixed in production; `S7034`, `S5950`, `S6010` and one `S1238` accepted on the owner's decision (RQ-QLT-016), as are the 17 test-file issues.
+- **Requirement refs**: RQ-QLT-018, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:
   - **Given** the flagged sites

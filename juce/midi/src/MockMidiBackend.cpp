@@ -38,6 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "common/midi/MockMidiBackend.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 
 namespace common::midi
@@ -56,12 +57,15 @@ namespace common::midi
         // Weak, not raw: deliver() must be able to prove a port body is still
         // alive before calling into it, and must keep it alive for the whole
         // callback. See the delivery note on State::deliver. [RQ-BUG-005]
-        std::map<std::string, std::vector<std::weak_ptr<InputPortBody>>> openInputs;
+        // The maps compare transparently (std::less<>), so a device name given
+        // as a view or literal looks up without a temporary std::string.
+        // [RQ-QLT-018, TASK-QLT-016]
+        std::map<std::string, std::vector<std::weak_ptr<InputPortBody>>, std::less<>> openInputs;
         // Raw is safe here: these pointers are only ever COUNTED, under the
         // mutex, by openOutputPortCount. Nothing dereferences them outside it.
-        std::map<std::string, std::vector<MockOutputPort*>> openOutputs;
-        std::map<std::string, std::vector<MidiMessage>> captured;
-        std::map<std::string, std::string> loopbacks; // output name -> input name
+        std::map<std::string, std::vector<MockOutputPort*>, std::less<>> openOutputs;
+        std::map<std::string, std::vector<MidiMessage>, std::less<>> captured;
+        std::map<std::string, std::string, std::less<>> loopbacks; // output name -> input name
 
         // Both fan a message out to every port currently open on `inputName`.
         // "Every port", plural, on purpose: a test may open the same device
@@ -92,7 +96,7 @@ namespace common::midi
         // than queueing it, which is what lets a test assert that stop() really
         // silences a device -- the controller relies on that when it stops the
         // ports while the settings dialog is open. [RQ-MID-005]
-        void receive(const MidiMessage& message)
+        void receive(const MidiMessage& message) const
         {
             if (!started || closed)
             {
@@ -117,7 +121,7 @@ namespace common::midi
             }
         }
 
-        void receiveError(const std::string& description)
+        void receiveError(const std::string& description) const
         {
             if (started && !closed && callbacks.onError)
             {

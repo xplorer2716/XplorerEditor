@@ -71,7 +71,7 @@ namespace midiapp::model
         /// last step: the reference base constructor virtual-dispatches
         /// UpdateMessageFromValue, which a C++ base constructor cannot do.
         AbstractParameter(std::string name, int minValue, int maxValue, int step,
-                          common::midi::MidiMessage message, std::string label = {});
+                          const common::midi::MidiMessage& message, std::string label = {});
 
         AbstractParameter(const AbstractParameter& other);
         AbstractParameter& operator=(const AbstractParameter&) = delete;

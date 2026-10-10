@@ -311,7 +311,7 @@ namespace xplorer::controller
     {
         const auto data = readAllBytes(fileName);
         const auto allSysexes = common::midi::SysexStreamIterator::allMessages(data);
-        const int count = static_cast<int>(allSysexes.size());
+        const auto count = static_cast<int>(allSysexes.size());
         int index = 0;
         for (const auto& sysex : allSysexes)
         {
@@ -418,29 +418,29 @@ namespace xplorer::controller
         const auto vco2Flags = xpl::util::toUnderlying(randomizerConfig.vco2FmNoiseSync);
         if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableFM)) == 0)
         {
-            excluded.insert("FM_AMP");
-            excluded.insert("FM_DESTINATION");
+            excluded.emplace("FM_AMP");
+            excluded.emplace("FM_DESTINATION");
         }
         if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableNoise)) == 0)
         {
-            excluded.insert("VCO2_WAVESHAPE_NOISE");
+            excluded.emplace("VCO2_WAVESHAPE_NOISE");
         }
         if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableSync)) == 0)
         {
-            excluded.insert("VCO2_WAVE_SYNC");
+            excluded.emplace("VCO2_WAVE_SYNC");
         }
         if (randomizerConfig.vcoDetune == model::EnumRandomVCODetune::Analog
             || randomizerConfig.vcoDetune == model::EnumRandomVCODetune::Digital)
         {
             xpanderTone().detune(randomizerConfig.vcoDetune == model::EnumRandomVCODetune::Analog);
-            excluded.insert("VCO1_DETUNE");
-            excluded.insert("VCO2_DETUNE");
+            excluded.emplace("VCO1_DETUNE");
+            excluded.emplace("VCO2_DETUNE");
         }
         if (randomizerConfig.vcoFreq != model::EnumRandomVCOFreq::Free)
         {
             xpanderTone().defineVCOFrequenciesTuning(randomizerConfig.vcoFreq);
-            excluded.insert("VCO1_FREQ");
-            excluded.insert("VCO2_FREQ");
+            excluded.emplace("VCO1_FREQ");
+            excluded.emplace("VCO2_FREQ");
         }
 
         tone().randomizeToneParameters(excluded, arguments.humanizeRatio, arguments.seed);
@@ -940,7 +940,7 @@ namespace xplorer::controller
         FullToneChangeEvent event;
         for (const auto& entry : tone().parameterMap())
         {
-            event.parameterMap.emplace(entry.name, entry.parameter->value());
+            event.parameterMap.try_emplace(entry.name, entry.parameter->value());
         }
         event.modulationMatrix = xpanderTone().modulationMatrix();
         postEvent([handler = _fullToneChangeHandler, event = std::move(event)] { handler(event); });

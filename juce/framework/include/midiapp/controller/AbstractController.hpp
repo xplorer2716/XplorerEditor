@@ -24,7 +24,7 @@ namespace midiapp::controller
     /// tests (the reference seeds from the clock).
     struct RandomizeToneArguments
     {
-        std::set<std::string> excludedParameters;
+        model::ParameterNameSet excludedParameters;
         std::optional<float> humanizeRatio;
         std::optional<unsigned int> seed;
     };

@@ -19,12 +19,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "midiapp/model/OrderedParameterMap.hpp"
 
+#include <functional>
 #include <optional>
 #include <set>
 #include <string>
 
 namespace midiapp::model
 {
+    /// A set of parameter names. The transparent comparator lets a name be
+    /// looked up by string_view or literal without building a std::string.
+    /// [RQ-QLT-018, TASK-QLT-016]
+    using ParameterNameSet = std::set<std::string, std::less<>>;
+
     /// Port of MidiApp.MidiController.Model.AbstractTone: the edited sound,
     /// owning its ordered parameter map and MIDI channel. [RQ-FMW-010]
     class AbstractTone
@@ -50,7 +56,7 @@ namespace midiapp::model
         /// humanize keeps values near the current ones; two-state parameters
         /// coin-flip min/max. `seed` makes tests deterministic (the reference
         /// seeds from the clock). [RQ-FMW-011]
-        virtual void randomizeToneParameters(const std::set<std::string>& excludedParameterNames,
+        virtual void randomizeToneParameters(const ParameterNameSet& excludedParameterNames,
                                              std::optional<float> humanizeRatio,
                                              std::optional<unsigned int> seed = std::nullopt);
 
@@ -60,7 +66,7 @@ namespace midiapp::model
                                AbstractTone& resultTone, float morphingFactor);
 
         /// Defaults to every parameter; tones narrow it (reference virtual).
-        [[nodiscard]] virtual std::set<std::string> eligibleParametersForToneMorphing() const;
+        [[nodiscard]] virtual ParameterNameSet eligibleParametersForToneMorphing() const;
 
         [[nodiscard]] std::string toString() const;
 

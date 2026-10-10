@@ -151,7 +151,7 @@ namespace xplorer::app
         {
             return;
         }
-        const int optionCount = static_cast<int>(_options.size());
+        const auto optionCount = static_cast<int>(_options.size());
 
         // Orientation comes from the panel's own extracted bounds, never from a
         // declared field: the reference geometry already says which way its
