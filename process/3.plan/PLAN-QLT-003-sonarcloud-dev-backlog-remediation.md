@@ -101,8 +101,8 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-018: Size and shape smells — fix or accept
 - **Tier**: M
-- **Status**: Not Started
-- **Description**: `cpp:S107` (10 params), `S1448` (83 methods), `S1479` (47 cases), `S1820` (21 fields), `S5414`, `S1188`, `S3358`, `S924`, `S1066`, `S4144`. Fix where proportionate; otherwise accept with rationale per RQ-QLT-016.
+- **Status**: Done
+- **Description**: Fixed: `cpp:S107` (`drawRadioBox` takes one rectangle), `S1188` x4, `S1820`, `S3358` x5, `S924`, `S1066`, `S4144`. Accepted on the owner's decision (RQ-QLT-016): `S107` x8, `S1448` x3, `S1479`, `S5414`.
 - **Requirement refs**: RQ-QLT-018, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:

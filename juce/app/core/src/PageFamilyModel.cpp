@@ -56,15 +56,13 @@ namespace xplorer::app
             {
                 continue;
             }
-            if (static_cast<std::size_t>(family.digitIndex) >= parameterName.size())
+            const auto digitIndex = static_cast<std::size_t>(family.digitIndex);
+            if (digitIndex >= parameterName.size() || parameterName[digitIndex] < '1'
+                || parameterName[digitIndex] > '9')
             {
-                break;
+                break; // a family prefix without an instance digit: not a family parameter
             }
-            const char digit = parameterName[static_cast<std::size_t>(family.digitIndex)];
-            if (digit < '1' || digit > '9')
-            {
-                break;
-            }
+            const char digit = parameterName[digitIndex];
             FamilyParameter result;
             result.controlTag = parameterName.substr(0, static_cast<std::size_t>(family.digitIndex))
                                 + "X" + parameterName.substr(static_cast<std::size_t>(family.digitIndex) + 1);

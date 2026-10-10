@@ -86,6 +86,14 @@ SCENARIO("Concrete parameter names map back to their family control tag", "[RQ-G
             CHECK_FALSE(familyParameterFor("VCO1_FREQ").has_value());
             CHECK_FALSE(familyParameterFor("VCF_MODE").has_value());
         }
+
+        // Traceability: TASK-QLT-018 (the two early exits were merged into one).
+        THEN("a family prefix without a valid instance digit returns nothing")
+        {
+            CHECK_FALSE(familyParameterFor("ENV_").has_value());           // nothing after the prefix
+            CHECK_FALSE(familyParameterFor("ENV_0_ATTACK").has_value());   // instances start at 1
+            CHECK_FALSE(familyParameterFor("ENV_A_ATTACK").has_value());   // not a digit
+        }
     }
 }
 

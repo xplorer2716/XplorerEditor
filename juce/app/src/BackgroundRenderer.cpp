@@ -124,6 +124,81 @@ namespace xplorer::app
             reference.createPath(outline);
             return outline.getBounds().getHeight();
         }
+
+        // One wood side rail: a horizontal gradient, grain hairlines drawn from
+        // `rng`, and two dark edge lines. Both rails share one generator and are
+        // painted in order, so the second rail's grain continues the first's
+        // sequence and every repaint is identical. [RQ-GUI-037, ADR-JUC-013,
+        // RQ-QLT-018, TASK-QLT-018]
+        void paintWoodRail(juce::Graphics& g, int x, int height, juce::Random& rng)
+        {
+            const auto uni = [&rng](float a, float b) { return a + (b - a) * rng.nextFloat(); };
+            juce::ColourGradient wood{WOOD_0, static_cast<float>(x), 0.0F,
+                                      WOOD_4, static_cast<float>(x + RAIL_WIDTH), 0.0F, false};
+            wood.addColour(0.25, WOOD_1);
+            wood.addColour(0.55, WOOD_2);
+            wood.addColour(0.85, WOOD_3);
+            g.setGradientFill(wood);
+            g.fillRect(x, 0, RAIL_WIDTH, height);
+
+            for (int i = 0; i < 90; ++i) // grain
+            {
+                const float gx = static_cast<float>(x) + uni(2.0F, 26.0F);
+                const float gy = uni(0.0F, static_cast<float>(height));
+                const float len = uni(30.0F, 160.0F);
+                const float dx = uni(-2.0F, 2.0F);
+                juce::Path grain;
+                grain.startNewSubPath(gx, gy);
+                grain.quadraticTo(gx + dx, gy + len * 0.5F, gx, gy + len);
+                g.setColour(WOOD_GRAIN.withAlpha(uni(0.15F, 0.40F)));
+                g.strokePath(grain, juce::PathStrokeType{uni(0.5F, 1.6F)});
+            }
+            g.setColour(juce::Colours::black.withAlpha(0.45F));
+            g.fillRect(x, 0, 2, height);
+            g.fillRect(x + 26, 0, 2, height);
+        }
+
+        // A labelled block is filled with its identity hue at blockFillAlpha and
+        // framed with a top-bright/bottom-dark gradient, so it reads as a slightly
+        // raised plate; passing no colour keeps the neutral unfilled frame used by
+        // control sub-panels. Ported 1:1 from the owner-validated mockup.
+        // [RQ-GUI-044, RQ-DSN-094, ADR-JUC-018 (DEC-JUC-025/026), RQ-QLT-018,
+        // TASK-QLT-018]
+        void drawBlockFrame(juce::Graphics& g, float x, float y, float w, float h, const juce::Colour* block)
+        {
+            if (block != nullptr)
+            {
+                g.setColour(block->withAlpha(tokens::component::blockFillAlpha));
+                g.fillRoundedRectangle(x, y, w, h, CORNER);
+                juce::ColourGradient relief{*block, x, y,
+                                            block->darker(tokens::component::blockFrameRelief),
+                                            x, y + h, false};
+                g.setGradientFill(relief);
+            }
+            else
+            {
+                g.setColour(FRAME);
+            }
+            g.drawRoundedRectangle(x, y, w, h, CORNER, LINE_WIDTH);
+        }
+
+        // The rule of a section header. Lead-in stub: flat block hue at full
+        // opacity, the same colour as the label and as the first pixel of the run
+        // after it, so the three read as one interrupted rule. Only the run AFTER
+        // the label carries the fade. [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108),
+        // RQ-QLT-018, TASK-QLT-018]
+        void fillSectionBar(juce::Graphics& g, int x, float barX, float barEnd, float barY, float barHeight,
+                            const juce::Colour& block)
+        {
+            g.setColour(block);
+            g.fillRect(static_cast<float>(x), barY, static_cast<float>(SECTION_LEAD_STUB), barHeight);
+
+            juce::ColourGradient bar{block, barX, barY,
+                                     block.withAlpha(tokens::component::sectionBarFadeEnd),
+                                     barEnd, barY, false};
+            g.setGradientFill(bar);
+            g.fillRect(barX, barY, barEnd - barX, barHeight);
+        }
     }
 
     void paintVectorBackground(juce::Graphics& g, const BlockPalette& palette)
@@ -149,7 +224,6 @@ namespace xplorer::app
         // Deterministic textures: a fixed seed makes every repaint identical
         // (ADR-JUC-013 §2), so the brushed/grain hairlines never shimmer.
         juce::Random rng{42};
-        const auto uni = [&rng](float a, float b) { return a + (b - a) * rng.nextFloat(); };
 
         // ---- metal plate ---------------------------------------------------
         // Plate + wood rails fill the whole canvas (top and bottom margins
@@ -163,34 +237,8 @@ namespace xplorer::app
         g.fillRect(0, 0, W, H);
 
         // ---- wood side rails ------------------------------------------------
-        const auto paintWood = [&](int x)
-        {
-            juce::ColourGradient wood{WOOD_0, static_cast<float>(x), 0.0F,
-                                      WOOD_4, static_cast<float>(x + RAIL_WIDTH), 0.0F, false};
-            wood.addColour(0.25, WOOD_1);
-            wood.addColour(0.55, WOOD_2);
-            wood.addColour(0.85, WOOD_3);
-            g.setGradientFill(wood);
-            g.fillRect(x, 0, RAIL_WIDTH, H);
-
-            for (int i = 0; i < 90; ++i) // grain
-            {
-                const float gx = static_cast<float>(x) + uni(2.0F, 26.0F);
-                const float gy = uni(0.0F, static_cast<float>(H));
-                const float len = uni(30.0F, 160.0F);
-                const float dx = uni(-2.0F, 2.0F);
-                juce::Path grain;
-                grain.startNewSubPath(gx, gy);
-                grain.quadraticTo(gx + dx, gy + len * 0.5F, gx, gy + len);
-                g.setColour(WOOD_GRAIN.withAlpha(uni(0.15F, 0.40F)));
-                g.strokePath(grain, juce::PathStrokeType{uni(0.5F, 1.6F)});
-            }
-            g.setColour(juce::Colours::black.withAlpha(0.45F));
-            g.fillRect(x, 0, 2, H);
-            g.fillRect(x + 26, 0, 2, H);
-        };
-        paintWood(0);
-        paintWood(W - RAIL_WIDTH);
+        paintWoodRail(g, 0, H, rng);
+        paintWoodRail(g, W - RAIL_WIDTH, H, rng);
 
         // Everything below is diagram geometry in reference/mockup coordinates
         // (ADR-JUC-013-mockup.svg); translate it up over the cropped band.
@@ -227,31 +275,12 @@ namespace xplorer::app
         using DrawCommand = std::function<void()>;
         std::vector<DrawCommand> lineLayer, boxLayer, textLayer;
 
-        // A labelled block is filled with its identity hue at blockFillAlpha and
-        // framed with a top-bright/bottom-dark gradient, so it reads as a slightly
-        // raised plate; passing no colour keeps the neutral unfilled frame used by
-        // control sub-panels. Ported 1:1 from the owner-validated mockup.
+        // Records a block frame on the box layer; see drawBlockFrame().
         // [RQ-GUI-044, RQ-DSN-094, ADR-JUC-018 (DEC-JUC-025/026)]
         const auto box = [&](float x, float y, float w, float h,
                              const juce::Colour* block = nullptr)
         {
-            boxLayer.emplace_back([&g, x, y, w, h, block]
-            {
-                if (block != nullptr)
-                {
-                    g.setColour(block->withAlpha(tokens::component::blockFillAlpha));
-                    g.fillRoundedRectangle(x, y, w, h, CORNER);
-                    juce::ColourGradient relief{*block, x, y,
-                                                block->darker(tokens::component::blockFrameRelief),
-                                                x, y + h, false};
-                    g.setGradientFill(relief);
-                }
-                else
-                {
-                    g.setColour(FRAME);
-                }
-                g.drawRoundedRectangle(x, y, w, h, CORNER, LINE_WIDTH);
-            });
+            boxLayer.emplace_back([&g, x, y, w, h, block] { drawBlockFrame(g, x, y, w, h, block); });
         };
         const auto line = [&](float x1, float y1, float x2, float y2)
         {
@@ -327,22 +356,7 @@ namespace xplorer::app
             text(static_cast<int>(labelX), baselineY, s, FS_SECTION, true, block,
                  juce::Justification::left);
             textLayer.emplace_back([&g, x, barX, barEnd, barY, barHeight, block]
-            {
-                // Lead-in stub: flat block hue at full opacity, the same colour as
-                // the label and as the first pixel of the run after it, so the
-                // three read as one interrupted rule. Only the run AFTER the
-                // label carries the fade.
-                // [RQ-GUI-062, ADR-JUC-034 (DEC-JUC-108)]
-                g.setColour(block);
-                g.fillRect(static_cast<float>(x), barY,
-                           static_cast<float>(SECTION_LEAD_STUB), barHeight);
-
-                juce::ColourGradient bar{block, barX, barY,
-                                         block.withAlpha(tokens::component::sectionBarFadeEnd),
-                                         barEnd, barY, false};
-                g.setGradientFill(bar);
-                g.fillRect(barX, barY, barEnd - barX, barHeight);
-            });
+                                   { fillSectionBar(g, x, barX, barEnd, barY, barHeight, block); });
         };
         const auto outLabel = [&](int x, int y, const juce::String& l1, const juce::String& l2)
         {

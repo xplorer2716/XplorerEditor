@@ -593,37 +593,9 @@ namespace xplorer::app
                     }
                 });
         };
-        _shortcutActions[SHORTCUT_ID_PATCH_SAVE] = [this]
-        {
-            // Default the file name to the tone's own name, sanitized and
-            // made unique the same way RQ-CTL-003's bank extraction already
-            // does — one sanitizer, not a second implementation of the same
-            // rule. [RQ-GUI-077]
-            //
-            // Trailing spaces are trimmed first: the model pads tone names to
-            // a fixed width with spaces (XPANDER's own on-synth storage
-            // format), which are meaningless trailing characters in a file
-            // name and not caught by the sanitizer (space is a legal file-name
-            // character everywhere else in a name).
-            const auto trimmedToneName = midiapp::service::trimTrailingSpaces(_controller->toneName());
-            const auto documentsDirectory =
-                juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
-            const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
-                trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
-                documentsDirectory.getFullPathName().toStdString());
-            _fileChooser = std::make_unique<juce::FileChooser>(
-                "Save patch", documentsDirectory.getChildFile(defaultFileName), SYSEX_FILE_FILTER);
-            _fileChooser->launchAsync(
-                juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-                [this](const juce::FileChooser& chooser)
-                {
-                    const auto file = chooser.getResult();
-                    if (file != juce::File())
-                    {
-                        _controller->saveXplorerTone(file.getFullPathName().toStdString());
-                    }
-                });
-        };
+        // One implementation shared with the File > Save menu item.
+        // [RQ-QLT-005, RQ-QLT-018, TASK-QLT-018]
+        _shortcutActions[SHORTCUT_ID_PATCH_SAVE] = [this] { showSavePatchDialog(); };
         // One implementation shared with the Patch menu item. [RQ-QLT-005]
         _shortcutActions[SHORTCUT_ID_PATCH_STORE] = [this] { showStorePatchDialog(); };
         _shortcutActions[SHORTCUT_ID_SETTINGS] = [this] { openSettingsDialog(); };
@@ -674,10 +646,15 @@ namespace xplorer::app
         // indices are named because paint()'s colour array is ordered to match
         // them: the two orderings must agree, and neither said so.
         // [RQ-QLT-007]
-        const std::size_t index =
-            device == controller::EnumMidiDevice::AutomationInputDevice ? LED_INDEX_AUTOMATION_IN
-            : device == controller::EnumMidiDevice::SynthInputDevice    ? LED_INDEX_SYNTH_IN
-                                                                        : LED_INDEX_SYNTH_OUT;
+        std::size_t index = LED_INDEX_SYNTH_OUT;
+        if (device == controller::EnumMidiDevice::AutomationInputDevice)
+        {
+            index = LED_INDEX_AUTOMATION_IN;
+        }
+        else if (device == controller::EnumMidiDevice::SynthInputDevice)
+        {
+            index = LED_INDEX_SYNTH_IN;
+        }
         _litUntil[index] = juce::Time::currentTimeMillis() + HOLD_MILLISECONDS;
         if (!isTimerRunning())
         {
@@ -1164,6 +1141,37 @@ namespace xplorer::app
                               [this](int program) { _controller->storeSinglePatchToSynth(program); });
     }
 
+    void MainComponent::showSavePatchDialog()
+    {
+        // Default the file name to the tone's own name, sanitized and
+        // made unique the same way RQ-CTL-003's bank extraction already
+        // does — one sanitizer, not a second implementation of the same
+        // rule. [RQ-GUI-077]
+        //
+        // Trailing spaces are trimmed first: the model pads tone names to
+        // a fixed width with spaces (XPANDER's own on-synth storage
+        // format), which are meaningless trailing characters in a file
+        // name and not caught by the sanitizer (space is a legal file-name
+        // character everywhere else in a name).
+        const auto trimmedToneName = midiapp::service::trimTrailingSpaces(_controller->toneName());
+        const auto documentsDirectory = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+        const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
+            trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+            documentsDirectory.getFullPathName().toStdString());
+        _fileChooser = std::make_unique<juce::FileChooser>(
+            "Save patch", documentsDirectory.getChildFile(defaultFileName), SYSEX_FILE_FILTER);
+        _fileChooser->launchAsync(
+            juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+            [this](const juce::FileChooser& chooser)
+            {
+                const auto file = chooser.getResult();
+                if (file != juce::File())
+                {
+                    _controller->saveXplorerTone(file.getFullPathName().toStdString());
+                }
+            });
+    }
+
     // `selectedId`, not `menuItemId`: the latter is the free function that maps
     // a MenuItem to the int JUCE hands back here, and a parameter of that name
     // would shadow it throughout the dispatch below. [RQ-QLT-001]
@@ -1363,7 +1371,7 @@ namespace xplorer::app
                 {
                     return;
                 }
-                _allDataDumpModeIsAll = true;
+                _dumpProgress.modeIsAll = true;
                 try
                 {
                     _controller->backupAllDataDumpToFile(file.getFullPathName().toStdString()); // [RQ-CTL-005]
@@ -1473,7 +1481,7 @@ namespace xplorer::app
                 {
                     return;
                 }
-                _allDataDumpModeIsAll = false;
+                _dumpProgress.modeIsAll = false;
                 try
                 {
                     _controller->getSingleTonesFromSynth(folder.getFullPathName().toStdString()); // [RQ-CTL-004]
@@ -1503,32 +1511,32 @@ namespace xplorer::app
         // reception is fed by incoming MIDI). Port of MainForm's progression
         // handler. [RQ-GUI-026]
         const int received = event.singlePatchCount + event.multiPatchCount;
-        const int maxValue = _allDataDumpModeIsAll
+        const int maxValue = _dumpProgress.modeIsAll
                                  ? model::constants::SINGLE_TONES_MAX_COUNT + model::constants::MULTI_PATCHES_MAX_COUNT
                                  : model::constants::SINGLE_TONES_MAX_COUNT;
 
-        if (_progressWindow == nullptr)
+        if (_dumpProgress.window == nullptr)
         {
-            _progressWindow = std::make_unique<ProgressWindow>();
-            _progressWindow->begin(_allDataDumpModeIsAll ? "All data dump request in progress..."
-                                                         : "Receiving single patches...",
-                                   maxValue);
+            _dumpProgress.window = std::make_unique<ProgressWindow>();
+            _dumpProgress.window->begin(_dumpProgress.modeIsAll ? "All data dump request in progress..."
+                                                                 : "Receiving single patches...",
+                                        maxValue);
         }
 
         const bool finished = !event.isWaitingForAllDataDumpRequest || received >= maxValue;
         if (finished)
         {
-            _progressWindow.reset();
+            _dumpProgress.window.reset();
         }
         else if (event.multiPatchCount == 0)
         {
-            _progressWindow->setStatus("Receiving single patch [" + juce::String(event.singlePatchCount) + "/"
+            _dumpProgress.window->setStatus("Receiving single patch [" + juce::String(event.singlePatchCount) + "/"
                                            + juce::String(model::constants::SINGLE_TONES_MAX_COUNT) + "]",
                                        received);
         }
         else
         {
-            _progressWindow->setStatus("Receiving multi patch [" + juce::String(event.multiPatchCount) + "/"
+            _dumpProgress.window->setStatus("Receiving multi patch [" + juce::String(event.multiPatchCount) + "/"
                                            + juce::String(model::constants::MULTI_PATCHES_MAX_COUNT) + "]",
                                        received);
         }

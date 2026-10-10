@@ -111,8 +111,7 @@ namespace midiapp::model
 
     void AbstractParameter::initializeValue(int value)
     {
-        const std::lock_guard lock(_mutex);
-        setValueLocked(value);
+        setValue(value); // the same quantize/clamp path, by construction [RQ-QLT-018, TASK-QLT-018]
     }
 
     void AbstractParameter::setValueLocked(int value)

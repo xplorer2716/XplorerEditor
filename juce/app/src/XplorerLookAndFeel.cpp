@@ -158,13 +158,15 @@ namespace xplorer::app
         }
     }
 
-    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, juce::Component&, float x, float y, float w,
-                                          float h, bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted)
+    void XplorerLookAndFeel::drawRadioBox(juce::Graphics& g, juce::Component&, juce::Rectangle<float> bounds,
+                                          bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted)
     {
         // Circular sibling of drawTickBox; same token palette, AA insets and
         // hover/disabled behaviour so radios and check boxes stay visually
-        // consistent. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041, RQ-GUI-043, ADR-JUC-017]
-        const auto box = juce::Rectangle<float>(x, y, w, h).reduced(1.0F);
+        // consistent. Takes its bounds as one rectangle rather than four
+        // floats. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041, RQ-GUI-043, ADR-JUC-017,
+        // RQ-QLT-018, TASK-QLT-018]
+        const auto box = bounds.reduced(1.0F);
         const float disabledMul = isEnabled ? 1.0F : tokens::component::disabledAlpha;
         const bool hovered = isEnabled && shouldDrawButtonAsHighlighted;
 
@@ -200,8 +202,8 @@ namespace xplorer::app
                                                 static_cast<float>(boxSize), static_cast<float>(boxSize));
         if (button.getRadioGroupId() != 0)
         {
-            drawRadioBox(g, button, box.getX(), box.getY(), box.getWidth(), box.getHeight(),
-                        button.getToggleState(), button.isEnabled(), shouldDrawButtonAsHighlighted);
+            drawRadioBox(g, button, box, button.getToggleState(), button.isEnabled(),
+                         shouldDrawButtonAsHighlighted);
         }
         else
         {
@@ -291,11 +293,12 @@ namespace xplorer::app
         // brightness step alone reads as a rendering artefact. The background is
         // deliberately NOT touched, because it is what carries the block
         // identity. [RQ-GUI-052, ADR-JUC-028 (DEC-JUC-078)]
-        const auto frameColour =
-            blockColour.has_value()
-                ? (blockHighlighted ? blockColour->brighter(tokens::semantic::hoverBrighten)
-                                    : *blockColour)
-                : box.findColour(juce::ComboBox::outlineColourId);
+        auto frameColour = box.findColour(juce::ComboBox::outlineColourId);
+        if (blockColour.has_value())
+        {
+            frameColour = blockHighlighted ? blockColour->brighter(tokens::semantic::hoverBrighten)
+                                           : *blockColour;
+        }
         const float frameWidth = (blockColour.has_value() && blockHighlighted)
                                      ? tokens::semantic::strokeDiagram
                                      : tokens::semantic::strokeBorder;

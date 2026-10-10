@@ -2,6 +2,8 @@
 
 #include "xplorer/model/XpanderConstants.hpp"
 
+#include <algorithm>
+
 namespace xplorer::model
 {
     /// Port of Xplorer.Model.ModulationMatrixEntry: one of the 20 matrix
@@ -23,13 +25,13 @@ namespace xplorer::model
         [[nodiscard]] int amount() const { return _amount; }
         void setAmount(int value)
         {
-            _amount = value < MIN_AMOUNT ? MIN_AMOUNT : (value > MAX_AMOUNT ? MAX_AMOUNT : value);
+            _amount = std::clamp(value, MIN_AMOUNT, MAX_AMOUNT);
         }
 
         [[nodiscard]] int quantize() const { return _quantize; }
         void setQuantize(int value)
         {
-            _quantize = value < MIN_QUANTIZE ? MIN_QUANTIZE : (value > MAX_QUANTIZE ? MAX_QUANTIZE : value);
+            _quantize = std::clamp(value, MIN_QUANTIZE, MAX_QUANTIZE);
         }
 
         void reset()

@@ -109,6 +109,7 @@ namespace xplorer::app
         /// [RQ-QLT-005]
         void showGotoPatchDialog();
         void showStorePatchDialog();
+        void showSavePatchDialog(); // [RQ-QLT-018, TASK-QLT-018]
 
         // Forwards knob/selector hover to the matrix highlight. A dedicated
         // MouseListener (not MainComponent itself) avoids clashing with the
@@ -159,10 +160,15 @@ namespace xplorer::app
         std::map<std::string, std::function<void()>, std::less<>> _shortcutActions;
         std::unique_ptr<juce::FileChooser> _fileChooser;
         std::unique_ptr<PianoWindow> _pianoWindow;
-        std::unique_ptr<ProgressWindow> _progressWindow;
-        // Reception mode of the in-flight all-data-dump request, so the
-        // progress window shows the right range/labels (event has no mode).
-        bool _allDataDumpModeIsAll = false;
+        // The progress window of an in-flight all-data-dump request, with the
+        // reception mode it displays so it shows the right range/labels (the
+        // event carries no mode). [RQ-QLT-018, TASK-QLT-018]
+        struct DumpProgress
+        {
+            std::unique_ptr<ProgressWindow> window;
+            bool modeIsAll = false;
+        };
+        DumpProgress _dumpProgress;
 
         // MIDI traffic LED panel (LedPanelControl port): three round lamps —
         // automation-in green, synth-in blue, synth-out red — each holding

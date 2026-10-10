@@ -4,6 +4,7 @@
 // [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
 #include "midiapp/service/PortableFormat.hpp"
 
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <string>
@@ -124,7 +125,9 @@ namespace xplorer::app
             return std::nullopt;
         }
         // Reference clamps stored values to 1..128.
-        cc = cc < 1 ? 1 : (cc > 128 ? 128 : cc);
+        constexpr int MIN_STORED_CC = 1;
+        constexpr int MAX_STORED_CC = 128;
+        cc = std::clamp(cc, MIN_STORED_CC, MAX_STORED_CC);
         return std::make_pair(name, cc);
     }
 

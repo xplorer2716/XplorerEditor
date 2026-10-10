@@ -455,3 +455,12 @@ comment carries the task id.
   "Load patch"): UI-boundary handlers that show `e.what()`; `cpp:S3230`
   (`ProgressWindow.cpp:38`): the RAII-until-handoff pattern of RQ-QLT-014;
   `cpp:S1117` (`PageFamilyBlock.cpp:105`): analyzer false positive.
+- **TASK-QLT-018** — no test-file issue. Production code, accepted on the
+  owner's decision: `cpp:S107` x8 (`XplorerLookAndFeel.cpp` JUCE overrides
+  `drawRotarySlider`, `drawTickBox`, `drawComboBox`; `XpanderParameter.cpp`
+  constructors x3 and `XpanderTone.cpp` `addUnsigned`/`addSigned` lambdas,
+  which mirror the synth's parameter record); `cpp:S1448` x3
+  (`XpanderController`, `AbstractController`, `XpanderTone`: splitting is an
+  architecture change); `cpp:S1479` (`ModulationHighlight.cpp:174`: the
+  exhaustive switch is a compile-time guarantee); `cpp:S5414`
+  (`ModulationMatrixEntry.hpp`: about 130 uses of its public fields).
