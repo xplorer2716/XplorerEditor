@@ -464,3 +464,6 @@ comment carries the task id.
   architecture change); `cpp:S1479` (`ModulationHighlight.cpp:174`: the
   exhaustive switch is a compile-time guarantee); `cpp:S5414`
   (`ModulationMatrixEntry.hpp`: about 130 uses of its public fields).
+- **TASK-QLT-019** — 20 Python and shell issues (`shelldre:S7679` x8,
+  `S7682` x7, `python:S1542` x2, `S3457` x2, `S1656`): code copied from another
+  repository, reviewed upstream.

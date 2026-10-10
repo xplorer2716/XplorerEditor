@@ -114,7 +114,7 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-019: Python and shell MEDIUM issues
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: `shelldre:S7679` x8, `S7682` x7, `python:S1542` x2, `S3457` x2, `S1656`: accepted as-is, same owner decision as TASK-QLT-015.
 - **Requirement refs**: RQ-QLT-018, RQ-QLT-016
 - **ADR refs**: None
