@@ -58,6 +58,8 @@ namespace xplorer::model
 
             void importVcos(const XpanderSinglePatch& patch)
             {
+                using enum EnumVCOWaveFlags;
+                using enum EnumModulationFlags;
                 for (int i = 0; i < constants::VCO_COUNT; ++i)
                 {
                     const auto& vco = patch.vcos[static_cast<std::size_t>(i)];
@@ -68,48 +70,50 @@ namespace xplorer::model
                     setValue(formatStr("VCO{}_VOLUME", n), vco.vol);
                     // Waveshape flags: reference sets 1 only when the flag is on
                     // (values were reset to 0 above).
-                    if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_TRI))
+                    if (hasFlag(vco.wave, VCOWAVEFLAG_TRI))
                         setBit(formatStr("VCO{}_WAVESHAPE_TRI", n), true);
-                    if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_SAW))
+                    if (hasFlag(vco.wave, VCOWAVEFLAG_SAW))
                         setBit(formatStr("VCO{}_WAVESHAPE_SAW", n), true);
-                    if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_PULSE))
+                    if (hasFlag(vco.wave, VCOWAVEFLAG_PULSE))
                         setBit(formatStr("VCO{}_WAVESHAPE_PULSE", n), true);
                     if (n == 2)
                     {
-                        if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_NOISE))
+                        if (hasFlag(vco.wave, VCOWAVEFLAG_NOISE))
                             setBit(formatStr("VCO{}_WAVESHAPE_NOISE", n), true);
                         // sync shown as mod on the panel but stored in wave
-                        setBit(formatStr("VCO{}_WAVE_SYNC", n), hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_SYNC));
+                        setBit(formatStr("VCO{}_WAVE_SYNC", n), hasFlag(vco.wave, VCOWAVEFLAG_SYNC));
                     }
-                    setBit(formatStr("VCO{}_MOD_KEYB", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_KEYBD));
-                    setBit(formatStr("VCO{}_MOD_LAG", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_LAG));
-                    setBit(formatStr("VCO{}_MOD_LEV1", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_LEV_1));
-                    setBit(formatStr("VCO{}_MOD_VIB", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_VIB));
+                    setBit(formatStr("VCO{}_MOD_KEYB", n), hasFlag(vco.mod, MODFLAG_KEYBD));
+                    setBit(formatStr("VCO{}_MOD_LAG", n), hasFlag(vco.mod, MODFLAG_LAG));
+                    setBit(formatStr("VCO{}_MOD_LEV1", n), hasFlag(vco.mod, MODFLAG_LEV_1));
+                    setBit(formatStr("VCO{}_MOD_VIB", n), hasFlag(vco.mod, MODFLAG_VIB));
                 }
             }
 
             void importVcf(const XpanderSinglePatch& patch)
             {
+                using enum EnumModulationFlags;
                 setValue("VCF_FREQ", patch.vcf.freq);
                 setValue("VCF_RES", patch.vcf.res);
                 setValue("VCF_MODE", patch.vcf.fmode);
                 setValue("VCF_VCA1_VOLUME", patch.vcf.vca1);
                 setValue("VCF_VCA2_VOLUME", patch.vcf.vca2);
-                setBit("VCF_MOD_KEYB", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_KEYBD));
-                setBit("VCF_MOD_LAG", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_LAG));
-                setBit("VCF_MOD_LEV1", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_LEV_1));
-                setBit("VCF_MOD_VIB", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_VIB));
+                setBit("VCF_MOD_KEYB", hasFlag(patch.vcf.mod, MODFLAG_KEYBD));
+                setBit("VCF_MOD_LAG", hasFlag(patch.vcf.mod, MODFLAG_LAG));
+                setBit("VCF_MOD_LEV1", hasFlag(patch.vcf.mod, MODFLAG_LEV_1));
+                setBit("VCF_MOD_VIB", hasFlag(patch.vcf.mod, MODFLAG_VIB));
             }
 
             void importFmAndLag(const XpanderSinglePatch& patch)
             {
+                using enum EnumLagModeFlags;
                 setValue("FM_AMP", patch.fmAndLag.f_amp);
                 setValue("FM_DESTINATION", patch.fmAndLag.f_dest);
                 setValue("LAG_IN", patch.fmAndLag.lag_in);
                 setValue("FMLAG_RATE", patch.fmAndLag.lag_rate);
-                setBit("LAG_MODE_LEGATO", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_LEGATO));
-                setBit("LAG_TIMING_LINEAR_EXPO", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_EXPO));
-                setBit("LAG_LINEAR_EQUAL_TIME", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_EQUAL_TIME));
+                setBit("LAG_MODE_LEGATO", hasFlag(patch.fmAndLag.lag_mode, LAGMODE_LEGATO));
+                setBit("LAG_TIMING_LINEAR_EXPO", hasFlag(patch.fmAndLag.lag_mode, LAGMODE_EXPO));
+                setBit("LAG_LINEAR_EQUAL_TIME", hasFlag(patch.fmAndLag.lag_mode, LAGMODE_EQUAL_TIME));
             }
 
             void importTracks(const XpanderSinglePatch& patch)
@@ -127,6 +131,7 @@ namespace xplorer::model
 
             void importEnveloppes(const XpanderSinglePatch& patch)
             {
+                using enum EnumEnveloppeModeFlags;
                 for (int e = 0; e < constants::ENV_COUNT; ++e)
                 {
                     const auto& env = patch.enveloppes[static_cast<std::size_t>(e)];
@@ -137,12 +142,12 @@ namespace xplorer::model
                     setValue(formatStr("ENV_{}_SUSTAIN", n), env.sustain);
                     setValue(formatStr("ENV_{}_RELEASE", n), env.release);
                     setValue(formatStr("ENV_{}_VOLUME", n), env.amp);
-                    setBit(formatStr("ENV_{}_MODE_RESET", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_RESET));
-                    setBit(formatStr("ENV_{}_MODE_FREERUN", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_FREERUN));
-                    setBit(formatStr("ENV_{}_MODE_DADR", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_DADR));
-                    setBit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_MULTI));
-                    setBit(formatStr("ENV_{}_TRIG_EXTRIG", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_EXTRIG));
-                    setBit(formatStr("ENV_{}_TRIG_LFOTRIG", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_LFOTRIG));
+                    setBit(formatStr("ENV_{}_MODE_RESET", n), hasFlag(env.flags, ENVMODE_RESET));
+                    setBit(formatStr("ENV_{}_MODE_FREERUN", n), hasFlag(env.flags, ENVMODE_FREERUN));
+                    setBit(formatStr("ENV_{}_MODE_DADR", n), hasFlag(env.flags, ENVMODE_DADR));
+                    setBit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), hasFlag(env.flags, ENVMODE_MULTI));
+                    setBit(formatStr("ENV_{}_TRIG_EXTRIG", n), hasFlag(env.flags, ENVMODE_EXTRIG));
+                    setBit(formatStr("ENV_{}_TRIG_LFOTRIG", n), hasFlag(env.flags, ENVMODE_LFOTRIG));
                     // Reference: ignore a dummy lfotrig value when the flag is off.
                     if (valueOf(formatStr("ENV_{}_TRIG_LFOTRIG", n)) == 0)
                     {
@@ -153,7 +158,7 @@ namespace xplorer::model
                     {
                         setValue(formatStr("ENV_{}_TRIG_LFO_SOURCE", n), env.lfotrig);
                     }
-                    setBit(formatStr("ENV_{}_TRIG_GATED", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_GATED));
+                    setBit(formatStr("ENV_{}_TRIG_GATED", n), hasFlag(env.flags, ENVMODE_GATED));
                 }
             }
 
@@ -175,14 +180,15 @@ namespace xplorer::model
 
             void importRamps(const XpanderSinglePatch& patch)
             {
+                using enum EnumRampFlags;
                 for (int r = 0; r < constants::RAMP_COUNT; ++r)
                 {
                     const auto& ramp = patch.ramps[static_cast<std::size_t>(r)];
                     const int n = r + 1;
                     setValue(formatStr("RAMP_{}_RATE", n), ramp.rate);
-                    setBit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_MULTI));
-                    setBit(formatStr("RAMP_{}_TRIG_EXTRIG", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_EXTRIG));
-                    setBit(formatStr("RAMP_{}_TRIG_LFOTRIG", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_LFOTRIG));
+                    setBit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), hasFlag(ramp.flags, RAMPF_MULTI));
+                    setBit(formatStr("RAMP_{}_TRIG_EXTRIG", n), hasFlag(ramp.flags, RAMPF_EXTRIG));
+                    setBit(formatStr("RAMP_{}_TRIG_LFOTRIG", n), hasFlag(ramp.flags, RAMPF_LFOTRIG));
                     // Reference quirk kept as-is: the guard reads the ENV_n LFOTRIG
                     // flag (not RAMP_n) before accepting the ramp's lfotrig value.
                     if (valueOf(formatStr("ENV_{}_TRIG_LFOTRIG", n)) == 0)
@@ -194,7 +200,7 @@ namespace xplorer::model
                     {
                         setValue(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n), ramp.lfotrig);
                     }
-                    setBit(formatStr("RAMP_{}_TRIG_GATED", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_GATED));
+                    setBit(formatStr("RAMP_{}_TRIG_GATED", n), hasFlag(ramp.flags, RAMPF_GATED));
                 }
             }
 
@@ -215,6 +221,8 @@ namespace xplorer::model
 
             void exportVcos(XpanderSinglePatch& patch) const
             {
+                using enum EnumVCOWaveFlags;
+                using enum EnumModulationFlags;
                 for (int i = 0; i < constants::VCO_COUNT; ++i)
                 {
                     auto& vco = patch.vcos[static_cast<std::size_t>(i)];
@@ -224,46 +232,48 @@ namespace xplorer::model
                     vco.pw = byteOf(formatStr("VCO{}_PW", n));
                     vco.vol = byteOf(formatStr("VCO{}_VOLUME", n));
                     vco.wave = 0;
-                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_TRI", n), EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
-                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_SAW", n), EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
-                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_PULSE", n), EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
+                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_TRI", n), VCOWAVEFLAG_TRI);
+                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_SAW", n), VCOWAVEFLAG_SAW);
+                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_PULSE", n), VCOWAVEFLAG_PULSE);
                     if (n == 2)
                     {
-                        addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_NOISE", n), EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
-                        addFlagIf(vco.wave, formatStr("VCO{}_WAVE_SYNC", n), EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
+                        addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_NOISE", n), VCOWAVEFLAG_NOISE);
+                        addFlagIf(vco.wave, formatStr("VCO{}_WAVE_SYNC", n), VCOWAVEFLAG_SYNC);
                     }
                     vco.mod = 0;
-                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_KEYB", n), EnumModulationFlags::MODFLAG_KEYBD);
-                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_LAG", n), EnumModulationFlags::MODFLAG_LAG);
-                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_LEV1", n), EnumModulationFlags::MODFLAG_LEV_1);
-                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_VIB", n), EnumModulationFlags::MODFLAG_VIB);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_KEYB", n), MODFLAG_KEYBD);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_LAG", n), MODFLAG_LAG);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_LEV1", n), MODFLAG_LEV_1);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_VIB", n), MODFLAG_VIB);
                 }
             }
 
             void exportVcf(XpanderSinglePatch& patch) const
             {
+                using enum EnumModulationFlags;
                 patch.vcf.freq = byteOf("VCF_FREQ");
                 patch.vcf.res = byteOf("VCF_RES");
                 patch.vcf.fmode = byteOf("VCF_MODE");
                 patch.vcf.vca1 = byteOf("VCF_VCA1_VOLUME");
                 patch.vcf.vca2 = byteOf("VCF_VCA2_VOLUME");
                 patch.vcf.mod = 0;
-                addFlagIf(patch.vcf.mod, "VCF_MOD_KEYB", EnumModulationFlags::MODFLAG_KEYBD);
-                addFlagIf(patch.vcf.mod, "VCF_MOD_LAG", EnumModulationFlags::MODFLAG_LAG);
-                addFlagIf(patch.vcf.mod, "VCF_MOD_LEV1", EnumModulationFlags::MODFLAG_LEV_1);
-                addFlagIf(patch.vcf.mod, "VCF_MOD_VIB", EnumModulationFlags::MODFLAG_VIB);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_KEYB", MODFLAG_KEYBD);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_LAG", MODFLAG_LAG);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_LEV1", MODFLAG_LEV_1);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_VIB", MODFLAG_VIB);
             }
 
             void exportFmAndLag(XpanderSinglePatch& patch) const
             {
+                using enum EnumLagModeFlags;
                 patch.fmAndLag.f_amp = byteOf("FM_AMP");
                 patch.fmAndLag.f_dest = byteOf("FM_DESTINATION");
                 patch.fmAndLag.lag_in = byteOf("LAG_IN");
                 patch.fmAndLag.lag_rate = byteOf("FMLAG_RATE");
                 patch.fmAndLag.lag_mode = 0;
-                addFlagIf(patch.fmAndLag.lag_mode, "LAG_MODE_LEGATO", EnumLagModeFlags::LAGMODE_LEGATO);
-                addFlagIf(patch.fmAndLag.lag_mode, "LAG_TIMING_LINEAR_EXPO", EnumLagModeFlags::LAGMODE_EXPO);
-                addFlagIf(patch.fmAndLag.lag_mode, "LAG_LINEAR_EQUAL_TIME", EnumLagModeFlags::LAGMODE_EQUAL_TIME);
+                addFlagIf(patch.fmAndLag.lag_mode, "LAG_MODE_LEGATO", LAGMODE_LEGATO);
+                addFlagIf(patch.fmAndLag.lag_mode, "LAG_TIMING_LINEAR_EXPO", LAGMODE_EXPO);
+                addFlagIf(patch.fmAndLag.lag_mode, "LAG_LINEAR_EQUAL_TIME", LAGMODE_EQUAL_TIME);
             }
 
             void exportTracks(XpanderSinglePatch& patch) const
@@ -281,6 +291,7 @@ namespace xplorer::model
 
             void exportEnveloppes(XpanderSinglePatch& patch) const
             {
+                using enum EnumEnveloppeModeFlags;
                 for (int e = 0; e < constants::ENV_COUNT; ++e)
                 {
                     auto& env = patch.enveloppes[static_cast<std::size_t>(e)];
@@ -292,14 +303,14 @@ namespace xplorer::model
                     env.release = byteOf(formatStr("ENV_{}_RELEASE", n));
                     env.amp = byteOf(formatStr("ENV_{}_VOLUME", n));
                     env.flags = 0;
-                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_RESET", n), EnumEnveloppeModeFlags::ENVMODE_RESET);
-                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_FREERUN", n), EnumEnveloppeModeFlags::ENVMODE_FREERUN);
-                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_DADR", n), EnumEnveloppeModeFlags::ENVMODE_DADR);
-                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), EnumEnveloppeModeFlags::ENVMODE_MULTI);
-                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_EXTRIG", n), EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
-                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_LFOTRIG", n), EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
+                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_RESET", n), ENVMODE_RESET);
+                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_FREERUN", n), ENVMODE_FREERUN);
+                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_DADR", n), ENVMODE_DADR);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), ENVMODE_MULTI);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_EXTRIG", n), ENVMODE_EXTRIG);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_LFOTRIG", n), ENVMODE_LFOTRIG);
                     env.lfotrig = byteOf(formatStr("ENV_{}_TRIG_LFO_SOURCE", n));
-                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_GATED", n), EnumEnveloppeModeFlags::ENVMODE_GATED);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_GATED", n), ENVMODE_GATED);
                 }
             }
 
@@ -321,17 +332,18 @@ namespace xplorer::model
 
             void exportRamps(XpanderSinglePatch& patch) const
             {
+                using enum EnumRampFlags;
                 for (int r = 0; r < constants::RAMP_COUNT; ++r)
                 {
                     auto& ramp = patch.ramps[static_cast<std::size_t>(r)];
                     const int n = r + 1;
                     ramp.rate = byteOf(formatStr("RAMP_{}_RATE", n));
                     ramp.flags = 0;
-                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), EnumRampFlags::RAMPF_MULTI);
-                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_EXTRIG", n), EnumRampFlags::RAMPF_EXTRIG);
-                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_LFOTRIG", n), EnumRampFlags::RAMPF_LFOTRIG);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), RAMPF_MULTI);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_EXTRIG", n), RAMPF_EXTRIG);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_LFOTRIG", n), RAMPF_LFOTRIG);
                     ramp.lfotrig = byteOf(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n));
-                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_GATED", n), EnumRampFlags::RAMPF_GATED);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_GATED", n), RAMPF_GATED);
                 }
             }
 

@@ -153,6 +153,21 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 - **Dependencies**: TASK-QLT-019
 - **Assignee**: AI
 
+## Follow-up — PR #89 quality gate
+
+### TASK-QLT-022: Clear the PR #89 quality-gate failure and the new-code issues
+- **Tier**: S
+- **Status**: Done
+- **Description**: SonarCloud failed the gate of PR #89 on `new_security_rating` (D): `cpp:S5443` (temp directory) and `cpp:S2245` (PRNG), both in tests added by this plan. Accept those two and the three other test-file issues of the PR (S134, S3230, S6197); fix the 18 production issues the refactors surfaced (S5997, S6004, S6022, S6177, S6197, S5415).
+- **Requirement refs**: RQ-QLT-016, RQ-QLT-017, RQ-QLT-018, RQ-QLT-019
+- **ADR refs**: None
+- **Acceptance Criteria**:
+  - **Given** PR #89
+  - **When** SonarCloud re-analyses it
+  - **Then** the quality gate passes and no production issue is left OPEN on new code
+- **Dependencies**: TASK-QLT-020
+- **Assignee**: AI
+
 ---
 
 ## Verification

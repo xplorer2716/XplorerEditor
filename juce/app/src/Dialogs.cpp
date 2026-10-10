@@ -764,7 +764,7 @@ namespace xplorer::app
     bool isPatchNameValid(std::string_view name)
     {
         return name.size() <= static_cast<std::size_t>(model::constants::TONE_NAME_LENGTH)
-            && std::all_of(name.begin(), name.end(), isAllowedPatchNameChar);
+            && std::ranges::all_of(name, isAllowedPatchNameChar);
     }
 
     void showRenameDialog(const std::string& currentName, std::function<void(const std::string&)> onAccept)

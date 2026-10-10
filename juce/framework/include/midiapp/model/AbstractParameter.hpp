@@ -93,7 +93,7 @@ namespace midiapp::model
         /// Copies `other`'s state. The public copy constructor takes the lock on
         /// `other` and holds it across this delegation, so the members below can
         /// be initialized rather than assigned. [RQ-QLT-018, TASK-QLT-017]
-        AbstractParameter(const AbstractParameter& other, const std::lock_guard<std::mutex>& otherLocked);
+        AbstractParameter(const AbstractParameter& other, const std::scoped_lock<std::mutex>& otherLocked);
 
         void setValueLocked(int value);
 

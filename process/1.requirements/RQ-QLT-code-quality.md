@@ -476,3 +476,7 @@ comment carries the task id.
 - **TASK-QLT-021** — 19 Python and shell issues (`python:S9409` x9, `S6353`
   x4, `S7498` x3, `S1481`, `S7494`; `shelldre:S1192`): code copied from
   another repository, reviewed upstream.
+- **TASK-QLT-022** — PR #89 quality gate. 5 issues in test files added by this
+  plan: `cpp:S5443` (`FileUtilsTests.cpp:22`, temp directory) and `S2245`
+  (`XpanderToneTests.cpp:164`, fixed-seed PRNG), the two that failed the gate,
+  plus `S3230`, `S134` and `S6197`.

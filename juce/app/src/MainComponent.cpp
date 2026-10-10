@@ -424,26 +424,25 @@ namespace xplorer::app
             {
                 continue;
             }
-            auto [component, bound] =
-                buildFixedBlockControl(spec, tag, *_registry, _controller->getParameter(tag));
-            if (component == nullptr)
+            auto built = buildFixedBlockControl(spec, tag, *_registry, _controller->getParameter(tag));
+            if (built.component == nullptr)
             {
                 continue;
             }
 
             // Skinned via the default LookAndFeel (set in the ctor). [RQ-GUI-031]
-            component->setBounds(spec.x, spec.y, spec.width, spec.height);
-            addAndMakeVisible(*component);
-            if (bound != nullptr)
+            built.component->setBounds(spec.x, spec.y, spec.width, spec.height);
+            addAndMakeVisible(*built.component);
+            if (built.bound != nullptr)
             {
-                _registry->bind(tag, *bound);
+                _registry->bind(tag, *built.bound);
             }
             // Fixed knobs forward their hover to the matrix highlight. [RQ-GUI-018]
             if (spec.kind == ControlKind::KnobControl)
             {
-                component->addMouseListener(&_hover, false);
+                built.component->addMouseListener(&_hover, false);
             }
-            _controls.push_back(std::move(component));
+            _controls.push_back(std::move(built.component));
         }
     }
 

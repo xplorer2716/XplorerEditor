@@ -73,31 +73,32 @@ namespace xplorer::controller
                                                                     EnumModulationEditCommands command,
                                                                     int value)
         {
+            using enum EnumModulationEditCommands;
             const int source = xpl::util::toUnderlying(entry.source);
             const int destination = xpl::util::toUnderlying(entry.destination);
             switch (command)
             {
-                case EnumModulationEditCommands::CHANGESOURCE:
+                case CHANGESOURCE:
                     tone.changeModulationSource(value, entry.amount(), entry.quantize(), destination,
                                                 entryNumber, nullptr);
                     return EnumModulationParameter::MODULATIONSOURCE;
-                case EnumModulationEditCommands::DELETESOURCE:
+                case DELETESOURCE:
                     // setting NONE resets the entry
                     tone.changeModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE),
                                                 entry.amount(), entry.quantize(), destination, entryNumber,
                                                 nullptr);
                     return EnumModulationParameter::MODULATIONSOURCE;
-                case EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE:
+                case DIALVALUEAMOUNTOFCHANGE:
                     tone.changeModulationSourceAmount(source, entry.amount() + value, destination,
                                                       entryNumber, nullptr);
                     return EnumModulationParameter::MODULATIONAMOUNT;
-                case EnumModulationEditCommands::SETQUANTIZE:
+                case SETQUANTIZE:
                     tone.changeModulationSourceQuantize(source, destination, value, entryNumber, nullptr);
                     return EnumModulationParameter::MODULATIONQUANTIZE;
-                case EnumModulationEditCommands::SETSIGN:
+                case SETSIGN:
                 {
-                    const int valueSign = value == SETSIGN_VALUE_NEGATIVE ? SIGN_NEGATIVE : SIGN_POSITIVE;
-                    if (signOfAmount(entry.amount()) == valueSign)
+                    if (const int valueSign = value == SETSIGN_VALUE_NEGATIVE ? SIGN_NEGATIVE : SIGN_POSITIVE;
+                        signOfAmount(entry.amount()) == valueSign)
                     {
                         return std::nullopt;
                     }
@@ -105,11 +106,11 @@ namespace xplorer::controller
                                                       entryNumber, nullptr);
                     return EnumModulationParameter::MODULATIONAMOUNT;
                 }
-                case EnumModulationEditCommands::SETUNSIGNEDVALUE:
+                case SETUNSIGNEDVALUE:
                     tone.changeModulationSourceAmount(source, value * signOfAmount(entry.amount()), destination,
                                                       entryNumber, nullptr);
                     return EnumModulationParameter::MODULATIONAMOUNT;
-                case EnumModulationEditCommands::TOGGLEQUANTIZE:
+                case TOGGLEQUANTIZE:
                 {
                     const int toggle = entry.quantize() == ModulationMatrixEntry::MAX_QUANTIZE
                                            ? ModulationMatrixEntry::MIN_QUANTIZE
@@ -117,8 +118,8 @@ namespace xplorer::controller
                     tone.changeModulationSourceQuantize(source, destination, toggle, entryNumber, nullptr);
                     return EnumModulationParameter::MODULATIONQUANTIZE;
                 }
-                case EnumModulationEditCommands::ADDSOURCE:
-                case EnumModulationEditCommands::UNKNOWN:
+                case ADDSOURCE:
+                case UNKNOWN:
                     break;
             }
             return std::nullopt;
@@ -446,8 +447,8 @@ namespace xplorer::controller
         {
             if (entry.destination == destination && entry.idSource == modulationSourceNumber)
             {
-                const auto changed = applyModulationEdit(xTone, entry, entryNumber + 1, command, value);
-                if (changed.has_value())
+                if (const auto changed = applyModulationEdit(xTone, entry, entryNumber + 1, command, value);
+                    changed.has_value())
                 {
                     notifyModulationEntryChangeEvent(entry, entryNumber + 1, *changed);
                 }
