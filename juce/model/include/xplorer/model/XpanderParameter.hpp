@@ -22,7 +22,8 @@ namespace xplorer::model
         static constexpr int SYSEX_BUTTON_ID = 5;
 
         XpanderParameter(const std::string& name, int page, int subPage, int minValue, int maxValue,
-                         int step, common::midi::MidiMessage message, int value, const std::string& label = {});
+                         int step, const common::midi::MidiMessage& message, int value,
+                         const std::string& label = {});
 
         [[nodiscard]] int page() const { return _page; }
         void setPage(int page) { _page = page; }
@@ -59,7 +60,7 @@ namespace xplorer::model
     {
     public:
         XpanderSignedParameter(const std::string& name, int page, int subPage, int minValue,
-                               int maxValue, int step, common::midi::MidiMessage message, int value,
+                               int maxValue, int step, const common::midi::MidiMessage& message, int value,
                                const std::string& label = {});
 
         [[nodiscard]] std::unique_ptr<AbstractParameter> clone() const override;
@@ -81,7 +82,7 @@ namespace xplorer::model
         static constexpr int MODULATION_SOURCE_INDEX = 9;
 
         XpanderModMatrixParameter(const std::string& name, int page, int subPage, int minValue,
-                                  int maxValue, int step, common::midi::MidiMessage message, int value);
+                                  int maxValue, int step, const common::midi::MidiMessage& message, int value);
 
         [[nodiscard]] int idSource() const;
         void setIdSource(int idSource);
@@ -98,7 +99,7 @@ namespace xplorer::model
     class XpanderFullToneParameter final : public midiapp::model::AbstractParameter
     {
     public:
-        explicit XpanderFullToneParameter(common::midi::MidiMessage message);
+        explicit XpanderFullToneParameter(const common::midi::MidiMessage& message);
 
         [[nodiscard]] std::unique_ptr<AbstractParameter> clone() const override;
 

@@ -188,22 +188,23 @@ namespace xplorer::app
         {
             switch (spec.kind)
             {
-                case ControlKind::KnobControl:
+                using enum ControlKind;
+                case KnobControl:
                     if (parameter == nullptr)
                     {
                         return {};
                     }
                     return buildFixedBlockKnob(registry, tag, *parameter);
-                case ControlKind::CheckBoxValuedControl:
+                case CheckBoxValuedControl:
                     if (parameter == nullptr)
                     {
                         return {};
                     }
                     return asFixedBlockControl(std::make_unique<BoundCheckBox>(
                         registry, tag, juce::String(spec.label))); // [RQ-GUI-032]
-                case ControlKind::ComboBoxValuedControl:
+                case ComboBoxValuedControl:
                     return buildFixedBlockComboBox(registry, tag);
-                case ControlKind::RadioButtonPanel:
+                case RadioButtonPanel:
                     return buildFixedBlockRadioGroup(registry, tag);
                 default:
                     return {};

@@ -11,9 +11,9 @@ namespace xplorer::model
     // --- XpanderParameter -------------------------------------------------
 
     XpanderParameter::XpanderParameter(const std::string& name, int page, int subPage, int minValue,
-                                       int maxValue, int step, MidiMessage message, int value,
+                                       int maxValue, int step, const MidiMessage& message, int value,
                                        const std::string& label)
-        : AbstractParameter(name, minValue, maxValue, step, std::move(message), label),
+        : AbstractParameter(name, minValue, maxValue, step, message, label),
           _page(page),
           _subPage(subPage)
     {
@@ -52,9 +52,9 @@ namespace xplorer::model
 
     XpanderSignedParameter::XpanderSignedParameter(const std::string& name, int page, int subPage,
                                                    int minValue, int maxValue, int step,
-                                                   MidiMessage message, int value,
+                                                   const MidiMessage& message, int value,
                                                    const std::string& label)
-        : XpanderParameter(name, page, subPage, minValue, maxValue, step, std::move(message), 0, label)
+        : XpanderParameter(name, page, subPage, minValue, maxValue, step, message, 0, label)
     {
         // The base constructor already ran initializeValue(0) with *this*
         // vtable not yet active; re-apply through the final override.
@@ -86,8 +86,8 @@ namespace xplorer::model
 
     XpanderModMatrixParameter::XpanderModMatrixParameter(const std::string& name, int page,
                                                          int subPage, int minValue, int maxValue,
-                                                         int step, MidiMessage message, int value)
-        : XpanderParameter(name, page, subPage, minValue, maxValue, step, std::move(message), value)
+                                                         int step, const MidiMessage& message, int value)
+        : XpanderParameter(name, page, subPage, minValue, maxValue, step, message, value)
     {
         setChanged(false); // avoid auto-send of mod sources (reference ctor)
     }
@@ -109,8 +109,8 @@ namespace xplorer::model
 
     // --- XpanderFullToneParameter -------------------------------------------
 
-    XpanderFullToneParameter::XpanderFullToneParameter(MidiMessage message)
-        : AbstractParameter("FullTone", 0, 1, 1, std::move(message))
+    XpanderFullToneParameter::XpanderFullToneParameter(const MidiMessage& message)
+        : AbstractParameter("FullTone", 0, 1, 1, message)
     {
         initializeValue(0);
         setChanged(true); // sent as soon as the worker scans it
