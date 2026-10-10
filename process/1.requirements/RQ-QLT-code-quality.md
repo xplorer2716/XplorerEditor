@@ -473,3 +473,6 @@ comment carries the task id.
   `JUCEApplication` virtuals return `const juce::String`); `cpp:S2486` x3
   (`Dialogs.cpp`, `MainComponent.cpp`: the UI-boundary handlers that show
   `e.what()`, already accepted for S1181).
+- **TASK-QLT-021** — 19 Python and shell issues (`python:S9409` x9, `S6353`
+  x4, `S7498` x3, `S1481`, `S7494`; `shelldre:S1192`): code copied from
+  another repository, reviewed upstream.

@@ -142,7 +142,7 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-021: Python and shell LOW issues
 - **Tier**: S
-- **Status**: Not Started
+- **Status**: Done
 - **Description**: `python:S9409` x9, `S6353` x4, `S7498` x3, `S1481`, `S7494`; `shelldre:S1192`: accepted as-is, same owner decision as TASK-QLT-015.
 - **Requirement refs**: RQ-QLT-019, RQ-QLT-016
 - **ADR refs**: None
