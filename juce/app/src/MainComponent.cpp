@@ -272,18 +272,21 @@ namespace xplorer::app
         }
     }
 
+    // The settings service and the look-and-feel are built in the initializer
+    // list. The rest of the bootstrap is order-dependent -- the logger is wired
+    // between the service and the controller -- so it stays in the body.
+    // [RQ-QLT-018, TASK-QLT-017]
     MainComponent::MainComponent()
+        : _settingsService(std::make_unique<settings::XmlSettingsService>(
+              preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString())),
+          _lookAndFeel(std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(
+              _settingsService->allUsersSettings().uiConfig.knobLedBorderColor)))) // [RQ-GUI-031]
     {
         _dispatcher = std::make_shared<JuceEventDispatcher>();
-        _settingsService = std::make_unique<settings::XmlSettingsService>(
-            preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString());
         configureDiagnosticLogging(*_settingsService);
         _controller = std::make_unique<controller::XpanderController>(
             _backend, *_settingsService, _dispatcher, productNameAndVersion());
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);
-        _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
-            juce::Colour(static_cast<juce::uint32>(
-                _settingsService->allUsersSettings().uiConfig.knobLedBorderColor))); // [RQ-GUI-031]
         // Block palette: defaults with the persisted per-block overrides
         // applied. [RQ-DSN-095, RQ-SET-007, ADR-JUC-020]
         _lookAndFeel->setBlockPalette(

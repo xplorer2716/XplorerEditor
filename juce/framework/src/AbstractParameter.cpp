@@ -34,16 +34,21 @@ namespace midiapp::model
     }
 
     AbstractParameter::AbstractParameter(const AbstractParameter& other)
+        : AbstractParameter(other, std::lock_guard(other._mutex))
     {
-        const std::lock_guard lock(other._mutex);
-        _name = other._name;
-        _label = other._label;
-        _minValue = other._minValue;
-        _maxValue = other._maxValue;
-        _step = other._step;
-        _value = other._value;
-        _changed = other._changed;
-        _messageBytes = other._messageBytes;
+    }
+
+    AbstractParameter::AbstractParameter(const AbstractParameter& other,
+                                         const std::lock_guard<std::mutex>& /*otherLocked*/)
+        : _name(other._name),
+          _label(other._label),
+          _minValue(other._minValue),
+          _maxValue(other._maxValue),
+          _step(other._step),
+          _value(other._value),
+          _changed(other._changed),
+          _messageBytes(other._messageBytes)
+    {
     }
 
     std::string AbstractParameter::name() const

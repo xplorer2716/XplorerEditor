@@ -1,5 +1,9 @@
 #include "midiapp/service/FileUtils.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
+
 #include <filesystem>
 #include <string_view>
 
@@ -32,7 +36,7 @@ namespace midiapp::service
         int number = 1;
         while (std::filesystem::exists(directory / (candidate + extension)))
         {
-            candidate = sanitized + std::to_string(number);
+            candidate = formatStr("{}{}", sanitized, number);
             ++number;
         }
         return candidate + extension;

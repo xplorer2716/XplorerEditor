@@ -110,6 +110,8 @@ SCENARIO("Channel messages can be re-stamped on another channel", "[RQ-FMW-051]"
         THEN("re-stamping is rejected")
         {
             CHECK_THROWS_AS(MidiMessage::sysEx(frame).withChannel(1), std::logic_error);
+            // The specific type (TASK-QLT-017): a std::domain_error, not a bare logic_error.
+            CHECK_THROWS_AS(MidiMessage::sysEx(frame).withChannel(1), std::domain_error);
         }
     }
 }

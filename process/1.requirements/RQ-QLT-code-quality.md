@@ -445,3 +445,13 @@ comment carries the task id.
   path API of the project is `std::string`); `cpp:S5950` x4
   (`XpanderParameter.cpp:48,82,107,127`: `clone()` needs the copy constructors,
   non-public by design, which `std::make_unique` cannot reach).
+- **TASK-QLT-017** — 1 issue in a test file (`cpp:S1117`). Production code,
+  accepted on the owner's decision: `cpp:S7040` x2 (`Dialogs.cpp:234`,
+  `FileUtils.cpp:12`), `S7035` (`EnumUtils.hpp:34`) and `S6495`
+  (`Logger.cpp:108`): C++23 features, or `std::format` / `std::put_time`, that
+  the C++20 project and the pinned GCC 11 CI cannot use; `cpp:S6185` x3
+  (`MidiMessage.cpp:33,52,139`): the MIDI layer cannot reach `formatStr`;
+  `cpp:S1181` x4 (`Dialogs.cpp:549,587`, `MainComponent.cpp` "New patch" and
+  "Load patch"): UI-boundary handlers that show `e.what()`; `cpp:S3230`
+  (`ProgressWindow.cpp:38`): the RAII-until-handoff pattern of RQ-QLT-014;
+  `cpp:S1117` (`PageFamilyBlock.cpp:105`): analyzer false positive.

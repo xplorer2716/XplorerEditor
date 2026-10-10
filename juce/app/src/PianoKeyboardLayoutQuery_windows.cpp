@@ -1,6 +1,6 @@
 #include "PianoKeyboardLayoutQuery.hpp"
 
-#include <windows.h>
+#include <Windows.h>
 
 #include <map>
 

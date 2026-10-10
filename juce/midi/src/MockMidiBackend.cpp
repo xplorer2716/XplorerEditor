@@ -136,8 +136,7 @@ namespace common::midi
     {
     public:
         MockInputPort(std::shared_ptr<State> state, std::string name)
-            : _state(std::move(state)), _name(std::move(name)),
-              _body(std::make_shared<InputPortBody>())
+            : _state(std::move(state)), _name(std::move(name))
         {
             const std::lock_guard lock(_state->mutex);
             _state->openInputs[_name].push_back(_body);
@@ -169,7 +168,7 @@ namespace common::midi
     private:
         std::shared_ptr<State> _state;
         std::string _name;
-        std::shared_ptr<InputPortBody> _body;
+        std::shared_ptr<InputPortBody> _body = std::make_shared<InputPortBody>();
     };
 
     class MockMidiBackend::MockOutputPort final : public MidiOutputPort

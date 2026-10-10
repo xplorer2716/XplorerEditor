@@ -1,5 +1,8 @@
 #include "xplorer/app/PageFamilyModel.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
 #include "xpl/util/EnumUtils.hpp"
 
 namespace xplorer::app
@@ -41,7 +44,7 @@ namespace xplorer::app
             return controlTag;
         }
         std::string resolved = controlTag;
-        resolved.replace(position, 3, "_" + std::to_string(instance) + "_");
+        resolved.replace(position, 3, midiapp::service::formatStr("_{}_", instance));
         return resolved;
     }
 

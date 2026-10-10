@@ -8,6 +8,7 @@
 #include "xpl/util/EnumUtils.hpp"
 
 #include <array>
+#include <cstddef>
 #include <utility>
 
 namespace xplorer::model
@@ -223,19 +224,19 @@ namespace xplorer::model
                     vco.pw = byteOf(formatStr("VCO{}_PW", n));
                     vco.vol = byteOf(formatStr("VCO{}_VOLUME", n));
                     vco.wave = 0;
-                    if (bit(formatStr("VCO{}_WAVESHAPE_TRI", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
-                    if (bit(formatStr("VCO{}_WAVESHAPE_SAW", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
-                    if (bit(formatStr("VCO{}_WAVESHAPE_PULSE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
+                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_TRI", n), EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
+                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_SAW", n), EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
+                    addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_PULSE", n), EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
                     if (n == 2)
                     {
-                        if (bit(formatStr("VCO{}_WAVESHAPE_NOISE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
-                        if (bit(formatStr("VCO{}_WAVE_SYNC", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
+                        addFlagIf(vco.wave, formatStr("VCO{}_WAVESHAPE_NOISE", n), EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
+                        addFlagIf(vco.wave, formatStr("VCO{}_WAVE_SYNC", n), EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
                     }
                     vco.mod = 0;
-                    if (bit(formatStr("VCO{}_MOD_KEYB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
-                    if (bit(formatStr("VCO{}_MOD_LAG", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
-                    if (bit(formatStr("VCO{}_MOD_LEV1", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
-                    if (bit(formatStr("VCO{}_MOD_VIB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_KEYB", n), EnumModulationFlags::MODFLAG_KEYBD);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_LAG", n), EnumModulationFlags::MODFLAG_LAG);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_LEV1", n), EnumModulationFlags::MODFLAG_LEV_1);
+                    addFlagIf(vco.mod, formatStr("VCO{}_MOD_VIB", n), EnumModulationFlags::MODFLAG_VIB);
                 }
             }
 
@@ -247,10 +248,10 @@ namespace xplorer::model
                 patch.vcf.vca1 = byteOf("VCF_VCA1_VOLUME");
                 patch.vcf.vca2 = byteOf("VCF_VCA2_VOLUME");
                 patch.vcf.mod = 0;
-                if (bit("VCF_MOD_KEYB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
-                if (bit("VCF_MOD_LAG")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
-                if (bit("VCF_MOD_LEV1")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
-                if (bit("VCF_MOD_VIB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_KEYB", EnumModulationFlags::MODFLAG_KEYBD);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_LAG", EnumModulationFlags::MODFLAG_LAG);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_LEV1", EnumModulationFlags::MODFLAG_LEV_1);
+                addFlagIf(patch.vcf.mod, "VCF_MOD_VIB", EnumModulationFlags::MODFLAG_VIB);
             }
 
             void exportFmAndLag(XpanderSinglePatch& patch) const
@@ -260,9 +261,9 @@ namespace xplorer::model
                 patch.fmAndLag.lag_in = byteOf("LAG_IN");
                 patch.fmAndLag.lag_rate = byteOf("FMLAG_RATE");
                 patch.fmAndLag.lag_mode = 0;
-                if (bit("LAG_MODE_LEGATO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_LEGATO);
-                if (bit("LAG_TIMING_LINEAR_EXPO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EXPO);
-                if (bit("LAG_LINEAR_EQUAL_TIME")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EQUAL_TIME);
+                addFlagIf(patch.fmAndLag.lag_mode, "LAG_MODE_LEGATO", EnumLagModeFlags::LAGMODE_LEGATO);
+                addFlagIf(patch.fmAndLag.lag_mode, "LAG_TIMING_LINEAR_EXPO", EnumLagModeFlags::LAGMODE_EXPO);
+                addFlagIf(patch.fmAndLag.lag_mode, "LAG_LINEAR_EQUAL_TIME", EnumLagModeFlags::LAGMODE_EQUAL_TIME);
             }
 
             void exportTracks(XpanderSinglePatch& patch) const
@@ -291,14 +292,14 @@ namespace xplorer::model
                     env.release = byteOf(formatStr("ENV_{}_RELEASE", n));
                     env.amp = byteOf(formatStr("ENV_{}_VOLUME", n));
                     env.flags = 0;
-                    if (bit(formatStr("ENV_{}_MODE_RESET", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_RESET);
-                    if (bit(formatStr("ENV_{}_MODE_FREERUN", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_FREERUN);
-                    if (bit(formatStr("ENV_{}_MODE_DADR", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_DADR);
-                    if (bit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_MULTI);
-                    if (bit(formatStr("ENV_{}_TRIG_EXTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
-                    if (bit(formatStr("ENV_{}_TRIG_LFOTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
+                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_RESET", n), EnumEnveloppeModeFlags::ENVMODE_RESET);
+                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_FREERUN", n), EnumEnveloppeModeFlags::ENVMODE_FREERUN);
+                    addFlagIf(env.flags, formatStr("ENV_{}_MODE_DADR", n), EnumEnveloppeModeFlags::ENVMODE_DADR);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), EnumEnveloppeModeFlags::ENVMODE_MULTI);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_EXTRIG", n), EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_LFOTRIG", n), EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
                     env.lfotrig = byteOf(formatStr("ENV_{}_TRIG_LFO_SOURCE", n));
-                    if (bit(formatStr("ENV_{}_TRIG_GATED", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_GATED);
+                    addFlagIf(env.flags, formatStr("ENV_{}_TRIG_GATED", n), EnumEnveloppeModeFlags::ENVMODE_GATED);
                 }
             }
 
@@ -326,16 +327,29 @@ namespace xplorer::model
                     const int n = r + 1;
                     ramp.rate = byteOf(formatStr("RAMP_{}_RATE", n));
                     ramp.flags = 0;
-                    if (bit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_MULTI);
-                    if (bit(formatStr("RAMP_{}_TRIG_EXTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_EXTRIG);
-                    if (bit(formatStr("RAMP_{}_TRIG_LFOTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_LFOTRIG);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), EnumRampFlags::RAMPF_MULTI);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_EXTRIG", n), EnumRampFlags::RAMPF_EXTRIG);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_LFOTRIG", n), EnumRampFlags::RAMPF_LFOTRIG);
                     ramp.lfotrig = byteOf(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n));
-                    if (bit(formatStr("RAMP_{}_TRIG_GATED", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_GATED);
+                    addFlagIf(ramp.flags, formatStr("RAMP_{}_TRIG_GATED", n), EnumRampFlags::RAMPF_GATED);
                 }
             }
 
         private:
             [[nodiscard]] bool bit(const std::string& name) const { return _lookup(name).value() == 1; }
+
+            // Sets `flag` in `flags` when the parameter `name` is on. A flag set is a
+            // bit field, so the or-ing is done on std::byte. [RQ-QLT-018, TASK-QLT-017]
+            template <typename Flag>
+            void addFlagIf(std::uint8_t& flags, const std::string& name, Flag flag) const
+            {
+                if (bit(name))
+                {
+                    flags = std::to_integer<std::uint8_t>(std::byte{flags}
+                                                          | std::byte{static_cast<std::uint8_t>(flag)});
+                }
+            }
+
             [[nodiscard]] std::uint8_t byteOf(const std::string& name) const
             {
                 return static_cast<std::uint8_t>(_lookup(name).value());

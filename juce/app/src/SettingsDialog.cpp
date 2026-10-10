@@ -28,6 +28,9 @@
 #include "Dialogs.hpp"
 
 #include "midiapp/service/Logger.hpp"
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
 #include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/LoggingConfigResolver.hpp"
@@ -327,7 +330,7 @@ namespace xplorer::app
                 midi.automationTable.clear();
                 for (const auto& row : _automationModel.rows)
                 {
-                    midi.automationTable.push_back(row.tag + ";" + std::to_string(row.cc));
+                    midi.automationTable.push_back(midiapp::service::formatStr("{};{}", row.tag, row.cc));
                 }
             }
 
@@ -1046,6 +1049,7 @@ namespace xplorer::app
                 : _controller(controller), _settingsService(settingsService), _backend(backend),
                   _onLedColourChanged(std::move(onLedColourChanged)),
                   _onBlockPaletteChanged(std::move(onBlockPaletteChanged)),
+                  _originalLedColour(settingsService.allUsersSettings().uiConfig.knobLedBorderColor),
                   _tabs(juce::TabbedButtonBar::TabsAtTop)
             {
                 // The reference brackets its settings dialog with
@@ -1061,7 +1065,6 @@ namespace xplorer::app
                 // Both colour snapshots are taken on open and restored on any
                 // non-accept close (Cancel, Esc, title bar).
                 // [DEC-JUC-038, DEC-JUC-113]
-                _originalLedColour = settingsService.allUsersSettings().uiConfig.knobLedBorderColor;
                 _originalPalette = resolveBlockPalette(settingsService.allUsersSettings().uiConfig);
 
                 // [RQ-QLT-014] Held in a smart pointer until the moment

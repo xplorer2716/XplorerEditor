@@ -88,9 +88,9 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-017: Type-safety and formatting (C++)
 - **Tier**: M
-- **Status**: Not Started
-- **Description**: `cpp:S6022` std::byte (19), `S3230` in-class initialisers (14), `S6185` std::format (9), `S7040` bounded escapes, `S6495`, `S7035` to_underlying, `S1117` shadowing, `S1181`/`S112` exception specificity, `S3806` include case.
-- **Requirement refs**: RQ-QLT-018
+- **Status**: Done
+- **Description**: Fixed in production: `cpp:S6022` (flag or-ing on `std::byte`), `S3230` (initializer lists, in-class initializers, locked copy via delegation), `S6185` (`formatStr`, 6 sites), `S112` (`std::domain_error`), `S3806` (`Windows.h`). `S7040`, `S7035`, `S6495`, `S6185` x3 (MIDI layer), `S1181`, `S3230` (ProgressWindow) and `S1117` (false positive) accepted on the owner's decision (RQ-QLT-016).
+- **Requirement refs**: RQ-QLT-018, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:
   - **Given** the flagged sites

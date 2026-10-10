@@ -1,5 +1,9 @@
 #include "xplorer/app/MidiAutomationTable.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
+
 #include <array>
 #include <charconv>
 #include <string>
@@ -89,7 +93,7 @@ namespace xplorer::app
         const auto& base = ccShortNameBase()[static_cast<std::size_t>(shortNameBaseIndex(ccNumber))];
         if (base == "Undefined")
         {
-            return base + " " + std::to_string(ccNumber);
+            return midiapp::service::formatStr("{} {}", base, ccNumber);
         }
         return base;
     }

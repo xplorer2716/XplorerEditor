@@ -64,13 +64,13 @@ namespace xplorer::settings
     class InMemorySettingsService final : public ISettingsService
     {
     public:
-        InMemorySettingsService() : _settings(defaultAllUsersSettings()) {}
+        InMemorySettingsService() = default;
 
         [[nodiscard]] const AllUsersSettings& allUsersSettings() override { return _settings; }
         void saveSettings(const AllUsersSettings& settings) override { _settings = settings; }
         void resetSettings() override { _settings = defaultAllUsersSettings(); }
 
     private:
-        AllUsersSettings _settings;
+        AllUsersSettings _settings = defaultAllUsersSettings();
     };
 }

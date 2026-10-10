@@ -3,7 +3,7 @@
 #include <string>
 
 #ifdef _WIN32
-#include <windows.h> // HANDLE [RQ-QLT-013]
+#include <Windows.h> // HANDLE [RQ-QLT-013]
 #endif
 
 namespace midiapp::service
