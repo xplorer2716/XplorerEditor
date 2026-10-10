@@ -16,6 +16,9 @@
 // update would otherwise clear a stale hover state.
 #include "ModMatrixPanel.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
 #include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/ModulationHighlight.hpp"
@@ -35,7 +38,7 @@ namespace xplorer::app
         refreshAll();
     }
 
-    const ControlSpec* ModMatrixPanel::specFor(const std::string& id) const
+    const ControlSpec* ModMatrixPanel::specFor(std::string_view id) const
     {
         for (const auto& spec : controlTable())
         {
@@ -197,7 +200,7 @@ namespace xplorer::app
     void ModMatrixPanel::refreshDestinationComboItems(int entryNumber)
     {
         auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
-        const auto* spec = specFor("MOD_DEST_" + std::to_string(entryNumber));
+        const auto* spec = specFor(midiapp::service::formatStr("MOD_DEST_{}", entryNumber));
         if (row.destination == nullptr || spec == nullptr)
         {
             return;
@@ -225,7 +228,7 @@ namespace xplorer::app
     void ModMatrixPanel::refreshSourceComboItems(int entryNumber)
     {
         auto& row = _rows[static_cast<std::size_t>(entryNumber - 1)];
-        const auto* spec = specFor("MOD_SRC_" + std::to_string(entryNumber));
+        const auto* spec = specFor(midiapp::service::formatStr("MOD_SRC_{}", entryNumber));
         if (row.source == nullptr || spec == nullptr)
         {
             return;

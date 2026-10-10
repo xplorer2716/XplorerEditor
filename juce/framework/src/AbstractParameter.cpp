@@ -23,7 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 namespace midiapp::model
 {
     AbstractParameter::AbstractParameter(std::string name, int minValue, int maxValue, int step,
-                                         common::midi::MidiMessage message, std::string label)
+                                         const common::midi::MidiMessage& message, std::string label)
         : _name(std::move(name)),
           _label(std::move(label)),
           _minValue(minValue),
@@ -34,16 +34,21 @@ namespace midiapp::model
     }
 
     AbstractParameter::AbstractParameter(const AbstractParameter& other)
+        : AbstractParameter(other, std::scoped_lock(other._mutex))
     {
-        const std::lock_guard lock(other._mutex);
-        _name = other._name;
-        _label = other._label;
-        _minValue = other._minValue;
-        _maxValue = other._maxValue;
-        _step = other._step;
-        _value = other._value;
-        _changed = other._changed;
-        _messageBytes = other._messageBytes;
+    }
+
+    AbstractParameter::AbstractParameter(const AbstractParameter& other,
+                                         const std::scoped_lock<std::mutex>& /*otherLocked*/)
+        : _name(other._name),
+          _label(other._label),
+          _minValue(other._minValue),
+          _maxValue(other._maxValue),
+          _step(other._step),
+          _value(other._value),
+          _changed(other._changed),
+          _messageBytes(other._messageBytes)
+    {
     }
 
     std::string AbstractParameter::name() const
@@ -58,7 +63,7 @@ namespace midiapp::model
         return _label;
     }
 
-    void AbstractParameter::setLabel(const std::string& label)
+    void AbstractParameter::setLabel(std::string_view label)
     {
         const std::lock_guard lock(_mutex);
         _label = label;
@@ -106,8 +111,7 @@ namespace midiapp::model
 
     void AbstractParameter::initializeValue(int value)
     {
-        const std::lock_guard lock(_mutex);
-        setValueLocked(value);
+        setValue(value); // the same quantize/clamp path, by construction [RQ-QLT-018, TASK-QLT-018]
     }
 
     void AbstractParameter::setValueLocked(int value)

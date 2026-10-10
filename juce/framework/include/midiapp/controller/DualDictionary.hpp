@@ -17,6 +17,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #pragma once
 
+#include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -55,7 +56,7 @@ namespace midiapp::controller
 
     private:
         mutable std::mutex _mutex;
-        std::map<std::string, int> _ccByName;
+        std::map<std::string, int, std::less<>> _ccByName;
         std::map<int, std::vector<std::string>> _namesByCc;
     };
 }

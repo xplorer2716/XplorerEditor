@@ -10,7 +10,6 @@ add_library(xpl_app_core STATIC
     src/MidiAutomationTable.cpp
     src/SegmentFont.cpp
     src/PianoKeyMapping.cpp
-    src/PianoKeyLabelPlan.cpp
     src/KnobPresetValues.cpp
     src/LoggingConfigResolver.cpp)
 target_include_directories(xpl_app_core PUBLIC include)

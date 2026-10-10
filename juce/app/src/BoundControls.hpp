@@ -37,6 +37,10 @@ namespace xplorer::app
         [[nodiscard]] virtual juce::Component& asComponent() = 0;
 
     protected:
+        /// The registry this control reports its edits to. [RQ-QLT-017, TASK-QLT-014]
+        [[nodiscard]] ParameterBindingRegistry& registry() const { return _registry; }
+
+    private:
         ParameterBindingRegistry& _registry;
         std::string _parameterName;
     };

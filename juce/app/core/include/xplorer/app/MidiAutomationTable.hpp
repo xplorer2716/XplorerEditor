@@ -7,6 +7,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -47,5 +48,5 @@ namespace xplorer::app
     /// CC to 1..128 as the reference does. nullopt when malformed or CC is not
     /// an integer. [reference SettingsManager.LoadSettings]
     [[nodiscard]] std::optional<std::pair<std::string, int>>
-    parseAutomationEntry(const std::string& entry);
+    parseAutomationEntry(std::string_view entry);
 }

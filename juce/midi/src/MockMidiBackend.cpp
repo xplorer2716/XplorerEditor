@@ -38,6 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "common/midi/MockMidiBackend.hpp"
 
 #include <algorithm>
+#include <functional>
 #include <map>
 
 namespace common::midi
@@ -56,12 +57,15 @@ namespace common::midi
         // Weak, not raw: deliver() must be able to prove a port body is still
         // alive before calling into it, and must keep it alive for the whole
         // callback. See the delivery note on State::deliver. [RQ-BUG-005]
-        std::map<std::string, std::vector<std::weak_ptr<InputPortBody>>> openInputs;
+        // The maps compare transparently (std::less<>), so a device name given
+        // as a view or literal looks up without a temporary std::string.
+        // [RQ-QLT-018, TASK-QLT-016]
+        std::map<std::string, std::vector<std::weak_ptr<InputPortBody>>, std::less<>> openInputs;
         // Raw is safe here: these pointers are only ever COUNTED, under the
         // mutex, by openOutputPortCount. Nothing dereferences them outside it.
-        std::map<std::string, std::vector<MockOutputPort*>> openOutputs;
-        std::map<std::string, std::vector<MidiMessage>> captured;
-        std::map<std::string, std::string> loopbacks; // output name -> input name
+        std::map<std::string, std::vector<MockOutputPort*>, std::less<>> openOutputs;
+        std::map<std::string, std::vector<MidiMessage>, std::less<>> captured;
+        std::map<std::string, std::string, std::less<>> loopbacks; // output name -> input name
 
         // Both fan a message out to every port currently open on `inputName`.
         // "Every port", plural, on purpose: a test may open the same device
@@ -92,32 +96,33 @@ namespace common::midi
         // than queueing it, which is what lets a test assert that stop() really
         // silences a device -- the controller relies on that when it stops the
         // ports while the settings dialog is open. [RQ-MID-005]
-        void receive(const MidiMessage& message)
+        void receive(const MidiMessage& message) const
         {
+            using enum MessageType;
             if (!started || closed)
             {
                 return;
             }
             switch (message.type())
             {
-                case MessageType::Channel:
+                case Channel:
                     if (callbacks.onChannelMessage) callbacks.onChannelMessage(message);
                     break;
-                case MessageType::SysEx:
+                case SysEx:
                     if (callbacks.onSysExMessage) callbacks.onSysExMessage(message);
                     break;
-                case MessageType::SysCommon:
+                case SysCommon:
                     if (callbacks.onSysCommonMessage) callbacks.onSysCommonMessage(message);
                     break;
-                case MessageType::SysRealtime:
+                case SysRealtime:
                     if (callbacks.onSysRealtimeMessage) callbacks.onSysRealtimeMessage(message);
                     break;
-                case MessageType::Invalid:
+                case Invalid:
                     break;
             }
         }
 
-        void receiveError(const std::string& description)
+        void receiveError(const std::string& description) const
         {
             if (started && !closed && callbacks.onError)
             {
@@ -132,12 +137,16 @@ namespace common::midi
     {
     public:
         MockInputPort(std::shared_ptr<State> state, std::string name)
-            : _state(std::move(state)), _name(std::move(name)),
-              _body(std::make_shared<InputPortBody>())
+            : _state(std::move(state)), _name(std::move(name))
         {
             const std::lock_guard lock(_state->mutex);
             _state->openInputs[_name].push_back(_body);
         }
+
+        // A copy would share the body, so destroying it would close this port.
+        // [RQ-QLT-017, TASK-QLT-014]
+        MockInputPort(const MockInputPort&) = delete;
+        MockInputPort& operator=(const MockInputPort&) = delete;
 
         ~MockInputPort() override
         {
@@ -160,7 +169,7 @@ namespace common::midi
     private:
         std::shared_ptr<State> _state;
         std::string _name;
-        std::shared_ptr<InputPortBody> _body;
+        std::shared_ptr<InputPortBody> _body = std::make_shared<InputPortBody>();
     };
 
     class MockMidiBackend::MockOutputPort final : public MidiOutputPort
@@ -172,6 +181,11 @@ namespace common::midi
             const std::lock_guard lock(_state->mutex);
             _state->openOutputs[_name].push_back(this);
         }
+
+        // The registry holds `this`: a copy would never be registered.
+        // [RQ-QLT-017, TASK-QLT-014]
+        MockOutputPort(const MockOutputPort&) = delete;
+        MockOutputPort& operator=(const MockOutputPort&) = delete;
 
         ~MockOutputPort() override
         {
@@ -302,8 +316,7 @@ namespace common::midi
     {
         {
             const std::lock_guard lock(_state->mutex);
-            if (std::find(_state->inputNames.begin(), _state->inputNames.end(), deviceName)
-                == _state->inputNames.end())
+            if (std::ranges::find(_state->inputNames, deviceName) == _state->inputNames.end())
             {
                 return nullptr; // [RQ-MID-002]
             }
@@ -315,8 +328,7 @@ namespace common::midi
     {
         {
             const std::lock_guard lock(_state->mutex);
-            if (std::find(_state->outputNames.begin(), _state->outputNames.end(), deviceName)
-                == _state->outputNames.end())
+            if (std::ranges::find(_state->outputNames, deviceName) == _state->outputNames.end())
             {
                 return nullptr; // [RQ-MID-002]
             }
@@ -357,10 +369,10 @@ namespace common::midi
     // produces its own reply. Used to exercise round-trips (program change ->
     // dump request -> dump) without hardware. One target per output; calling
     // again re-points it.
-    void MockMidiBackend::connectLoopback(const std::string& outputDeviceName, const std::string& inputDeviceName)
+    void MockMidiBackend::connectLoopback(std::string_view outputDeviceName, std::string_view inputDeviceName)
     {
         const std::lock_guard lock(_state->mutex);
-        _state->loopbacks[outputDeviceName] = inputDeviceName;
+        _state->loopbacks[std::string(outputDeviceName)] = inputDeviceName;
     }
 
     // How many handles are open on a device right now. This is what proves the
@@ -377,9 +389,9 @@ namespace common::midi
         // Counts live handles, not registry slots: a body kept alive by an
         // in-flight delivery still has an expired weak_ptr here, and a closed
         // port must read as closed the instant its handle is destroyed.
-        return static_cast<int>(std::count_if(found->second.begin(), found->second.end(),
-                                              [](const std::weak_ptr<InputPortBody>& candidate)
-                                              { return !candidate.expired(); }));
+        return static_cast<int>(std::ranges::count_if(found->second,
+                                                      [](const std::weak_ptr<InputPortBody>& candidate)
+                                                      { return !candidate.expired(); }));
     }
 
     int MockMidiBackend::openOutputPortCount(const std::string& deviceName) const

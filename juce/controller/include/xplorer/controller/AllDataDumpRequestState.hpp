@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -48,7 +49,7 @@ namespace xplorer::controller
             _multiPatches.clear();
         }
 
-        void initialize(const std::string& destination, Mode receptionMode)
+        void initialize(std::string_view destination, Mode receptionMode)
         {
             clear();
             setWaitingForAllDataDumpRequest(true);

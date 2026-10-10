@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <set>
 #include <stdexcept>
+#include <string_view>
 
 using midiapp::model::AbstractTone;
 using midiapp::testing::TestTone;
@@ -147,6 +148,29 @@ SCENARIO("Morphing interpolates eligible parameters", "[RQ-FMW-012]")
             CHECK(result.parameterMap().at("A").value() == 10);
             AbstractTone::morphTones(toneA, toneB, result, 1.0F);
             CHECK(result.parameterMap().at("A").value() == 50);
+        }
+    }
+}
+
+// Traceability: TASK-QLT-016 (ParameterNameSet compares transparently; the
+// string_view lookups below only compile while that holds).
+SCENARIO("The eligible-parameter set is looked up by view", "[RQ-QLT-018][RQ-FMW-012]")
+{
+    GIVEN("a tone with three parameters")
+    {
+        const auto tone = makeTone();
+
+        WHEN("its eligible morphing parameters are listed")
+        {
+            const auto eligible = tone.eligibleParametersForToneMorphing();
+
+            THEN("every parameter name is in the set, found by string_view without a std::string")
+            {
+                CHECK(eligible.size() == 3);
+                CHECK(eligible.contains(std::string_view{"A"}));
+                CHECK(eligible.contains(std::string_view{"SWITCH"}));
+                CHECK_FALSE(eligible.contains(std::string_view{"Z"}));
+            }
         }
     }
 }

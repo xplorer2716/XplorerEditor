@@ -1,5 +1,8 @@
 #include "xplorer/app/PageFamilyModel.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
 #include "xpl/util/EnumUtils.hpp"
 
 namespace xplorer::app
@@ -41,7 +44,7 @@ namespace xplorer::app
             return controlTag;
         }
         std::string resolved = controlTag;
-        resolved.replace(position, 3, "_" + std::to_string(instance) + "_");
+        resolved.replace(position, 3, midiapp::service::formatStr("_{}_", instance));
         return resolved;
     }
 
@@ -53,15 +56,13 @@ namespace xplorer::app
             {
                 continue;
             }
-            if (static_cast<std::size_t>(family.digitIndex) >= parameterName.size())
+            const auto digitIndex = static_cast<std::size_t>(family.digitIndex);
+            if (digitIndex >= parameterName.size() || parameterName[digitIndex] < '1'
+                || parameterName[digitIndex] > '9')
             {
-                break;
+                break; // a family prefix without an instance digit: not a family parameter
             }
-            const char digit = parameterName[static_cast<std::size_t>(family.digitIndex)];
-            if (digit < '1' || digit > '9')
-            {
-                break;
-            }
+            const char digit = parameterName[digitIndex];
             FamilyParameter result;
             result.controlTag = parameterName.substr(0, static_cast<std::size_t>(family.digitIndex))
                                 + "X" + parameterName.substr(static_cast<std::size_t>(family.digitIndex) + 1);

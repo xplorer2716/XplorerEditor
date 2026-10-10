@@ -26,8 +26,9 @@ namespace xplorer::model
             {
                 throw std::out_of_range("packetized read past end of data");
             }
-            const std::uint16_t packet =
-                static_cast<std::uint16_t>(_packed[_position] | (_packed[_position + 1] << 8));
+            const auto low = static_cast<std::uint16_t>(_packed[_position]);
+            const auto high = static_cast<std::uint16_t>(_packed[_position + 1]);
+            const auto packet = static_cast<std::uint16_t>(low | (high << 8));
             _position += 2;
             return unpack(packet);
         }

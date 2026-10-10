@@ -40,7 +40,7 @@ namespace xplorer::model
         [[nodiscard]] std::string toneName() const override { return _toneName; }
         /// Truncated/space-padded to 8 characters (reference setter).
         void setToneName(const std::string& name) override;
-        [[nodiscard]] std::set<std::string> eligibleParametersForToneMorphing() const override;
+        [[nodiscard]] midiapp::model::ParameterNameSet eligibleParametersForToneMorphing() const override;
 
         // --- program numbers (reference .Properties.cs) [RQ-MOD-021] ---
         [[nodiscard]] int editingProgramNumber() const { return _editingProgramNumber; }
@@ -118,6 +118,6 @@ namespace xplorer::model
         int _currentProgramNumber = MAX_PROGRAM_NUMBER; // reference DEFAULT_EDITING_NUMBER
         int _editingProgramNumber = MAX_PROGRAM_NUMBER;
         std::array<ModulationMatrixEntry, constants::MODENTRIES_COUNT> _modulationMatrix{};
-        std::set<std::string> _parameterNamesForToneMorphing;
+        midiapp::model::ParameterNameSet _parameterNamesForToneMorphing;
     };
 }

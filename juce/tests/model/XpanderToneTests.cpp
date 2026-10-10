@@ -8,6 +8,7 @@
 #include <array>
 #include <fstream>
 #include <functional>
+#include <random>
 #include <vector>
 
 using namespace xplorer::model;
@@ -140,6 +141,47 @@ SCENARIO("A real hardware dump round-trips through the full tone", "[RQ-MOD-022]
             THEN("serialization is idempotent")
             {
                 CHECK(secondTone.toByteArray() == reEncoded);
+            }
+        }
+    }
+}
+
+// Traceability: TASK-QLT-013 (fromSinglePatch/toSinglePatch were split into one
+// member per patch section; the single real dump above leaves flag branches
+// such as VCO2 noise/sync or the LFO-trigger fallbacks unexercised).
+SCENARIO("Arbitrary single patches stabilise after one tone round trip", "[RQ-MOD-022][RQ-QLT-017]")
+{
+    // The dump is a 6-byte SysEx header, then every patch byte split into two
+    // wire bytes of one nibble each, then the closing F7.
+    constexpr std::size_t DUMP_HEADER_LENGTH = 6;
+    constexpr std::uint32_t NIBBLE_MASK = 0x0F;
+    constexpr std::uint32_t RANDOM_SEED = 20261010;
+    constexpr int RANDOM_PATCH_COUNT = 300;
+
+    GIVEN("300 hardware-shaped dumps whose data nibbles are pseudo-random")
+    {
+        const auto dump = loadFixtureDump();
+        std::mt19937 random(RANDOM_SEED);
+
+        WHEN("each is decoded, re-encoded, decoded again and re-encoded")
+        {
+            THEN("the second encoding equals the first, and no dump is rejected")
+            {
+                for (int iteration = 0; iteration < RANDOM_PATCH_COUNT; ++iteration)
+                {
+                    auto bytes = dump;
+                    for (std::size_t i = DUMP_HEADER_LENGTH; i + 1 < bytes.size(); ++i)
+                    {
+                        bytes[i] = static_cast<std::uint8_t>(random() & NIBBLE_MASK);
+                    }
+                    XpanderTone first;
+                    first.fromByteArray(bytes);
+                    const auto firstEncoding = first.toByteArray();
+                    XpanderTone second;
+                    second.fromByteArray(firstEncoding);
+                    INFO("iteration " << iteration);
+                    CHECK(second.toByteArray() == firstEncoding);
+                }
             }
         }
     }

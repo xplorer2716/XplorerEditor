@@ -353,3 +353,130 @@ tranche and triaged separately:
   - **When** this file is read
   - **Then** its rationale is findable by rule id and location
 - **Dependencies**: None
+
+## SonarCloud `dev` Backlog Remediation (PLAN-QLT-003)
+
+Origin: SonarCloud scan of branch `dev`, analysis 2026-10-09 — 324 OPEN issues
+(0 BLOCKER, 33 HIGH, 177 MEDIUM, 114 LOW; MQR impact severities).
+
+### RQ-QLT-017: HIGH-impact SonarCloud issues are resolved or triaged
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: The codebase SHALL have zero OPEN HIGH-impact SonarCloud
+  issues on the delivered branch, each being either fixed or accepted with a
+  rationale recorded per RQ-QLT-016.
+- **Metric**: OPEN issues with impact severity HIGH = 0 (33 at baseline)
+- **Measurement Method**: `sonar list issues --branch <branch> --severities HIGH`
+  after the next SonarCloud analysis
+- **Priority**: Must
+- **Acceptance Criteria**:
+  - **Given** the 33 baseline HIGH issues
+  - **When** SonarCloud re-analyses the branch
+  - **Then** none remains OPEN
+  - **And** the test suite passes with no test modified to force a pass
+- **Dependencies**: RQ-QLT-016, RQ-TST-*
+
+### RQ-QLT-018: MEDIUM-impact SonarCloud issues are resolved or triaged
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: The codebase SHALL have zero OPEN MEDIUM-impact SonarCloud
+  issues on the delivered branch, each being either fixed or accepted with a
+  rationale recorded per RQ-QLT-016.
+- **Metric**: OPEN issues with impact severity MEDIUM = 0 (177 at baseline)
+- **Measurement Method**: `sonar list issues --branch <branch> --severities MEDIUM`
+- **Priority**: Should
+- **Acceptance Criteria**:
+  - **Given** the 177 baseline MEDIUM issues
+  - **When** SonarCloud re-analyses the branch
+  - **Then** none remains OPEN
+  - **And** the test suite passes with no test modified to force a pass
+- **Dependencies**: RQ-QLT-016, RQ-QLT-017, RQ-TST-*
+
+### RQ-QLT-019: LOW-impact SonarCloud issues are resolved or triaged
+
+- **Category**: Non-Functional
+- **NFR Type**: Maintainability
+- **EARS Type**: Ubiquitous
+- **Statement**: The codebase SHALL have zero OPEN LOW-impact SonarCloud
+  issues on the delivered branch, each being either fixed or accepted with a
+  rationale recorded per RQ-QLT-016.
+- **Metric**: OPEN issues with impact severity LOW = 0 (114 at baseline)
+- **Measurement Method**: `sonar list issues --branch <branch> --severities LOW`
+- **Priority**: Could
+- **Acceptance Criteria**:
+  - **Given** the 114 baseline LOW issues
+  - **When** SonarCloud re-analyses the branch
+  - **Then** none remains OPEN
+  - **And** the test suite passes with no test modified to force a pass
+- **Dependencies**: RQ-QLT-016, RQ-QLT-018, RQ-TST-*
+
+### Triage record for PLAN-QLT-003 (RQ-QLT-016)
+
+Policy: an issue located in a **test file** is accepted, not fixed — the tests
+are AI-generated and not maintained by a human. An issue in a **Python or
+shell file** is accepted as-is too: those files are copied from another
+repository and reviewed there. Other production-code issues are fixed, unless
+the owner decides otherwise case by case (recorded below). Each SonarCloud
+comment carries the task id.
+
+- **TASK-QLT-013** — `cpp:S134` x5, `juce/tests/app/KnobPresetValuesTests.cpp`
+  lines 97, 132, 236, 258, 290 (nesting deeper than 3 in test code).
+- **TASK-QLT-014** — `cpp:S5213` x1, `juce/controller/src/XpanderController.cpp`
+  line 299 (`restoreAllDataDumpToSynth`, `std::function` parameter). Production
+  code, accepted on the owner's explicit decision: the API is blocking and
+  paced by sleeps, so the type-erasure cost is nil, and a template would move
+  the body into the header and add private members to a class already over the
+  S1448 limit.
+- **TASK-QLT-015** — `python:S3776` x5 (`extract_control_table.py:46`,
+  `fit_vfd_tokens.py:253,445`, `generate_design_tokens.py:74`,
+  `prototypes/triangle_lattice.py:120`) and `shelldre:S7688` x2
+  (`validate-ids.sh:15`, `check_no_version_literals.sh:71`): Python and shell
+  code copied from another repository, reviewed upstream.
+- **TASK-QLT-016** — 17 issues in test files (`cpp:S5827` x7, `S6045` x4,
+  `S5817` x2, `S7034`, `S6033`, `S5950`, `S6010` x1 each). Production code,
+  accepted on the owner's decision: `cpp:S7034` x2 (`MainComponent.cpp:111`,
+  `FileUtils.cpp:24`: `std::string::contains` is C++23, the project is C++20);
+  `cpp:S1238` x1 (`EventDispatcher.hpp:20`: `post()` by value is the base
+  class's sink signature); `cpp:S6010` x1 (`XpanderController.cpp:201`: every
+  path API of the project is `std::string`); `cpp:S5950` x4
+  (`XpanderParameter.cpp:48,82,107,127`: `clone()` needs the copy constructors,
+  non-public by design, which `std::make_unique` cannot reach).
+- **TASK-QLT-017** — 1 issue in a test file (`cpp:S1117`). Production code,
+  accepted on the owner's decision: `cpp:S7040` x2 (`Dialogs.cpp:234`,
+  `FileUtils.cpp:12`), `S7035` (`EnumUtils.hpp:34`) and `S6495`
+  (`Logger.cpp:108`): C++23 features, or `std::format` / `std::put_time`, that
+  the C++20 project and the pinned GCC 11 CI cannot use; `cpp:S6185` x3
+  (`MidiMessage.cpp:33,52,139`): the MIDI layer cannot reach `formatStr`;
+  `cpp:S1181` x4 (`Dialogs.cpp:549,587`, `MainComponent.cpp` "New patch" and
+  "Load patch"): UI-boundary handlers that show `e.what()`; `cpp:S3230`
+  (`ProgressWindow.cpp:38`): the RAII-until-handoff pattern of RQ-QLT-014;
+  `cpp:S1117` (`PageFamilyBlock.cpp:105`): analyzer false positive.
+- **TASK-QLT-018** — no test-file issue. Production code, accepted on the
+  owner's decision: `cpp:S107` x8 (`XplorerLookAndFeel.cpp` JUCE overrides
+  `drawRotarySlider`, `drawTickBox`, `drawComboBox`; `XpanderParameter.cpp`
+  constructors x3 and `XpanderTone.cpp` `addUnsigned`/`addSigned` lambdas,
+  which mirror the synth's parameter record); `cpp:S1448` x3
+  (`XpanderController`, `AbstractController`, `XpanderTone`: splitting is an
+  architecture change); `cpp:S1479` (`ModulationHighlight.cpp:174`: the
+  exhaustive switch is a compile-time guarantee); `cpp:S5414`
+  (`ModulationMatrixEntry.hpp`: about 130 uses of its public fields).
+- **TASK-QLT-019** — 20 Python and shell issues (`shelldre:S7679` x8,
+  `S7682` x7, `python:S1542` x2, `S3457` x2, `S1656`): code copied from another
+  repository, reviewed upstream.
+- **TASK-QLT-020** — 21 issues in test files (`cpp:S6012` x6, `S6197` x5,
+  `S6177` x4, `S6009` x3, `S3574`, `S5566`, `S6171`). Production code, accepted
+  on the owner's decision: `cpp:S5951` x2 (`Main.cpp:42,43`: the JUCE
+  `JUCEApplication` virtuals return `const juce::String`); `cpp:S2486` x3
+  (`Dialogs.cpp`, `MainComponent.cpp`: the UI-boundary handlers that show
+  `e.what()`, already accepted for S1181).
+- **TASK-QLT-021** — 19 Python and shell issues (`python:S9409` x9, `S6353`
+  x4, `S7498` x3, `S1481`, `S7494`; `shelldre:S1192`): code copied from
+  another repository, reviewed upstream.
+- **TASK-QLT-022** — PR #89 quality gate. 5 issues in test files added by this
+  plan: `cpp:S5443` (`FileUtilsTests.cpp:22`, temp directory) and `S2245`
+  (`XpanderToneTests.cpp:164`, fixed-seed PRNG), the two that failed the gate,
+  plus `S3230`, `S134` and `S6197`.

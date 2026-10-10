@@ -21,6 +21,8 @@
 
 #include <juce_core/juce_core.h>
 
+#include <algorithm>
+
 namespace xplorer::app
 {
     namespace
@@ -106,20 +108,106 @@ namespace xplorer::app
         constexpr const char* VFD_DISPLAY_CONTROL_ID = "_vfdDisplay";
 
         // Fixed (non page-family) blocks handled in TASK-JUC-063.
+        constexpr std::array FIXED_BLOCK_TAG_PREFIXES{"VCO1", "VCO2", "FM", "LAG", "VCF"};
+
         bool isFixedBlockTag(const std::string& tag)
         {
             if (tag.empty() || tag.find("_X") != std::string::npos)
             {
                 return false;
             }
-            for (const auto* prefix : {"VCO1", "VCO2", "FM", "LAG", "VCF"})
+            return std::ranges::any_of(FIXED_BLOCK_TAG_PREFIXES,
+                                       [&tag](const char* prefix) { return tag.starts_with(prefix); });
+        }
+
+        /// A control built for one fixed-block spec, with the handle the
+        /// registry binds it by. An empty `component` means the spec yields
+        /// nothing to place: no backing parameter, no options to show, or a
+        /// kind the fixed block does not place. [RQ-QLT-017, TASK-QLT-013]
+        struct FixedBlockControl
+        {
+            std::unique_ptr<juce::Component> component;
+            IBoundControl* bound = nullptr;
+        };
+
+        template <typename Control>
+        FixedBlockControl asFixedBlockControl(std::unique_ptr<Control> control)
+        {
+            IBoundControl* bound = control.get();
+            return {std::move(control), bound};
+        }
+
+        FixedBlockControl buildFixedBlockKnob(ParameterBindingRegistry& registry, const std::string& tag,
+                                              const midiapp::model::AbstractParameter& parameter)
+        {
+            auto knob = std::make_unique<BoundKnob>(registry, tag, parameter.minValue(),
+                                                    parameter.maxValue(), parameter.step());
+            // The VCO frequency knobs step through harmonic semitones
+            // rather than the tenths their 0..63 range would derive
+            // (reference MainForm.Overrides.cs). Every other knob is
+            // left to derive its own presets from its range, lazily.
+            // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-130)]
+            if (const auto* harmonics = harmonicPresetValuesFor(tag))
             {
-                if (tag.rfind(prefix, 0) == 0)
-                {
-                    return true;
-                }
+                knob->setPresetValues(*harmonics);
             }
-            return false;
+            return asFixedBlockControl(std::move(knob));
+        }
+
+        FixedBlockControl buildFixedBlockComboBox(ParameterBindingRegistry& registry, const std::string& tag)
+        {
+            std::vector<std::pair<std::string, int>> options;
+            const auto labels = comboLabelsForControl(tag);
+            for (std::size_t i = 0; i < labels.size(); ++i)
+            {
+                options.emplace_back(labels[i], static_cast<int>(i));
+            }
+            if (options.empty())
+            {
+                return {};
+            }
+            return asFixedBlockControl(std::make_unique<BoundComboBox>(registry, tag, options));
+        }
+
+        FixedBlockControl buildFixedBlockRadioGroup(ParameterBindingRegistry& registry, const std::string& tag)
+        {
+            const auto options = radioPanelOptions(tag);
+            if (options.empty())
+            {
+                return {};
+            }
+            // Fixed-block radio panels (FM destination, LAG timing) render
+            // as real two-way radio groups, matching the reference form
+            // (owner request). [RQ-GUI-038, RQ-GUI-040, ADR-JUC-016]
+            return asFixedBlockControl(std::make_unique<BoundRadioGroup>(registry, tag, options));
+        }
+
+        FixedBlockControl buildFixedBlockControl(const ControlSpec& spec, const std::string& tag,
+                                                 ParameterBindingRegistry& registry,
+                                                 const midiapp::model::AbstractParameter* parameter)
+        {
+            switch (spec.kind)
+            {
+                case ControlKind::KnobControl:
+                    if (parameter == nullptr)
+                    {
+                        return {};
+                    }
+                    return buildFixedBlockKnob(registry, tag, *parameter);
+                case ControlKind::CheckBoxValuedControl:
+                    if (parameter == nullptr)
+                    {
+                        return {};
+                    }
+                    return asFixedBlockControl(std::make_unique<BoundCheckBox>(
+                        registry, tag, juce::String(spec.label))); // [RQ-GUI-032]
+                case ControlKind::ComboBoxValuedControl:
+                    return buildFixedBlockComboBox(registry, tag);
+                case ControlKind::RadioButtonPanel:
+                    return buildFixedBlockRadioGroup(registry, tag);
+                default:
+                    return {};
+            }
         }
 
         juce::String preferredSettingsDirectory()
@@ -182,18 +270,21 @@ namespace xplorer::app
         }
     }
 
+    // The settings service and the look-and-feel are built in the initializer
+    // list. The rest of the bootstrap is order-dependent -- the logger is wired
+    // between the service and the controller -- so it stays in the body.
+    // [RQ-QLT-018, TASK-QLT-017]
     MainComponent::MainComponent()
+        : _settingsService(std::make_unique<settings::XmlSettingsService>(
+              preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString())),
+          _lookAndFeel(std::make_unique<XplorerLookAndFeel>(juce::Colour(static_cast<juce::uint32>(
+              _settingsService->allUsersSettings().uiConfig.knobLedBorderColor)))) // [RQ-GUI-031]
     {
         _dispatcher = std::make_shared<JuceEventDispatcher>();
-        _settingsService = std::make_unique<settings::XmlSettingsService>(
-            preferredSettingsDirectory().toStdString(), fallbackSettingsDirectory().toStdString());
         configureDiagnosticLogging(*_settingsService);
         _controller = std::make_unique<controller::XpanderController>(
             _backend, *_settingsService, _dispatcher, productNameAndVersion());
         _registry = std::make_unique<ParameterBindingRegistry>(*_controller);
-        _lookAndFeel = std::make_unique<XplorerLookAndFeel>(
-            juce::Colour(static_cast<juce::uint32>(
-                _settingsService->allUsersSettings().uiConfig.knobLedBorderColor))); // [RQ-GUI-031]
         // Block palette: defaults with the persisted per-block overrides
         // applied. [RQ-DSN-095, RQ-SET-007, ADR-JUC-020]
         _lookAndFeel->setBlockPalette(
@@ -333,94 +424,25 @@ namespace xplorer::app
             {
                 continue;
             }
-            const auto* parameter = _controller->getParameter(tag);
-            std::unique_ptr<juce::Component> component;
-            IBoundControl* bound = nullptr;
-
-            switch (spec.kind)
+            auto built = buildFixedBlockControl(spec, tag, *_registry, _controller->getParameter(tag));
+            if (built.component == nullptr)
             {
-                case ControlKind::KnobControl:
-                {
-                    if (parameter == nullptr)
-                    {
-                        continue;
-                    }
-                    auto knob = std::make_unique<BoundKnob>(*_registry, tag, parameter->minValue(),
-                                                            parameter->maxValue(), parameter->step());
-                    // The VCO frequency knobs step through harmonic semitones
-                    // rather than the tenths their 0..63 range would derive
-                    // (reference MainForm.Overrides.cs). Every other knob is
-                    // left to derive its own presets from its range, lazily.
-                    // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-130)]
-                    if (const auto* harmonics = harmonicPresetValuesFor(tag))
-                    {
-                        knob->setPresetValues(*harmonics);
-                    }
-                    bound = knob.get();
-                    component = std::move(knob);
-                    break;
-                }
-                case ControlKind::CheckBoxValuedControl:
-                {
-                    if (parameter == nullptr)
-                    {
-                        continue;
-                    }
-                    auto check = std::make_unique<BoundCheckBox>(*_registry, tag,
-                                                                juce::String(spec.label)); // [RQ-GUI-032]
-                    bound = check.get();
-                    component = std::move(check);
-                    break;
-                }
-                case ControlKind::ComboBoxValuedControl:
-                {
-                    std::vector<std::pair<std::string, int>> options;
-                    const auto labels = comboLabelsForControl(tag);
-                    for (std::size_t i = 0; i < labels.size(); ++i)
-                    {
-                        options.emplace_back(labels[i], static_cast<int>(i));
-                    }
-                    if (options.empty())
-                    {
-                        continue;
-                    }
-                    auto combo = std::make_unique<BoundComboBox>(*_registry, tag, options);
-                    bound = combo.get();
-                    component = std::move(combo);
-                    break;
-                }
-                case ControlKind::RadioButtonPanel:
-                {
-                    const auto options = radioPanelOptions(tag);
-                    if (options.empty())
-                    {
-                        continue;
-                    }
-                    // Fixed-block radio panels (FM destination, LAG timing) render
-                    // as real two-way radio groups, matching the reference form
-                    // (owner request). [RQ-GUI-038, RQ-GUI-040, ADR-JUC-016]
-                    auto radios = std::make_unique<BoundRadioGroup>(*_registry, tag, options);
-                    bound = radios.get();
-                    component = std::move(radios);
-                    break;
-                }
-                default:
-                    continue;
+                continue;
             }
 
             // Skinned via the default LookAndFeel (set in the ctor). [RQ-GUI-031]
-            component->setBounds(spec.x, spec.y, spec.width, spec.height);
-            addAndMakeVisible(*component);
-            if (bound != nullptr)
+            built.component->setBounds(spec.x, spec.y, spec.width, spec.height);
+            addAndMakeVisible(*built.component);
+            if (built.bound != nullptr)
             {
-                _registry->bind(tag, *bound);
+                _registry->bind(tag, *built.bound);
             }
             // Fixed knobs forward their hover to the matrix highlight. [RQ-GUI-018]
             if (spec.kind == ControlKind::KnobControl)
             {
-                component->addMouseListener(&_hover, false);
+                built.component->addMouseListener(&_hover, false);
             }
-            _controls.push_back(std::move(component));
+            _controls.push_back(std::move(built.component));
         }
     }
 
@@ -485,7 +507,7 @@ namespace xplorer::app
         {
             return;
         }
-        for (auto& block : _familyBlocks)
+        for (const auto& block : _familyBlocks)
         {
             if (block->familyPrefix() == familyPage->familyPrefix)
             {
@@ -568,37 +590,9 @@ namespace xplorer::app
                     }
                 });
         };
-        _shortcutActions[SHORTCUT_ID_PATCH_SAVE] = [this]
-        {
-            // Default the file name to the tone's own name, sanitized and
-            // made unique the same way RQ-CTL-003's bank extraction already
-            // does — one sanitizer, not a second implementation of the same
-            // rule. [RQ-GUI-077]
-            //
-            // Trailing spaces are trimmed first: the model pads tone names to
-            // a fixed width with spaces (XPANDER's own on-synth storage
-            // format), which are meaningless trailing characters in a file
-            // name and not caught by the sanitizer (space is a legal file-name
-            // character everywhere else in a name).
-            const auto trimmedToneName = midiapp::service::trimTrailingSpaces(_controller->toneName());
-            const auto documentsDirectory =
-                juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
-            const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
-                trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
-                documentsDirectory.getFullPathName().toStdString());
-            _fileChooser = std::make_unique<juce::FileChooser>(
-                "Save patch", documentsDirectory.getChildFile(defaultFileName), SYSEX_FILE_FILTER);
-            _fileChooser->launchAsync(
-                juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
-                [this](const juce::FileChooser& chooser)
-                {
-                    const auto file = chooser.getResult();
-                    if (file != juce::File())
-                    {
-                        _controller->saveXplorerTone(file.getFullPathName().toStdString());
-                    }
-                });
-        };
+        // One implementation shared with the File > Save menu item.
+        // [RQ-QLT-005, RQ-QLT-018, TASK-QLT-018]
+        _shortcutActions[SHORTCUT_ID_PATCH_SAVE] = [this] { showSavePatchDialog(); };
         // One implementation shared with the Patch menu item. [RQ-QLT-005]
         _shortcutActions[SHORTCUT_ID_PATCH_STORE] = [this] { showStorePatchDialog(); };
         _shortcutActions[SHORTCUT_ID_SETTINGS] = [this] { openSettingsDialog(); };
@@ -649,10 +643,15 @@ namespace xplorer::app
         // indices are named because paint()'s colour array is ordered to match
         // them: the two orderings must agree, and neither said so.
         // [RQ-QLT-007]
-        const std::size_t index =
-            device == controller::EnumMidiDevice::AutomationInputDevice ? LED_INDEX_AUTOMATION_IN
-            : device == controller::EnumMidiDevice::SynthInputDevice    ? LED_INDEX_SYNTH_IN
-                                                                        : LED_INDEX_SYNTH_OUT;
+        std::size_t index = LED_INDEX_SYNTH_OUT;
+        if (device == controller::EnumMidiDevice::AutomationInputDevice)
+        {
+            index = LED_INDEX_AUTOMATION_IN;
+        }
+        else if (device == controller::EnumMidiDevice::SynthInputDevice)
+        {
+            index = LED_INDEX_SYNTH_IN;
+        }
         _litUntil[index] = juce::Time::currentTimeMillis() + HOLD_MILLISECONDS;
         if (!isTimerRunning())
         {
@@ -704,7 +703,7 @@ namespace xplorer::app
         const int size = tokens::component::indicatorSize;
         const auto now = juce::Time::currentTimeMillis();
         const int horizontalSpace = (area.getWidth() - LED_COUNT * size) / (LED_COUNT + 1);
-        const float y = static_cast<float>(area.getY() + (area.getHeight() - size) / 2);
+        const auto y = static_cast<float>(area.getY() + (area.getHeight() - size) / 2);
 
         for (int i = 0; i < LED_COUNT; ++i)
         {
@@ -914,17 +913,18 @@ namespace xplorer::app
         /// position alone. [RQ-QLT-003, ADR-QLT-001 (DEC-QLT-004)]
         [[nodiscard]] const char* topLevelMenuName(TopLevelMenu menu)
         {
+            using enum TopLevelMenu;
             switch (menu)
             {
-                case TopLevelMenu::File:
+                case File:
                     return "File";
-                case TopLevelMenu::Patch:
+                case Patch:
                     return "Patch";
-                case TopLevelMenu::View:
+                case View:
                     return "View";
-                case TopLevelMenu::Tools:
+                case Tools:
                     return "Tools";
-                case TopLevelMenu::Help:
+                case Help:
                     return "Help";
             }
             return "";
@@ -960,6 +960,7 @@ namespace xplorer::app
 
     juce::PopupMenu MainComponent::getMenuForIndex(int index, const juce::String&)
     {
+        using enum MenuItem;
         juce::PopupMenu menu;
         switch (static_cast<TopLevelMenu>(index))
         {
@@ -968,29 +969,29 @@ namespace xplorer::app
             // matching .resx strings -- not an approximation.
             // [RQ-GUI-008, ADR-JUC-032]
             case TopLevelMenu::File: // the only three icons in the whole reference
-                addReferenceItem(menu, MenuItem::FileNew, "New", BinaryData::menu_new_png,
+                addReferenceItem(menu, FileNew, "New", BinaryData::menu_new_png,
                                  BinaryData::menu_new_pngSize);
-                addReferenceItem(menu, MenuItem::FileOpen, "Open", BinaryData::menu_open_png,
+                addReferenceItem(menu, FileOpen, "Open", BinaryData::menu_open_png,
                                  BinaryData::menu_open_pngSize);
                 menu.addSeparator();
                 // The reference's "Save as" is deliberately absent: our Save
                 // already always prompts for a destination (no current-file
                 // path is tracked), so it IS the reference's Save as.
                 // [RQ-GUI-008, owner-confirmed deviation]
-                addReferenceItem(menu, MenuItem::FileSave, "Save", BinaryData::menu_save_png,
+                addReferenceItem(menu, FileSave, "Save", BinaryData::menu_save_png,
                                  BinaryData::menu_save_pngSize);
                 menu.addSeparator();
-                addReferenceItem(menu, MenuItem::FileExit, "Exit"); // no shortcut in the reference
+                addReferenceItem(menu, FileExit, "Exit"); // no shortcut in the reference
                 break;
             case TopLevelMenu::Patch:
-                addReferenceItem(menu, MenuItem::PatchPrevious, "Previous");
-                addReferenceItem(menu, MenuItem::PatchNext, "Next");
-                addReferenceItem(menu, MenuItem::PatchGoto, "Go to patch...");
+                addReferenceItem(menu, PatchPrevious, "Previous");
+                addReferenceItem(menu, PatchNext, "Next");
+                addReferenceItem(menu, PatchGoto, "Go to patch...");
                 menu.addSeparator();
-                addReferenceItem(menu, MenuItem::PatchRandomize, "Randomize");
-                addReferenceItem(menu, MenuItem::PatchRename, "Rename");
-                addReferenceItem(menu, MenuItem::PatchStore, "Store");
-                addReferenceItem(menu, MenuItem::PatchSynchronize, "Synchronize");
+                addReferenceItem(menu, PatchRandomize, "Randomize");
+                addReferenceItem(menu, PatchRename, "Rename");
+                addReferenceItem(menu, PatchStore, "Store");
+                addReferenceItem(menu, PatchSynchronize, "Synchronize");
                 break;
             case TopLevelMenu::View: // [RQ-SCL-002, RQ-SCL-003]
             {
@@ -1012,34 +1013,34 @@ namespace xplorer::app
             }
             case TopLevelMenu::Tools:
             {
-                addReferenceItem(menu, MenuItem::ToolsSettings, "Settings");
+                addReferenceItem(menu, ToolsSettings, "Settings");
                 juce::PopupMenu singlePatches;
-                singlePatches.addItem(menuItemId(MenuItem::ToolsGetAllSinglePatches),
+                singlePatches.addItem(menuItemId(ToolsGetAllSinglePatches),
                                       "Get all single patches from synth");
-                singlePatches.addItem(menuItemId(MenuItem::ToolsExtractSinglePatches),
+                singlePatches.addItem(menuItemId(ToolsExtractSinglePatches),
                                       "Extract all single patches from file");
                 menu.addSubMenu("Single patches...", singlePatches);
                 juce::PopupMenu allDataDump;
-                allDataDump.addItem(menuItemId(MenuItem::ToolsBackupAllData), "Backup all data");
-                allDataDump.addItem(menuItemId(MenuItem::ToolsRestoreAllData), "Restore all data");
+                allDataDump.addItem(menuItemId(ToolsBackupAllData), "Backup all data");
+                allDataDump.addItem(menuItemId(ToolsRestoreAllData), "Restore all data");
                 menu.addSubMenu("Backup/Restore...", allDataDump);                
-                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
+                addReferenceItem(menu, ToolsTuneRequest, "Tune Request");
                 // No reference counterpart -- the second sanctioned JUCE-only
                 // item after the View menu, kept at the owner's decision. No
                 // shortcut, since the reference has none to match.
                 // [RQ-GUI-028, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
+                menu.addItem(menuItemId(ToolsPianoKeyboard), "Piano keyboard");
                 // Third sanctioned JUCE-only departure, no reference
                 // counterpart, no shortcut. [RQ-GUI-082, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsTestDisplay), "Test display");
+                menu.addItem(menuItemId(ToolsTestDisplay), "Test display");
                 break;
             }
             case TopLevelMenu::Help:
-                addReferenceItem(menu, MenuItem::HelpUserManual, "Xplorer help");
+                addReferenceItem(menu, HelpUserManual, "Xplorer help");
                 menu.addSeparator();
-                addReferenceItem(menu, MenuItem::HelpReleases, "Check for new releases");
-                addReferenceItem(menu, MenuItem::HelpWebsite, "Go to website");
-                addReferenceItem(menu, MenuItem::HelpAbout, "About...");
+                addReferenceItem(menu, HelpReleases, "Check for new releases");
+                addReferenceItem(menu, HelpWebsite, "Go to website");
+                addReferenceItem(menu, HelpAbout, "About...");
                 break;
         }
         return menu;
@@ -1139,11 +1140,43 @@ namespace xplorer::app
                               [this](int program) { _controller->storeSinglePatchToSynth(program); });
     }
 
+    void MainComponent::showSavePatchDialog()
+    {
+        // Default the file name to the tone's own name, sanitized and
+        // made unique the same way RQ-CTL-003's bank extraction already
+        // does — one sanitizer, not a second implementation of the same
+        // rule. [RQ-GUI-077]
+        //
+        // Trailing spaces are trimmed first: the model pads tone names to
+        // a fixed width with spaces (XPANDER's own on-synth storage
+        // format), which are meaningless trailing characters in a file
+        // name and not caught by the sanitizer (space is a legal file-name
+        // character everywhere else in a name).
+        const auto trimmedToneName = midiapp::service::trimTrailingSpaces(_controller->toneName());
+        const auto documentsDirectory = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory);
+        const auto defaultFileName = midiapp::service::makeUniqueFilenameFromString(
+            trimmedToneName, midiapp::service::SYSEX_FILE_EXTENSION_WITH_DOT,
+            documentsDirectory.getFullPathName().toStdString());
+        _fileChooser = std::make_unique<juce::FileChooser>(
+            "Save patch", documentsDirectory.getChildFile(defaultFileName), SYSEX_FILE_FILTER);
+        _fileChooser->launchAsync(
+            juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+            [this](const juce::FileChooser& chooser)
+            {
+                const auto file = chooser.getResult();
+                if (file != juce::File())
+                {
+                    _controller->saveXplorerTone(file.getFullPathName().toStdString());
+                }
+            });
+    }
+
     // `selectedId`, not `menuItemId`: the latter is the free function that maps
     // a MenuItem to the int JUCE hands back here, and a parameter of that name
     // would shadow it throughout the dispatch below. [RQ-QLT-001]
     void MainComponent::menuItemSelected(int selectedId, int)
     {
+        using enum MenuItem;
         // View menu, handled before the switch because its scale items are a
         // contiguous id range rather than individual cases. [RQ-SCL-002]
         const auto scaleIndex = selectedId - VIEW_SCALE_FIRST_ID;
@@ -1168,7 +1201,7 @@ namespace xplorer::app
 
         switch (static_cast<MenuItem>(selectedId))
         {
-            case MenuItem::FileNew:
+            case FileNew:
                 // Load the bundled default patch, like the reference's
                 // FileOperationsManager.NewPatch(). Not a blank editor: the
                 // program number comes from the file's own sysex data.
@@ -1195,47 +1228,47 @@ namespace xplorer::app
                 }
                 break;
             }
-            case MenuItem::FileOpen: // reuse the load action
+            case FileOpen: // reuse the load action
                 _shortcutActions[SHORTCUT_ID_PATCH_LOAD]();
                 break;
-            case MenuItem::FileSave:
+            case FileSave:
                 _shortcutActions[SHORTCUT_ID_PATCH_SAVE]();
                 break;
-            case MenuItem::FileExit:
+            case FileExit:
                 juce::JUCEApplication::getInstance()->systemRequestedQuit();
                 break;
-            case MenuItem::PatchNext:
+            case PatchNext:
                 _controller->increaseCurrentProgramNumber();
                 break;
-            case MenuItem::PatchPrevious:
+            case PatchPrevious:
                 _controller->decreaseCurrentProgramNumber();
                 break;
-            case MenuItem::PatchGoto:
+            case PatchGoto:
                 showGotoPatchDialog();
                 break;
-            case MenuItem::PatchStore:
+            case PatchStore:
                 showStorePatchDialog();
                 break;
-            case MenuItem::PatchRename:
+            case PatchRename:
                 showRenameDialogForCurrentTone();
                 break;
-            case MenuItem::PatchRandomize:
+            case PatchRandomize:
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
                 break;
-            case MenuItem::PatchSynchronize:
+            case PatchSynchronize:
                 // Re-fetch the current patch from the synth, the same call
                 // Go to / Store already make.
                 // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
                 _controller->sendProgramChangeAndGetSinglePatchFromSynth(
                     _controller->currentProgramNumber());
                 break;
-            case MenuItem::ToolsSettings:
+            case ToolsSettings:
                 openSettingsDialog();
                 break;
-            case MenuItem::ToolsTuneRequest:
+            case ToolsTuneRequest:
                 _controller->sendTuneRequestToSynth();
                 break;
-            case MenuItem::ToolsPianoKeyboard: // [RQ-GUI-028]
+            case ToolsPianoKeyboard: // [RQ-GUI-028]
                 if (_pianoWindow == nullptr)
                 {
                     _pianoWindow = std::make_unique<PianoWindow>(*_controller);
@@ -1246,10 +1279,10 @@ namespace xplorer::app
                     _pianoWindow->toFront(true);
                 }
                 break;
-            case MenuItem::ToolsTestDisplay: // [RQ-GUI-082]
+            case ToolsTestDisplay: // [RQ-GUI-082]
                 displayCharacterTest();
                 break;
-            case MenuItem::HelpAbout:
+            case HelpAbout:
                 // Name and version from the build, not from a literal: this
                 // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
                 // root. [RQ-BLD-015, RQ-BLD-016]
@@ -1264,25 +1297,25 @@ namespace xplorer::app
             // The three Help URLs, opened in the system browser exactly as the
             // reference's OpenBrowserWithUrl does — no update check of our own.
             // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
-            case MenuItem::HelpUserManual:
+            case HelpUserManual:
                 juce::URL(USER_MANUAL_URL).launchInDefaultBrowser();
                 break;
-            case MenuItem::HelpReleases:
+            case HelpReleases:
                 juce::URL(RELEASES_URL).launchInDefaultBrowser();
                 break;
-            case MenuItem::HelpWebsite:
+            case HelpWebsite:
                 juce::URL(WEBSITE_URL).launchInDefaultBrowser();
                 break;
-            case MenuItem::ToolsGetAllSinglePatches:
+            case ToolsGetAllSinglePatches:
                 getAllSinglePatchesFromSynth();
                 break;
-            case MenuItem::ToolsExtractSinglePatches:
+            case ToolsExtractSinglePatches:
                 showExtractSingleTonesDialog(*_controller);
                 break;
-            case MenuItem::ToolsBackupAllData:
+            case ToolsBackupAllData:
                 backupAllData();
                 break;
-            case MenuItem::ToolsRestoreAllData:
+            case ToolsRestoreAllData:
                 restoreAllData();
                 break;
             // Ids outside the enumeration reach here only if JUCE reports an
@@ -1338,7 +1371,7 @@ namespace xplorer::app
                 {
                     return;
                 }
-                _allDataDumpModeIsAll = true;
+                _dumpProgress.modeIsAll = true;
                 try
                 {
                     _controller->backupAllDataDumpToFile(file.getFullPathName().toStdString()); // [RQ-CTL-005]
@@ -1448,7 +1481,7 @@ namespace xplorer::app
                 {
                     return;
                 }
-                _allDataDumpModeIsAll = false;
+                _dumpProgress.modeIsAll = false;
                 try
                 {
                     _controller->getSingleTonesFromSynth(folder.getFullPathName().toStdString()); // [RQ-CTL-004]
@@ -1478,32 +1511,32 @@ namespace xplorer::app
         // reception is fed by incoming MIDI). Port of MainForm's progression
         // handler. [RQ-GUI-026]
         const int received = event.singlePatchCount + event.multiPatchCount;
-        const int maxValue = _allDataDumpModeIsAll
+        const int maxValue = _dumpProgress.modeIsAll
                                  ? model::constants::SINGLE_TONES_MAX_COUNT + model::constants::MULTI_PATCHES_MAX_COUNT
                                  : model::constants::SINGLE_TONES_MAX_COUNT;
 
-        if (_progressWindow == nullptr)
+        if (_dumpProgress.window == nullptr)
         {
-            _progressWindow = std::make_unique<ProgressWindow>();
-            _progressWindow->begin(_allDataDumpModeIsAll ? "All data dump request in progress..."
-                                                         : "Receiving single patches...",
-                                   maxValue);
+            _dumpProgress.window = std::make_unique<ProgressWindow>();
+            _dumpProgress.window->begin(_dumpProgress.modeIsAll ? "All data dump request in progress..."
+                                                                 : "Receiving single patches...",
+                                        maxValue);
         }
 
         const bool finished = !event.isWaitingForAllDataDumpRequest || received >= maxValue;
         if (finished)
         {
-            _progressWindow.reset();
+            _dumpProgress.window.reset();
         }
         else if (event.multiPatchCount == 0)
         {
-            _progressWindow->setStatus("Receiving single patch [" + juce::String(event.singlePatchCount) + "/"
+            _dumpProgress.window->setStatus("Receiving single patch [" + juce::String(event.singlePatchCount) + "/"
                                            + juce::String(model::constants::SINGLE_TONES_MAX_COUNT) + "]",
                                        received);
         }
         else
         {
-            _progressWindow->setStatus("Receiving multi patch [" + juce::String(event.multiPatchCount) + "/"
+            _dumpProgress.window->setStatus("Receiving multi patch [" + juce::String(event.multiPatchCount) + "/"
                                            + juce::String(model::constants::MULTI_PATCHES_MAX_COUNT) + "]",
                                        received);
         }

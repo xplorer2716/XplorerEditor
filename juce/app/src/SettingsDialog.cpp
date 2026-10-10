@@ -28,6 +28,9 @@
 #include "Dialogs.hpp"
 
 #include "midiapp/service/Logger.hpp"
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
 #include "xpl/util/EnumUtils.hpp"
 #include "xplorer/app/ControlMetadata.hpp"
 #include "xplorer/app/LoggingConfigResolver.hpp"
@@ -327,7 +330,7 @@ namespace xplorer::app
                 midi.automationTable.clear();
                 for (const auto& row : _automationModel.rows)
                 {
-                    midi.automationTable.push_back(row.tag + ";" + std::to_string(row.cc));
+                    midi.automationTable.push_back(midiapp::service::formatStr("{};{}", row.tag, row.cc));
                 }
             }
 
@@ -443,8 +446,17 @@ namespace xplorer::app
                 addAndMakeVisible(editor);
             }
 
-            juce::ComboBox _synthOut, _synthIn, _autoIn, _channel, _synthType;
-            juce::Label _synthOutLabel, _synthInLabel, _autoInLabel, _channelLabel, _synthTypeLabel, _delayLabel;
+            juce::ComboBox _synthOut;
+            juce::ComboBox _synthIn;
+            juce::ComboBox _autoIn;
+            juce::ComboBox _channel;
+            juce::ComboBox _synthType;
+            juce::Label _synthOutLabel;
+            juce::Label _synthInLabel;
+            juce::Label _autoInLabel;
+            juce::Label _channelLabel;
+            juce::Label _synthTypeLabel;
+            juce::Label _delayLabel;
             juce::TextEditor _delay;
             juce::ToggleButton _smartNotesOff;
             juce::Label _automationLabel;
@@ -707,10 +719,12 @@ namespace xplorer::app
             int _editTarget = LED_TARGET;
 
             juce::GroupComponent _coloursGroup;
-            juce::Label _unityHint, _blockHint;
+            juce::Label _unityHint;
+            juce::Label _blockHint;
             juce::Label _ledLabel;
             Swatch _ledSwatch;
-            juce::TextButton _ledChoose, _resetDefaults;
+            juce::TextButton _ledChoose;
+            juce::TextButton _resetDefaults;
             std::array<BlockRow, BLOCK_COLOUR_COUNT> _blockRows;
             juce::Rectangle<int> _separator;
         };
@@ -870,9 +884,20 @@ namespace xplorer::app
                     juce::dontSendNotification);
             }
 
-            juce::ComboBox _freq, _detune, _env;
-            juce::Label _freqLabel, _detuneLabel, _envLabel, _vco2Label, _matrixLabel;
-            juce::ToggleButton _fm, _noise, _sync, _amount, _quantize, _srcDest;
+            juce::ComboBox _freq;
+            juce::ComboBox _detune;
+            juce::ComboBox _env;
+            juce::Label _freqLabel;
+            juce::Label _detuneLabel;
+            juce::Label _envLabel;
+            juce::Label _vco2Label;
+            juce::Label _matrixLabel;
+            juce::ToggleButton _fm;
+            juce::ToggleButton _noise;
+            juce::ToggleButton _sync;
+            juce::ToggleButton _amount;
+            juce::ToggleButton _quantize;
+            juce::ToggleButton _srcDest;
             juce::TextButton _randomizeAll;
         };
 
@@ -1023,7 +1048,9 @@ namespace xplorer::app
 
             juce::ComboBox _severity;
             juce::Label _severityLabel;
-            juce::ToggleButton _midiDomain, _controllerDomain, _uiDomain;
+            juce::ToggleButton _midiDomain;
+            juce::ToggleButton _controllerDomain;
+            juce::ToggleButton _uiDomain;
             juce::Label _directoryLabel;
             juce::Label _directoryPath;
             juce::TextButton _browse;
@@ -1046,6 +1073,7 @@ namespace xplorer::app
                 : _controller(controller), _settingsService(settingsService), _backend(backend),
                   _onLedColourChanged(std::move(onLedColourChanged)),
                   _onBlockPaletteChanged(std::move(onBlockPaletteChanged)),
+                  _originalLedColour(settingsService.allUsersSettings().uiConfig.knobLedBorderColor),
                   _tabs(juce::TabbedButtonBar::TabsAtTop)
             {
                 // The reference brackets its settings dialog with
@@ -1061,7 +1089,6 @@ namespace xplorer::app
                 // Both colour snapshots are taken on open and restored on any
                 // non-accept close (Cancel, Esc, title bar).
                 // [DEC-JUC-038, DEC-JUC-113]
-                _originalLedColour = settingsService.allUsersSettings().uiConfig.knobLedBorderColor;
                 _originalPalette = resolveBlockPalette(settingsService.allUsersSettings().uiConfig);
 
                 // [RQ-QLT-014] Held in a smart pointer until the moment
@@ -1200,7 +1227,8 @@ namespace xplorer::app
             UiSettingsPage* _uiPage = nullptr;
             RandomizerSettingsPage* _randomPage = nullptr;
             LoggingSettingsPage* _loggingPage = nullptr;
-            juce::TextButton _ok, _cancel;
+            juce::TextButton _ok;
+            juce::TextButton _cancel;
         };
     }
 

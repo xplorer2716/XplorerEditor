@@ -83,7 +83,7 @@ namespace xplorer::controller
     {
         using E = EnumRotaryEncoders;
         auto add = [this](int page, int subPage, std::set<E> authorized)
-        { _authorizedRotaryEvents.emplace(std::make_pair(page, subPage), std::move(authorized)); };
+        { _authorizedRotaryEvents.try_emplace(std::make_pair(page, subPage), std::move(authorized)); };
         auto addRange = [&add](EnumPages first, EnumPages last, int subPage, const std::set<E>& authorized)
         {
             for (int page = xpl::util::toUnderlying(first); page <= xpl::util::toUnderlying(last); ++page)

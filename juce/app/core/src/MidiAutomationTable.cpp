@@ -1,5 +1,10 @@
 #include "xplorer/app/MidiAutomationTable.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
+
+#include <algorithm>
 #include <array>
 #include <charconv>
 #include <string>
@@ -89,7 +94,7 @@ namespace xplorer::app
         const auto& base = ccShortNameBase()[static_cast<std::size_t>(shortNameBaseIndex(ccNumber))];
         if (base == "Undefined")
         {
-            return base + " " + std::to_string(ccNumber);
+            return midiapp::service::formatStr("{} {}", base, ccNumber);
         }
         return base;
     }
@@ -103,24 +108,26 @@ namespace xplorer::app
         return zeroPadded3(ccNumber) + " - " + controlChangeShortName(ccNumber);
     }
 
-    std::optional<std::pair<std::string, int>> parseAutomationEntry(const std::string& entry)
+    std::optional<std::pair<std::string, int>> parseAutomationEntry(std::string_view entry)
     {
         // Split on the last ';' (parameter names never contain one).
         const auto delimiter = entry.find_last_of(';');
-        if (delimiter == std::string::npos || delimiter == 0 || delimiter + 1 >= entry.size())
+        if (delimiter == std::string_view::npos || delimiter == 0 || delimiter + 1 >= entry.size())
         {
             return std::nullopt;
         }
-        const std::string name = entry.substr(0, delimiter);
+        const std::string name(entry.substr(0, delimiter));
         const std::string_view number(entry.data() + delimiter + 1, entry.size() - delimiter - 1);
         int cc = 0;
-        const auto result = std::from_chars(number.data(), number.data() + number.size(), cc);
-        if (result.ec != std::errc{} || result.ptr != number.data() + number.size())
+        if (const auto result = std::from_chars(number.data(), number.data() + number.size(), cc);
+            result.ec != std::errc{} || result.ptr != number.data() + number.size())
         {
             return std::nullopt;
         }
         // Reference clamps stored values to 1..128.
-        cc = cc < 1 ? 1 : (cc > 128 ? 128 : cc);
+        constexpr int MIN_STORED_CC = 1;
+        constexpr int MAX_STORED_CC = 128;
+        cc = std::clamp(cc, MIN_STORED_CC, MAX_STORED_CC);
         return std::make_pair(name, cc);
     }
 
@@ -150,8 +157,8 @@ namespace xplorer::app
                 "-webkit-print-color-adjust:exact;print-color-adjust:exact}}\n"
                 "</style>\n</head>\n<body>\n";
         html += "<h1>MIDI Automation Table</h1>\n";
-        html += std::string("<div class=\"sub\">Xplorer &mdash; Oberheim Xpander/Matrix-12 real-time editor"
-                            "<br><a href=\"")
+        html += std::string(R"html(<div class="sub">Xplorer &mdash; Oberheim Xpander/Matrix-12 real-time editor)html"
+                            R"html(<br><a href=")html")
                 + website + "\">" + website + "</a></div>\n";
         html += "<table>\n<thead><tr><th>Parameter</th><th>Control Change</th></tr></thead>\n<tbody>\n";
         for (const auto& [parameter, ccName] : rows)

@@ -1,7 +1,7 @@
 #include "midiapp/service/SingleInstanceGuard.hpp"
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #else
 #include <fcntl.h>
 #include <sys/file.h>

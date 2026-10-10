@@ -12,12 +12,16 @@
 
 #include <functional>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 namespace xplorer::app
 {
     /// Measures how wide `character` renders at `fontSize`, in the same units
-    /// as the key width passed to pianoKeyLabelFor.
+    /// as the key width passed to pianoKeyLabelFor. This is the type-erased
+    /// form, for callers that hold a measurer as a value; pianoKeyLabelFor
+    /// takes any callable of this shape, so a function or lambda reaches it
+    /// without being wrapped. [RQ-QLT-017, TASK-QLT-014]
     using PianoLabelWidthMeasurer = std::function<float(char32_t character, float fontSize)>;
 
     /// Decides whether `midiNoteNumber` shows its binding character.
@@ -32,8 +36,25 @@ namespace xplorer::app
     /// require the measured width to fit within `keyWidthPixels`; if it does
     /// not, the label is dropped (DEC-JUC-121) rather than clipped or shrunk.
     /// A note absent from `mapping` returns std::nullopt on either kind of
-    /// key. [RQ-GUI-075]
+    /// key. [RQ-GUI-075, RQ-QLT-017, TASK-QLT-014]
+    template <typename Measurer>
+        requires std::is_invocable_r_v<float, const Measurer&, char32_t, float>
     [[nodiscard]] std::optional<char32_t> pianoKeyLabelFor(
         int midiNoteNumber, const std::vector<ResolvedPianoKey>& mapping, int mappingBaseMidiNote,
-        bool isBlackKey, float keyWidthPixels, float fontSize, const PianoLabelWidthMeasurer& measureWidth);
+        bool isBlackKey, float keyWidthPixels, float fontSize, const Measurer& measureWidth)
+    {
+        for (const auto& key : mapping)
+        {
+            if (mappingBaseMidiNote + key.noteOffsetFromC != midiNoteNumber)
+            {
+                continue;
+            }
+            if (isBlackKey && measureWidth(key.character, fontSize) > keyWidthPixels)
+            {
+                return std::nullopt; // too narrow to fit legibly [DEC-JUC-121]
+            }
+            return key.character;
+        }
+        return std::nullopt; // this note carries no binding
+    }
 }

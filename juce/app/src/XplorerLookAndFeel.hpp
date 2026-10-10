@@ -98,7 +98,7 @@ namespace xplorer::app
         // read as classic radios instead of check boxes. Hover/disabled/focus
         // states mirror drawTickBox. [RQ-GUI-038, ADR-JUC-016, RQ-GUI-041..043,
         // ADR-JUC-017]
-        void drawRadioBox(juce::Graphics& g, juce::Component& component, float x, float y, float w, float h,
+        void drawRadioBox(juce::Graphics& g, juce::Component& component, juce::Rectangle<float> bounds,
                           bool ticked, bool isEnabled, bool shouldDrawButtonAsHighlighted);
 
         /// The combo-box Font itself, independent of any ComboBox instance, so

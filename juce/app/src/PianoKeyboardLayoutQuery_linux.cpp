@@ -64,6 +64,10 @@ namespace xplorer::app
         public:
             explicit X11KeyboardLayoutQuery(Display* display) : _display(display) {}
 
+            // A copy would close the same X display twice. [RQ-QLT-017, TASK-QLT-014]
+            X11KeyboardLayoutQuery(const X11KeyboardLayoutQuery&) = delete;
+            X11KeyboardLayoutQuery& operator=(const X11KeyboardLayoutQuery&) = delete;
+
             ~X11KeyboardLayoutQuery() override
             {
                 XCloseDisplay(_display);

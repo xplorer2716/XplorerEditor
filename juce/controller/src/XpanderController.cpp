@@ -72,6 +72,17 @@ namespace xplorer::controller
             }
             return std::vector<std::uint8_t>(std::istreambuf_iterator<char>(stream), {});
         }
+
+        // Whether the synth is showing a different page than the one `parameter`
+        // lives on, i.e. whether a page select must precede its frame. See the
+        // note on workerThreadProc. [RQ-CTL-020, RQ-QLT-017, TASK-QLT-013]
+        bool needsPageSelect(const PageSubPageHelper& pageSubPageHelper, const XpanderParameter& parameter)
+        {
+            int lastPage = 0;
+            int lastSubPage = 0;
+            pageSubPageHelper.getPageSubPage(lastPage, lastSubPage);
+            return lastPage != parameter.page() || lastSubPage != parameter.subPage();
+        }
     }
 
     XpanderController::XpanderController(common::midi::MidiBackend& backend,
@@ -300,7 +311,7 @@ namespace xplorer::controller
     {
         const auto data = readAllBytes(fileName);
         const auto allSysexes = common::midi::SysexStreamIterator::allMessages(data);
-        const int count = static_cast<int>(allSysexes.size());
+        const auto count = static_cast<int>(allSysexes.size());
         int index = 0;
         for (const auto& sysex : allSysexes)
         {
@@ -407,29 +418,29 @@ namespace xplorer::controller
         const auto vco2Flags = xpl::util::toUnderlying(randomizerConfig.vco2FmNoiseSync);
         if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableFM)) == 0)
         {
-            excluded.insert("FM_AMP");
-            excluded.insert("FM_DESTINATION");
+            excluded.emplace("FM_AMP");
+            excluded.emplace("FM_DESTINATION");
         }
         if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableNoise)) == 0)
         {
-            excluded.insert("VCO2_WAVESHAPE_NOISE");
+            excluded.emplace("VCO2_WAVESHAPE_NOISE");
         }
         if ((vco2Flags & xpl::util::toUnderlying(model::EnumRandomVCO2::EnableSync)) == 0)
         {
-            excluded.insert("VCO2_WAVE_SYNC");
+            excluded.emplace("VCO2_WAVE_SYNC");
         }
         if (randomizerConfig.vcoDetune == model::EnumRandomVCODetune::Analog
             || randomizerConfig.vcoDetune == model::EnumRandomVCODetune::Digital)
         {
             xpanderTone().detune(randomizerConfig.vcoDetune == model::EnumRandomVCODetune::Analog);
-            excluded.insert("VCO1_DETUNE");
-            excluded.insert("VCO2_DETUNE");
+            excluded.emplace("VCO1_DETUNE");
+            excluded.emplace("VCO2_DETUNE");
         }
         if (randomizerConfig.vcoFreq != model::EnumRandomVCOFreq::Free)
         {
             xpanderTone().defineVCOFrequenciesTuning(randomizerConfig.vcoFreq);
-            excluded.insert("VCO1_FREQ");
-            excluded.insert("VCO2_FREQ");
+            excluded.emplace("VCO1_FREQ");
+            excluded.emplace("VCO2_FREQ");
         }
 
         tone().randomizeToneParameters(excluded, arguments.humanizeRatio, arguments.seed);
@@ -579,7 +590,7 @@ namespace xplorer::controller
 
     // --- clipboard [RQ-CTL-040] ---------------------------------------------------
 
-    bool XpanderController::canClipboardPasteTo(const std::string& destination) const
+    bool XpanderController::canClipboardPasteTo(std::string_view destination) const
     {
         constexpr std::size_t COMPARE_LENGTH = 4;
         if (_clipboardSource.empty() || destination.size() < COMPARE_LENGTH)
@@ -683,7 +694,7 @@ namespace xplorer::controller
             return text;
         };
         std::string line1 = _productNameAndVersion;
-        std::transform(line1.begin(), line1.end(), line1.begin(),
+        std::ranges::transform(line1, line1.begin(),
             [](char c) { return static_cast<char>(::toupper(static_cast<unsigned char>(c))); });
         // padRight only grows a string, never shrinks it: a name+version that
         // does not fit the line must be shortened first, or it silently
@@ -722,7 +733,7 @@ namespace xplorer::controller
         sendDisplayMessageToSynth(pl1+pl2); // [RQ-GUI-082]
     }
 
-    void XpanderController::sendTypeWriterMessageToSynth(const std::string& message)
+    void XpanderController::sendTypeWriterMessageToSynth(std::string_view message)
     {
         constexpr int SCROLL_DELAY = 50;
         if (!verifySynthOutputDevice())
@@ -732,7 +743,7 @@ namespace xplorer::controller
         sendDisplayOffOnToSynth();
         for (std::size_t i = 0; i <= message.size(); ++i)
         {
-            std::string scrollingMessage = message.substr(0, i);
+            std::string scrollingMessage(message.substr(0, i));
             scrollingMessage.resize(MAX_DISPLAY_MESSAGE_LENGTH, ' ');
             sendDisplayMessageToSynth(scrollingMessage);
             sleepMs(SCROLL_DELAY); // [RQ-CTL-061]
@@ -877,21 +888,14 @@ namespace xplorer::controller
             {
                 continue;
             }
-            auto* xpanderParameter = dynamic_cast<XpanderParameter*>(parameterToSend.get());
-            if (xpanderParameter != nullptr)
+            if (const auto* xpanderParameter = dynamic_cast<const XpanderParameter*>(parameterToSend.get());
+                xpanderParameter != nullptr && needsPageSelect(_pageSubPageHelper, *xpanderParameter))
             {
-                int lastPage = 0;
-                int lastSubPage = 0;
-                _pageSubPageHelper.getPageSubPage(lastPage, lastSubPage);
-                if (lastPage != xpanderParameter->page() || lastSubPage != xpanderParameter->subPage())
+                sendDataToSynthOutputDevice(xpanderParameter->pageSelectMessage());
+                _pageSubPageHelper.updatePageSubPage(xpanderParameter->page(), xpanderParameter->subPage());
+                if (!waitForTransmitDelay(stopToken))
                 {
-                    sendDataToSynthOutputDevice(xpanderParameter->pageSelectMessage());
-                    _pageSubPageHelper.updatePageSubPage(xpanderParameter->page(),
-                                                         xpanderParameter->subPage());
-                    if (!waitForTransmitDelay(stopToken))
-                    {
-                        break;
-                    }
+                    break;
                 }
             }
             sendDataToSynthOutputDevice(parameterToSend->message());
@@ -936,7 +940,7 @@ namespace xplorer::controller
         FullToneChangeEvent event;
         for (const auto& entry : tone().parameterMap())
         {
-            event.parameterMap.emplace(entry.name, entry.parameter->value());
+            event.parameterMap.try_emplace(entry.name, entry.parameter->value());
         }
         event.modulationMatrix = xpanderTone().modulationMatrix();
         postEvent([handler = _fullToneChangeHandler, event = std::move(event)] { handler(event); });

@@ -32,8 +32,8 @@ namespace midiapp::model
         {
             throw std::invalid_argument("duplicate parameter name: " + name);
         }
-        _indexByName.emplace(name, _entries.size());
-        _entries.push_back({name, std::move(parameter)});
+        _indexByName.try_emplace(name, _entries.size());
+        _entries.emplace_back(name, std::move(parameter));
     }
 
     bool OrderedParameterMap::contains(const std::string& name) const

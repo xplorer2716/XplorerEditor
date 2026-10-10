@@ -20,8 +20,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "midiapp/model/AbstractParameter.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -64,7 +66,18 @@ namespace midiapp::model
         [[nodiscard]] auto end() const { return _entries.end(); }
 
     private:
+        /// Hashes a name through a string_view, so a view or literal key looks
+        /// up without a temporary std::string. [RQ-QLT-018, TASK-QLT-016]
+        struct NameHash
+        {
+            using is_transparent = void;
+            [[nodiscard]] std::size_t operator()(std::string_view name) const noexcept
+            {
+                return std::hash<std::string_view>{}(name);
+            }
+        };
+
         std::vector<Entry> _entries;
-        std::unordered_map<std::string, std::size_t> _indexByName;
+        std::unordered_map<std::string, std::size_t, NameHash, std::equal_to<>> _indexByName;
     };
 }

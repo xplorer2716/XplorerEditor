@@ -65,7 +65,7 @@ namespace xplorer::app
         juce::Image image(juce::Image::ARGB, pixelSize, pixelSize, true);
         juce::Graphics g(image);
 
-        const float size = static_cast<float>(pixelSize);
+        const auto size = static_cast<float>(pixelSize);
         const float cx = size * 0.5F;
         const float cy = size * 0.5F;
         const auto badge = tokens::component::dialogIconAccent;

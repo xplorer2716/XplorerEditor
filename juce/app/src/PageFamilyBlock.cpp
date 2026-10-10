@@ -40,11 +40,12 @@ namespace xplorer::app
         /// ADR-JUC-020 (DEC-JUC-037)]
         BlockId blockIdForFamily(const std::string& controlTagPrefix)
         {
-            if (controlTagPrefix == "ENV_X")   { return BlockId::Env; }
-            if (controlTagPrefix == "LFO_X")   { return BlockId::Lfo; }
-            if (controlTagPrefix == "RAMP_X")  { return BlockId::Ramp; }
+            using enum BlockId;
+            if (controlTagPrefix == "ENV_X")   { return Env; }
+            if (controlTagPrefix == "LFO_X")   { return Lfo; }
+            if (controlTagPrefix == "RAMP_X")  { return Ramp; }
             jassert(controlTagPrefix == "TRACK_X"); // a fifth family needs a mapping here
-            return BlockId::Track;
+            return Track;
         }
     }
 
@@ -227,7 +228,7 @@ namespace xplorer::app
             control->asComponent().setBounds(spec.x, spec.y, spec.width, spec.height);
             _parent.addAndMakeVisible(control->asComponent());
             _registry.bind(concrete, *control);
-            _controls.push_back({spec.tag, std::move(control)});
+            _controls.emplace_back(spec.tag, std::move(control));
         }
 
         // Instance selector buttons (radio group). Caption is the reference

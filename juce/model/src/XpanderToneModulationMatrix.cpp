@@ -450,16 +450,13 @@ namespace xplorer::model
                         xpl::util::toUnderlying(EnumModulationSourcesModMatrix::KBD),
                         xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE))(randomizer));
             }
-            if (enableAmount)
+            // The reference humanize path never changes the amount (value stays
+            // 0 then is clamped); kept as-is, hence the humanizeRatio guard.
+            if (enableAmount && !humanizeRatio.has_value())
             {
-                if (!humanizeRatio.has_value())
-                {
-                    // reference rand.Next(min, max) upper bound is exclusive
-                    entry.setAmount(std::uniform_int_distribution<int>(
-                        ModulationMatrixEntry::MIN_AMOUNT, ModulationMatrixEntry::MAX_AMOUNT - 1)(randomizer));
-                }
-                // reference humanize path never changes the amount (value
-                // stays 0 then is clamped); kept as-is
+                // reference rand.Next(min, max) upper bound is exclusive
+                entry.setAmount(std::uniform_int_distribution<int>(
+                    ModulationMatrixEntry::MIN_AMOUNT, ModulationMatrixEntry::MAX_AMOUNT - 1)(randomizer));
             }
             if (enableQuantize && !humanizeRatio.has_value())
             {

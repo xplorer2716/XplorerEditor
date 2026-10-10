@@ -291,6 +291,179 @@ SCENARIO("Modulation edit follows from the synth updates the local matrix", "[RQ
     }
 }
 
+namespace
+{
+    // Wire form of a modulation-edit-follows value: a low byte and a high byte,
+    // where a high byte of 1 marks a negative value stored as (0x80 + value).
+    // [RQ-CTL-025]
+    constexpr int MOD_EDIT_SIGNED_VALUE_BIAS = 0x80;
+    constexpr std::uint8_t MOD_EDIT_NEGATIVE_HIGH_BYTE = 0x01;
+    constexpr int MOD_EDIT_NO_SOURCE_NUMBER = 0;
+
+    std::vector<std::uint8_t> vco1FrequencyPageSelect()
+    {
+        const auto pageSubPage = model::PAGE_SUBPAGE_FOR_MODULATION_DESTINATION[
+            static_cast<std::size_t>(xpl::util::toUnderlying(model::EnumModulationDestinations::VCO1_FRQ))];
+        return {0xF0, 0x10, 0x02, 0x0B, static_cast<std::uint8_t>(xpl::util::toUnderlying(pageSubPage.page)),
+                static_cast<std::uint8_t>(pageSubPage.subPage), 0xF7};
+    }
+
+    std::vector<std::uint8_t> modulationEditFrame(int idSource, model::EnumModulationEditCommands command, int value)
+    {
+        const bool negative = value < 0;
+        const auto low = static_cast<std::uint8_t>(negative ? MOD_EDIT_SIGNED_VALUE_BIAS + value : value);
+        const std::uint8_t high = negative ? MOD_EDIT_NEGATIVE_HIGH_BYTE : 0x00;
+        return {0xF0, 0x10, 0x02, 0x0F, 0x00, static_cast<std::uint8_t>(idSource), 0x00,
+                static_cast<std::uint8_t>(xpl::util::toUnderlying(command)), 0x00, low, high, 0xF7};
+    }
+}
+
+// Traceability: TASK-QLT-013 (the command switch moved out of
+// handleModulationEditFromSynth, which only ADDSOURCE exercised before).
+SCENARIO("Each modulation edit command from the synth changes the targeted entry",
+         "[RQ-CTL-025][RQ-QLT-017]")
+{
+    using model::EnumModulationEditCommands;
+    using model::EnumModulationSourcesModMatrix;
+    using controller::EnumModulationParameter;
+
+    GIVEN("entry 1 routes LFO1 to VCO1 frequency, with amount 0 and quantize off")
+    {
+        Fixture f;
+        f.controller.start();
+        std::vector<controller::ModulationEntryChangeEvent> events;
+        f.controller.setModulationEntryChangeHandler(
+            [&events](const controller::ModulationEntryChangeEvent& event) { events.push_back(event); });
+        f.backend.injectIncoming(SYNTH_IN, MidiMessage::sysEx(vco1FrequencyPageSelect()));
+        f.backend.injectIncoming(
+            SYNTH_IN,
+            MidiMessage::sysEx(modulationEditFrame(MOD_EDIT_NO_SOURCE_NUMBER, EnumModulationEditCommands::ADDSOURCE,
+                                                   xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO1))));
+        const auto& entry = f.controller.getModulationEntryByNumber(1);
+        const int idSource = entry.idSource;
+        events.clear();
+        const auto edit = [&f, idSource](EnumModulationEditCommands command, int value)
+        { f.backend.injectIncoming(SYNTH_IN, MidiMessage::sysEx(modulationEditFrame(idSource, command, value))); };
+
+        WHEN("the synth changes the source to LFO2")
+        {
+            edit(EnumModulationEditCommands::CHANGESOURCE,
+                 xpl::util::toUnderlying(EnumModulationSourcesModMatrix::LFO2));
+
+            THEN("the entry carries LFO2 and a source-changed event is raised")
+            {
+                CHECK(entry.source == EnumModulationSourcesModMatrix::LFO2);
+                REQUIRE(events.size() == 1);
+                CHECK(events[0].entryNumber == 1);
+                CHECK(events[0].parameter == EnumModulationParameter::MODULATIONSOURCE);
+            }
+        }
+
+        WHEN("the synth deletes the source")
+        {
+            edit(EnumModulationEditCommands::DELETESOURCE, 0);
+
+            THEN("the entry is reset to no source and a source-changed event is raised")
+            {
+                CHECK(entry.source == EnumModulationSourcesModMatrix::NONE);
+                REQUIRE(events.size() == 1);
+                CHECK(events[0].parameter == EnumModulationParameter::MODULATIONSOURCE);
+            }
+        }
+
+        WHEN("the synth dials the amount up by 5 then down by 3")
+        {
+            edit(EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE, 5);
+            edit(EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE, -3);
+
+            THEN("the amount follows both steps and an amount-changed event is raised each time")
+            {
+                CHECK(entry.amount() == 2);
+                REQUIRE(events.size() == 2);
+                CHECK(events[0].parameter == EnumModulationParameter::MODULATIONAMOUNT);
+                CHECK(events[1].parameter == EnumModulationParameter::MODULATIONAMOUNT);
+            }
+        }
+
+        WHEN("the synth sets the quantize")
+        {
+            edit(EnumModulationEditCommands::SETQUANTIZE, 1);
+
+            THEN("quantize is on and a quantize-changed event is raised")
+            {
+                CHECK(entry.quantize() == 1);
+                REQUIRE(events.size() == 1);
+                CHECK(events[0].parameter == EnumModulationParameter::MODULATIONQUANTIZE);
+            }
+        }
+
+        WHEN("the synth toggles the quantize twice")
+        {
+            edit(EnumModulationEditCommands::TOGGLEQUANTIZE, 0);
+            const int afterFirstToggle = entry.quantize();
+            edit(EnumModulationEditCommands::TOGGLEQUANTIZE, 0);
+
+            THEN("quantize goes on then off again, with an event each time")
+            {
+                CHECK(afterFirstToggle == 1);
+                CHECK(entry.quantize() == 0);
+                REQUIRE(events.size() == 2);
+                CHECK(events[0].parameter == EnumModulationParameter::MODULATIONQUANTIZE);
+                CHECK(events[1].parameter == EnumModulationParameter::MODULATIONQUANTIZE);
+            }
+        }
+
+        WHEN("the synth sends an unsigned value of 10 to a positive amount")
+        {
+            edit(EnumModulationEditCommands::SETUNSIGNEDVALUE, 10);
+
+            THEN("the amount is +10")
+            {
+                CHECK(entry.amount() == 10);
+                REQUIRE(events.size() == 1);
+                CHECK(events[0].parameter == EnumModulationParameter::MODULATIONAMOUNT);
+            }
+        }
+
+        WHEN("the synth sends an unsigned value of 10 to a negative amount")
+        {
+            edit(EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE, -5);
+            edit(EnumModulationEditCommands::SETUNSIGNEDVALUE, 10);
+
+            THEN("the amount keeps its sign and becomes -10")
+            {
+                CHECK(entry.amount() == -10);
+                CHECK(events.size() == 2);
+            }
+        }
+
+        WHEN("the synth flips the sign of a positive amount to negative")
+        {
+            edit(EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE, 5);
+            edit(EnumModulationEditCommands::SETSIGN, 1);
+
+            THEN("the amount becomes -5 and an amount-changed event is raised")
+            {
+                CHECK(entry.amount() == -5);
+                REQUIRE(events.size() == 2);
+                CHECK(events[1].parameter == EnumModulationParameter::MODULATIONAMOUNT);
+            }
+        }
+
+        WHEN("the synth sets a sign that the amount already has")
+        {
+            edit(EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE, 5);
+            edit(EnumModulationEditCommands::SETSIGN, 0);
+
+            THEN("the amount is unchanged and no further event is raised")
+            {
+                CHECK(entry.amount() == 5);
+                CHECK(events.size() == 1);
+            }
+        }
+    }
+}
+
 SCENARIO("Storing a patch sends tone, store command and resynchronizes", "[RQ-CTL-006]")
 {
     GIVEN("a started controller")
@@ -503,6 +676,31 @@ SCENARIO("Test display sends every reference glyph across both VFD lines", "[RQ-
                 {
                     CHECK(sent[2][5 + 40 + i] == static_cast<std::uint8_t>(expected[i]));
                 }
+            }
+        }
+    }
+}
+
+// Traceability: TASK-QLT-020 (the message parameter became a std::string_view).
+SCENARIO("The type-writer message reveals one more character per frame", "[RQ-CTL-061][RQ-QLT-019]")
+{
+    GIVEN("a controller")
+    {
+        Fixture f;
+
+        WHEN("typing out a two-character message")
+        {
+            f.controller.sendTypeWriterMessageToSynth("AB");
+
+            THEN("display off and on are followed by an empty, a one-character and a two-character frame")
+            {
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                REQUIRE(sent.size() == 5);
+                CHECK(sent[2][5] == ' ');
+                CHECK(sent[3][5] == 'A');
+                CHECK(sent[3][6] == ' ');
+                CHECK(sent[4][5] == 'A');
+                CHECK(sent[4][6] == 'B');
             }
         }
     }

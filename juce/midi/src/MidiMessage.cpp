@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "xpl/util/EnumUtils.hpp"
 
+#include <cstddef>
 #include <sstream>
 #include <stdexcept>
 
@@ -53,8 +54,10 @@ namespace common::midi
         }
         requireDataByte(data1, "data1");
 
-        const auto status = static_cast<std::uint8_t>(xpl::util::toUnderlying(command)
-                                                      | static_cast<std::uint8_t>(channel));
+        // Command nibble and channel nibble are bit fields of one status byte.
+        const auto status = std::to_integer<std::uint8_t>(
+            std::byte{static_cast<std::uint8_t>(xpl::util::toUnderlying(command))}
+            | std::byte{static_cast<std::uint8_t>(channel)});
         if (isTwoByteCommand(command))
         {
             return MidiMessage({status, static_cast<std::uint8_t>(data1)});
@@ -88,24 +91,25 @@ namespace common::midi
 
     MessageType MidiMessage::type() const
     {
+        using enum MessageType;
         const std::uint8_t status = _bytes.front();
         if (status >= 0x80 && status <= 0xEF)
         {
-            return MessageType::Channel;
+            return Channel;
         }
         if (status == SYSEX_START)
         {
-            return MessageType::SysEx;
+            return SysEx;
         }
         if (status >= 0xF1 && status <= 0xF7)
         {
-            return MessageType::SysCommon;
+            return SysCommon;
         }
         if (status >= 0xF8)
         {
-            return MessageType::SysRealtime;
+            return SysRealtime;
         }
-        return MessageType::Invalid;
+        return Invalid;
     }
 
     ChannelCommand MidiMessage::command() const
@@ -132,7 +136,9 @@ namespace common::midi
     {
         if (type() != MessageType::Channel)
         {
-            throw std::logic_error("withChannel is only valid for channel messages");
+            // A std::domain_error (a std::logic_error), not a bare logic_error:
+            // callers can tell this misuse apart. [RQ-QLT-018, TASK-QLT-017]
+            throw std::domain_error("withChannel is only valid for channel messages");
         }
         if (newChannel < MIDI_CHANNEL_MIN || newChannel > MIDI_CHANNEL_MAX)
         {

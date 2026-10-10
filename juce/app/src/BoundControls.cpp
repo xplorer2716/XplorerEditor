@@ -16,9 +16,12 @@ namespace xplorer::app
         setTextBoxStyle(juce::Slider::NoTextBox, true, 0, 0);
         setRange(minValue, maxValue, juce::jmax(1, step));
 
-        onDragStart = [this] { _registry.onControlEditBegan(_parameterName); };
-        onDragEnd = [this] { _registry.onControlEditEnded(); };
-        onValueChange = [this] { _registry.onControlEdited(_parameterName, static_cast<int>(getValue())); };
+        // `this->`: the constructor's own `registry` / `parameterName` parameters
+        // would otherwise hide the accessors inside these lambdas.
+        onDragStart = [this] { this->registry().onControlEditBegan(this->parameterName()); };
+        onDragEnd = [this] { this->registry().onControlEditEnded(); };
+        onValueChange = [this]
+        { this->registry().onControlEdited(this->parameterName(), static_cast<int>(getValue())); };
     }
 
     void BoundKnob::setDisplayedValue(int value)
@@ -49,9 +52,10 @@ namespace xplorer::app
             const int index = getSelectedItemIndex();
             if (index >= 0 && index < static_cast<int>(_valueByRow.size()))
             {
-                _registry.onControlEditBegan(_parameterName);
-                _registry.onControlEdited(_parameterName, _valueByRow[static_cast<std::size_t>(index)]);
-                _registry.onControlEditEnded();
+                this->registry().onControlEditBegan(this->parameterName());
+                this->registry().onControlEdited(this->parameterName(),
+                                                 _valueByRow[static_cast<std::size_t>(index)]);
+                this->registry().onControlEditEnded();
             }
         };
     }
@@ -80,9 +84,9 @@ namespace xplorer::app
     {
         onClick = [this]
         {
-            _registry.onControlEditBegan(_parameterName);
-            _registry.onControlEdited(_parameterName, getToggleState() ? 1 : 0);
-            _registry.onControlEditEnded();
+            this->registry().onControlEditBegan(this->parameterName());
+            this->registry().onControlEdited(this->parameterName(), getToggleState() ? 1 : 0);
+            this->registry().onControlEditEnded();
         };
     }
 
@@ -126,9 +130,9 @@ namespace xplorer::app
                 return;
             }
         }
-        _registry.onControlEditBegan(_parameterName);
-        _registry.onControlEdited(_parameterName, value);
-        _registry.onControlEditEnded();
+        registry().onControlEditBegan(parameterName());
+        registry().onControlEdited(parameterName(), value);
+        registry().onControlEditEnded();
     }
 
     void BoundRadioGroup::resized()
@@ -147,7 +151,7 @@ namespace xplorer::app
         {
             return;
         }
-        const int optionCount = static_cast<int>(_options.size());
+        const auto optionCount = static_cast<int>(_options.size());
 
         // Orientation comes from the panel's own extracted bounds, never from a
         // declared field: the reference geometry already says which way its

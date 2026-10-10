@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace midiapp::model
@@ -37,7 +38,7 @@ namespace midiapp::model
 
         [[nodiscard]] std::string name() const;
         [[nodiscard]] std::string label() const;
-        void setLabel(const std::string& label);
+        void setLabel(std::string_view label);
 
         [[nodiscard]] int minValue() const;
         [[nodiscard]] int maxValue() const;
@@ -71,7 +72,7 @@ namespace midiapp::model
         /// last step: the reference base constructor virtual-dispatches
         /// UpdateMessageFromValue, which a C++ base constructor cannot do.
         AbstractParameter(std::string name, int minValue, int maxValue, int step,
-                          common::midi::MidiMessage message, std::string label = {});
+                          const common::midi::MidiMessage& message, std::string label = {});
 
         AbstractParameter(const AbstractParameter& other);
         AbstractParameter& operator=(const AbstractParameter&) = delete;
@@ -89,6 +90,11 @@ namespace midiapp::model
         [[nodiscard]] std::vector<std::uint8_t>& rawMessageBytes() { return _messageBytes; }
 
     private:
+        /// Copies `other`'s state. The public copy constructor takes the lock on
+        /// `other` and holds it across this delegation, so the members below can
+        /// be initialized rather than assigned. [RQ-QLT-018, TASK-QLT-017]
+        AbstractParameter(const AbstractParameter& other, const std::scoped_lock<std::mutex>& otherLocked);
+
         void setValueLocked(int value);
 
         mutable std::mutex _mutex;

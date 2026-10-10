@@ -22,6 +22,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace common::midi
@@ -62,7 +63,7 @@ namespace common::midi
         /// Wires an output device to an input device: every message sent to
         /// `outputDeviceName` is immediately injected into `inputDeviceName`
         /// (loopback cable). [RQ-MID-041]
-        void connectLoopback(const std::string& outputDeviceName, const std::string& inputDeviceName);
+        void connectLoopback(std::string_view outputDeviceName, std::string_view inputDeviceName);
 
         /// Number of currently open ports for a device name (0 after the
         /// unique_ptr is destroyed) — lets tests assert hot-swap release. [RQ-MID-003]

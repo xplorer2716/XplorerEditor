@@ -16,6 +16,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <string_view>
 
 namespace xplorer::app
 {
@@ -72,7 +73,7 @@ namespace xplorer::app
         };
 
         void buildRow(juce::Component& parent, int entryNumber);
-        [[nodiscard]] const ControlSpec* specFor(const std::string& id) const;
+        [[nodiscard]] const ControlSpec* specFor(std::string_view id) const;
         void onSourceChanged(int entryNumber);
         void onAmountChanged(int entryNumber);
         void onDestinationChanged(int entryNumber);

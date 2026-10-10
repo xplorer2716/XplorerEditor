@@ -1,5 +1,9 @@
 #include "midiapp/service/FileUtils.hpp"
 
+// PortableFormat.hpp, not <format>: see its header comment and
+// [RQ-BLD-025, ADR-BLD-004 (DEC-BLD-021)] for why.
+#include "midiapp/service/PortableFormat.hpp"
+
 #include <filesystem>
 #include <string_view>
 
@@ -32,15 +36,15 @@ namespace midiapp::service
         int number = 1;
         while (std::filesystem::exists(directory / (candidate + extension)))
         {
-            candidate = sanitized + std::to_string(number);
+            candidate = formatStr("{}{}", sanitized, number);
             ++number;
         }
         return candidate + extension;
     }
 
-    std::string trimTrailingSpaces(const std::string& value)
+    std::string trimTrailingSpaces(std::string_view value)
     {
         const auto lastNonSpace = value.find_last_not_of(' ');
-        return lastNonSpace == std::string::npos ? std::string{} : value.substr(0, lastNonSpace + 1);
+        return lastNonSpace == std::string_view::npos ? std::string{} : std::string(value.substr(0, lastNonSpace + 1));
     }
 }

@@ -1,6 +1,7 @@
 #include "xplorer/app/KnobPresetValues.hpp"
 
 #include <cstddef>
+#include <string_view>
 
 namespace xplorer::app
 {
@@ -18,14 +19,14 @@ namespace xplorer::app
         /// [ADR-JUC-037 (DEC-JUC-130)]
         const std::vector<int>& harmonicSemitonePresets()
         {
-            static const std::vector<int> values = {0, 4, 7, 12, 16, 19, 24, 28, 31, 36};
+            static const std::vector values = {0, 4, 7, 12, 16, 19, 24, 28, 31, 36};
             return values;
         }
 
         /// The parameters carrying that override. Named here rather than
         /// tested for at the call site, so adding a third knob is a data
         /// change. [ADR-JUC-037 (DEC-JUC-130)]
-        bool takesHarmonicPresets(const std::string& parameterName)
+        bool takesHarmonicPresets(std::string_view parameterName)
         {
             return parameterName == "VCO1_FREQ" || parameterName == "VCO2_FREQ";
         }
@@ -89,7 +90,7 @@ namespace xplorer::app
         }
         for (const auto& position : presetKeyPositions())
         {
-            if (const auto character = query->characterForPosition(position.referenceChar))
+            if (const auto character = query->characterForPosition(position.referenceChar); character.has_value())
             {
                 resolved.push_back({*character, position.presetIndex});
             }
