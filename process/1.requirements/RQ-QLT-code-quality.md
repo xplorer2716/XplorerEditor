@@ -413,3 +413,12 @@ Origin: SonarCloud scan of branch `dev`, analysis 2026-10-09 — 324 OPEN issues
   - **Then** none remains OPEN
   - **And** the test suite passes with no test modified to force a pass
 - **Dependencies**: RQ-QLT-016, RQ-QLT-018, RQ-TST-*
+
+### Triage record for PLAN-QLT-003 (RQ-QLT-016)
+
+Policy: an issue located in a **test file** is accepted, not fixed — the tests
+are AI-generated and not maintained by a human. Production-code issues are
+fixed. Each SonarCloud comment carries the task id.
+
+- **TASK-QLT-013** — `cpp:S134` x5, `juce/tests/app/KnobPresetValuesTests.cpp`
+  lines 97, 132, 236, 258, 290 (nesting deeper than 3 in test code).

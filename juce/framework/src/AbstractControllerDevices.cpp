@@ -10,6 +10,29 @@ namespace midiapp::controller
     using common::midi::MidiInputCallbacks;
     using common::midi::MidiMessage;
 
+    namespace
+    {
+        // A MIDI controller value runs 0..127; a two-state parameter flips at
+        // the midpoint. [RQ-FMW-050]
+        constexpr int CC_VALUE_MAX = 127;
+        constexpr int CC_TWO_STATE_THRESHOLD = 63;
+
+        // Autoscales a 0-127 CC value to the parameter range, reference formula
+        // included the mid-range special case for two-state parameters.
+        // [RQ-FMW-050, RQ-QLT-017, TASK-QLT-013]
+        int autoscaleControllerValue(const model::AbstractParameter& parameter, int controllerValue)
+        {
+            const double interleave = parameter.maxValue() + std::abs(parameter.minValue());
+            double scaledValue = controllerValue;
+            if (interleave == 1 && scaledValue > CC_TWO_STATE_THRESHOLD)
+            {
+                scaledValue = CC_VALUE_MAX;
+            }
+            const double controllerRatio = scaledValue / CC_VALUE_MAX;
+            return static_cast<int>(controllerRatio * interleave) - std::abs(parameter.minValue());
+        }
+    }
+
     common::midi::MidiInputCallbacks AbstractController::makeAutomationCallbacks()
     {
         MidiInputCallbacks callbacks;
@@ -110,19 +133,9 @@ namespace midiapp::controller
             {
                 for (const auto& parameterName : parameterNames)
                 {
-                    // Autoscale the 0-127 CC value to the parameter range,
-                    // reference formula included the mid-range special case
-                    // for two-state parameters. [RQ-FMW-050]
+                    // [RQ-FMW-050]
                     const auto* parameter = getParameter(parameterName);
-                    const double interleave = parameter->maxValue() + std::abs(parameter->minValue());
-                    double controllerValue = message.data2();
-                    if (interleave == 1 && controllerValue > 63)
-                    {
-                        controllerValue = 127;
-                    }
-                    const double controllerRatio = controllerValue / 127.0;
-                    const int value = static_cast<int>(controllerRatio * interleave)
-                                      - std::abs(parameter->minValue());
+                    const int value = autoscaleControllerValue(*parameter, message.data2());
                     setParameter(parameterName, value);
                     notifyAutomationParameterChangeEvent(parameterName, value);
                 }

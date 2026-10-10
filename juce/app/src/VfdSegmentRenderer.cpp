@@ -141,6 +141,35 @@ namespace xplorer::app
             return kernel;
         }
 
+        /// Flat-index distance between neighbouring samples of one image row.
+        constexpr std::size_t ROW_SAMPLE_STRIDE = 1;
+
+        /// Kernel-weighted sum of the samples around `position` along one line
+        /// of the field. `lineStart` is the flat index of the line's first
+        /// sample and `stride` the flat distance between consecutive samples on
+        /// it, so one routine serves the horizontal pass (stride
+        /// ROW_SAMPLE_STRIDE) and the vertical one (stride = image width).
+        /// Samples outside [0, length) contribute nothing, and the kernel is
+        /// accumulated in ascending offset order, which the blurred output
+        /// depends on bit for bit. [ADR-JUC-023 (DEC-JUC-054), RQ-QLT-017,
+        /// TASK-QLT-013]
+        float convolveAlongLine(const std::vector<float>& kernel, const std::vector<float>& samples,
+                                int position, int length, std::size_t lineStart, std::size_t stride)
+        {
+            const auto radius = static_cast<int>(kernel.size()) / 2;
+            float accumulated = 0.0F;
+            for (int k = -radius; k <= radius; ++k)
+            {
+                const int sample = position + k;
+                if (sample >= 0 && sample < length)
+                {
+                    accumulated += kernel[static_cast<std::size_t>(k + radius)]
+                                   * samples[lineStart + static_cast<std::size_t>(sample) * stride];
+                }
+            }
+            return accumulated;
+        }
+
         /// Separable Gaussian blur, in place, via one scratch buffer.
         ///
         /// Hand-rolled because JUCE offers neither: `ImageConvolutionKernel` is
@@ -151,24 +180,14 @@ namespace xplorer::app
         void blur(std::vector<float>& field, int width, int height, float sigma)
         {
             const auto kernel = gaussianKernel(sigma);
-            const auto radius = static_cast<int>(kernel.size()) / 2;
             std::vector<float> scratch(field.size(), 0.0F);
 
             for (int y = 0; y < height; ++y)
             {
                 for (int x = 0; x < width; ++x)
                 {
-                    float accumulated = 0.0F;
-                    for (int k = -radius; k <= radius; ++k)
-                    {
-                        const int sampleX = x + k;
-                        if (sampleX >= 0 && sampleX < width)
-                        {
-                            accumulated += kernel[static_cast<std::size_t>(k + radius)]
-                                           * field[static_cast<std::size_t>(y * width + sampleX)];
-                        }
-                    }
-                    scratch[static_cast<std::size_t>(y * width + x)] = accumulated;
+                    scratch[static_cast<std::size_t>(y * width + x)] = convolveAlongLine(
+                        kernel, field, x, width, static_cast<std::size_t>(y * width), ROW_SAMPLE_STRIDE);
                 }
             }
 
@@ -176,17 +195,8 @@ namespace xplorer::app
             {
                 for (int x = 0; x < width; ++x)
                 {
-                    float accumulated = 0.0F;
-                    for (int k = -radius; k <= radius; ++k)
-                    {
-                        const int sampleY = y + k;
-                        if (sampleY >= 0 && sampleY < height)
-                        {
-                            accumulated += kernel[static_cast<std::size_t>(k + radius)]
-                                           * scratch[static_cast<std::size_t>(sampleY * width + x)];
-                        }
-                    }
-                    field[static_cast<std::size_t>(y * width + x)] = accumulated;
+                    field[static_cast<std::size_t>(y * width + x)] = convolveAlongLine(
+                        kernel, scratch, y, height, static_cast<std::size_t>(x), static_cast<std::size_t>(width));
                 }
             }
         }

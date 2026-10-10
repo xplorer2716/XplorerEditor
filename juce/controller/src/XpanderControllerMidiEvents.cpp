@@ -32,6 +32,7 @@
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 
 namespace xplorer::controller
 {
@@ -49,6 +50,80 @@ namespace xplorer::controller
 
     namespace
     {
+        // Sign of a modulation amount, and the SETSIGN wire value that means
+        // "negative". [RQ-CTL-025]
+        constexpr int SIGN_NEGATIVE = -1;
+        constexpr int SIGN_POSITIVE = 1;
+        constexpr int SETSIGN_VALUE_NEGATIVE = 1;
+
+        int signOfAmount(int amount)
+        {
+            return amount < 0 ? SIGN_NEGATIVE : SIGN_POSITIVE;
+        }
+
+        // Applies one modulation-edit command reported by the synth to the
+        // matrix row it targets, and names the row parameter that changed so
+        // the caller can notify the UI. Empty when the command changes nothing:
+        // ADDSOURCE is handled before any row exists, and SETSIGN is a no-op
+        // when the sign already matches. `entryNumber` is 1-based.
+        // [RQ-CTL-025, RQ-QLT-017, TASK-QLT-013]
+        std::optional<EnumModulationParameter> applyModulationEdit(XpanderTone& tone,
+                                                                    const ModulationMatrixEntry& entry,
+                                                                    int entryNumber,
+                                                                    EnumModulationEditCommands command,
+                                                                    int value)
+        {
+            const int source = xpl::util::toUnderlying(entry.source);
+            const int destination = xpl::util::toUnderlying(entry.destination);
+            switch (command)
+            {
+                case EnumModulationEditCommands::CHANGESOURCE:
+                    tone.changeModulationSource(value, entry.amount(), entry.quantize(), destination,
+                                                entryNumber, nullptr);
+                    return EnumModulationParameter::MODULATIONSOURCE;
+                case EnumModulationEditCommands::DELETESOURCE:
+                    // setting NONE resets the entry
+                    tone.changeModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE),
+                                                entry.amount(), entry.quantize(), destination, entryNumber,
+                                                nullptr);
+                    return EnumModulationParameter::MODULATIONSOURCE;
+                case EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE:
+                    tone.changeModulationSourceAmount(source, entry.amount() + value, destination,
+                                                      entryNumber, nullptr);
+                    return EnumModulationParameter::MODULATIONAMOUNT;
+                case EnumModulationEditCommands::SETQUANTIZE:
+                    tone.changeModulationSourceQuantize(source, destination, value, entryNumber, nullptr);
+                    return EnumModulationParameter::MODULATIONQUANTIZE;
+                case EnumModulationEditCommands::SETSIGN:
+                {
+                    const int valueSign = value == SETSIGN_VALUE_NEGATIVE ? SIGN_NEGATIVE : SIGN_POSITIVE;
+                    if (signOfAmount(entry.amount()) == valueSign)
+                    {
+                        return std::nullopt;
+                    }
+                    tone.changeModulationSourceAmount(source, entry.amount() * SIGN_NEGATIVE, destination,
+                                                      entryNumber, nullptr);
+                    return EnumModulationParameter::MODULATIONAMOUNT;
+                }
+                case EnumModulationEditCommands::SETUNSIGNEDVALUE:
+                    tone.changeModulationSourceAmount(source, value * signOfAmount(entry.amount()), destination,
+                                                      entryNumber, nullptr);
+                    return EnumModulationParameter::MODULATIONAMOUNT;
+                case EnumModulationEditCommands::TOGGLEQUANTIZE:
+                {
+                    const int toggle = entry.quantize() == ModulationMatrixEntry::MAX_QUANTIZE
+                                           ? ModulationMatrixEntry::MIN_QUANTIZE
+                                           : ModulationMatrixEntry::MAX_QUANTIZE;
+                    tone.changeModulationSourceQuantize(source, destination, toggle, entryNumber, nullptr);
+                    return EnumModulationParameter::MODULATIONQUANTIZE;
+                }
+                case EnumModulationEditCommands::ADDSOURCE:
+                case EnumModulationEditCommands::UNKNOWN:
+                    break;
+            }
+            return std::nullopt;
+        }
+
         bool startsWith(const MidiMessage& message, std::initializer_list<std::uint8_t> intro)
         {
             if (message.size() < intro.size())
@@ -371,78 +446,10 @@ namespace xplorer::controller
         {
             if (entry.destination == destination && entry.idSource == modulationSourceNumber)
             {
-                switch (command)
+                const auto changed = applyModulationEdit(xTone, entry, entryNumber + 1, command, value);
+                if (changed.has_value())
                 {
-                    case EnumModulationEditCommands::CHANGESOURCE:
-                        xTone.changeModulationSource(value, entry.amount(), entry.quantize(),
-                                                     xpl::util::toUnderlying(entry.destination), entryNumber + 1,
-                                                     nullptr);
-                        notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                         EnumModulationParameter::MODULATIONSOURCE);
-                        break;
-                    case EnumModulationEditCommands::DELETESOURCE:
-                        // setting NONE resets the entry
-                        xTone.changeModulationSource(xpl::util::toUnderlying(EnumModulationSourcesModMatrix::NONE),
-                                                     entry.amount(), entry.quantize(),
-                                                     xpl::util::toUnderlying(entry.destination), entryNumber + 1,
-                                                     nullptr);
-                        notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                         EnumModulationParameter::MODULATIONSOURCE);
-                        break;
-                    case EnumModulationEditCommands::DIALVALUEAMOUNTOFCHANGE:
-                        xTone.changeModulationSourceAmount(xpl::util::toUnderlying(entry.source),
-                                                           entry.amount() + value,
-                                                           xpl::util::toUnderlying(entry.destination),
-                                                           entryNumber + 1, nullptr);
-                        notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                         EnumModulationParameter::MODULATIONAMOUNT);
-                        break;
-                    case EnumModulationEditCommands::SETQUANTIZE:
-                        xTone.changeModulationSourceQuantize(xpl::util::toUnderlying(entry.source),
-                                                             xpl::util::toUnderlying(entry.destination), value,
-                                                             entryNumber + 1, nullptr);
-                        notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                         EnumModulationParameter::MODULATIONQUANTIZE);
-                        break;
-                    case EnumModulationEditCommands::SETSIGN:
-                    {
-                        const int valueSign = value == 1 ? -1 : 1;
-                        const int amountSign = entry.amount() < 0 ? -1 : 1;
-                        if (amountSign != valueSign)
-                        {
-                            xTone.changeModulationSourceAmount(xpl::util::toUnderlying(entry.source),
-                                                               entry.amount() * -1,
-                                                               xpl::util::toUnderlying(entry.destination),
-                                                               entryNumber + 1, nullptr);
-                            notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                             EnumModulationParameter::MODULATIONAMOUNT);
-                        }
-                        break;
-                    }
-                    case EnumModulationEditCommands::SETUNSIGNEDVALUE:
-                    {
-                        const int amountSign = entry.amount() < 0 ? -1 : 1;
-                        xTone.changeModulationSourceAmount(xpl::util::toUnderlying(entry.source),
-                                                           value * amountSign,
-                                                           xpl::util::toUnderlying(entry.destination),
-                                                           entryNumber + 1, nullptr);
-                        notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                         EnumModulationParameter::MODULATIONAMOUNT);
-                        break;
-                    }
-                    case EnumModulationEditCommands::TOGGLEQUANTIZE:
-                    {
-                        const int toggle = entry.quantize() == 1 ? 0 : 1;
-                        xTone.changeModulationSourceQuantize(xpl::util::toUnderlying(entry.source),
-                                                             xpl::util::toUnderlying(entry.destination), toggle,
-                                                             entryNumber + 1, nullptr);
-                        notifyModulationEntryChangeEvent(entry, entryNumber + 1,
-                                                         EnumModulationParameter::MODULATIONQUANTIZE);
-                        break;
-                    }
-                    case EnumModulationEditCommands::ADDSOURCE:
-                    case EnumModulationEditCommands::UNKNOWN:
-                        break;
+                    notifyModulationEntryChangeEvent(entry, entryNumber + 1, *changed);
                 }
                 break;
             }

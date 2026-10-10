@@ -72,6 +72,17 @@ namespace xplorer::controller
             }
             return std::vector<std::uint8_t>(std::istreambuf_iterator<char>(stream), {});
         }
+
+        // Whether the synth is showing a different page than the one `parameter`
+        // lives on, i.e. whether a page select must precede its frame. See the
+        // note on workerThreadProc. [RQ-CTL-020, RQ-QLT-017, TASK-QLT-013]
+        bool needsPageSelect(const PageSubPageHelper& pageSubPageHelper, const XpanderParameter& parameter)
+        {
+            int lastPage = 0;
+            int lastSubPage = 0;
+            pageSubPageHelper.getPageSubPage(lastPage, lastSubPage);
+            return lastPage != parameter.page() || lastSubPage != parameter.subPage();
+        }
     }
 
     XpanderController::XpanderController(common::midi::MidiBackend& backend,
@@ -878,20 +889,13 @@ namespace xplorer::controller
                 continue;
             }
             auto* xpanderParameter = dynamic_cast<XpanderParameter*>(parameterToSend.get());
-            if (xpanderParameter != nullptr)
+            if (xpanderParameter != nullptr && needsPageSelect(_pageSubPageHelper, *xpanderParameter))
             {
-                int lastPage = 0;
-                int lastSubPage = 0;
-                _pageSubPageHelper.getPageSubPage(lastPage, lastSubPage);
-                if (lastPage != xpanderParameter->page() || lastSubPage != xpanderParameter->subPage())
+                sendDataToSynthOutputDevice(xpanderParameter->pageSelectMessage());
+                _pageSubPageHelper.updatePageSubPage(xpanderParameter->page(), xpanderParameter->subPage());
+                if (!waitForTransmitDelay(stopToken))
                 {
-                    sendDataToSynthOutputDevice(xpanderParameter->pageSelectMessage());
-                    _pageSubPageHelper.updatePageSubPage(xpanderParameter->page(),
-                                                         xpanderParameter->subPage());
-                    if (!waitForTransmitDelay(stopToken))
-                    {
-                        break;
-                    }
+                    break;
                 }
             }
             sendDataToSynthOutputDevice(parameterToSend->message());

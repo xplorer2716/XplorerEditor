@@ -8,6 +8,7 @@
 #include "xpl/util/EnumUtils.hpp"
 
 #include <array>
+#include <utility>
 
 namespace xplorer::model
 {
@@ -37,6 +38,315 @@ namespace xplorer::model
             const auto mask = static_cast<std::uint8_t>(flag);
             return (flags & mask) == mask;
         }
+
+        // fromSinglePatch() and toSinglePatch() walk every section of a patch,
+        // and each section carries its own flag tests: one function holding them
+        // all is past what can be read in a sitting. The two classes below take
+        // the walk apart, one member per section, in the order the patch lays
+        // them out. A parameter is reached through `lookup`, because
+        // parameterAt() is private to XpanderTone and the tone hands it in.
+        // Pure code motion: every parameter name, ordering and reference quirk
+        // is unchanged. [RQ-MOD-022, RQ-QLT-017, TASK-QLT-013]
+
+        /// Writes a patch's sections into the tone's parameters.
+        template <typename Lookup>
+        class SinglePatchImporter
+        {
+        public:
+            explicit SinglePatchImporter(Lookup lookup) : _lookup(std::move(lookup)) {}
+
+            void importVcos(const XpanderSinglePatch& patch)
+            {
+                for (int i = 0; i < constants::VCO_COUNT; ++i)
+                {
+                    const auto& vco = patch.vcos[static_cast<std::size_t>(i)];
+                    const int n = i + 1;
+                    setValue(formatStr("VCO{}_FREQ", n), vco.freq);
+                    setValue(formatStr("VCO{}_DETUNE", n), vco.detune);
+                    setValue(formatStr("VCO{}_PW", n), vco.pw);
+                    setValue(formatStr("VCO{}_VOLUME", n), vco.vol);
+                    // Waveshape flags: reference sets 1 only when the flag is on
+                    // (values were reset to 0 above).
+                    if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_TRI))
+                        setBit(formatStr("VCO{}_WAVESHAPE_TRI", n), true);
+                    if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_SAW))
+                        setBit(formatStr("VCO{}_WAVESHAPE_SAW", n), true);
+                    if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_PULSE))
+                        setBit(formatStr("VCO{}_WAVESHAPE_PULSE", n), true);
+                    if (n == 2)
+                    {
+                        if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_NOISE))
+                            setBit(formatStr("VCO{}_WAVESHAPE_NOISE", n), true);
+                        // sync shown as mod on the panel but stored in wave
+                        setBit(formatStr("VCO{}_WAVE_SYNC", n), hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_SYNC));
+                    }
+                    setBit(formatStr("VCO{}_MOD_KEYB", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_KEYBD));
+                    setBit(formatStr("VCO{}_MOD_LAG", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_LAG));
+                    setBit(formatStr("VCO{}_MOD_LEV1", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_LEV_1));
+                    setBit(formatStr("VCO{}_MOD_VIB", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_VIB));
+                }
+            }
+
+            void importVcf(const XpanderSinglePatch& patch)
+            {
+                setValue("VCF_FREQ", patch.vcf.freq);
+                setValue("VCF_RES", patch.vcf.res);
+                setValue("VCF_MODE", patch.vcf.fmode);
+                setValue("VCF_VCA1_VOLUME", patch.vcf.vca1);
+                setValue("VCF_VCA2_VOLUME", patch.vcf.vca2);
+                setBit("VCF_MOD_KEYB", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_KEYBD));
+                setBit("VCF_MOD_LAG", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_LAG));
+                setBit("VCF_MOD_LEV1", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_LEV_1));
+                setBit("VCF_MOD_VIB", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_VIB));
+            }
+
+            void importFmAndLag(const XpanderSinglePatch& patch)
+            {
+                setValue("FM_AMP", patch.fmAndLag.f_amp);
+                setValue("FM_DESTINATION", patch.fmAndLag.f_dest);
+                setValue("LAG_IN", patch.fmAndLag.lag_in);
+                setValue("FMLAG_RATE", patch.fmAndLag.lag_rate);
+                setBit("LAG_MODE_LEGATO", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_LEGATO));
+                setBit("LAG_TIMING_LINEAR_EXPO", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_EXPO));
+                setBit("LAG_LINEAR_EQUAL_TIME", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_EQUAL_TIME));
+            }
+
+            void importTracks(const XpanderSinglePatch& patch)
+            {
+                for (int t = 0; t < constants::TRACK_COUNT; ++t)
+                {
+                    setValue(formatStr("TRACK_{}_IN", t + 1), patch.tracks[static_cast<std::size_t>(t)].input);
+                    for (int p = 0; p < constants::TRACK_POINTS_COUNTS; ++p)
+                    {
+                        setValue(formatStr("TRACK_{}_POINT_{}", t + 1, p + 1),
+                                 patch.tracks[static_cast<std::size_t>(t)].points[static_cast<std::size_t>(p)]);
+                    }
+                }
+            }
+
+            void importEnveloppes(const XpanderSinglePatch& patch)
+            {
+                for (int e = 0; e < constants::ENV_COUNT; ++e)
+                {
+                    const auto& env = patch.enveloppes[static_cast<std::size_t>(e)];
+                    const int n = e + 1;
+                    setValue(formatStr("ENV_{}_DELAY", n), env.delay);
+                    setValue(formatStr("ENV_{}_ATTACK", n), env.attack);
+                    setValue(formatStr("ENV_{}_DECAY", n), env.decay);
+                    setValue(formatStr("ENV_{}_SUSTAIN", n), env.sustain);
+                    setValue(formatStr("ENV_{}_RELEASE", n), env.release);
+                    setValue(formatStr("ENV_{}_VOLUME", n), env.amp);
+                    setBit(formatStr("ENV_{}_MODE_RESET", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_RESET));
+                    setBit(formatStr("ENV_{}_MODE_FREERUN", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_FREERUN));
+                    setBit(formatStr("ENV_{}_MODE_DADR", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_DADR));
+                    setBit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_MULTI));
+                    setBit(formatStr("ENV_{}_TRIG_EXTRIG", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_EXTRIG));
+                    setBit(formatStr("ENV_{}_TRIG_LFOTRIG", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_LFOTRIG));
+                    // Reference: ignore a dummy lfotrig value when the flag is off.
+                    if (valueOf(formatStr("ENV_{}_TRIG_LFOTRIG", n)) == 0)
+                    {
+                        setValue(formatStr("ENV_{}_TRIG_LFO_SOURCE", n),
+                                 xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1));
+                    }
+                    else
+                    {
+                        setValue(formatStr("ENV_{}_TRIG_LFO_SOURCE", n), env.lfotrig);
+                    }
+                    setBit(formatStr("ENV_{}_TRIG_GATED", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_GATED));
+                }
+            }
+
+            void importLfos(const XpanderSinglePatch& patch)
+            {
+                for (int l = 0; l < constants::LFO_COUNT; ++l)
+                {
+                    const auto& lfo = patch.lfos[static_cast<std::size_t>(l)];
+                    const int n = l + 1;
+                    setValue(formatStr("LFO_{}_SPEED", n), lfo.speed);
+                    setValue(formatStr("LFO_{}_WAVESHAPE", n), lfo.wave);
+                    setValue(formatStr("LFO_{}_SAMPLE_INPUT", n), lfo.sample);
+                    setValue(formatStr("LFO_{}_RETRIG", n), lfo.retrig);
+                    setValue(formatStr("LFO_{}_AMP", n), lfo.amp);
+                    setValue(formatStr("LFO_{}_LAG", n), lfo.lag);
+                    setValue(formatStr("LFO_{}_RETRIG_MODE", n), lfo.retrig_mode);
+                }
+            }
+
+            void importRamps(const XpanderSinglePatch& patch)
+            {
+                for (int r = 0; r < constants::RAMP_COUNT; ++r)
+                {
+                    const auto& ramp = patch.ramps[static_cast<std::size_t>(r)];
+                    const int n = r + 1;
+                    setValue(formatStr("RAMP_{}_RATE", n), ramp.rate);
+                    setBit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_MULTI));
+                    setBit(formatStr("RAMP_{}_TRIG_EXTRIG", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_EXTRIG));
+                    setBit(formatStr("RAMP_{}_TRIG_LFOTRIG", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_LFOTRIG));
+                    // Reference quirk kept as-is: the guard reads the ENV_n LFOTRIG
+                    // flag (not RAMP_n) before accepting the ramp's lfotrig value.
+                    if (valueOf(formatStr("ENV_{}_TRIG_LFOTRIG", n)) == 0)
+                    {
+                        setValue(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n),
+                                 xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1));
+                    }
+                    else
+                    {
+                        setValue(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n), ramp.lfotrig);
+                    }
+                    setBit(formatStr("RAMP_{}_TRIG_GATED", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_GATED));
+                }
+            }
+
+        private:
+            void setValue(const std::string& name, int value) { _lookup(name).setValue(value); }
+            void setBit(const std::string& name, bool set) { setValue(name, set ? 1 : 0); }
+            [[nodiscard]] int valueOf(const std::string& name) { return _lookup(name).value(); }
+
+            Lookup _lookup;
+        };
+
+        /// Reads the tone's parameters into a patch's sections.
+        template <typename Lookup>
+        class SinglePatchExporter
+        {
+        public:
+            explicit SinglePatchExporter(Lookup lookup) : _lookup(std::move(lookup)) {}
+
+            void exportVcos(XpanderSinglePatch& patch) const
+            {
+                for (int i = 0; i < constants::VCO_COUNT; ++i)
+                {
+                    auto& vco = patch.vcos[static_cast<std::size_t>(i)];
+                    const int n = i + 1;
+                    vco.freq = byteOf(formatStr("VCO{}_FREQ", n));
+                    vco.detune = signedByteOf(formatStr("VCO{}_DETUNE", n));
+                    vco.pw = byteOf(formatStr("VCO{}_PW", n));
+                    vco.vol = byteOf(formatStr("VCO{}_VOLUME", n));
+                    vco.wave = 0;
+                    if (bit(formatStr("VCO{}_WAVESHAPE_TRI", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
+                    if (bit(formatStr("VCO{}_WAVESHAPE_SAW", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
+                    if (bit(formatStr("VCO{}_WAVESHAPE_PULSE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
+                    if (n == 2)
+                    {
+                        if (bit(formatStr("VCO{}_WAVESHAPE_NOISE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
+                        if (bit(formatStr("VCO{}_WAVE_SYNC", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
+                    }
+                    vco.mod = 0;
+                    if (bit(formatStr("VCO{}_MOD_KEYB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
+                    if (bit(formatStr("VCO{}_MOD_LAG", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
+                    if (bit(formatStr("VCO{}_MOD_LEV1", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
+                    if (bit(formatStr("VCO{}_MOD_VIB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
+                }
+            }
+
+            void exportVcf(XpanderSinglePatch& patch) const
+            {
+                patch.vcf.freq = byteOf("VCF_FREQ");
+                patch.vcf.res = byteOf("VCF_RES");
+                patch.vcf.fmode = byteOf("VCF_MODE");
+                patch.vcf.vca1 = byteOf("VCF_VCA1_VOLUME");
+                patch.vcf.vca2 = byteOf("VCF_VCA2_VOLUME");
+                patch.vcf.mod = 0;
+                if (bit("VCF_MOD_KEYB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
+                if (bit("VCF_MOD_LAG")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
+                if (bit("VCF_MOD_LEV1")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
+                if (bit("VCF_MOD_VIB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
+            }
+
+            void exportFmAndLag(XpanderSinglePatch& patch) const
+            {
+                patch.fmAndLag.f_amp = byteOf("FM_AMP");
+                patch.fmAndLag.f_dest = byteOf("FM_DESTINATION");
+                patch.fmAndLag.lag_in = byteOf("LAG_IN");
+                patch.fmAndLag.lag_rate = byteOf("FMLAG_RATE");
+                patch.fmAndLag.lag_mode = 0;
+                if (bit("LAG_MODE_LEGATO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_LEGATO);
+                if (bit("LAG_TIMING_LINEAR_EXPO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EXPO);
+                if (bit("LAG_LINEAR_EQUAL_TIME")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EQUAL_TIME);
+            }
+
+            void exportTracks(XpanderSinglePatch& patch) const
+            {
+                for (int t = 0; t < constants::TRACK_COUNT; ++t)
+                {
+                    patch.tracks[static_cast<std::size_t>(t)].input = byteOf(formatStr("TRACK_{}_IN", t + 1));
+                    for (int p = 0; p < constants::TRACK_POINTS_COUNTS; ++p)
+                    {
+                        patch.tracks[static_cast<std::size_t>(t)].points[static_cast<std::size_t>(p)] =
+                            byteOf(formatStr("TRACK_{}_POINT_{}", t + 1, p + 1));
+                    }
+                }
+            }
+
+            void exportEnveloppes(XpanderSinglePatch& patch) const
+            {
+                for (int e = 0; e < constants::ENV_COUNT; ++e)
+                {
+                    auto& env = patch.enveloppes[static_cast<std::size_t>(e)];
+                    const int n = e + 1;
+                    env.delay = byteOf(formatStr("ENV_{}_DELAY", n));
+                    env.attack = byteOf(formatStr("ENV_{}_ATTACK", n));
+                    env.decay = byteOf(formatStr("ENV_{}_DECAY", n));
+                    env.sustain = byteOf(formatStr("ENV_{}_SUSTAIN", n));
+                    env.release = byteOf(formatStr("ENV_{}_RELEASE", n));
+                    env.amp = byteOf(formatStr("ENV_{}_VOLUME", n));
+                    env.flags = 0;
+                    if (bit(formatStr("ENV_{}_MODE_RESET", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_RESET);
+                    if (bit(formatStr("ENV_{}_MODE_FREERUN", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_FREERUN);
+                    if (bit(formatStr("ENV_{}_MODE_DADR", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_DADR);
+                    if (bit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_MULTI);
+                    if (bit(formatStr("ENV_{}_TRIG_EXTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
+                    if (bit(formatStr("ENV_{}_TRIG_LFOTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
+                    env.lfotrig = byteOf(formatStr("ENV_{}_TRIG_LFO_SOURCE", n));
+                    if (bit(formatStr("ENV_{}_TRIG_GATED", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_GATED);
+                }
+            }
+
+            void exportLfos(XpanderSinglePatch& patch) const
+            {
+                for (int l = 0; l < constants::LFO_COUNT; ++l)
+                {
+                    auto& lfo = patch.lfos[static_cast<std::size_t>(l)];
+                    const int n = l + 1;
+                    lfo.speed = byteOf(formatStr("LFO_{}_SPEED", n));
+                    lfo.wave = byteOf(formatStr("LFO_{}_WAVESHAPE", n));
+                    lfo.sample = byteOf(formatStr("LFO_{}_SAMPLE_INPUT", n));
+                    lfo.retrig = byteOf(formatStr("LFO_{}_RETRIG", n));
+                    lfo.amp = byteOf(formatStr("LFO_{}_AMP", n));
+                    lfo.lag = byteOf(formatStr("LFO_{}_LAG", n));
+                    lfo.retrig_mode = byteOf(formatStr("LFO_{}_RETRIG_MODE", n));
+                }
+            }
+
+            void exportRamps(XpanderSinglePatch& patch) const
+            {
+                for (int r = 0; r < constants::RAMP_COUNT; ++r)
+                {
+                    auto& ramp = patch.ramps[static_cast<std::size_t>(r)];
+                    const int n = r + 1;
+                    ramp.rate = byteOf(formatStr("RAMP_{}_RATE", n));
+                    ramp.flags = 0;
+                    if (bit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_MULTI);
+                    if (bit(formatStr("RAMP_{}_TRIG_EXTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_EXTRIG);
+                    if (bit(formatStr("RAMP_{}_TRIG_LFOTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_LFOTRIG);
+                    ramp.lfotrig = byteOf(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n));
+                    if (bit(formatStr("RAMP_{}_TRIG_GATED", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_GATED);
+                }
+            }
+
+        private:
+            [[nodiscard]] bool bit(const std::string& name) const { return _lookup(name).value() == 1; }
+            [[nodiscard]] std::uint8_t byteOf(const std::string& name) const
+            {
+                return static_cast<std::uint8_t>(_lookup(name).value());
+            }
+            [[nodiscard]] std::int8_t signedByteOf(const std::string& name) const
+            {
+                return static_cast<std::int8_t>(_lookup(name).value());
+            }
+
+            Lookup _lookup;
+        };
     }
 
     // A tone is the editor's live patch buffer: the 227 parameters of one
@@ -305,136 +615,15 @@ namespace xplorer::model
         }
         clearModulationMatrix();
 
-        auto setBit = [this](const std::string& name, bool set)
-        { parameterAt(name).setValue(set ? 1 : 0); };
-
-        // VCOs
-        for (int i = 0; i < constants::VCO_COUNT; ++i)
-        {
-            const auto& vco = patch.vcos[static_cast<std::size_t>(i)];
-            const int n = i + 1;
-            parameterAt(formatStr("VCO{}_FREQ", n)).setValue(vco.freq);
-            parameterAt(formatStr("VCO{}_DETUNE", n)).setValue(vco.detune);
-            parameterAt(formatStr("VCO{}_PW", n)).setValue(vco.pw);
-            parameterAt(formatStr("VCO{}_VOLUME", n)).setValue(vco.vol);
-            // Waveshape flags: reference sets 1 only when the flag is on
-            // (values were reset to 0 above).
-            if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_TRI))
-                setBit(formatStr("VCO{}_WAVESHAPE_TRI", n), true);
-            if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_SAW))
-                setBit(formatStr("VCO{}_WAVESHAPE_SAW", n), true);
-            if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_PULSE))
-                setBit(formatStr("VCO{}_WAVESHAPE_PULSE", n), true);
-            if (n == 2)
-            {
-                if (hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_NOISE))
-                    setBit(formatStr("VCO{}_WAVESHAPE_NOISE", n), true);
-                // sync shown as mod on the panel but stored in wave
-                setBit(formatStr("VCO{}_WAVE_SYNC", n), hasFlag(vco.wave, EnumVCOWaveFlags::VCOWAVEFLAG_SYNC));
-            }
-            setBit(formatStr("VCO{}_MOD_KEYB", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_KEYBD));
-            setBit(formatStr("VCO{}_MOD_LAG", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_LAG));
-            setBit(formatStr("VCO{}_MOD_LEV1", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_LEV_1));
-            setBit(formatStr("VCO{}_MOD_VIB", n), hasFlag(vco.mod, EnumModulationFlags::MODFLAG_VIB));
-        }
-
-        // VCF/VCA
-        parameterAt("VCF_FREQ").setValue(patch.vcf.freq);
-        parameterAt("VCF_RES").setValue(patch.vcf.res);
-        parameterAt("VCF_MODE").setValue(patch.vcf.fmode);
-        parameterAt("VCF_VCA1_VOLUME").setValue(patch.vcf.vca1);
-        parameterAt("VCF_VCA2_VOLUME").setValue(patch.vcf.vca2);
-        setBit("VCF_MOD_KEYB", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_KEYBD));
-        setBit("VCF_MOD_LAG", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_LAG));
-        setBit("VCF_MOD_LEV1", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_LEV_1));
-        setBit("VCF_MOD_VIB", hasFlag(patch.vcf.mod, EnumModulationFlags::MODFLAG_VIB));
-
-        // FM/LAG
-        parameterAt("FM_AMP").setValue(patch.fmAndLag.f_amp);
-        parameterAt("FM_DESTINATION").setValue(patch.fmAndLag.f_dest);
-        parameterAt("LAG_IN").setValue(patch.fmAndLag.lag_in);
-        parameterAt("FMLAG_RATE").setValue(patch.fmAndLag.lag_rate);
-        setBit("LAG_MODE_LEGATO", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_LEGATO));
-        setBit("LAG_TIMING_LINEAR_EXPO", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_EXPO));
-        setBit("LAG_LINEAR_EQUAL_TIME", hasFlag(patch.fmAndLag.lag_mode, EnumLagModeFlags::LAGMODE_EQUAL_TIME));
-
-        // TRACK
-        for (int t = 0; t < constants::TRACK_COUNT; ++t)
-        {
-            parameterAt(formatStr("TRACK_{}_IN", t + 1)).setValue(patch.tracks[static_cast<std::size_t>(t)].input);
-            for (int p = 0; p < constants::TRACK_POINTS_COUNTS; ++p)
-            {
-                parameterAt(formatStr("TRACK_{}_POINT_{}", t + 1, p + 1))
-                    .setValue(patch.tracks[static_cast<std::size_t>(t)].points[static_cast<std::size_t>(p)]);
-            }
-        }
-
-        // ENV
-        for (int e = 0; e < constants::ENV_COUNT; ++e)
-        {
-            const auto& env = patch.enveloppes[static_cast<std::size_t>(e)];
-            const int n = e + 1;
-            parameterAt(formatStr("ENV_{}_DELAY", n)).setValue(env.delay);
-            parameterAt(formatStr("ENV_{}_ATTACK", n)).setValue(env.attack);
-            parameterAt(formatStr("ENV_{}_DECAY", n)).setValue(env.decay);
-            parameterAt(formatStr("ENV_{}_SUSTAIN", n)).setValue(env.sustain);
-            parameterAt(formatStr("ENV_{}_RELEASE", n)).setValue(env.release);
-            parameterAt(formatStr("ENV_{}_VOLUME", n)).setValue(env.amp);
-            setBit(formatStr("ENV_{}_MODE_RESET", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_RESET));
-            setBit(formatStr("ENV_{}_MODE_FREERUN", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_FREERUN));
-            setBit(formatStr("ENV_{}_MODE_DADR", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_DADR));
-            setBit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_MULTI));
-            setBit(formatStr("ENV_{}_TRIG_EXTRIG", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_EXTRIG));
-            setBit(formatStr("ENV_{}_TRIG_LFOTRIG", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_LFOTRIG));
-            // Reference: ignore a dummy lfotrig value when the flag is off.
-            if (parameterAt(formatStr("ENV_{}_TRIG_LFOTRIG", n)).value() == 0)
-            {
-                parameterAt(formatStr("ENV_{}_TRIG_LFO_SOURCE", n))
-                    .setValue(xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1));
-            }
-            else
-            {
-                parameterAt(formatStr("ENV_{}_TRIG_LFO_SOURCE", n)).setValue(env.lfotrig);
-            }
-            setBit(formatStr("ENV_{}_TRIG_GATED", n), hasFlag(env.flags, EnumEnveloppeModeFlags::ENVMODE_GATED));
-        }
-
-        // LFO
-        for (int l = 0; l < constants::LFO_COUNT; ++l)
-        {
-            const auto& lfo = patch.lfos[static_cast<std::size_t>(l)];
-            const int n = l + 1;
-            parameterAt(formatStr("LFO_{}_SPEED", n)).setValue(lfo.speed);
-            parameterAt(formatStr("LFO_{}_WAVESHAPE", n)).setValue(lfo.wave);
-            parameterAt(formatStr("LFO_{}_SAMPLE_INPUT", n)).setValue(lfo.sample);
-            parameterAt(formatStr("LFO_{}_RETRIG", n)).setValue(lfo.retrig);
-            parameterAt(formatStr("LFO_{}_AMP", n)).setValue(lfo.amp);
-            parameterAt(formatStr("LFO_{}_LAG", n)).setValue(lfo.lag);
-            parameterAt(formatStr("LFO_{}_RETRIG_MODE", n)).setValue(lfo.retrig_mode);
-        }
-
-        // RAMP
-        for (int r = 0; r < constants::RAMP_COUNT; ++r)
-        {
-            const auto& ramp = patch.ramps[static_cast<std::size_t>(r)];
-            const int n = r + 1;
-            parameterAt(formatStr("RAMP_{}_RATE", n)).setValue(ramp.rate);
-            setBit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_MULTI));
-            setBit(formatStr("RAMP_{}_TRIG_EXTRIG", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_EXTRIG));
-            setBit(formatStr("RAMP_{}_TRIG_LFOTRIG", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_LFOTRIG));
-            // Reference quirk kept as-is: the guard reads the ENV_n LFOTRIG
-            // flag (not RAMP_n) before accepting the ramp's lfotrig value.
-            if (parameterAt(formatStr("ENV_{}_TRIG_LFOTRIG", n)).value() == 0)
-            {
-                parameterAt(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n))
-                    .setValue(xpl::util::toUnderlying(EnumLFOTriggerSources::LFO1));
-            }
-            else
-            {
-                parameterAt(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n)).setValue(ramp.lfotrig);
-            }
-            setBit(formatStr("RAMP_{}_TRIG_GATED", n), hasFlag(ramp.flags, EnumRampFlags::RAMPF_GATED));
-        }
+        SinglePatchImporter importer{
+            [this](const std::string& name) -> XpanderParameter& { return parameterAt(name); }};
+        importer.importVcos(patch);
+        importer.importVcf(patch);
+        importer.importFmAndLag(patch);
+        importer.importTracks(patch);
+        importer.importEnveloppes(patch);
+        importer.importLfos(patch);
+        importer.importRamps(patch);
 
         // MODULATION MATRIX: rebuilt through the destination-change flow.
         for (int i = 0; i < constants::MODENTRIES_COUNT; ++i)
@@ -455,117 +644,15 @@ namespace xplorer::model
     XpanderSinglePatch XpanderTone::toSinglePatch() const
     {
         XpanderSinglePatch patch;
-        auto bit = [this](const std::string& name) { return parameterAt(name).value() == 1; };
-        auto byteOf = [this](const std::string& name)
-        { return static_cast<std::uint8_t>(parameterAt(name).value()); };
-
-        // VCOs
-        for (int i = 0; i < constants::VCO_COUNT; ++i)
-        {
-            auto& vco = patch.vcos[static_cast<std::size_t>(i)];
-            const int n = i + 1;
-            vco.freq = byteOf(formatStr("VCO{}_FREQ", n));
-            vco.detune = static_cast<std::int8_t>(parameterAt(formatStr("VCO{}_DETUNE", n)).value());
-            vco.pw = byteOf(formatStr("VCO{}_PW", n));
-            vco.vol = byteOf(formatStr("VCO{}_VOLUME", n));
-            vco.wave = 0;
-            if (bit(formatStr("VCO{}_WAVESHAPE_TRI", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_TRI);
-            if (bit(formatStr("VCO{}_WAVESHAPE_SAW", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SAW);
-            if (bit(formatStr("VCO{}_WAVESHAPE_PULSE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_PULSE);
-            if (n == 2)
-            {
-                if (bit(formatStr("VCO{}_WAVESHAPE_NOISE", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_NOISE);
-                if (bit(formatStr("VCO{}_WAVE_SYNC", n))) vco.wave |= xpl::util::toUnderlying(EnumVCOWaveFlags::VCOWAVEFLAG_SYNC);
-            }
-            vco.mod = 0;
-            if (bit(formatStr("VCO{}_MOD_KEYB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
-            if (bit(formatStr("VCO{}_MOD_LAG", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
-            if (bit(formatStr("VCO{}_MOD_LEV1", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
-            if (bit(formatStr("VCO{}_MOD_VIB", n))) vco.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
-        }
-
-        // VCF/VCA
-        patch.vcf.freq = byteOf("VCF_FREQ");
-        patch.vcf.res = byteOf("VCF_RES");
-        patch.vcf.fmode = byteOf("VCF_MODE");
-        patch.vcf.vca1 = byteOf("VCF_VCA1_VOLUME");
-        patch.vcf.vca2 = byteOf("VCF_VCA2_VOLUME");
-        patch.vcf.mod = 0;
-        if (bit("VCF_MOD_KEYB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_KEYBD);
-        if (bit("VCF_MOD_LAG")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LAG);
-        if (bit("VCF_MOD_LEV1")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_LEV_1);
-        if (bit("VCF_MOD_VIB")) patch.vcf.mod |= xpl::util::toUnderlying(EnumModulationFlags::MODFLAG_VIB);
-
-        // FM/LAG
-        patch.fmAndLag.f_amp = byteOf("FM_AMP");
-        patch.fmAndLag.f_dest = byteOf("FM_DESTINATION");
-        patch.fmAndLag.lag_in = byteOf("LAG_IN");
-        patch.fmAndLag.lag_rate = byteOf("FMLAG_RATE");
-        patch.fmAndLag.lag_mode = 0;
-        if (bit("LAG_MODE_LEGATO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_LEGATO);
-        if (bit("LAG_TIMING_LINEAR_EXPO")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EXPO);
-        if (bit("LAG_LINEAR_EQUAL_TIME")) patch.fmAndLag.lag_mode |= xpl::util::toUnderlying(EnumLagModeFlags::LAGMODE_EQUAL_TIME);
-
-        // TRACK
-        for (int t = 0; t < constants::TRACK_COUNT; ++t)
-        {
-            patch.tracks[static_cast<std::size_t>(t)].input = byteOf(formatStr("TRACK_{}_IN", t + 1));
-            for (int p = 0; p < constants::TRACK_POINTS_COUNTS; ++p)
-            {
-                patch.tracks[static_cast<std::size_t>(t)].points[static_cast<std::size_t>(p)] =
-                    byteOf(formatStr("TRACK_{}_POINT_{}", t + 1, p + 1));
-            }
-        }
-
-        // ENV
-        for (int e = 0; e < constants::ENV_COUNT; ++e)
-        {
-            auto& env = patch.enveloppes[static_cast<std::size_t>(e)];
-            const int n = e + 1;
-            env.delay = byteOf(formatStr("ENV_{}_DELAY", n));
-            env.attack = byteOf(formatStr("ENV_{}_ATTACK", n));
-            env.decay = byteOf(formatStr("ENV_{}_DECAY", n));
-            env.sustain = byteOf(formatStr("ENV_{}_SUSTAIN", n));
-            env.release = byteOf(formatStr("ENV_{}_RELEASE", n));
-            env.amp = byteOf(formatStr("ENV_{}_VOLUME", n));
-            env.flags = 0;
-            if (bit(formatStr("ENV_{}_MODE_RESET", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_RESET);
-            if (bit(formatStr("ENV_{}_MODE_FREERUN", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_FREERUN);
-            if (bit(formatStr("ENV_{}_MODE_DADR", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_DADR);
-            if (bit(formatStr("ENV_{}_TRIG_SINGLE_MULTI", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_MULTI);
-            if (bit(formatStr("ENV_{}_TRIG_EXTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_EXTRIG);
-            if (bit(formatStr("ENV_{}_TRIG_LFOTRIG", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_LFOTRIG);
-            env.lfotrig = byteOf(formatStr("ENV_{}_TRIG_LFO_SOURCE", n));
-            if (bit(formatStr("ENV_{}_TRIG_GATED", n))) env.flags |= xpl::util::toUnderlying(EnumEnveloppeModeFlags::ENVMODE_GATED);
-        }
-
-        // LFO
-        for (int l = 0; l < constants::LFO_COUNT; ++l)
-        {
-            auto& lfo = patch.lfos[static_cast<std::size_t>(l)];
-            const int n = l + 1;
-            lfo.speed = byteOf(formatStr("LFO_{}_SPEED", n));
-            lfo.wave = byteOf(formatStr("LFO_{}_WAVESHAPE", n));
-            lfo.sample = byteOf(formatStr("LFO_{}_SAMPLE_INPUT", n));
-            lfo.retrig = byteOf(formatStr("LFO_{}_RETRIG", n));
-            lfo.amp = byteOf(formatStr("LFO_{}_AMP", n));
-            lfo.lag = byteOf(formatStr("LFO_{}_LAG", n));
-            lfo.retrig_mode = byteOf(formatStr("LFO_{}_RETRIG_MODE", n));
-        }
-
-        // RAMP
-        for (int r = 0; r < constants::RAMP_COUNT; ++r)
-        {
-            auto& ramp = patch.ramps[static_cast<std::size_t>(r)];
-            const int n = r + 1;
-            ramp.rate = byteOf(formatStr("RAMP_{}_RATE", n));
-            ramp.flags = 0;
-            if (bit(formatStr("RAMP_{}_TRIG_SINGLE_MULTI", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_MULTI);
-            if (bit(formatStr("RAMP_{}_TRIG_EXTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_EXTRIG);
-            if (bit(formatStr("RAMP_{}_TRIG_LFOTRIG", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_LFOTRIG);
-            ramp.lfotrig = byteOf(formatStr("RAMP_{}_TRIG_LFO_SOURCE", n));
-            if (bit(formatStr("RAMP_{}_TRIG_GATED", n))) ramp.flags |= xpl::util::toUnderlying(EnumRampFlags::RAMPF_GATED);
-        }
+        const SinglePatchExporter exporter{
+            [this](const std::string& name) -> const XpanderParameter& { return parameterAt(name); }};
+        exporter.exportVcos(patch);
+        exporter.exportVcf(patch);
+        exporter.exportFmAndLag(patch);
+        exporter.exportTracks(patch);
+        exporter.exportEnveloppes(patch);
+        exporter.exportLfos(patch);
+        exporter.exportRamps(patch);
 
         // MODULATION MATRIX
         for (int i = 0; i < constants::MODENTRIES_COUNT; ++i)

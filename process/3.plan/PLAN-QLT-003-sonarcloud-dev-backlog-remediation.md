@@ -32,8 +32,8 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-013: Reduce cognitive complexity and nesting in C++
 - **Tier**: M
-- **Status**: Not Started
-- **Description**: Fix `cpp:S3776` (MainComponent.cpp:327, XpanderControllerMidiEvents.cpp:341, XpanderTone.cpp:291,455) and `cpp:S134` (VfdSegmentRenderer.cpp:165,183, XpanderController.cpp:891, XpanderControllerMidiEvents.cpp:411, AbstractControllerDevices.cpp:119) by extracting named helpers. The 5 test-file S134 (KnobPresetValuesTests.cpp) are fixed if cheap, else accepted per RQ-QLT-016.
+- **Status**: Done
+- **Description**: Fix `cpp:S3776` (MainComponent.cpp:327, XpanderControllerMidiEvents.cpp:341, XpanderTone.cpp:291,455) and `cpp:S134` (VfdSegmentRenderer.cpp:165,183, XpanderController.cpp:891, XpanderControllerMidiEvents.cpp:411, AbstractControllerDevices.cpp:119) by extracting named helpers. The 5 test-file S134 (KnobPresetValuesTests.cpp) are accepted, not fixed (AI-generated tests, RQ-QLT-016 triage policy).
 - **Requirement refs**: RQ-QLT-017, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:

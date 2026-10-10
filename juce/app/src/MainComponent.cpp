@@ -122,6 +122,96 @@ namespace xplorer::app
             return false;
         }
 
+        /// A control built for one fixed-block spec, with the handle the
+        /// registry binds it by. An empty `component` means the spec yields
+        /// nothing to place: no backing parameter, no options to show, or a
+        /// kind the fixed block does not place. [RQ-QLT-017, TASK-QLT-013]
+        struct FixedBlockControl
+        {
+            std::unique_ptr<juce::Component> component;
+            IBoundControl* bound = nullptr;
+        };
+
+        template <typename Control>
+        FixedBlockControl asFixedBlockControl(std::unique_ptr<Control> control)
+        {
+            IBoundControl* bound = control.get();
+            return {std::move(control), bound};
+        }
+
+        FixedBlockControl buildFixedBlockKnob(ParameterBindingRegistry& registry, const std::string& tag,
+                                              const midiapp::model::AbstractParameter& parameter)
+        {
+            auto knob = std::make_unique<BoundKnob>(registry, tag, parameter.minValue(),
+                                                    parameter.maxValue(), parameter.step());
+            // The VCO frequency knobs step through harmonic semitones
+            // rather than the tenths their 0..63 range would derive
+            // (reference MainForm.Overrides.cs). Every other knob is
+            // left to derive its own presets from its range, lazily.
+            // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-130)]
+            if (const auto* harmonics = harmonicPresetValuesFor(tag))
+            {
+                knob->setPresetValues(*harmonics);
+            }
+            return asFixedBlockControl(std::move(knob));
+        }
+
+        FixedBlockControl buildFixedBlockComboBox(ParameterBindingRegistry& registry, const std::string& tag)
+        {
+            std::vector<std::pair<std::string, int>> options;
+            const auto labels = comboLabelsForControl(tag);
+            for (std::size_t i = 0; i < labels.size(); ++i)
+            {
+                options.emplace_back(labels[i], static_cast<int>(i));
+            }
+            if (options.empty())
+            {
+                return {};
+            }
+            return asFixedBlockControl(std::make_unique<BoundComboBox>(registry, tag, options));
+        }
+
+        FixedBlockControl buildFixedBlockRadioGroup(ParameterBindingRegistry& registry, const std::string& tag)
+        {
+            const auto options = radioPanelOptions(tag);
+            if (options.empty())
+            {
+                return {};
+            }
+            // Fixed-block radio panels (FM destination, LAG timing) render
+            // as real two-way radio groups, matching the reference form
+            // (owner request). [RQ-GUI-038, RQ-GUI-040, ADR-JUC-016]
+            return asFixedBlockControl(std::make_unique<BoundRadioGroup>(registry, tag, options));
+        }
+
+        FixedBlockControl buildFixedBlockControl(const ControlSpec& spec, const std::string& tag,
+                                                 ParameterBindingRegistry& registry,
+                                                 const midiapp::model::AbstractParameter* parameter)
+        {
+            switch (spec.kind)
+            {
+                case ControlKind::KnobControl:
+                    if (parameter == nullptr)
+                    {
+                        return {};
+                    }
+                    return buildFixedBlockKnob(registry, tag, *parameter);
+                case ControlKind::CheckBoxValuedControl:
+                    if (parameter == nullptr)
+                    {
+                        return {};
+                    }
+                    return asFixedBlockControl(std::make_unique<BoundCheckBox>(
+                        registry, tag, juce::String(spec.label))); // [RQ-GUI-032]
+                case ControlKind::ComboBoxValuedControl:
+                    return buildFixedBlockComboBox(registry, tag);
+                case ControlKind::RadioButtonPanel:
+                    return buildFixedBlockRadioGroup(registry, tag);
+                default:
+                    return {};
+            }
+        }
+
         juce::String preferredSettingsDirectory()
         {
             return juce::File::getSpecialLocation(juce::File::commonApplicationDataDirectory)
@@ -333,79 +423,11 @@ namespace xplorer::app
             {
                 continue;
             }
-            const auto* parameter = _controller->getParameter(tag);
-            std::unique_ptr<juce::Component> component;
-            IBoundControl* bound = nullptr;
-
-            switch (spec.kind)
+            auto [component, bound] =
+                buildFixedBlockControl(spec, tag, *_registry, _controller->getParameter(tag));
+            if (component == nullptr)
             {
-                case ControlKind::KnobControl:
-                {
-                    if (parameter == nullptr)
-                    {
-                        continue;
-                    }
-                    auto knob = std::make_unique<BoundKnob>(*_registry, tag, parameter->minValue(),
-                                                            parameter->maxValue(), parameter->step());
-                    // The VCO frequency knobs step through harmonic semitones
-                    // rather than the tenths their 0..63 range would derive
-                    // (reference MainForm.Overrides.cs). Every other knob is
-                    // left to derive its own presets from its range, lazily.
-                    // [RQ-GUI-079, ADR-JUC-037 (DEC-JUC-130)]
-                    if (const auto* harmonics = harmonicPresetValuesFor(tag))
-                    {
-                        knob->setPresetValues(*harmonics);
-                    }
-                    bound = knob.get();
-                    component = std::move(knob);
-                    break;
-                }
-                case ControlKind::CheckBoxValuedControl:
-                {
-                    if (parameter == nullptr)
-                    {
-                        continue;
-                    }
-                    auto check = std::make_unique<BoundCheckBox>(*_registry, tag,
-                                                                juce::String(spec.label)); // [RQ-GUI-032]
-                    bound = check.get();
-                    component = std::move(check);
-                    break;
-                }
-                case ControlKind::ComboBoxValuedControl:
-                {
-                    std::vector<std::pair<std::string, int>> options;
-                    const auto labels = comboLabelsForControl(tag);
-                    for (std::size_t i = 0; i < labels.size(); ++i)
-                    {
-                        options.emplace_back(labels[i], static_cast<int>(i));
-                    }
-                    if (options.empty())
-                    {
-                        continue;
-                    }
-                    auto combo = std::make_unique<BoundComboBox>(*_registry, tag, options);
-                    bound = combo.get();
-                    component = std::move(combo);
-                    break;
-                }
-                case ControlKind::RadioButtonPanel:
-                {
-                    const auto options = radioPanelOptions(tag);
-                    if (options.empty())
-                    {
-                        continue;
-                    }
-                    // Fixed-block radio panels (FM destination, LAG timing) render
-                    // as real two-way radio groups, matching the reference form
-                    // (owner request). [RQ-GUI-038, RQ-GUI-040, ADR-JUC-016]
-                    auto radios = std::make_unique<BoundRadioGroup>(*_registry, tag, options);
-                    bound = radios.get();
-                    component = std::move(radios);
-                    break;
-                }
-                default:
-                    continue;
+                continue;
             }
 
             // Skinned via the default LookAndFeel (set in the ctor). [RQ-GUI-031]
