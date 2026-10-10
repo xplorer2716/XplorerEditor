@@ -3,6 +3,7 @@
 // Port of MidiApp.MidiController.Service.FileUtils. [RQ-CTL-003, RQ-CTL-004]
 
 #include <string>
+#include <string_view>
 
 namespace midiapp::service
 {
@@ -21,5 +22,5 @@ namespace midiapp::service
     /// trailing spaces into a file name built via
     /// `makeUniqueFilenameFromString` (space is otherwise a legal file-name
     /// character, so the sanitizer above does not remove it). [RQ-GUI-077]
-    [[nodiscard]] std::string trimTrailingSpaces(const std::string& value);
+    [[nodiscard]] std::string trimTrailingSpaces(std::string_view value);
 }

@@ -221,7 +221,7 @@ namespace xplorer::model
         return {name.begin(), name.end()};
     }
 
-    void XpanderSinglePatch::setPatchName(const std::string& newName)
+    void XpanderSinglePatch::setPatchName(std::string_view newName)
     {
         name.fill(' ');
         const auto count = std::min(newName.size(), name.size());

@@ -205,8 +205,12 @@ namespace xplorer::app
             static constexpr int LABEL_TO_LINK_GAP = tokens::semantic::layoutHairline;
 
             juce::Image _image;
-            juce::Label _title, _version, _copyright, _notice;
-            juce::HyperlinkButton _link, _licenseLink;
+            juce::Label _title;
+            juce::Label _version;
+            juce::Label _copyright;
+            juce::Label _notice;
+            juce::HyperlinkButton _link;
+            juce::HyperlinkButton _licenseLink;
             juce::TextButton _dependenciesButton{"Dependencies..."};
         };
 
@@ -282,7 +286,10 @@ namespace xplorer::app
                 addAndMakeVisible(label);
             }
 
-            juce::Label _name, _version, _license, _websitePlaceholder;
+            juce::Label _name;
+            juce::Label _version;
+            juce::Label _license;
+            juce::Label _websitePlaceholder;
             juce::HyperlinkButton _website;
         };
 
@@ -321,15 +328,16 @@ namespace xplorer::app
             one real, reachable configuration left. [RQ-GUI-057, DEC-ABT-005] */
         juce::String explanationFor(SbomStatus status)
         {
+            using enum SbomStatus;
             switch (status)
             {
-                case SbomStatus::InvalidJson:
+                case InvalidJson:
                     return "The software bill of materials is not valid JSON and could not "
                            "be parsed.";
-                case SbomStatus::NotSpdxOrEmpty:
+                case NotSpdxOrEmpty:
                     return "The software bill of materials contains no dependency "
                            "information.";
-                case SbomStatus::Loaded:
+                case Loaded:
                     break;
             }
             return {};
@@ -423,7 +431,10 @@ namespace xplorer::app
             static constexpr int MAX_VISIBLE_ROWS = 14;
             static constexpr int MESSAGE_HEIGHT = 5 * DEP_ROW_HEIGHT;
 
-            juce::Label _nameHeader, _versionHeader, _licenseHeader, _websiteHeader;
+            juce::Label _nameHeader;
+            juce::Label _versionHeader;
+            juce::Label _licenseHeader;
+            juce::Label _websiteHeader;
             juce::Label _message;
             juce::Viewport _viewport;
             std::unique_ptr<DependencyList> _list;
@@ -741,16 +752,16 @@ namespace xplorer::app
     // only: a leading or interior space is a legal name character here
     // (PATCH_NAME_CHAR_PATTERN) and is the user's, not the format's.
     // [RQ-GUI-081]
-    std::string patchNameForEditing(const std::string& storedName)
+    std::string patchNameForEditing(std::string_view storedName)
     {
         const auto lastSignificant =
             storedName.find_last_not_of(model::constants::TONE_NAME_PADDING_CHAR);
-        return lastSignificant == std::string::npos
+        return lastSignificant == std::string_view::npos
                    ? std::string{}
-                   : storedName.substr(0, lastSignificant + 1);
+                   : std::string(storedName.substr(0, lastSignificant + 1));
     }
 
-    bool isPatchNameValid(const std::string& name)
+    bool isPatchNameValid(std::string_view name)
     {
         return name.size() <= static_cast<std::size_t>(model::constants::TONE_NAME_LENGTH)
             && std::all_of(name.begin(), name.end(), isAllowedPatchNameChar);

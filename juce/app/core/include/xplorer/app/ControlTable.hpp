@@ -77,7 +77,11 @@ namespace xplorer::app
     {
         const char* id;   ///< WinForms field name (unique)
         ControlKind kind;
-        int x, y, width, height; ///< logical canvas bounds
+        /// logical canvas bounds
+        int x;
+        int y;
+        int width;
+        int height;
         const char* tag;  ///< parameter name / binding tag ("" when none)
         const char* label; ///< caption (checkbox/label .Text from the resx; "" when none)
     };

@@ -681,6 +681,31 @@ SCENARIO("Test display sends every reference glyph across both VFD lines", "[RQ-
     }
 }
 
+// Traceability: TASK-QLT-020 (the message parameter became a std::string_view).
+SCENARIO("The type-writer message reveals one more character per frame", "[RQ-CTL-061][RQ-QLT-019]")
+{
+    GIVEN("a controller")
+    {
+        Fixture f;
+
+        WHEN("typing out a two-character message")
+        {
+            f.controller.sendTypeWriterMessageToSynth("AB");
+
+            THEN("display off and on are followed by an empty, a one-character and a two-character frame")
+            {
+                const auto sent = f.backend.sentMessages(SYNTH_OUT);
+                REQUIRE(sent.size() == 5);
+                CHECK(sent[2][5] == ' ');
+                CHECK(sent[3][5] == 'A');
+                CHECK(sent[3][6] == ' ');
+                CHECK(sent[4][5] == 'A');
+                CHECK(sent[4][6] == 'B');
+            }
+        }
+    }
+}
+
 SCENARIO("Modulation-matrix source/destination availability follows the 6-source cap",
          "[RQ-GUI-016][RQ-CTL-030]")
 {

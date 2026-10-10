@@ -273,7 +273,9 @@ namespace xplorer::app
         // left the fill, which only passed while the fill was nearly invisible.
         // [RQ-GUI-051, ADR-JUC-027 (DEC-JUC-075)]
         using DrawCommand = std::function<void()>;
-        std::vector<DrawCommand> lineLayer, boxLayer, textLayer;
+        std::vector<DrawCommand> lineLayer;
+        std::vector<DrawCommand> boxLayer;
+        std::vector<DrawCommand> textLayer;
 
         // Records a block frame on the box layer; see drawBlockFrame().
         // [RQ-GUI-044, RQ-DSN-094, ADR-JUC-018 (DEC-JUC-025/026)]

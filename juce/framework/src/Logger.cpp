@@ -64,24 +64,26 @@ namespace midiapp::service
 
         const char* levelName(TraceLevel level)
         {
+            using enum TraceLevel;
             switch (level)
             {
-                case TraceLevel::Error: return "ERROR";
-                case TraceLevel::Warning: return "WARNING";
-                case TraceLevel::Info: return "INFO";
-                case TraceLevel::Verbose: return "VERBOSE";
-                case TraceLevel::Off: break;
+                case Error: return "ERROR";
+                case Warning: return "WARNING";
+                case Info: return "INFO";
+                case Verbose: return "VERBOSE";
+                case Off: break;
             }
             return "OFF";
         }
 
         const char* domainName(LogDomain domain)
         {
+            using enum LogDomain;
             switch (domain)
             {
-                case LogDomain::Midi: return "MIDI";
-                case LogDomain::ControllerCalls: return "CTL";
-                case LogDomain::UiEvents: return "UI";
+                case Midi: return "MIDI";
+                case ControllerCalls: return "CTL";
+                case UiEvents: return "UI";
             }
             return "?";
         }

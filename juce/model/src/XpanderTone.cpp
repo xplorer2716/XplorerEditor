@@ -715,6 +715,7 @@ namespace xplorer::model
     /// DEC-BUG-004)]
     void XpanderTone::defineVCOFrequenciesTuning(EnumRandomVCOFreq tuning)
     {
+        using enum EnumRandomVCOFreq;
         // Shared term of the compound intervals: a ninth is a second an octave
         // up, an eleventh a fourth, a thirteenth a sixth.
         constexpr int SEMITONES_PER_OCTAVE = 12;
@@ -727,15 +728,15 @@ namespace xplorer::model
         auto& vco2 = parameterAt("VCO2_FREQ");
         switch (tuning)
         {
-            case EnumRandomVCOFreq::SameNote: vco1.setValue(SAME_NOTE_SEMITONE); vco2.setValue(vco1.value()); break;
-            case EnumRandomVCOFreq::Third:    vco1.setValue(0);  vco2.setValue(4); break;
-            case EnumRandomVCOFreq::Fifth:    vco1.setValue(0);  vco2.setValue(7); break;
-            case EnumRandomVCOFreq::Seventh:  vco1.setValue(0);  vco2.setValue(11); break;
-            case EnumRandomVCOFreq::Octave:   vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE); break;
-            case EnumRandomVCOFreq::Ninth:    vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 2); break;
-            case EnumRandomVCOFreq::Eleventh: vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 5); break;
-            case EnumRandomVCOFreq::Thirteenth: vco1.setValue(0); vco2.setValue(SEMITONES_PER_OCTAVE + 9); break;
-            case EnumRandomVCOFreq::Free:
+            case SameNote: vco1.setValue(SAME_NOTE_SEMITONE); vco2.setValue(vco1.value()); break;
+            case Third:    vco1.setValue(0);  vco2.setValue(4); break;
+            case Fifth:    vco1.setValue(0);  vco2.setValue(7); break;
+            case Seventh:  vco1.setValue(0);  vco2.setValue(11); break;
+            case Octave:   vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE); break;
+            case Ninth:    vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 2); break;
+            case Eleventh: vco1.setValue(0);  vco2.setValue(SEMITONES_PER_OCTAVE + 5); break;
+            case Thirteenth: vco1.setValue(0); vco2.setValue(SEMITONES_PER_OCTAVE + 9); break;
+            case Free:
                 break;
         }
     }
@@ -755,11 +756,12 @@ namespace xplorer::model
         EnvelopeShape shape{};
         switch (enveloppe)
         {
-            case EnumRandomVCAEnv::Organ: shape = {{0, 63, 63, 63, 0, 63}}; break;
-            case EnumRandomVCAEnv::String: shape = {{0, 30, 63, 63, 32, 63}}; break;
-            case EnumRandomVCAEnv::Percusive: shape = {{0, 0, 63, 10, 0, 63}}; break;
-            case EnumRandomVCAEnv::PercusiveWithRelease: shape = {{0, 0, 63, 0, 32, 63}}; break;
-            case EnumRandomVCAEnv::Free: return; // unsupported in the reference (Debug.Fail)
+            using enum EnumRandomVCAEnv;
+            case Organ: shape = {{0, 63, 63, 63, 0, 63}}; break;
+            case String: shape = {{0, 30, 63, 63, 32, 63}}; break;
+            case Percusive: shape = {{0, 0, 63, 10, 0, 63}}; break;
+            case PercusiveWithRelease: shape = {{0, 0, 63, 0, 32, 63}}; break;
+            case Free: return; // unsupported in the reference (Debug.Fail)
         }
         parameterAt("ENV_2_DELAY").setValue(shape.values[0]);
         parameterAt("ENV_2_ATTACK").setValue(shape.values[1]);

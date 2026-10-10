@@ -98,25 +98,26 @@ namespace common::midi
         // ports while the settings dialog is open. [RQ-MID-005]
         void receive(const MidiMessage& message) const
         {
+            using enum MessageType;
             if (!started || closed)
             {
                 return;
             }
             switch (message.type())
             {
-                case MessageType::Channel:
+                case Channel:
                     if (callbacks.onChannelMessage) callbacks.onChannelMessage(message);
                     break;
-                case MessageType::SysEx:
+                case SysEx:
                     if (callbacks.onSysExMessage) callbacks.onSysExMessage(message);
                     break;
-                case MessageType::SysCommon:
+                case SysCommon:
                     if (callbacks.onSysCommonMessage) callbacks.onSysCommonMessage(message);
                     break;
-                case MessageType::SysRealtime:
+                case SysRealtime:
                     if (callbacks.onSysRealtimeMessage) callbacks.onSysRealtimeMessage(message);
                     break;
-                case MessageType::Invalid:
+                case Invalid:
                     break;
             }
         }
@@ -315,8 +316,7 @@ namespace common::midi
     {
         {
             const std::lock_guard lock(_state->mutex);
-            if (std::find(_state->inputNames.begin(), _state->inputNames.end(), deviceName)
-                == _state->inputNames.end())
+            if (std::ranges::find(_state->inputNames, deviceName) == _state->inputNames.end())
             {
                 return nullptr; // [RQ-MID-002]
             }
@@ -328,8 +328,7 @@ namespace common::midi
     {
         {
             const std::lock_guard lock(_state->mutex);
-            if (std::find(_state->outputNames.begin(), _state->outputNames.end(), deviceName)
-                == _state->outputNames.end())
+            if (std::ranges::find(_state->outputNames, deviceName) == _state->outputNames.end())
             {
                 return nullptr; // [RQ-MID-002]
             }
@@ -370,10 +369,10 @@ namespace common::midi
     // produces its own reply. Used to exercise round-trips (program change ->
     // dump request -> dump) without hardware. One target per output; calling
     // again re-points it.
-    void MockMidiBackend::connectLoopback(const std::string& outputDeviceName, const std::string& inputDeviceName)
+    void MockMidiBackend::connectLoopback(std::string_view outputDeviceName, std::string_view inputDeviceName)
     {
         const std::lock_guard lock(_state->mutex);
-        _state->loopbacks[outputDeviceName] = inputDeviceName;
+        _state->loopbacks[std::string(outputDeviceName)] = inputDeviceName;
     }
 
     // How many handles are open on a device right now. This is what proves the
@@ -390,9 +389,9 @@ namespace common::midi
         // Counts live handles, not registry slots: a body kept alive by an
         // in-flight delivery still has an expired weak_ptr here, and a closed
         // port must read as closed the instant its handle is destroyed.
-        return static_cast<int>(std::count_if(found->second.begin(), found->second.end(),
-                                              [](const std::weak_ptr<InputPortBody>& candidate)
-                                              { return !candidate.expired(); }));
+        return static_cast<int>(std::ranges::count_if(found->second,
+                                                      [](const std::weak_ptr<InputPortBody>& candidate)
+                                                      { return !candidate.expired(); }));
     }
 
     int MockMidiBackend::openOutputPortCount(const std::string& deviceName) const

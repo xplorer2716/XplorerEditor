@@ -33,7 +33,10 @@ namespace xplorer::app
 
         struct SegmentLine
         {
-            float x0, y0, x1, y1;
+            float x0;
+            float y0;
+            float x1;
+            float y1;
         };
 
         /// Endpoints of the 16 segments, in cell-width fractions. Order matches
@@ -264,9 +267,7 @@ namespace xplorer::app
 
     bool VfdSegmentRenderer::hasOverride(int codePoint) noexcept
     {
-        return std::find(OVERRIDDEN_CHARACTERS.begin(), OVERRIDDEN_CHARACTERS.end(),
-                         codePoint)
-               != OVERRIDDEN_CHARACTERS.end();
+        return std::ranges::find(OVERRIDDEN_CHARACTERS, codePoint) != OVERRIDDEN_CHARACTERS.end();
     }
 
     void VfdSegmentRenderer::paintGlyph(juce::Graphics& target,
@@ -280,8 +281,7 @@ namespace xplorer::app
         const auto placement = juce::AffineTransform::scale(cellWidth)
                                    .translated(originX, originY);
 
-        const auto overridden = std::find(OVERRIDDEN_CHARACTERS.begin(),
-                                          OVERRIDDEN_CHARACTERS.end(), codePoint);
+        const auto overridden = std::ranges::find(OVERRIDDEN_CHARACTERS, codePoint);
         if (overridden != OVERRIDDEN_CHARACTERS.end())
         {
             const auto index = static_cast<std::size_t>(

@@ -116,20 +116,20 @@ namespace xplorer::app
     /// One past the last scale-preset id. Adding a preset widens this range,
     /// which is why RQ-QLT-002 checks it against the fixed ids rather than
     /// trusting the 50/60 gap to stay wide enough.
-    [[nodiscard]] inline constexpr int viewScaleIdEnd() noexcept
+    [[nodiscard]] constexpr int viewScaleIdEnd() noexcept
     {
         return VIEW_SCALE_FIRST_ID + static_cast<int>(WINDOW_SCALE_PRESETS.size());
     }
 
     /// The id JUCE is handed for a menu item, at the one boundary where the
     /// typed enumerator meets PopupMenu's plain `int`.
-    [[nodiscard]] inline constexpr int menuItemId(MenuItem item) noexcept
+    [[nodiscard]] constexpr int menuItemId(MenuItem item) noexcept
     {
         return xpl::util::toUnderlying(item);
     }
 
     /// The MenuBarModel index of a top-level menu.
-    [[nodiscard]] inline constexpr int topLevelMenuIndex(TopLevelMenu menu) noexcept
+    [[nodiscard]] constexpr int topLevelMenuIndex(TopLevelMenu menu) noexcept
     {
         return xpl::util::toUnderlying(menu);
     }

@@ -31,9 +31,10 @@ namespace xplorer::app
     void applyLoggingConfiguration(int rawSeverityLevel, bool midiDomainEnabled,
                                     bool controllerDomainEnabled, bool uiDomainEnabled)
     {
+        using enum LogDomain;
         Logger::setLevel(resolveSeverityLevel(rawSeverityLevel));
-        Logger::setDomainEnabled(LogDomain::Midi, midiDomainEnabled);
-        Logger::setDomainEnabled(LogDomain::ControllerCalls, controllerDomainEnabled);
-        Logger::setDomainEnabled(LogDomain::UiEvents, uiDomainEnabled);
+        Logger::setDomainEnabled(Midi, midiDomainEnabled);
+        Logger::setDomainEnabled(ControllerCalls, controllerDomainEnabled);
+        Logger::setDomainEnabled(UiEvents, uiDomainEnabled);
     }
 }

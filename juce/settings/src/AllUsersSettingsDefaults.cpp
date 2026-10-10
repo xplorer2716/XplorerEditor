@@ -20,19 +20,21 @@ namespace xplorer::settings
 
     AllUsersSettings::RandomizerConfiguration defaultRandomizerConfiguration()
     {
+        using enum EnumRandomVCO2;
+        using enum EnumRandomModMatrix;
         // Reference GetRandomizerConfigurationDefault: randomize everything.
         AllUsersSettings::RandomizerConfiguration config;
         config.vcoFreq = EnumRandomVCOFreq::Free;
         config.vcoDetune = EnumRandomVCODetune::Free;
         config.vco2FmNoiseSync = static_cast<EnumRandomVCO2>(
-            static_cast<int>(xpl::util::toUnderlying(EnumRandomVCO2::EnableFM))
-            | static_cast<int>(xpl::util::toUnderlying(EnumRandomVCO2::EnableNoise))
-            | static_cast<int>(xpl::util::toUnderlying(EnumRandomVCO2::EnableSync)));
+            static_cast<int>(xpl::util::toUnderlying(EnableFM))
+            | static_cast<int>(xpl::util::toUnderlying(EnableNoise))
+            | static_cast<int>(xpl::util::toUnderlying(EnableSync)));
         config.vca2Env = EnumRandomVCAEnv::Free;
         config.modulationMatrix = static_cast<EnumRandomModMatrix>(
-            static_cast<int>(xpl::util::toUnderlying(EnumRandomModMatrix::EnableAmount))
-            | static_cast<int>(xpl::util::toUnderlying(EnumRandomModMatrix::EnableSourcesAndDestinations))
-            | static_cast<int>(xpl::util::toUnderlying(EnumRandomModMatrix::EnableQuantize)));
+            static_cast<int>(xpl::util::toUnderlying(EnableAmount))
+            | static_cast<int>(xpl::util::toUnderlying(EnableSourcesAndDestinations))
+            | static_cast<int>(xpl::util::toUnderlying(EnableQuantize)));
         return config;
     }
 

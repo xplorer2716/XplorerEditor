@@ -318,8 +318,8 @@ namespace xplorer::controller
             int parameterPage = 0;
             int parameterSubPage = 0;
             _pageSubPageHelper.getPageSubPage(parameterPage, parameterSubPage);
-            auto* parameter = getParameterForPageSubPageAndId(parameterPage, parameterSubPage, buttonId);
-            if (parameter != nullptr)
+            if (auto* parameter = getParameterForPageSubPageAndId(parameterPage, parameterSubPage, buttonId);
+                parameter != nullptr)
             {
                 // [RQ-CTL-022] rotaries are relative, buttons absolute.
                 parameter->setValueUnchanged(isRotaryButton ? parameter->value() + parameterValue
@@ -430,8 +430,8 @@ namespace xplorer::controller
 
         if (command == EnumModulationEditCommands::ADDSOURCE)
         {
-            const int entryNumber = xTone.getNextAvailableModEntry();
-            if (entryNumber != XpanderTone::NO_AVAILABLE_MOD_ENTRY)
+            if (const int entryNumber = xTone.getNextAvailableModEntry();
+                entryNumber != XpanderTone::NO_AVAILABLE_MOD_ENTRY)
             {
                 xTone.addModulationSource(value, 0, ModulationMatrixEntry::MIN_QUANTIZE,
                                           xpl::util::toUnderlying(destination), entryNumber + 1, nullptr);
@@ -507,8 +507,8 @@ namespace xplorer::controller
     {
         page = -1;
         subPage = -1;
-        constexpr std::size_t PAGESUBPAGE_SELECTMESSAGE_LENGTH = 6;
-        if (message.size() < PAGESUBPAGE_SELECTMESSAGE_LENGTH
+        if (constexpr std::size_t PAGESUBPAGE_SELECTMESSAGE_LENGTH = 6;
+            message.size() < PAGESUBPAGE_SELECTMESSAGE_LENGTH
             || !startsWith(message, {0xF0, 0x10, 0x02, 0x0B}))
         {
             return false;

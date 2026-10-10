@@ -96,6 +96,7 @@ namespace common::midi
             // [RQ-MID-021, RQ-MID-024]
             void handleIncomingMidiMessage(juce::MidiInput*, const juce::MidiMessage& message) override
             {
+                using enum MessageType;
                 if (!_started)
                 {
                     return;
@@ -103,19 +104,19 @@ namespace common::midi
                 const auto xplMessage = toXplMessage(message);
                 switch (xplMessage.type())
                 {
-                    case MessageType::Channel: // [RQ-MID-020]
+                    case Channel: // [RQ-MID-020]
                         if (_callbacks.onChannelMessage) _callbacks.onChannelMessage(xplMessage);
                         break;
-                    case MessageType::SysEx:
+                    case SysEx:
                         if (_callbacks.onSysExMessage) _callbacks.onSysExMessage(xplMessage);
                         break;
-                    case MessageType::SysCommon: // [RQ-MID-022]
+                    case SysCommon: // [RQ-MID-022]
                         if (_callbacks.onSysCommonMessage) _callbacks.onSysCommonMessage(xplMessage);
                         break;
-                    case MessageType::SysRealtime:
+                    case SysRealtime:
                         if (_callbacks.onSysRealtimeMessage) _callbacks.onSysRealtimeMessage(xplMessage);
                         break;
-                    case MessageType::Invalid:
+                    case Invalid:
                         break;
                 }
             }

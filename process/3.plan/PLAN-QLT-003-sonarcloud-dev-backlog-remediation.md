@@ -129,9 +129,9 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-020: C++ LOW issues
 - **Tier**: M
-- **Status**: Not Started
-- **Description**: All `cpp:` LOW issues (S6177 using enum, S1659, S6009 string_view, S6197, S6012, S6004, S5408, S2486, S5951, S5350, S5566, S6171, S3574, S3628, S6179).
-- **Requirement refs**: RQ-QLT-019
+- **Status**: Done
+- **Description**: Fixed in production: `cpp:S6177` x17 (`using enum`), `S1659` x17, `S6009` x13 (`string_view`), `S6197` x6 (ranges), `S6004` x6, `S5408` x3, `S5350` x2, `S5566`, `S3628`, `S6179`, `S6012`. `S5951` x2 and `S2486` x3 accepted on the owner's decision (RQ-QLT-016), as are the 21 test-file issues.
+- **Requirement refs**: RQ-QLT-019, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:
   - **Given** the flagged sites

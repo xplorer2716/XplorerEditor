@@ -467,3 +467,9 @@ comment carries the task id.
 - **TASK-QLT-019** — 20 Python and shell issues (`shelldre:S7679` x8,
   `S7682` x7, `python:S1542` x2, `S3457` x2, `S1656`): code copied from another
   repository, reviewed upstream.
+- **TASK-QLT-020** — 21 issues in test files (`cpp:S6012` x6, `S6197` x5,
+  `S6177` x4, `S6009` x3, `S3574`, `S5566`, `S6171`). Production code, accepted
+  on the owner's decision: `cpp:S5951` x2 (`Main.cpp:42,43`: the JUCE
+  `JUCEApplication` virtuals return `const juce::String`); `cpp:S2486` x3
+  (`Dialogs.cpp`, `MainComponent.cpp`: the UI-boundary handlers that show
+  `e.what()`, already accepted for S1181).

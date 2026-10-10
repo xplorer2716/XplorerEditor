@@ -33,6 +33,7 @@ add_executable(xpl_tests_framework
     framework/DualDictionaryTests.cpp
     framework/AbstractControllerTests.cpp
     framework/ServicesTests.cpp
+    framework/FileUtilsTests.cpp
     framework/PortableFormatTests.cpp)
 target_link_libraries(xpl_tests_framework PRIVATE
     xpl_framework xpl::warnings Catch2::Catch2WithMain)

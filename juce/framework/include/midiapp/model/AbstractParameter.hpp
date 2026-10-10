@@ -23,6 +23,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace midiapp::model
@@ -37,7 +38,7 @@ namespace midiapp::model
 
         [[nodiscard]] std::string name() const;
         [[nodiscard]] std::string label() const;
-        void setLabel(const std::string& label);
+        void setLabel(std::string_view label);
 
         [[nodiscard]] int minValue() const;
         [[nodiscard]] int maxValue() const;

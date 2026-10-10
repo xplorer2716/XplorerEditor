@@ -15,6 +15,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace xplorer::controller
 {
@@ -105,8 +106,8 @@ namespace xplorer::controller
 
         // --- clipboard (page families) [RQ-CTL-040] --------------------------
         [[nodiscard]] const std::string& clipboardSource() const { return _clipboardSource; }
-        void setClipboardSource(const std::string& source) { _clipboardSource = source; }
-        [[nodiscard]] bool canClipboardPasteTo(const std::string& destination) const;
+        void setClipboardSource(std::string_view source) { _clipboardSource = source; }
+        [[nodiscard]] bool canClipboardPasteTo(std::string_view destination) const;
         void clearClipboard() { _clipboardSource.clear(); }
         [[nodiscard]] bool isClipboardEmpty() const { return _clipboardSource.empty(); }
         void pasteClipboardTo(const std::string& destination);
@@ -122,7 +123,7 @@ namespace xplorer::controller
         void forceSendPageSubPage();
         void sendGreetingsToSynth();
       
-        void sendTypeWriterMessageToSynth(const std::string &message);
+        void sendTypeWriterMessageToSynth(std::string_view message);
         /// Sends the uppercase alphabet, the digits 0-9 and the reference
         /// symbol set <>/+-*$ across the two VFD lines, so every glyph the
         /// display can show is exercised from one menu action. [RQ-GUI-082]

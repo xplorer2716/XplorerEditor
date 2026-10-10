@@ -63,7 +63,7 @@ namespace midiapp::model
         return _label;
     }
 
-    void AbstractParameter::setLabel(const std::string& label)
+    void AbstractParameter::setLabel(std::string_view label)
     {
         const std::lock_guard lock(_mutex);
         _label = label;

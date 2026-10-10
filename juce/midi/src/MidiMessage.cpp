@@ -91,24 +91,25 @@ namespace common::midi
 
     MessageType MidiMessage::type() const
     {
+        using enum MessageType;
         const std::uint8_t status = _bytes.front();
         if (status >= 0x80 && status <= 0xEF)
         {
-            return MessageType::Channel;
+            return Channel;
         }
         if (status == SYSEX_START)
         {
-            return MessageType::SysEx;
+            return SysEx;
         }
         if (status >= 0xF1 && status <= 0xF7)
         {
-            return MessageType::SysCommon;
+            return SysCommon;
         }
         if (status >= 0xF8)
         {
-            return MessageType::SysRealtime;
+            return SysRealtime;
         }
-        return MessageType::Invalid;
+        return Invalid;
     }
 
     ChannelCommand MidiMessage::command() const

@@ -21,6 +21,8 @@
 
 #include <juce_core/juce_core.h>
 
+#include <algorithm>
+
 namespace xplorer::app
 {
     namespace
@@ -106,20 +108,16 @@ namespace xplorer::app
         constexpr const char* VFD_DISPLAY_CONTROL_ID = "_vfdDisplay";
 
         // Fixed (non page-family) blocks handled in TASK-JUC-063.
+        constexpr std::array FIXED_BLOCK_TAG_PREFIXES{"VCO1", "VCO2", "FM", "LAG", "VCF"};
+
         bool isFixedBlockTag(const std::string& tag)
         {
             if (tag.empty() || tag.find("_X") != std::string::npos)
             {
                 return false;
             }
-            for (const auto* prefix : {"VCO1", "VCO2", "FM", "LAG", "VCF"})
-            {
-                if (tag.rfind(prefix, 0) == 0)
-                {
-                    return true;
-                }
-            }
-            return false;
+            return std::ranges::any_of(FIXED_BLOCK_TAG_PREFIXES,
+                                       [&tag](const char* prefix) { return tag.starts_with(prefix); });
         }
 
         /// A control built for one fixed-block spec, with the handle the
@@ -510,7 +508,7 @@ namespace xplorer::app
         {
             return;
         }
-        for (auto& block : _familyBlocks)
+        for (const auto& block : _familyBlocks)
         {
             if (block->familyPrefix() == familyPage->familyPrefix)
             {
@@ -916,17 +914,18 @@ namespace xplorer::app
         /// position alone. [RQ-QLT-003, ADR-QLT-001 (DEC-QLT-004)]
         [[nodiscard]] const char* topLevelMenuName(TopLevelMenu menu)
         {
+            using enum TopLevelMenu;
             switch (menu)
             {
-                case TopLevelMenu::File:
+                case File:
                     return "File";
-                case TopLevelMenu::Patch:
+                case Patch:
                     return "Patch";
-                case TopLevelMenu::View:
+                case View:
                     return "View";
-                case TopLevelMenu::Tools:
+                case Tools:
                     return "Tools";
-                case TopLevelMenu::Help:
+                case Help:
                     return "Help";
             }
             return "";
@@ -962,6 +961,7 @@ namespace xplorer::app
 
     juce::PopupMenu MainComponent::getMenuForIndex(int index, const juce::String&)
     {
+        using enum MenuItem;
         juce::PopupMenu menu;
         switch (static_cast<TopLevelMenu>(index))
         {
@@ -970,29 +970,29 @@ namespace xplorer::app
             // matching .resx strings -- not an approximation.
             // [RQ-GUI-008, ADR-JUC-032]
             case TopLevelMenu::File: // the only three icons in the whole reference
-                addReferenceItem(menu, MenuItem::FileNew, "New", BinaryData::menu_new_png,
+                addReferenceItem(menu, FileNew, "New", BinaryData::menu_new_png,
                                  BinaryData::menu_new_pngSize);
-                addReferenceItem(menu, MenuItem::FileOpen, "Open", BinaryData::menu_open_png,
+                addReferenceItem(menu, FileOpen, "Open", BinaryData::menu_open_png,
                                  BinaryData::menu_open_pngSize);
                 menu.addSeparator();
                 // The reference's "Save as" is deliberately absent: our Save
                 // already always prompts for a destination (no current-file
                 // path is tracked), so it IS the reference's Save as.
                 // [RQ-GUI-008, owner-confirmed deviation]
-                addReferenceItem(menu, MenuItem::FileSave, "Save", BinaryData::menu_save_png,
+                addReferenceItem(menu, FileSave, "Save", BinaryData::menu_save_png,
                                  BinaryData::menu_save_pngSize);
                 menu.addSeparator();
-                addReferenceItem(menu, MenuItem::FileExit, "Exit"); // no shortcut in the reference
+                addReferenceItem(menu, FileExit, "Exit"); // no shortcut in the reference
                 break;
             case TopLevelMenu::Patch:
-                addReferenceItem(menu, MenuItem::PatchPrevious, "Previous");
-                addReferenceItem(menu, MenuItem::PatchNext, "Next");
-                addReferenceItem(menu, MenuItem::PatchGoto, "Go to patch...");
+                addReferenceItem(menu, PatchPrevious, "Previous");
+                addReferenceItem(menu, PatchNext, "Next");
+                addReferenceItem(menu, PatchGoto, "Go to patch...");
                 menu.addSeparator();
-                addReferenceItem(menu, MenuItem::PatchRandomize, "Randomize");
-                addReferenceItem(menu, MenuItem::PatchRename, "Rename");
-                addReferenceItem(menu, MenuItem::PatchStore, "Store");
-                addReferenceItem(menu, MenuItem::PatchSynchronize, "Synchronize");
+                addReferenceItem(menu, PatchRandomize, "Randomize");
+                addReferenceItem(menu, PatchRename, "Rename");
+                addReferenceItem(menu, PatchStore, "Store");
+                addReferenceItem(menu, PatchSynchronize, "Synchronize");
                 break;
             case TopLevelMenu::View: // [RQ-SCL-002, RQ-SCL-003]
             {
@@ -1014,34 +1014,34 @@ namespace xplorer::app
             }
             case TopLevelMenu::Tools:
             {
-                addReferenceItem(menu, MenuItem::ToolsSettings, "Settings");
+                addReferenceItem(menu, ToolsSettings, "Settings");
                 juce::PopupMenu singlePatches;
-                singlePatches.addItem(menuItemId(MenuItem::ToolsGetAllSinglePatches),
+                singlePatches.addItem(menuItemId(ToolsGetAllSinglePatches),
                                       "Get all single patches from synth");
-                singlePatches.addItem(menuItemId(MenuItem::ToolsExtractSinglePatches),
+                singlePatches.addItem(menuItemId(ToolsExtractSinglePatches),
                                       "Extract all single patches from file");
                 menu.addSubMenu("Single patches...", singlePatches);
                 juce::PopupMenu allDataDump;
-                allDataDump.addItem(menuItemId(MenuItem::ToolsBackupAllData), "Backup all data");
-                allDataDump.addItem(menuItemId(MenuItem::ToolsRestoreAllData), "Restore all data");
+                allDataDump.addItem(menuItemId(ToolsBackupAllData), "Backup all data");
+                allDataDump.addItem(menuItemId(ToolsRestoreAllData), "Restore all data");
                 menu.addSubMenu("Backup/Restore...", allDataDump);                
-                addReferenceItem(menu, MenuItem::ToolsTuneRequest, "Tune Request");
+                addReferenceItem(menu, ToolsTuneRequest, "Tune Request");
                 // No reference counterpart -- the second sanctioned JUCE-only
                 // item after the View menu, kept at the owner's decision. No
                 // shortcut, since the reference has none to match.
                 // [RQ-GUI-028, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsPianoKeyboard), "Piano keyboard");
+                menu.addItem(menuItemId(ToolsPianoKeyboard), "Piano keyboard");
                 // Third sanctioned JUCE-only departure, no reference
                 // counterpart, no shortcut. [RQ-GUI-082, RQ-GUI-008]
-                menu.addItem(menuItemId(MenuItem::ToolsTestDisplay), "Test display");
+                menu.addItem(menuItemId(ToolsTestDisplay), "Test display");
                 break;
             }
             case TopLevelMenu::Help:
-                addReferenceItem(menu, MenuItem::HelpUserManual, "Xplorer help");
+                addReferenceItem(menu, HelpUserManual, "Xplorer help");
                 menu.addSeparator();
-                addReferenceItem(menu, MenuItem::HelpReleases, "Check for new releases");
-                addReferenceItem(menu, MenuItem::HelpWebsite, "Go to website");
-                addReferenceItem(menu, MenuItem::HelpAbout, "About...");
+                addReferenceItem(menu, HelpReleases, "Check for new releases");
+                addReferenceItem(menu, HelpWebsite, "Go to website");
+                addReferenceItem(menu, HelpAbout, "About...");
                 break;
         }
         return menu;
@@ -1177,6 +1177,7 @@ namespace xplorer::app
     // would shadow it throughout the dispatch below. [RQ-QLT-001]
     void MainComponent::menuItemSelected(int selectedId, int)
     {
+        using enum MenuItem;
         // View menu, handled before the switch because its scale items are a
         // contiguous id range rather than individual cases. [RQ-SCL-002]
         const auto scaleIndex = selectedId - VIEW_SCALE_FIRST_ID;
@@ -1201,7 +1202,7 @@ namespace xplorer::app
 
         switch (static_cast<MenuItem>(selectedId))
         {
-            case MenuItem::FileNew:
+            case FileNew:
                 // Load the bundled default patch, like the reference's
                 // FileOperationsManager.NewPatch(). Not a blank editor: the
                 // program number comes from the file's own sysex data.
@@ -1228,47 +1229,47 @@ namespace xplorer::app
                 }
                 break;
             }
-            case MenuItem::FileOpen: // reuse the load action
+            case FileOpen: // reuse the load action
                 _shortcutActions[SHORTCUT_ID_PATCH_LOAD]();
                 break;
-            case MenuItem::FileSave:
+            case FileSave:
                 _shortcutActions[SHORTCUT_ID_PATCH_SAVE]();
                 break;
-            case MenuItem::FileExit:
+            case FileExit:
                 juce::JUCEApplication::getInstance()->systemRequestedQuit();
                 break;
-            case MenuItem::PatchNext:
+            case PatchNext:
                 _controller->increaseCurrentProgramNumber();
                 break;
-            case MenuItem::PatchPrevious:
+            case PatchPrevious:
                 _controller->decreaseCurrentProgramNumber();
                 break;
-            case MenuItem::PatchGoto:
+            case PatchGoto:
                 showGotoPatchDialog();
                 break;
-            case MenuItem::PatchStore:
+            case PatchStore:
                 showStorePatchDialog();
                 break;
-            case MenuItem::PatchRename:
+            case PatchRename:
                 showRenameDialogForCurrentTone();
                 break;
-            case MenuItem::PatchRandomize:
+            case PatchRandomize:
                 _controller->randomizeTone(midiapp::controller::RandomizeToneArguments{});
                 break;
-            case MenuItem::PatchSynchronize:
+            case PatchSynchronize:
                 // Re-fetch the current patch from the synth, the same call
                 // Go to / Store already make.
                 // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
                 _controller->sendProgramChangeAndGetSinglePatchFromSynth(
                     _controller->currentProgramNumber());
                 break;
-            case MenuItem::ToolsSettings:
+            case ToolsSettings:
                 openSettingsDialog();
                 break;
-            case MenuItem::ToolsTuneRequest:
+            case ToolsTuneRequest:
                 _controller->sendTuneRequestToSynth();
                 break;
-            case MenuItem::ToolsPianoKeyboard: // [RQ-GUI-028]
+            case ToolsPianoKeyboard: // [RQ-GUI-028]
                 if (_pianoWindow == nullptr)
                 {
                     _pianoWindow = std::make_unique<PianoWindow>(*_controller);
@@ -1279,10 +1280,10 @@ namespace xplorer::app
                     _pianoWindow->toFront(true);
                 }
                 break;
-            case MenuItem::ToolsTestDisplay: // [RQ-GUI-082]
+            case ToolsTestDisplay: // [RQ-GUI-082]
                 displayCharacterTest();
                 break;
-            case MenuItem::HelpAbout:
+            case HelpAbout:
                 // Name and version from the build, not from a literal: this
                 // call site is the RQ-GUI-025 defect RQ-BLD-016 closes at its
                 // root. [RQ-BLD-015, RQ-BLD-016]
@@ -1297,25 +1298,25 @@ namespace xplorer::app
             // The three Help URLs, opened in the system browser exactly as the
             // reference's OpenBrowserWithUrl does — no update check of our own.
             // [RQ-GUI-008, ADR-JUC-032 (DEC-JUC-101)]
-            case MenuItem::HelpUserManual:
+            case HelpUserManual:
                 juce::URL(USER_MANUAL_URL).launchInDefaultBrowser();
                 break;
-            case MenuItem::HelpReleases:
+            case HelpReleases:
                 juce::URL(RELEASES_URL).launchInDefaultBrowser();
                 break;
-            case MenuItem::HelpWebsite:
+            case HelpWebsite:
                 juce::URL(WEBSITE_URL).launchInDefaultBrowser();
                 break;
-            case MenuItem::ToolsGetAllSinglePatches:
+            case ToolsGetAllSinglePatches:
                 getAllSinglePatchesFromSynth();
                 break;
-            case MenuItem::ToolsExtractSinglePatches:
+            case ToolsExtractSinglePatches:
                 showExtractSingleTonesDialog(*_controller);
                 break;
-            case MenuItem::ToolsBackupAllData:
+            case ToolsBackupAllData:
                 backupAllData();
                 break;
-            case MenuItem::ToolsRestoreAllData:
+            case ToolsRestoreAllData:
                 restoreAllData();
                 break;
             // Ids outside the enumeration reach here only if JUCE reports an

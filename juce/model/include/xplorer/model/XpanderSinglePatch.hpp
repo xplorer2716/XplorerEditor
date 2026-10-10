@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace xplorer::model
@@ -122,6 +123,6 @@ namespace xplorer::model
         [[nodiscard]] static std::string getNameFromByteArray(std::span<const std::uint8_t> bytes);
 
         [[nodiscard]] std::string patchName() const;
-        void setPatchName(const std::string& newName);
+        void setPatchName(std::string_view newName);
     };
 }

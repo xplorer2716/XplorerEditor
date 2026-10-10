@@ -22,7 +22,14 @@ namespace xplorer::app
     /// painter names its colours explicitly. [DEC-JUC-034]
     struct BlockPalette
     {
-        juce::Colour vco, lag, track, vcf, env, lfo, ramp, matrix;
+        juce::Colour vco;
+        juce::Colour lag;
+        juce::Colour track;
+        juce::Colour vcf;
+        juce::Colour env;
+        juce::Colour lfo;
+        juce::Colour ramp;
+        juce::Colour matrix;
     };
 
     // BlockId is declared in xplorer/app/BlockIdentity.hpp (headless core), so

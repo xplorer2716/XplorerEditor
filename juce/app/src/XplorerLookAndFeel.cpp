@@ -7,6 +7,7 @@
 
 #include "xplorer/app/ComboBoxSizing.hpp"
 
+#include <cmath>
 #include <memory>
 #include <optional>
 #include <string>
@@ -101,7 +102,7 @@ namespace xplorer::app
             juce::Rectangle<int>(x, y, width, height).toFloat().reduced(layout::KNOB_BOUNDS_INSET);
         const auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) / 2.0F;
         const auto centre = bounds.getCentre();
-        const auto angle = startAngle + sliderPos * (endAngle - startAngle);
+        const auto angle = std::lerp(startAngle, endAngle, sliderPos);
 
         // No filled knob body: the interior is left transparent so the panel
         // background (with its shading) shows through — only the ring/crown is

@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <string>
+#include <string_view>
 
 namespace xplorer::app
 {
@@ -45,11 +46,11 @@ namespace xplorer::app
     /// The stored patch name as it should appear in an editable field: the
     /// model's fixed-width space padding removed, leading and interior spaces
     /// kept. [RQ-GUI-081]
-    [[nodiscard]] std::string patchNameForEditing(const std::string& storedName);
+    [[nodiscard]] std::string patchNameForEditing(std::string_view storedName);
 
     /// True when every character is in the reference patch-name character
     /// set and the name is within the stored patch-name length.
-    [[nodiscard]] bool isPatchNameValid(const std::string& name);
+    [[nodiscard]] bool isPatchNameValid(std::string_view name);
 
     void showAboutDialog(const std::string& productNameAndVersion);
 

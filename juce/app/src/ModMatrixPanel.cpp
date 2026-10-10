@@ -38,7 +38,7 @@ namespace xplorer::app
         refreshAll();
     }
 
-    const ControlSpec* ModMatrixPanel::specFor(const std::string& id) const
+    const ControlSpec* ModMatrixPanel::specFor(std::string_view id) const
     {
         for (const auto& spec : controlTable())
         {
