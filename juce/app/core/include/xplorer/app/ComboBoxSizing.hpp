@@ -15,9 +15,11 @@
 // side (XplorerLookAndFeel) supplies a real measurer; tests supply a fake one.
 // [RQ-GUI-047, RQ-GUI-048, RQ-DSN-096, ADR-JUC-022 (DEC-JUC-050)]
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
 
 namespace xplorer::app
@@ -38,6 +40,9 @@ namespace xplorer::app
 
     /// Measures a string's width, in the same units as ComboBoxSizingInput::
     /// width, at a given font size. Injected so this module stays JUCE-free.
+    /// This is the type-erased form, for callers that hold a measurer as a
+    /// value; comboBoxesOverflowingAt takes any callable of this shape, so a
+    /// lambda reaches it without being wrapped. [RQ-QLT-017, TASK-QLT-014]
     using TextWidthMeasurer = std::function<float(std::string_view text, float fontSize)>;
 
     /// Ids of the combo boxes whose widest label does NOT fit at `fontSize`.
@@ -49,8 +54,28 @@ namespace xplorer::app
     /// a later label, width or typeface edit fails loudly instead of silently
     /// ellipsizing. `arrowZone` + 2*`labelBorder` is the overhead subtracted
     /// from each control's width to get the text room actually available.
-    /// [RQ-GUI-047, RQ-GUI-048, ADR-JUC-022 (DEC-JUC-050)]
+    /// [RQ-GUI-047, RQ-GUI-048, ADR-JUC-022 (DEC-JUC-050), RQ-QLT-017, TASK-QLT-014]
+    template <typename Measurer>
+        requires std::is_invocable_r_v<float, const Measurer&, std::string_view, float>
     [[nodiscard]] std::vector<std::string> comboBoxesOverflowingAt(
         const std::vector<ComboBoxSizingInput>& inputs, float fontSize, int arrowZone,
-        int labelBorder, const TextWidthMeasurer& measureWidth);
+        int labelBorder, const Measurer& measureWidth)
+    {
+        std::vector<std::string> overflowing;
+        for (const auto& input : inputs)
+        {
+            const float available =
+                static_cast<float>(input.width - arrowZone - 2 * labelBorder);
+            float widest = 0.0F;
+            for (const auto& label : input.labels)
+            {
+                widest = std::max(widest, measureWidth(label, fontSize));
+            }
+            if (widest > available)
+            {
+                overflowing.push_back(input.controlId);
+            }
+        }
+        return overflowing;
+    }
 }

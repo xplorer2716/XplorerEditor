@@ -139,6 +139,11 @@ namespace common::midi
             _state->openInputs[_name].push_back(_body);
         }
 
+        // A copy would share the body, so destroying it would close this port.
+        // [RQ-QLT-017, TASK-QLT-014]
+        MockInputPort(const MockInputPort&) = delete;
+        MockInputPort& operator=(const MockInputPort&) = delete;
+
         ~MockInputPort() override
         {
             const std::lock_guard lock(_state->mutex);
@@ -172,6 +177,11 @@ namespace common::midi
             const std::lock_guard lock(_state->mutex);
             _state->openOutputs[_name].push_back(this);
         }
+
+        // The registry holds `this`: a copy would never be registered.
+        // [RQ-QLT-017, TASK-QLT-014]
+        MockOutputPort(const MockOutputPort&) = delete;
+        MockOutputPort& operator=(const MockOutputPort&) = delete;
 
         ~MockOutputPort() override
         {

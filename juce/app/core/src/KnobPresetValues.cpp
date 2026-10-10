@@ -89,7 +89,7 @@ namespace xplorer::app
         }
         for (const auto& position : presetKeyPositions())
         {
-            if (const auto character = query->characterForPosition(position.referenceChar))
+            if (const auto character = query->characterForPosition(position.referenceChar); character.has_value())
             {
                 resolved.push_back({*character, position.presetIndex});
             }

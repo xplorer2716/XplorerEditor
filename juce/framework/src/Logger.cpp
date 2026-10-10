@@ -22,25 +22,40 @@ namespace midiapp::service
 {
     namespace
     {
+        constexpr std::size_t DOMAIN_COUNT = 3;
+
         // Process-wide singleton state, deliberately file-local rather than a
         // class: logging is called from the message thread, the transmit
         // worker and the MIDI callback threads alike, so there is exactly one
         // sink and one mutex serialising writes to it.
         //
-        // g_level and g_domainEnabled are atomic and read OUTSIDE the mutex,
+        // `level` and `domainEnabled` are atomic and read OUTSIDE the mutex,
         // so the common case -- a call below the current level or under a
         // disabled domain -- costs one atomic load and no lock contention.
         // Only calls that will actually be written take the mutex.
-        std::mutex g_mutex;
-        std::unique_ptr<ILogSink> g_sink;
-        std::atomic<TraceLevel> g_level{TraceLevel::Off}; // silent until configured
+        //
+        // The state lives behind state() as a function-local static, not as
+        // namespace-scope variables: one instance, built on first use, that no
+        // other code in the file can reach except through that accessor.
+        // [RQ-QLT-017, TASK-QLT-014]
+        struct LoggerState
+        {
+            std::mutex mutex;
+            std::unique_ptr<ILogSink> sink;
+            std::atomic<TraceLevel> level{TraceLevel::Off}; // silent until configured
 
-        // One flag per LogDomain, indexed by its underlying value; all three
-        // default enabled so raising the global threshold alone -- the
-        // common case -- logs every domain, matching the pre-domain
-        // behaviour this feature extends. [RQ-FMW-073, RQ-SET-008]
-        constexpr std::size_t DOMAIN_COUNT = 3;
-        std::array<std::atomic<bool>, DOMAIN_COUNT> g_domainEnabled{true, true, true};
+            // One flag per LogDomain, indexed by its underlying value; all three
+            // default enabled so raising the global threshold alone -- the
+            // common case -- logs every domain, matching the pre-domain
+            // behaviour this feature extends. [RQ-FMW-073, RQ-SET-008]
+            std::array<std::atomic<bool>, DOMAIN_COUNT> domainEnabled{true, true, true};
+        };
+
+        LoggerState& state()
+        {
+            static LoggerState instance;
+            return instance;
+        }
 
         std::size_t domainIndex(LogDomain domain)
         {
@@ -136,35 +151,37 @@ namespace midiapp::service
     {
         auto sink = std::make_unique<FileStreamSink>(logFilePath);
         const bool opened = sink->good();
-        const std::lock_guard lock(g_mutex);
-        g_sink = std::move(sink);
+        auto& logger = state();
+        const std::lock_guard lock(logger.mutex);
+        logger.sink = std::move(sink);
         return opened;
     }
 
     void Logger::configure(std::unique_ptr<ILogSink> sink)
     {
-        const std::lock_guard lock(g_mutex);
-        g_sink = std::move(sink);
+        auto& logger = state();
+        const std::lock_guard lock(logger.mutex);
+        logger.sink = std::move(sink);
     }
 
     void Logger::setLevel(TraceLevel level)
     {
-        g_level = level;
+        state().level = level;
     }
 
     TraceLevel Logger::level()
     {
-        return g_level;
+        return state().level;
     }
 
     void Logger::setDomainEnabled(LogDomain domain, bool enabled)
     {
-        g_domainEnabled[domainIndex(domain)] = enabled;
+        state().domainEnabled[domainIndex(domain)] = enabled;
     }
 
     bool Logger::isDomainEnabled(LogDomain domain)
     {
-        return g_domainEnabled[domainIndex(domain)];
+        return state().domainEnabled[domainIndex(domain)];
     }
 
     // Releases the sink's handle. Not merely tidy: on Windows an open handle
@@ -172,26 +189,28 @@ namespace midiapp::service
     // between scenarios that recreate their log file.
     void Logger::shutdown()
     {
-        const std::lock_guard lock(g_mutex);
-        g_sink.reset();
+        auto& logger = state();
+        const std::lock_guard lock(logger.mutex);
+        logger.sink.reset();
     }
 
     void Logger::writeLine(LogDomain domain, TraceLevel level, const char* file, int line,
                             const std::string& message)
     {
+        auto& logger = state();
         if (!isDomainEnabled(domain) || level == TraceLevel::Off
-            || xpl::util::toUnderlying(level) > xpl::util::toUnderlying(g_level.load()))
+            || xpl::util::toUnderlying(level) > xpl::util::toUnderlying(logger.level.load()))
         {
             return;
         }
-        const std::lock_guard lock(g_mutex);
-        if (g_sink == nullptr)
+        const std::lock_guard lock(logger.mutex);
+        if (logger.sink == nullptr)
         {
             return;
         }
         std::ostringstream formatted;
         formatted << formatTimestamp() << " [" << levelName(level) << "] [" << domainName(domain) << "] "
                   << fileBaseName(file) << ":" << line << ": " << message;
-        g_sink->write(formatted.str());
+        logger.sink->write(formatted.str());
     }
 }

@@ -22,7 +22,7 @@ namespace xplorer::app
         std::vector<ResolvedPianoKey> resolved;
         for (const auto& position : pianoKeyPositions())
         {
-            if (const auto character = query.characterForPosition(position.referenceChar))
+            if (const auto character = query.characterForPosition(position.referenceChar); character.has_value())
             {
                 resolved.push_back({*character, position.noteOffsetFromC});
             }

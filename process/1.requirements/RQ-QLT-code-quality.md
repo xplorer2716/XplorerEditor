@@ -418,7 +418,14 @@ Origin: SonarCloud scan of branch `dev`, analysis 2026-10-09 — 324 OPEN issues
 
 Policy: an issue located in a **test file** is accepted, not fixed — the tests
 are AI-generated and not maintained by a human. Production-code issues are
-fixed. Each SonarCloud comment carries the task id.
+fixed, unless the owner decides otherwise case by case (recorded below). Each
+SonarCloud comment carries the task id.
 
 - **TASK-QLT-013** — `cpp:S134` x5, `juce/tests/app/KnobPresetValuesTests.cpp`
   lines 97, 132, 236, 258, 290 (nesting deeper than 3 in test code).
+- **TASK-QLT-014** — `cpp:S5213` x1, `juce/controller/src/XpanderController.cpp`
+  line 299 (`restoreAllDataDumpToSynth`, `std::function` parameter). Production
+  code, accepted on the owner's explicit decision: the API is blocking and
+  paced by sleeps, so the type-erasure cost is nil, and a template would move
+  the body into the header and add private members to a class already over the
+  S1448 limit.

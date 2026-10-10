@@ -46,8 +46,8 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 
 ### TASK-QLT-014: Class-design and global-state HIGH issues
 - **Tier**: M
-- **Status**: Not Started
-- **Description**: `cpp:S3624` (rule of five: MockMidiBackend.cpp:131,166, PianoKeyboardLayoutQuery_linux.cpp:62), `cpp:S3656` (BoundControls.hpp:25 protected member), `cpp:S5421` (Logger.cpp:35,36,43 mutable globals), `cpp:S5213` (std::function to template: ComboBoxSizing.cpp:32, PianoKeyLabelPlan.cpp:7, XpanderController.cpp:299), `cpp:S7172` (KnobPresetValues.cpp:92, PianoKeyMapping.cpp:25).
+- **Status**: Done
+- **Description**: `cpp:S3624` (rule of five: MockMidiBackend.cpp:131,166, PianoKeyboardLayoutQuery_linux.cpp:62), `cpp:S3656` (BoundControls.hpp:25 protected member), `cpp:S5421` (Logger.cpp:35,36,43 mutable globals, moved into a function-local state), `cpp:S5213` (std::function to template: ComboBoxSizing.cpp:32, PianoKeyLabelPlan.cpp:7; XpanderController.cpp:299 accepted on the owner's decision, RQ-QLT-016), `cpp:S7172` (KnobPresetValues.cpp:92, PianoKeyMapping.cpp:25).
 - **Requirement refs**: RQ-QLT-017, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:

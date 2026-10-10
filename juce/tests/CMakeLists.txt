@@ -119,6 +119,9 @@ if(XPL_BUILD_APP)
         app/ShortcutIconTests.cpp
         app/DialogIconTests.cpp
         app/BoundRadioGroupTests.cpp
+        # Each bound widget reports a user edit to the registry under its own
+        # parameter name. [RQ-GUI-030, RQ-QLT-017, TASK-QLT-014]
+        app/BoundControlsEditTests.cpp
         app/LedPanelGeometryTests.cpp
         app/DialogsPatchNameTests.cpp
         app/SbomReaderTests.cpp
