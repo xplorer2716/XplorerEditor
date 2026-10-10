@@ -59,15 +59,15 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 - **Assignee**: AI
 
 ### TASK-QLT-015: Python and shell HIGH issues
-- **Tier**: M
-- **Status**: Not Started
-- **Description**: `python:S3776` x5 (extract_control_table.py, fit_vfd_tokens.py x2, generate_design_tokens.py, prototypes/triangle_lattice.py) and `shelldre:S7688` x2 (`[` to `[[` in validate-ids.sh, check_no_version_literals.sh).
-- **Requirement refs**: RQ-QLT-017
+- **Tier**: S
+- **Status**: Done
+- **Description**: `python:S3776` x5 (extract_control_table.py, fit_vfd_tokens.py x2, generate_design_tokens.py, prototypes/triangle_lattice.py) and `shelldre:S7688` x2 (validate-ids.sh, check_no_version_literals.sh) are accepted as-is in SonarCloud, no code change: Python and shell code copied from another repository and reviewed there (owner decision).
+- **Requirement refs**: RQ-QLT-017, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:
   - **Given** the 7 flagged sites
-  - **When** the scripts are run on their existing inputs
-  - **Then** outputs are identical and SonarCloud shows none OPEN
+  - **When** SonarCloud is queried
+  - **Then** each is ACCEPTED, with a comment citing TASK-QLT-015
 - **Dependencies**: None
 - **Assignee**: AI
 
@@ -115,13 +115,13 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 ### TASK-QLT-019: Python and shell MEDIUM issues
 - **Tier**: S
 - **Status**: Not Started
-- **Description**: `shelldre:S7679` x8, `S7682` x7, `python:S1542` x2, `S3457` x2, `S1656`.
-- **Requirement refs**: RQ-QLT-018
+- **Description**: `shelldre:S7679` x8, `S7682` x7, `python:S1542` x2, `S3457` x2, `S1656`: accepted as-is, same owner decision as TASK-QLT-015.
+- **Requirement refs**: RQ-QLT-018, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:
   - **Given** the 20 flagged sites
-  - **When** the scripts are run on existing inputs
-  - **Then** outputs are identical and none is OPEN
+  - **When** SonarCloud is queried
+  - **Then** each is ACCEPTED, with a comment citing TASK-QLT-019
 - **Dependencies**: TASK-QLT-015
 - **Assignee**: AI
 
@@ -143,13 +143,13 @@ Issue list: `sonar list issues -p xplorer2716_XplorerEditor --branch dev`
 ### TASK-QLT-021: Python and shell LOW issues
 - **Tier**: S
 - **Status**: Not Started
-- **Description**: `python:S9409` x9, `S6353` x4, `S7498` x3, `S1481`, `S7494`; `shelldre:S1192`.
-- **Requirement refs**: RQ-QLT-019
+- **Description**: `python:S9409` x9, `S6353` x4, `S7498` x3, `S1481`, `S7494`; `shelldre:S1192`: accepted as-is, same owner decision as TASK-QLT-015.
+- **Requirement refs**: RQ-QLT-019, RQ-QLT-016
 - **ADR refs**: None
 - **Acceptance Criteria**:
-  - **Given** the flagged sites
-  - **When** the scripts are run on existing inputs
-  - **Then** outputs are identical and none is OPEN
+  - **Given** the 19 flagged sites
+  - **When** SonarCloud is queried
+  - **Then** each is ACCEPTED, with a comment citing TASK-QLT-021
 - **Dependencies**: TASK-QLT-019
 - **Assignee**: AI
 

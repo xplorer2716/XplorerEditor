@@ -417,9 +417,11 @@ Origin: SonarCloud scan of branch `dev`, analysis 2026-10-09 — 324 OPEN issues
 ### Triage record for PLAN-QLT-003 (RQ-QLT-016)
 
 Policy: an issue located in a **test file** is accepted, not fixed — the tests
-are AI-generated and not maintained by a human. Production-code issues are
-fixed, unless the owner decides otherwise case by case (recorded below). Each
-SonarCloud comment carries the task id.
+are AI-generated and not maintained by a human. An issue in a **Python or
+shell file** is accepted as-is too: those files are copied from another
+repository and reviewed there. Other production-code issues are fixed, unless
+the owner decides otherwise case by case (recorded below). Each SonarCloud
+comment carries the task id.
 
 - **TASK-QLT-013** — `cpp:S134` x5, `juce/tests/app/KnobPresetValuesTests.cpp`
   lines 97, 132, 236, 258, 290 (nesting deeper than 3 in test code).
@@ -429,3 +431,8 @@ SonarCloud comment carries the task id.
   paced by sleeps, so the type-erasure cost is nil, and a template would move
   the body into the header and add private members to a class already over the
   S1448 limit.
+- **TASK-QLT-015** — `python:S3776` x5 (`extract_control_table.py:46`,
+  `fit_vfd_tokens.py:253,445`, `generate_design_tokens.py:74`,
+  `prototypes/triangle_lattice.py:120`) and `shelldre:S7688` x2
+  (`validate-ids.sh:15`, `check_no_version_literals.sh:71`): Python and shell
+  code copied from another repository, reviewed upstream.
